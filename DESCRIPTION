@@ -1,0 +1,16 @@
+Package: PDFR
+Type: Package
+Title: Extract Text From PDFs In An R Friendly Way
+Version: 0.1.0
+Author: Allan Cameron
+Maintainer: <Allan.Cameron@nhs.net>
+Description: Extracts text from PDF into an R dataframe giving the content,
+    size, position and font of any text elements. This information can then 
+    be manipulated in R.
+License: GPL (>= 2)
+Encoding: UTF-8
+LazyData: true
+Imports: Rcpp (>= 0.12.17), Rcpp11
+LinkingTo: Rcpp, Rcpp11
+Depends:
+RoxygenNote: 6.0.1

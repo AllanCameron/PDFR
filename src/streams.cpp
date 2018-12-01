@@ -1,0 +1,192 @@
+#include "pdfr.h"
+#include "streams.h"
+#include "document.h"
+#include "stringfunctions.h"
+#include "miniz.h"
+
+
+/*---------------------------------------------------------------------------*/
+
+bool isFlateDecode(const std::string& filestring, int startpos)
+{
+  dictionary dict = dictionary(filestring, startpos);
+  return RexIn(dict.get("/Filter"), "/FlateDecode");
+}
+
+/*---------------------------------------------------------------------------*/
+
+std::string FlateDecode(const std::string& s)
+{
+  z_stream stream ;
+  int factor = 20;
+
+  while(true)
+  {
+    char * out = new char[s.length()*factor];
+    stream.zalloc = Z_NULL;
+    stream.zfree = Z_NULL;
+    stream.opaque = Z_NULL;
+    stream.avail_in = s.length();
+    stream.next_in = (Bytef*)s.c_str();
+    stream.avail_out = s.length()*factor;
+    stream.next_out = (Bytef*)out;
+    inflateInit(&stream);
+    inflate(&stream, Z_FINISH);
+    inflateEnd(&stream)       ;
+
+    if(stream.total_out >= factor*s.length())
+    {
+      delete[] out;
+      factor *= 2;
+      continue;
+    }
+
+    std::string result;
+    for(unsigned long i = 0; i < stream.total_out; i++) result += out[i];
+    delete[] out;
+    return result;
+  }
+}
+
+
+/*---------------------------------------------------------------------------*/
+
+std::string
+getStreamContents(document& d, const std::string& filestring, int objstart)
+{
+  dictionary dict = dictionary(filestring, objstart);
+  if(dict.has("stream")) if(dict.has("/Length"))
+  {
+    int streamlen;
+    if(dict.hasRefs("/Length"))
+    {
+      int lengthob = dict.getRefs("/Length")[0];
+      streamlen = std::stoi(d.getobject(lengthob).getStream());
+    }
+    else
+    {
+      streamlen = std::stoi(dict.get("/Length"));
+    }
+    int streamstart = std::stoi(dict.get("stream"));
+    return filestring.substr(streamstart, streamlen);
+  }
+  return "";
+}
+
+/*---------------------------------------------------------------------------*/
+
+bool objHasStream(const std::string& filestring, int objectstart)
+{
+  dictionary dict = dictionary(filestring, objectstart);
+  return dict.has("stream");
+}
+
+/*---------------------------------------------------------------------------*/
+
+bool isObject(const std::string& filestring, int objectstart)
+{
+  std::string ts(filestring.begin() + objectstart,
+                 filestring.begin() + objectstart + 20);
+  return  !stringloc(ts, "\\d+ \\d+ obj", "end").empty();
+}
+
+/*---------------------------------------------------------------------------*/
+
+std::string objectPreStream(const std::string& filestring, int objectstart)
+{
+  std::vector<int> streamstart, nextobjstart, mn;
+  std::string dic;
+  int nchars = 0;
+  while(mn.size() == 0 && nchars < 3000)
+  {
+    nchars += 1500;
+    dic.assign(filestring.begin() + objectstart,
+               filestring.begin() + objectstart + nchars);
+    streamstart = stringloc(dic, "stream", "start");
+    nextobjstart = stringloc(dic, "endobj", "start");
+    if(!streamstart.empty()) mn.push_back(streamstart[0]);
+    if(!nextobjstart.empty()) mn.push_back(nextobjstart[0]);
+  }
+  if(mn.size()>0) return dic.substr(0, *std::min_element(mn.begin(), mn.end()));
+
+  Rcpp::stop("No object found");
+}
+
+/*---------------------------------------------------------------------------*/
+
+std::vector<std::vector<int>>
+decodeString(document& d, const std::string& filestring, int objstart)
+{
+  std::vector<std::vector<int>> ReAr, FAr, FA;
+  std::vector<int> ArW, objind;
+  int startingobj;
+  dictionary dict = dictionary(filestring, objstart);
+  std::string CS, IMatch, WM;
+  if(dict.has("/DecodeParms"))
+  {
+    dictionary subdict = dictionary(dict.get("/DecodeParms"));
+    if(subdict.has("/Columns")) CS = subdict.get("/Columns");
+  }
+  if(dict.has("/Index")) IMatch = dict.get("/Index");
+  if(dict.has("/W"))  WM = dict.get("/W");
+  if(IMatch.size() == 0) startingobj = 0;
+  else
+  {
+    std::vector<std::string> IMatchs = Rex(IMatch, "(\\d|\\s)+");
+    if(IMatchs.size() == 0) startingobj = 0;
+    else startingobj = std::stoi(Rex(IMatchs[0], "\\d+")[0]);
+  }
+  if(!CS.empty())
+  {
+    int  ncols  =  std::stoi(Rex(CS, "\\d{1,2}")[0]) + 1;
+    if(!WM.empty())
+    {
+      std::vector<std::string> WMs = Rex(WM, "(\\d|\\s)+");
+      WMs = splitter(WMs[0], " ");
+      for(auto i : WMs) ArW.push_back(std::stoi(i));
+      std::string SS = getStreamContents(d, filestring, objstart);
+      if(isFlateDecode(filestring, objstart)) SS = FlateDecode(SS);
+      std::vector<unsigned char> rawarray(SS.begin(), SS.end());
+      std::vector<int> intAr(rawarray.begin(), rawarray.end());
+      int nrows = intAr.size() / ncols;
+      for(int i = 0; i < nrows; i++)
+      {
+        std::vector<int>
+        tmp(intAr.begin() + ncols * i + 1, intAr.begin() + ncols * (i + 1));
+        ReAr.push_back(tmp);
+      }
+      for(unsigned int i = 0; i < ReAr.size(); i++ ) if(i > 0)
+      {
+        std::vector<int> tAr = ReAr[i];
+        for(size_t j = 0; j<tAr.size(); j++)
+          ReAr[i][j] = tAr[j] + ReAr[i - 1][j];
+      }
+      for(unsigned int i = 0; i < ReAr[0].size(); i++)
+      {
+        std::vector<int> temarray;
+        for(int j = 0; j < nrows; j++) temarray.push_back(ReAr[j][i] % 256);
+        FAr.push_back(temarray);
+      }
+      std::vector<int> BI {16777216, 65536, 256, 1};
+      std::vector<int> CA;
+      for(auto i: ArW) CA.insert(CA.end(), BI.end() - i, BI.end());
+      for(size_t i = 0; i < FAr.size(); i++) for(auto &j : FAr[i]) j *= CA[i];
+      int cumsum = 0;
+      for(auto i : ArW)
+      {
+        std::vector<int> newcolumn = FAr[cumsum];
+        if(i > 1) for(int j = 1; j < i; j++)
+          for(size_t k = 0; k < FAr[cumsum + j].size(); k++)
+            newcolumn[k] += FAr[cumsum + j][k];
+        FA.push_back(newcolumn);
+        cumsum += i;
+      }
+      for(size_t i = 0; i<FA[0].size(); i++) objind.push_back(i + startingobj);
+      FA.push_back(objind);
+    }
+  }
+  return FA;
+}
+
+/*---------------------------------------------------------------------------*/
+
