@@ -15,14 +15,14 @@ void printvec(std::vector<T> x)
 
 /*---------------------------------------------------------------------------*/
 
-std::chrono::high_resolution_clock::time_point startClock()
+inline std::chrono::high_resolution_clock::time_point startClock()
 {
   return std::chrono::high_resolution_clock::now();
 }
 
 /*---------------------------------------------------------------------------*/
 
-void timeSince(std::string message,
+inline void timeSince(std::string message,
                std::chrono::high_resolution_clock::time_point& start)
 {
   std::chrono::high_resolution_clock::time_point end =
