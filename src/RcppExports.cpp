@@ -29,17 +29,6 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// bytesFromArray
-std::vector<unsigned char> bytesFromArray(const std::string& s);
-RcppExport SEXP _PDFR_bytesFromArray(SEXP sSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const std::string& >::type s(sSEXP);
-    rcpp_result_gen = Rcpp::wrap(bytesFromArray(s));
-    return rcpp_result_gen;
-END_RCPP
-}
 // get_xref
 Rcpp::DataFrame get_xref(const std::string& filename);
 RcppExport SEXP _PDFR_get_xref(SEXP filenameSEXP) {
@@ -95,18 +84,6 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const std::string& >::type filename(filenameSEXP);
     Rcpp::traits::input_parameter< int >::type pagenum(pagenumSEXP);
     rcpp_result_gen = Rcpp::wrap(pdfpage(filename, pagenum));
-    return rcpp_result_gen;
-END_RCPP
-}
-// getPageString
-std::string getPageString(const std::string& filename, int pagenum);
-RcppExport SEXP _PDFR_getPageString(SEXP filenameSEXP, SEXP pagenumSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const std::string& >::type filename(filenameSEXP);
-    Rcpp::traits::input_parameter< int >::type pagenum(pagenumSEXP);
-    rcpp_result_gen = Rcpp::wrap(getPageString(filename, pagenum));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -174,13 +151,11 @@ END_RCPP
 static const R_CallMethodDef CallEntries[] = {
     {"_PDFR_byteStringToString", (DL_FUNC) &_PDFR_byteStringToString, 1},
     {"_PDFR_get_partial_file", (DL_FUNC) &_PDFR_get_partial_file, 3},
-    {"_PDFR_bytesFromArray", (DL_FUNC) &_PDFR_bytesFromArray, 1},
     {"_PDFR_get_xref", (DL_FUNC) &_PDFR_get_xref, 1},
     {"_PDFR_get_object", (DL_FUNC) &_PDFR_get_object, 2},
     {"_PDFR_get_obj_stream", (DL_FUNC) &_PDFR_get_obj_stream, 2},
     {"_PDFR_pdfdoc", (DL_FUNC) &_PDFR_pdfdoc, 1},
     {"_PDFR_pdfpage", (DL_FUNC) &_PDFR_pdfpage, 2},
-    {"_PDFR_getPageString", (DL_FUNC) &_PDFR_getPageString, 2},
     {"_PDFR_carveout", (DL_FUNC) &_PDFR_carveout, 3},
     {"_PDFR_splitter", (DL_FUNC) &_PDFR_splitter, 2},
     {"_PDFR_Rex", (DL_FUNC) &_PDFR_Rex, 2},

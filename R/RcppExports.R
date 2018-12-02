@@ -9,10 +9,6 @@ get_partial_file <- function(filename, start, stop) {
     .Call('_PDFR_get_partial_file', PACKAGE = 'PDFR', filename, start, stop)
 }
 
-bytesFromArray <- function(s) {
-    .Call('_PDFR_bytesFromArray', PACKAGE = 'PDFR', s)
-}
-
 get_xref <- function(filename) {
     .Call('_PDFR_get_xref', PACKAGE = 'PDFR', filename)
 }
@@ -28,6 +24,13 @@ get_object <- function(filename, o) {
     .Call('_PDFR_get_object', PACKAGE = 'PDFR', filename, o)
 }
 
+#' get_object_stream
+#'
+#' Get a pdf object's stream (if any)
+#'
+#' @param filename the path to a valid PDF file.
+#' @param o The object number, given as an integer.
+#' @export
 get_obj_stream <- function(filename, o) {
     .Call('_PDFR_get_obj_stream', PACKAGE = 'PDFR', filename, o)
 }
@@ -53,17 +56,6 @@ pdfdoc <- function(filepath) {
 #' @export
 pdfpage <- function(filename, pagenum) {
     .Call('_PDFR_pdfpage', PACKAGE = 'PDFR', filename, pagenum)
-}
-
-#' getPageString
-#'
-#' Returns a pdf page's Postscript program as a text string
-#'
-#' @param filename the path to a valid PDF file.
-#' @param pagenum the page to extract
-#' @export
-getPageString <- function(filename, pagenum) {
-    .Call('_PDFR_getPageString', PACKAGE = 'PDFR', filename, pagenum)
 }
 
 carveout <- function(subject, precarve, postcarve) {
