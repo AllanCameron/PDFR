@@ -45,7 +45,7 @@ class document;
 #include "page.h"
 #include "GraphicsState.h"
 
-/*---------------------------------------------------------------------------*/
+//---------------------------------------------------------------------------//
 
 template< typename Mt, typename T >
 std::vector<Mt> getKeys(std::map<Mt, T> Map)
@@ -59,5 +59,114 @@ std::vector<Mt> getKeys(std::map<Mt, T> Map)
   return keyvec;
 }
 
+//---------------------------------------------------------------------------//
+
+inline void createpdf(const std::string& filename)
+{
+  document res = document(filename);
+}
+
+//---------------------------------------------------------------------------//
+
+inline std::string getpagestring(page p){return p.contentstring;}
+
+//---------------------------------------------------------------------------//
+
+inline std::string getPageString(const std::string& filename, int pagenum)
+{
+  return getpagestring(document(filename).getPage(pagenum - 1));
+}
+
+//---------------------------------------------------------------------------//
+
+Rcpp::List PDFpage(document mypdf, page pg);
+
+//---------------------------------------------------------------------------//
+
+// [[Rcpp::export]]
+std::string byteStringToString(const std::string& s);
+
+//---------------------------------------------------------------------------//
+
+// [[Rcpp::export]]
+std::string get_partial_file(const std::string& filename, long start, long stp);
+
+//---------------------------------------------------------------------------//
+
+// [[Rcpp::export]]
+std::string carveout (const std::string& subject, const std::string& precarve,
+                      const std::string& postcarve);
+
+//---------------------------------------------------------------------------//
+
+// [[Rcpp::export]]
+std::vector<std::string>
+  splitter(const std::string& subject, const std::string& matcher);
+
+//---------------------------------------------------------------------------//
+
+// [[Rcpp::export]]
+std::vector<std::string>
+  Rex (const std::vector<std::string>& strvec, std::string matcher);
+
+//---------------------------------------------------------------------------//
+
+// [[Rcpp::export]]
+std::vector<uint8_t> rc4(std::vector<uint8_t> msg, std::vector<uint8_t> key);
+
+//---------------------------------------------------------------------------//
+
+// [[Rcpp::export]]
+std::vector<uint8_t> md5(std::vector<uint8_t> input);
+
+/*---------------------------------------------------------------------------*/
+
+// [[Rcpp::export]]
+Rcpp::DataFrame get_xref(const std::string& filename);
+
+//---------------------------------------------------------------------------//
+//' get_object
+//'
+//' Show the key:value pairs in a PDF object dictionary
+//'
+//' @param filename the path to a valid PDF file.
+//' @param o The object number, given as an integer.
+//' @export
+// [[Rcpp::export]]
+Rcpp::List get_object(const std::string& filename, int o);
+
+//---------------------------------------------------------------------------//
+//' get_object_stream
+//'
+//' Get a pdf object's stream (if any)
+//'
+//' @param filename the path to a valid PDF file.
+//' @param o The object number, given as an integer.
+//' @export
+// [[Rcpp::export]]
+std::string get_obj_stream(const std::string& filename, int o);
+
+//---------------------------------------------------------------------------//
+//' pdfdoc
+//'
+//' List a PDF document's filename, catalogue dictionary, page dictionaries,
+//' encryption status and file key (if encrypted)
+//'
+//' @param filepath the path to a valid PDF file.
+//' @export
+// [[Rcpp::export]]
+Rcpp::List pdfdoc(const std::string & filepath);
+
+//---------------------------------------------------------------------------//
+//' pdfpage
+//'
+//' Returns a list comprising a page's fonts, its Postscript program as a text
+//' string and its text elements as an R data frame
+//'
+//' @param filename the path to a valid PDF file.
+//' @param pagenum the page to extract
+//' @export
+// [[Rcpp::export]]
+Rcpp::List pdfpage(const std::string& filename, int pagenum);
 
 #endif

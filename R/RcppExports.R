@@ -5,8 +5,28 @@ byteStringToString <- function(s) {
     .Call('_PDFR_byteStringToString', PACKAGE = 'PDFR', s)
 }
 
-get_partial_file <- function(filename, start, stop) {
-    .Call('_PDFR_get_partial_file', PACKAGE = 'PDFR', filename, start, stop)
+get_partial_file <- function(filename, start, stp) {
+    .Call('_PDFR_get_partial_file', PACKAGE = 'PDFR', filename, start, stp)
+}
+
+carveout <- function(subject, precarve, postcarve) {
+    .Call('_PDFR_carveout', PACKAGE = 'PDFR', subject, precarve, postcarve)
+}
+
+splitter <- function(subject, matcher) {
+    .Call('_PDFR_splitter', PACKAGE = 'PDFR', subject, matcher)
+}
+
+Rex <- function(strvec, matcher) {
+    .Call('_PDFR_Rex', PACKAGE = 'PDFR', strvec, matcher)
+}
+
+rc4 <- function(msg, key) {
+    .Call('_PDFR_rc4', PACKAGE = 'PDFR', msg, key)
+}
+
+md5 <- function(input) {
+    .Call('_PDFR_md5', PACKAGE = 'PDFR', input)
 }
 
 get_xref <- function(filename) {
@@ -56,25 +76,5 @@ pdfdoc <- function(filepath) {
 #' @export
 pdfpage <- function(filename, pagenum) {
     .Call('_PDFR_pdfpage', PACKAGE = 'PDFR', filename, pagenum)
-}
-
-carveout <- function(subject, precarve, postcarve) {
-    .Call('_PDFR_carveout', PACKAGE = 'PDFR', subject, precarve, postcarve)
-}
-
-splitter <- function(subject, matcher) {
-    .Call('_PDFR_splitter', PACKAGE = 'PDFR', subject, matcher)
-}
-
-Rex <- function(strvec, matcher) {
-    .Call('_PDFR_Rex', PACKAGE = 'PDFR', strvec, matcher)
-}
-
-rc4 <- function(msg, key) {
-    .Call('_PDFR_rc4', PACKAGE = 'PDFR', msg, key)
-}
-
-md5 <- function(input) {
-    .Call('_PDFR_md5', PACKAGE = 'PDFR', input)
 }
 

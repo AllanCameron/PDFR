@@ -1,8 +1,9 @@
-library(trak)
 library(devtools)
 library(Rcpp)
 library(Rcpp11)
 library(ggplot2)
+library(httr)
+library(magrittr)
 library(extrafont)
 library(grid)
 
@@ -14,30 +15,18 @@ assignInNamespace("version_info",
                                       version_max = "99.99.99",
                                       path = "bin"))), "devtools")
 
-pdfpath    <- "\\\\XGGC.SCOT.NHS.UK\\GGCData\\FolderRedirects\\" %>%
-              paste0("GRI5\\cameral931\\My Documents\\")
-
-gricurrent <- pdfpath %>% paste0("gricurrent.pdf")
-cppref     <- pdfpath %>% paste0("cppref.pdf")
-w46        <- pdfpath %>% paste0("griwd46.pdf")
+pdfpath    <- "./test/"
 barcodes   <- pdfpath %>% paste0("barcodes.pdf")
-fortuna    <- pdfpath %>% paste0("fortuna.pdf")
 barrets    <- pdfpath %>% paste0("barrets.pdf")
 pdfref     <- pdfpath %>% paste0("pdfref.pdf")
 poster     <- pdfpath %>% paste0("Ellie poster1.pdf")
-Novel      <- pdfpath %>% paste0("Novel.pdf")
 chestpain  <- pdfpath %>% paste0("chest pain.pdf")
 pdfinfo    <- pdfpath %>% paste0("pdfinfo.pdf")
 adobe      <- pdfpath %>% paste0("adobe.pdf")
-yukon      <- pdfpath %>% paste0("yukon.pdf")
-dummy      <- pdfpath %>% paste0("dummy.pdf")
 leeds      <- pdfpath %>% paste0("leeds.pdf")
 sams       <- pdfpath %>% paste0("sams.pdf")
-audition   <- pdfpath %>% paste0("audition.pdf")
-sam        <- pdfpath %>% paste0("SAM Scotland 2018-5.pdf")
 ggp        <- pdfpath %>% paste0("gg.pdf")
 testreader <- pdfpath %>% paste0("testreader.pdf")
-sample     <- pdfpath %>% paste0("sample.pdf")
 tex        <- pdfpath %>% paste0("tex.pdf")
 rcpp       <- pdfpath %>% paste0("rcpp.pdf")
 paris      <- pdfpath %>% paste0("paris.pdf")
@@ -73,7 +62,7 @@ else cat("file saved to ", path.expand("~/"), filename, "\n", collapse = "")
 #' @return a ggplot
 #' @export
 #'
-#' @examples pdfplot(apdf, 1)
+#' @examples pdfplot(pdfref, 1)
 pdfplot <- function(pdf, page = 1, font = "Arial", textsize = 1)
   {
     PDFR::pdfpage(pdf, page) -> x;

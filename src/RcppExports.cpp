@@ -17,73 +17,15 @@ BEGIN_RCPP
 END_RCPP
 }
 // get_partial_file
-std::string get_partial_file(const std::string& filename, long start, long stop);
-RcppExport SEXP _PDFR_get_partial_file(SEXP filenameSEXP, SEXP startSEXP, SEXP stopSEXP) {
+std::string get_partial_file(const std::string& filename, long start, long stp);
+RcppExport SEXP _PDFR_get_partial_file(SEXP filenameSEXP, SEXP startSEXP, SEXP stpSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const std::string& >::type filename(filenameSEXP);
     Rcpp::traits::input_parameter< long >::type start(startSEXP);
-    Rcpp::traits::input_parameter< long >::type stop(stopSEXP);
-    rcpp_result_gen = Rcpp::wrap(get_partial_file(filename, start, stop));
-    return rcpp_result_gen;
-END_RCPP
-}
-// get_xref
-Rcpp::DataFrame get_xref(const std::string& filename);
-RcppExport SEXP _PDFR_get_xref(SEXP filenameSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const std::string& >::type filename(filenameSEXP);
-    rcpp_result_gen = Rcpp::wrap(get_xref(filename));
-    return rcpp_result_gen;
-END_RCPP
-}
-// get_object
-Rcpp::List get_object(const std::string& filename, int o);
-RcppExport SEXP _PDFR_get_object(SEXP filenameSEXP, SEXP oSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const std::string& >::type filename(filenameSEXP);
-    Rcpp::traits::input_parameter< int >::type o(oSEXP);
-    rcpp_result_gen = Rcpp::wrap(get_object(filename, o));
-    return rcpp_result_gen;
-END_RCPP
-}
-// get_obj_stream
-std::string get_obj_stream(const std::string& filename, int o);
-RcppExport SEXP _PDFR_get_obj_stream(SEXP filenameSEXP, SEXP oSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const std::string& >::type filename(filenameSEXP);
-    Rcpp::traits::input_parameter< int >::type o(oSEXP);
-    rcpp_result_gen = Rcpp::wrap(get_obj_stream(filename, o));
-    return rcpp_result_gen;
-END_RCPP
-}
-// pdfdoc
-Rcpp::List pdfdoc(const std::string& filepath);
-RcppExport SEXP _PDFR_pdfdoc(SEXP filepathSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const std::string& >::type filepath(filepathSEXP);
-    rcpp_result_gen = Rcpp::wrap(pdfdoc(filepath));
-    return rcpp_result_gen;
-END_RCPP
-}
-// pdfpage
-Rcpp::List pdfpage(const std::string& filename, int pagenum);
-RcppExport SEXP _PDFR_pdfpage(SEXP filenameSEXP, SEXP pagenumSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const std::string& >::type filename(filenameSEXP);
-    Rcpp::traits::input_parameter< int >::type pagenum(pagenumSEXP);
-    rcpp_result_gen = Rcpp::wrap(pdfpage(filename, pagenum));
+    Rcpp::traits::input_parameter< long >::type stp(stpSEXP);
+    rcpp_result_gen = Rcpp::wrap(get_partial_file(filename, start, stp));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -147,20 +89,78 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// get_xref
+Rcpp::DataFrame get_xref(const std::string& filename);
+RcppExport SEXP _PDFR_get_xref(SEXP filenameSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const std::string& >::type filename(filenameSEXP);
+    rcpp_result_gen = Rcpp::wrap(get_xref(filename));
+    return rcpp_result_gen;
+END_RCPP
+}
+// get_object
+Rcpp::List get_object(const std::string& filename, int o);
+RcppExport SEXP _PDFR_get_object(SEXP filenameSEXP, SEXP oSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const std::string& >::type filename(filenameSEXP);
+    Rcpp::traits::input_parameter< int >::type o(oSEXP);
+    rcpp_result_gen = Rcpp::wrap(get_object(filename, o));
+    return rcpp_result_gen;
+END_RCPP
+}
+// get_obj_stream
+std::string get_obj_stream(const std::string& filename, int o);
+RcppExport SEXP _PDFR_get_obj_stream(SEXP filenameSEXP, SEXP oSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const std::string& >::type filename(filenameSEXP);
+    Rcpp::traits::input_parameter< int >::type o(oSEXP);
+    rcpp_result_gen = Rcpp::wrap(get_obj_stream(filename, o));
+    return rcpp_result_gen;
+END_RCPP
+}
+// pdfdoc
+Rcpp::List pdfdoc(const std::string& filepath);
+RcppExport SEXP _PDFR_pdfdoc(SEXP filepathSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const std::string& >::type filepath(filepathSEXP);
+    rcpp_result_gen = Rcpp::wrap(pdfdoc(filepath));
+    return rcpp_result_gen;
+END_RCPP
+}
+// pdfpage
+Rcpp::List pdfpage(const std::string& filename, int pagenum);
+RcppExport SEXP _PDFR_pdfpage(SEXP filenameSEXP, SEXP pagenumSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const std::string& >::type filename(filenameSEXP);
+    Rcpp::traits::input_parameter< int >::type pagenum(pagenumSEXP);
+    rcpp_result_gen = Rcpp::wrap(pdfpage(filename, pagenum));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_PDFR_byteStringToString", (DL_FUNC) &_PDFR_byteStringToString, 1},
     {"_PDFR_get_partial_file", (DL_FUNC) &_PDFR_get_partial_file, 3},
-    {"_PDFR_get_xref", (DL_FUNC) &_PDFR_get_xref, 1},
-    {"_PDFR_get_object", (DL_FUNC) &_PDFR_get_object, 2},
-    {"_PDFR_get_obj_stream", (DL_FUNC) &_PDFR_get_obj_stream, 2},
-    {"_PDFR_pdfdoc", (DL_FUNC) &_PDFR_pdfdoc, 1},
-    {"_PDFR_pdfpage", (DL_FUNC) &_PDFR_pdfpage, 2},
     {"_PDFR_carveout", (DL_FUNC) &_PDFR_carveout, 3},
     {"_PDFR_splitter", (DL_FUNC) &_PDFR_splitter, 2},
     {"_PDFR_Rex", (DL_FUNC) &_PDFR_Rex, 2},
     {"_PDFR_rc4", (DL_FUNC) &_PDFR_rc4, 2},
     {"_PDFR_md5", (DL_FUNC) &_PDFR_md5, 1},
+    {"_PDFR_get_xref", (DL_FUNC) &_PDFR_get_xref, 1},
+    {"_PDFR_get_object", (DL_FUNC) &_PDFR_get_object, 2},
+    {"_PDFR_get_obj_stream", (DL_FUNC) &_PDFR_get_obj_stream, 2},
+    {"_PDFR_pdfdoc", (DL_FUNC) &_PDFR_pdfdoc, 1},
+    {"_PDFR_pdfpage", (DL_FUNC) &_PDFR_pdfpage, 2},
     {NULL, NULL, 0}
 };
 
