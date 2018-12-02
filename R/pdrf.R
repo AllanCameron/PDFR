@@ -19,8 +19,8 @@ pdfpath    <- "./test/"
 barcodes   <- pdfpath %>% paste0("barcodes.pdf")
 barrets    <- pdfpath %>% paste0("barrets.pdf")
 pdfref     <- pdfpath %>% paste0("pdfref.pdf")
-poster     <- pdfpath %>% paste0("Ellie poster1.pdf")
-chestpain  <- pdfpath %>% paste0("chest pain.pdf")
+poster     <- pdfpath %>% paste0("poster.pdf")
+chestpain  <- pdfpath %>% paste0("chestpain.pdf")
 pdfinfo    <- pdfpath %>% paste0("pdfinfo.pdf")
 adobe      <- pdfpath %>% paste0("adobe.pdf")
 leeds      <- pdfpath %>% paste0("leeds.pdf")
@@ -67,15 +67,15 @@ pdfplot <- function(pdf, page = 1, font = "Arial", textsize = 1)
   {
     PDFR::pdfpage(pdf, page) -> x;
     x$Elements -> y;
-    ggplot(data = y,
+    ggplot2::ggplot(data = y,
            aes(x = left, y = bottom, size = I(textsize*170*size/(x$Box[4] - x$Box[2]))),
            lims = x$Box ) -> G;
-    G + geom_rect(aes(xmin = x$Box[1], ymin = x$Box[2],
+    G + ggplot2::geom_rect(aes(xmin = x$Box[1], ymin = x$Box[2],
                       xmax = x$Box[3], ymax = x$Box[4]),
                   fill = "white", colour="black", size=0.2
-      ) + geom_text(aes(label = text), hjust = 0, vjust = 0, family = font
-      ) + coord_equal(
-      ) + scale_size_identity();
+      ) + ggplot2::geom_text(aes(label = text), hjust = 0, vjust = 0, family = font
+      ) + ggplot2::coord_equal(
+      ) + ggplot2::scale_size_identity();
   }
 
 pdfpageplot <- function(x, font = "Arial", fontsize = 1){

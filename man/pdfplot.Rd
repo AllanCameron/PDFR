@@ -24,5 +24,5 @@ The aim is not a complete pdf rendering but to help identify elements of
 interest in the data frame of text elements to convert to data points.
 }
 \examples{
-pdfplot(apdf, 1)
+pdfplot(pdfref, 1)
 }
