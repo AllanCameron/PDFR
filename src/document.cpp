@@ -22,6 +22,21 @@ document::document(const std::string& filename) : file(filename)
 
 /*---------------------------------------------------------------------------*/
 
+document::document(const std::vector<uint8_t>& bytevector)
+{
+  filestring = bytestostring(bytevector);
+  filesize = (int) filestring.size();
+  Xref = xref(*this);
+  trailer = Xref.trailer();
+  filekey = get_cryptkey();
+  getCatalogue();
+  getPageDir();
+  isLinearized();
+  getPageHeaders();
+}
+
+/*---------------------------------------------------------------------------*/
+
 void document::get_file()
 {
     std::ifstream in(file.c_str(), std::ios::in | std::ios::binary);

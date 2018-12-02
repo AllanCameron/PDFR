@@ -78,3 +78,15 @@ pdfpage <- function(filename, pagenum) {
     .Call('_PDFR_pdfpage', PACKAGE = 'PDFR', filename, pagenum)
 }
 
+#' pdfpageraw
+#'
+#' Returns a list comprising a page's fonts, its Postscript program as a text
+#' string and its text elements as an R data frame
+#'
+#' @param rawfile raw pdf data
+#' @param pagenum the page to extract
+#' @export
+pdfpageraw <- function(rawfile, pagenum) {
+    .Call('_PDFR_pdfpageraw', PACKAGE = 'PDFR', rawfile, pagenum)
+}
+

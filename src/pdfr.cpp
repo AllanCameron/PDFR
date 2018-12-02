@@ -90,6 +90,13 @@ Rcpp::List pdfdoc(const std::string & filepath)
   return Rcpp::List::create(Rcpp::Named("file") = filename);
 }
 
+
+Rcpp::List pdfdoc(const std::vector<uint8_t> & rawfile)
+{
+  document myfile = document(rawfile);
+  Rcpp::CharacterVector filename = Rcpp::wrap({"From raw data"});
+  return Rcpp::List::create(Rcpp::Named("file") = filename);
+}
 //---------------------------------------------------------------------------//
 
 Rcpp::List pdfpage(const std::string& filename, int pagenum)
@@ -98,3 +105,8 @@ Rcpp::List pdfpage(const std::string& filename, int pagenum)
   return PDFpage(myfile, myfile.getPage(pagenum - 1));
 }
 
+Rcpp::List pdfpageraw(const std::vector<uint8_t>& rawfile, int pagenum)
+{
+  document myfile = document(rawfile);
+  return PDFpage(myfile, myfile.getPage(pagenum - 1));
+}

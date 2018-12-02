@@ -147,6 +147,18 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// pdfpageraw
+Rcpp::List pdfpageraw(const std::vector<uint8_t>& rawfile, int pagenum);
+RcppExport SEXP _PDFR_pdfpageraw(SEXP rawfileSEXP, SEXP pagenumSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const std::vector<uint8_t>& >::type rawfile(rawfileSEXP);
+    Rcpp::traits::input_parameter< int >::type pagenum(pagenumSEXP);
+    rcpp_result_gen = Rcpp::wrap(pdfpageraw(rawfile, pagenum));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_PDFR_byteStringToString", (DL_FUNC) &_PDFR_byteStringToString, 1},
@@ -161,6 +173,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_PDFR_get_obj_stream", (DL_FUNC) &_PDFR_get_obj_stream, 2},
     {"_PDFR_pdfdoc", (DL_FUNC) &_PDFR_pdfdoc, 1},
     {"_PDFR_pdfpage", (DL_FUNC) &_PDFR_pdfpage, 2},
+    {"_PDFR_pdfpageraw", (DL_FUNC) &_PDFR_pdfpageraw, 2},
     {NULL, NULL, 0}
 };
 

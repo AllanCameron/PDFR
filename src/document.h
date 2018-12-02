@@ -30,6 +30,7 @@ public:
   object_class getobject(int objnum);
   std::vector<uint8_t> get_cryptkey();
   document(const std::string& filename);
+  document(const std::vector<uint8_t>& rawfile);
   document();
   std::vector<int> expandKids(std::vector<int> objnums);
   std::vector<int> expandContents(std::vector<int> objnums);

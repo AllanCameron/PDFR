@@ -169,4 +169,16 @@ Rcpp::List pdfdoc(const std::string & filepath);
 // [[Rcpp::export]]
 Rcpp::List pdfpage(const std::string& filename, int pagenum);
 
+//---------------------------------------------------------------------------//
+//' pdfpageraw
+//'
+//' Returns a list comprising a page's fonts, its Postscript program as a text
+//' string and its text elements as an R data frame
+//'
+//' @param rawfile raw pdf data
+//' @param pagenum the page to extract
+//' @export
+// [[Rcpp::export]]
+Rcpp::List pdfpageraw(const std::vector<uint8_t>& rawfile, int pagenum);
+
 #endif

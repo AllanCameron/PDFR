@@ -15,7 +15,7 @@ assignInNamespace("version_info",
                                       version_max = "99.99.99",
                                       path = "bin"))), "devtools")
 
-pdfpath    <- "./test/"
+pdfpath    <- "./tests/"
 barcodes   <- pdfpath %>% paste0("barcodes.pdf")
 barrets    <- pdfpath %>% paste0("barrets.pdf")
 pdfref     <- pdfpath %>% paste0("pdfref.pdf")
@@ -30,6 +30,7 @@ testreader <- pdfpath %>% paste0("testreader.pdf")
 tex        <- pdfpath %>% paste0("tex.pdf")
 rcpp       <- pdfpath %>% paste0("rcpp.pdf")
 paris      <- pdfpath %>% paste0("paris.pdf")
+rexts      <- pdfpath %>% paste0("R-exts.pdf")
 
 internetFile <- function(x, filename = NULL)
 {

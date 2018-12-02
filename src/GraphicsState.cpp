@@ -222,12 +222,13 @@ Instructionset GraphicsState::tokenize(std::string s)
         n = symbol_type(s[i]);
         if(n == 'D')
         {
+          int octcount = 0;
           token.push_back(buf); buf = "";
           ttype.push_back("string");
-          while(n == 'D')
+          while(n == 'D' && octcount < 3)
           {
             minibuf += s[i];
-            i++;
+            i++; octcount ++;
             n = symbol_type(s[i]);
           }
           int newint = oct2dec(std::stoi(minibuf));
@@ -373,9 +374,10 @@ void GraphicsState::tokenize_array(std::vector<std::string> &ttype,
         {
           token.push_back(buf); buf = "";
           ttype.push_back("string");
-          while(symbol_type(s[i]) == 'D')
+          int octcount = 0;
+          while(symbol_type(s[i]) == 'D' && octcount < 3)
           {
-            minibuf += s[i]; i++;
+            minibuf += s[i]; i++; octcount++;
           }
           int newint = oct2dec(std::stoi(minibuf));
           token.push_back(intToHexstring(newint));
