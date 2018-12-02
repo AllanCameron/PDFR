@@ -18,7 +18,6 @@ public:
   dictionary catalogue;
   object_class pagedir;
   xref Xref;
-  std::map<std::string, std::string> UCMap;
 
   // member functions
   void get_file();
@@ -35,7 +34,6 @@ public:
   std::vector<int> expandKids(std::vector<int> objnums);
   std::vector<int> expandContents(std::vector<int> objnums);
   void getPageHeaders();
-  void UCM();
 };
 
 #endif

@@ -24,6 +24,7 @@
 #include "stringfunctions.h"
 #include "streams.h"
 #include "encodings.h"
+#include "ucm.h"
 
 EncMap getBaseEncode(const std::string& encoding)
 {
@@ -867,7 +868,7 @@ parseUnicode(std::string s, std::map<std::string, std::string>& UM)
 std::string defaultUnicode(document& d, std::string s)
 {
   std::vector<std::string> hstrings;
-  std::map<std::string, std::string> &UM = d.UCMap;
+  std::map<std::string, std::string> &UM = UCM;
   for(auto i : s) hstrings.push_back(intToHexstring((int) i));
   for(auto &i : hstrings) if(UM.find(i) != UM.end()) i = UM[i];
   std::string res;

@@ -70,10 +70,10 @@ pdfplot <- function(pdf, page = 1, font = "Arial", textsize = 1)
     ggplot2::ggplot(data = y,
            aes(x = left, y = bottom, size = I(textsize*170*size/(x$Box[4] - x$Box[2]))),
            lims = x$Box ) -> G;
-    G + ggplot2::geom_rect(aes(xmin = x$Box[1], ymin = x$Box[2],
+    G + ggplot2::geom_rect(ggplot2::aes(xmin = x$Box[1], ymin = x$Box[2],
                       xmax = x$Box[3], ymax = x$Box[4]),
                   fill = "white", colour="black", size=0.2
-      ) + ggplot2::geom_text(aes(label = text), hjust = 0, vjust = 0, family = font
+      ) + ggplot2::geom_text(ggplot2::aes(label = text), hjust = 0, vjust = 0, family = font
       ) + ggplot2::coord_equal(
       ) + ggplot2::scale_size_identity();
   }

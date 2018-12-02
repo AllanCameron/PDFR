@@ -4,6 +4,7 @@
 #include "encodings.h"
 #include "corefonts.h"
 #include "font.h"
+#include "ucm.h"
 
 font::font(document& d, const dictionary& Fontref, const std::string& fontid) :
 FontID(fontid)
@@ -229,8 +230,8 @@ void font::mapUnicode(dictionary& fontref, document& d)
               mykey = "0x" + mykey.substr(2, 2);
               uint16_t uintkey = stoul(mykey, nullptr, 0);
               if(EncodingMap.find(uintkey) != EncodingMap.end())
-                EncodingMap[uintkey] = d.UCMap[myhex];
-              else EncodingMap[uintkey] = d.UCMap[myhex];
+                EncodingMap[uintkey] = UCM[myhex];
+              else EncodingMap[uintkey] = UCM[myhex];
             }
           }
         }
@@ -263,9 +264,9 @@ void font::mapUnicode(dictionary& fontref, document& d)
                 std::string newHex = intToHexstring((int) myui);
                 if(EncodingMap.find(mykey) != EncodingMap.end())
                 {
-                  EncodingMap[mykey] = d.UCMap[newHex];
+                  EncodingMap[mykey] = UCM[newHex];
                 }
-                else EncodingMap[mykey] = d.UCMap[newHex];
+                else EncodingMap[mykey] = UCM[newHex];
               }
             }
           }
