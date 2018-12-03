@@ -45,7 +45,7 @@ Rcpp::List PDFpage(document mypdf, page pg)
 
 Rcpp::DataFrame get_xref(const std::string& filename)
 {
-  document& mydoc = document(filename);
+  document mydoc = document(filename);
   std::vector<int> ob, startb, stopb, inob;
 
   if(!mydoc.Xref.getObjects().empty())
