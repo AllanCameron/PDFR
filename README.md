@@ -13,6 +13,7 @@ xml, json, html and csv.
 
 Some R packages already exist to help extract information from pdfs. In
 particular, [pdftools](https://ropensci.org/blog/2016/03/01/pdftools-and-jeroen/) provides an R interface to some of Poppler's pdf tools, and can quickly and 
+particular, [https://ropensci.org/blog/2016/03/01/pdftools-and-jeroen/](pdftools) provides an R interface to some of Poppler's pdf tools, and can quickly and 
 reliably extract text wholesale from pdf. Although this preserves much of the 
 text layout on a page, the precise locations, fonts and sizes of the text 
 elements is lost, reducing the options for extracting semantic information. 
@@ -22,7 +23,7 @@ PDFR is mostly written in C++. Rather than being based on an existing library
 such as xpdf or Poppler, it was written from scratch with the specific goal
 of making text extraction easier for R users. Most of the design is new, an
 attempt to implement the pdf standard 
-[ISO 32000](https://www.iso.org/standard/51502.html), though I also learned a 
+[ISO 32000](https://www.iso.org/standard/51502.html), though I also learned a
 lot from existing open-source libraries.
 
 The only external C++ library used is miniz, which is used to implement the
