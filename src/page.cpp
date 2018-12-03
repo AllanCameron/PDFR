@@ -42,7 +42,8 @@ page::page(document& d, int pagenum) : pagenumber(pagenum)
       for (auto q : resourceobjs) resources = d.getobject(q).getDict();
     }
   else resources = dictionary(header.get("/Resources"));
-
+  if (resources.has("/XObject")) xobjstring = resources.get("/XObject");
+  parseXObjStream(d);
   if (!resources.hasDictionary("/Font"))
   {
     std::vector<int> fontobjs = resources.getRefs("/Font");
@@ -72,3 +73,22 @@ page::page(document& d, int pagenum) : pagenumber(pagenum)
 }
 
 /*---------------------------------------------------------------------------*/
+
+
+void page::parseXObjStream(document& d)
+{
+  if(xobjstring.length() > 0)
+  {
+    if(isDictString(xobjstring))
+    {
+      dictionary objdict = dictionary(xobjstring);
+      std::vector<std::string> dictkeys = objdict.getDictKeys();
+      for(auto i : dictkeys)
+      {
+        std::vector<int> refints = objdict.getRefs(i);
+        if(!refints.empty())
+          XObjects[i] = d.getobject(refints.at(0)).getStream();
+      }
+    }
+  }
+}

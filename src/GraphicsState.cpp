@@ -3,7 +3,7 @@
 #include "document.h"
 #include "GraphicsState.h"
 
-GraphicsState::GraphicsState(page& pag) :
+GraphicsState::GraphicsState(page& pag) : p(pag),
   PRstate(0), Tl(1), Tw(0), Th(100), Tc(0), currfontsize(0), currentfont("")
 {
   Instructions  = tokenize(pag.contentstring);
@@ -12,7 +12,7 @@ GraphicsState::GraphicsState(page& pag) :
   Tmstate = Tdstate = initstate;
   gs.push_back(initstate);
   fontsizestack.push_back(currfontsize);
-  InstructionReader(pag);
+  InstructionReader(pag, Instructions);
   MakeGS();
   db =  Rcpp::DataFrame::create(
     Rcpp::Named("text") = text,
@@ -414,7 +414,7 @@ Instructionset GraphicsState::parser(std::vector<std::string> token,
           token[i] == "Tc" || token[i] == "Tw" ||  token[i] == "Tm" ||
           token[i] == "Tf" || token[i] == "TL" ||  token[i] == "Tr" ||
           token[i] == "\"" || token[i] == "'"  ||  token[i] == "cm" ||
-          token[i] == "Tz" || token[i] == "Th"
+          token[i] == "Tz" || token[i] == "Th" ||  token[i] == "Do"
       )
       {
         tmptype.pop_back();
@@ -441,6 +441,17 @@ void GraphicsState::q()
   gs.push_back(gs.back());
   fontstack.push_back(currentfont);
   fontsizestack.push_back(currfontsize);
+}
+
+/*---------------------------------------------------------------------------*/
+
+void GraphicsState::Do(std::string& a)
+{
+  if(p.XObjects.find(a) != p.XObjects.end())
+  {
+    std::cout << "Getting xobject " << a << std::endl;
+    InstructionReader(p, tokenize(p.XObjects[a]));
+  }
 }
 
 /*---------------------------------------------------------------------------*/
@@ -558,10 +569,9 @@ void GraphicsState::TJ(page& pag, std::vector<std::vector<std::string>>& i)
 
 /*---------------------------------------------------------------------------*/
 
-void GraphicsState::InstructionReader(page& pag)
+void GraphicsState::InstructionReader(page& pag, Instructionset I)
 {
-  //std::cout << "Reading Instructions" << std::endl;
-  for(auto &i : Instructions)
+  for(auto &i : I)
   {
     std::string& Ins = i[0][0];
     std::vector<std::string> &Operands = i[2];
@@ -578,9 +588,9 @@ void GraphicsState::InstructionReader(page& pag)
     if(Ins == "Td" || Ins == "TD") Td(Ins, Operands);
     if(Ins == "ET" || Ins == "BT") BT();
     if(Ins == "Tf") Tf(pag, Operands);
+    if(Ins == "Do") Do(Operands[0]);
     if(Ins == "Tj" || Ins == "'" || Ins == "TJ") TJ(pag, i);
   }
-  //std::cout << "Instructions read" << std::endl;
 }
 
 /*---------------------------------------------------------------------------*/

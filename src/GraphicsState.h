@@ -9,6 +9,7 @@ class GraphicsState
 public:
   Rcpp::DataFrame db;
   GraphicsState(page& pag);
+  page p;
 
 private:
   font wfont;
@@ -26,7 +27,7 @@ private:
                       std::vector<std::string> &token, std::string &s);
   Instructionset parser(std::vector<std::string> token,
                         std::vector<std::string> ttype);
-  void InstructionReader(page& p);
+  void InstructionReader(page& p, Instructionset I);
   void Q(page& p);
   void q();
   void Td(std::string Ins, std::vector<std::string>& Operands);
@@ -35,6 +36,8 @@ private:
   void Tf(page& pag, std::vector<std::string>& Operands);
   void MakeGS();
   void clump();
+  void Do(std::string& xo);
+
 };
 
 #endif

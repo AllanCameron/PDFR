@@ -33,7 +33,7 @@ Rcpp::List PDFpage(document mypdf, page pg)
   return Rcpp::List::create(
     Rcpp::Named("Resources")  =  pg.resources.R_out(),
     Rcpp::Named("Fonts")      =  pg.fonts.R_out(),
-    Rcpp::Named("Encodings")  =  fontenc,
+    Rcpp::Named("XObjects")   =  pg.XObjects,
     Rcpp::Named("Box")        =  pg.minbox,
     Rcpp::Named("Rotate")     =  pg.rotate,
     Rcpp::Named("PageString") =  pg.contentstring,
