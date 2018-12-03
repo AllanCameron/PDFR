@@ -1,6 +1,6 @@
 # PDFR
 
-##An R package to extract usable text from portable document format (pdf) files.
+## An R package to extract usable text from portable document format (pdf) files.
 
 The pdf file format is an excellent way of sharing documents so that they
 appear the same independent of the platform on which they are viewed, and
