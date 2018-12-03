@@ -66,7 +66,6 @@ bool isDictString(const std::string& s);
 
 char symbol_type(const char c);
 
-std::string
-  namesToChar(std::string s, const std::string& encoding);
+std::string namesToChar(std::string s, const std::string& encoding);
 
 #endif

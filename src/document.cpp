@@ -4,8 +4,6 @@
 #include "stringfunctions.h"
 #include "crypto.h"
 
-
-
 /*---------------------------------------------------------------------------*/
 
 document::document(const std::string& filename) : file(filename)
@@ -50,7 +48,6 @@ void document::get_file()
     fileCon->close();
 }
 
-
 /*---------------------------------------------------------------------------*/
 
 object_class document::getobject(int n)
@@ -94,12 +91,10 @@ void document::isLinearized()
 std::vector <int> document::expandKids(std::vector<int> objnums)
 {
   std::vector<bool> ispage(objnums.size(), true);
-
   unsigned int i = 0;
   while (i < objnums.size())
   {
     object_class o = getobject(objnums[i]);
-
     if (o.hasKids())
     {
       std::vector<int> tmpvec = o.getKids();
@@ -109,12 +104,10 @@ std::vector <int> document::expandKids(std::vector<int> objnums)
     }
     i++;
   }
-
   std::vector<int> res;
   for(i = 0; i < objnums.size(); i++) if(ispage[i]) res.push_back(objnums[i]);
   return res;
 }
-
 
 /*---------------------------------------------------------------------------*/
 
@@ -156,13 +149,12 @@ page document::getPage(int pagenum)
 
 /*---------------------------------------------------------------------------*/
 
-
 std::string document::subfile(int startbyte, int len)
 {
   return filestring.substr(startbyte, len);
 }
 
-
+/*---------------------------------------------------------------------------*/
 
 std::vector<uint8_t> document::get_cryptkey()
 {
@@ -184,7 +176,6 @@ std::vector<uint8_t> document::get_cryptkey()
                                   this->Xref.getStart(encnum));
     }
     int ehl = encheader.length();
-
     if(ehl > 0)
     {
       std::vector<std::string> ps = Rex(encheader, "/P( )+(-)?\\d+");
@@ -193,24 +184,14 @@ std::vector<uint8_t> document::get_cryptkey()
         pbytes = perm(ps[0].substr(2, ps[0].length() - 2));
       }
       std::vector<std::string> rs = Rex(encheader, "/R \\d");
-      if(rs.size() > 0)
-      {
-        rnum = stoi(rs[0].substr(3, rs[0].length() - 3));
-      }
-      else
-      {
-        rnum = 2;
-      }
+      if(rs.size() > 0) rnum = stoi(rs[0].substr(3, rs[0].length() - 3));
+      else rnum = 2;
       std::vector<std::string> ls = Rex(encheader, "/Length \\d+");
-
       if(ls.size() > 0 && rnum > 2)
       {
         cryptlen = stoi(ls[0].substr(8, ls[0].length() - 8))/8;
       }
-      else
-      {
-        cryptlen = 5;
-      }
+      else cryptlen = 5;
       std::vector<int> ostarts = stringloc(encheader, "/O\\(", "end");
       std::vector<int> ustarts = stringloc(encheader, "/U\\(", "end");
       if(ostarts.size() > 0)
@@ -244,7 +225,6 @@ std::vector<uint8_t> document::get_cryptkey()
       Fstring.insert(Fstring.end(), idbytes.begin(), idbytes.end());
       std::vector<uint8_t> filekey = md5(Fstring);
       while(filekey.size() > cryptlen) filekey.pop_back();
-
       if(rnum > 2)
       {
         for(unsigned it = 0; it < 50; it++)
@@ -253,11 +233,7 @@ std::vector<uint8_t> document::get_cryptkey()
           while(filekey.size() > cryptlen) filekey.pop_back();
         }
       }
-
-      // filekey produced - now check it;
       std::vector<uint8_t> checkans;
-
-      // algorithm for revision 2
       if(rnum == 2)
       {
         checkans = rc4(up, filekey);
@@ -269,19 +245,11 @@ std::vector<uint8_t> document::get_cryptkey()
             if(checkans[l] != ubytes[l]) break;
             m++;
           }
-          if(m == 32)
-          {
-            return filekey;
-          }
-          else
-          {
-            return blank;
-          }
+          if(m == 32) return filekey; else return blank;
         }
       }
       if(rnum > 2)
       {
-        //std::cout << "rnum = " << rnum << std::endl;
         std::vector<uint8_t> buf = up;
         buf.insert(buf.end(), idbytes.begin(), idbytes.end());
         checkans = md5(buf);
@@ -302,16 +270,7 @@ std::vector<uint8_t> document::get_cryptkey()
           if(checkans[l] != ubytes[l]) break;
           m++;
         }
-        if(m == 16)
-        {
-          return filekey;
-        }
-        else
-        {
-          /* std::cout << "filekey does not match user string."
-                       << std::endl; */
-          return filekey;
-        }
+        return filekey;
       }
     }
   }

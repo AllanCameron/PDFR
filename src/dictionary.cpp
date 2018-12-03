@@ -43,7 +43,6 @@ void dictionary_parser(std::vector<std::vector<std::string>>& s)
   s = res;
 }
 
-
 /*---------------------------------------------------------------------------*/
 
 std::map<std::string, std::string>

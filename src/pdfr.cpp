@@ -45,19 +45,19 @@ Rcpp::List PDFpage(document mypdf, page pg)
 
 Rcpp::DataFrame get_xref(const std::string& filename)
 {
-  document mydoc = document(filename);
+  document& mydoc = document(filename);
   std::vector<int> ob, startb, stopb, inob;
 
-  if(mydoc.Xref.getObjects().size() > 0)
+  if(!mydoc.Xref.getObjects().empty())
+  {
+    for(int j : mydoc.Xref.getObjects())
     {
-      for(int j : mydoc.Xref.getObjects())
-        {
-          ob.push_back(j);
-          startb.push_back(mydoc.Xref.getStart(j));
-          stopb.push_back(mydoc.Xref.getEnd(j));
-          inob.push_back(mydoc.Xref.inObject(j));
-        }
+      ob.push_back(j);
+      startb.push_back(mydoc.Xref.getStart(j));
+      stopb.push_back(mydoc.Xref.getEnd(j));
+      inob.push_back(mydoc.Xref.inObject(j));
     }
+  }
   return Rcpp::DataFrame::create(Rcpp::Named("Object") = ob,
                                  Rcpp::Named("StartByte") = startb,
                                  Rcpp::Named("StopByte") = stopb,
@@ -90,6 +90,7 @@ Rcpp::List pdfdoc(const std::string & filepath)
   return Rcpp::List::create(Rcpp::Named("file") = filename);
 }
 
+//---------------------------------------------------------------------------//
 
 Rcpp::List pdfdoc(const std::vector<uint8_t> & rawfile)
 {
@@ -97,6 +98,7 @@ Rcpp::List pdfdoc(const std::vector<uint8_t> & rawfile)
   Rcpp::CharacterVector filename = Rcpp::wrap({"From raw data"});
   return Rcpp::List::create(Rcpp::Named("file") = filename);
 }
+
 //---------------------------------------------------------------------------//
 
 Rcpp::List pdfpage(const std::string& filename, int pagenum)
@@ -104,6 +106,8 @@ Rcpp::List pdfpage(const std::string& filename, int pagenum)
   document myfile = document(filename);
   return PDFpage(myfile, myfile.getPage(pagenum - 1));
 }
+
+//---------------------------------------------------------------------------//
 
 Rcpp::List pdfpageraw(const std::vector<uint8_t>& rawfile, int pagenum)
 {

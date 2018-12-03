@@ -25,28 +25,7 @@ GraphicsState::GraphicsState(page& pag) :
     Rcpp::Named("stringsAsFactors") = false);
 }
 
-
-
-/* This is a partial postscript "tokenizer", which reads the postscript text
-* one character at a time. Various characters put it into different states
-* via a switch function to allow it to determine whether the characters
-* it is reading form a number, a string, an instruction, an array etc.
-* Typically, when it reaches whitespace, it stores the string of characters it
-* has just read and the type it has assigned to them before returning to its
-* default state, ready for the next string of characters. Each string of
-* characters is called a token. It therefore works a bit like a simple
-* Turing machine, switching between finite states based on a finite range
-* of inputs.
-*
-* The tokens are fed into the parser function, which identifies only
-* those tokens which will form the instruction set for the interpreter (GS).
-* The instruction set is parsed to include any operands and their types.
-* Currently, this is all accomplished using (vectors of vectors of) vectors
-* of strings. It would probably be more efficient to find a way to do this
-* with native types...
-*/
-
-#include "pdfr.h"
+/*---------------------------------------------------------------------------*/
 
 Instructionset GraphicsState::tokenize(std::string s)
 {
@@ -415,6 +394,7 @@ void GraphicsState::tokenize_array(std::vector<std::string> &ttype,
   s = "";
 }
 
+/*---------------------------------------------------------------------------*/
 
 Instructionset GraphicsState::parser(std::vector<std::string> token,
                                      std::vector<std::string> ttype)
@@ -454,9 +434,7 @@ Instructionset GraphicsState::parser(std::vector<std::string> token,
   return res;
 }
 
-
 /*---------------------------------------------------------------------------*/
-
 
 void GraphicsState::q()
 {
@@ -466,7 +444,6 @@ void GraphicsState::q()
 }
 
 /*---------------------------------------------------------------------------*/
-
 
 void GraphicsState::Q(page& pag)
 {
@@ -485,7 +462,6 @@ void GraphicsState::Q(page& pag)
   }
 }
 
-
 /*---------------------------------------------------------------------------*/
 
 
@@ -501,7 +477,6 @@ void GraphicsState::Td(std::string Ins, std::vector<std::string>& Operands)
 
 /*---------------------------------------------------------------------------*/
 
-
 void GraphicsState::BT()
 {
   Tmstate = Tdstate = initstate;
@@ -510,7 +485,6 @@ void GraphicsState::BT()
 }
 
 /*---------------------------------------------------------------------------*/
-
 
 void GraphicsState::Tf(page& pag, std::vector<std::string>& Operands)
 {
@@ -584,7 +558,6 @@ void GraphicsState::TJ(page& pag, std::vector<std::vector<std::string>>& i)
 
 /*---------------------------------------------------------------------------*/
 
-
 void GraphicsState::InstructionReader(page& pag)
 {
   //std::cout << "Reading Instructions" << std::endl;
@@ -638,7 +611,6 @@ void GraphicsState::MakeGS()
 
 /*---------------------------------------------------------------------------*/
 
-
 void GraphicsState::clump()
 {
   if(widths.size() > 0) for(unsigned i = 0; i < widths.size(); i++)
@@ -681,5 +653,3 @@ void GraphicsState::clump()
     leftmatch[i] = -2;
   }
 }
-
-

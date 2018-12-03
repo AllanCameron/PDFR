@@ -3,6 +3,7 @@
 #include "streams.h"
 #include "xref.h"
 
+/*---------------------------------------------------------------------------*/
 
 void xref::locateXrefs()
 {
@@ -77,7 +78,6 @@ void xref::xrefIsstream()
   }
 }
 
-
 /*---------------------------------------------------------------------------*/
 
 void xref::getTrailer()
@@ -141,7 +141,6 @@ void xref::xrefFromString(std::string& xstr)
 
 /*---------------------------------------------------------------------------*/
 
-
 void xref::buildXRtable()
 {
   for(size_t i = 0; i < Xreflocations.size(); i++)
@@ -152,7 +151,6 @@ void xref::buildXRtable()
 }
 
 /*---------------------------------------------------------------------------*/
-
 
 void xref::findEnds()
 {
@@ -186,7 +184,6 @@ void xref::findEnds()
 }
 
 /*---------------------------------------------------------------------------*/
-
 
 xref::xref(document& d) : d(&d)
 {

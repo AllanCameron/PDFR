@@ -6,6 +6,8 @@
 #include "font.h"
 #include "ucm.h"
 
+/*---------------------------------------------------------------------------*/
+
 font::font(document& d, const dictionary& Fontref, const std::string& fontid) :
 FontID(fontid)
 {
@@ -23,7 +25,7 @@ FontID(fontid)
   makeGlyphTable();
 }
 
-
+/*---------------------------------------------------------------------------*/
 
 void parseDifferences(const std::string& enc, EncMap& symbmap)
 {
@@ -315,6 +317,7 @@ void font::getEncoding(dictionary& fontref, document& d)
   }
 }
 
+/*---------------------------------------------------------------------------*/
 
 void font::getCoreFont(std::string s)
 {
@@ -335,6 +338,7 @@ void font::getCoreFont(std::string s)
   if(s == "/ZapfDingbats") *this = getDingbats();
 }
 
+/*---------------------------------------------------------------------------*/
 
 void font::makeGlyphTable()
 {
@@ -350,6 +354,7 @@ void font::makeGlyphTable()
   }
 }
 
+/*---------------------------------------------------------------------------*/
 
 void font::parsewidtharray(std::string s)
 {
