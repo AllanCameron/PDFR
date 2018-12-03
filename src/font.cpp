@@ -1,5 +1,6 @@
 #include "pdfr.h"
 #include "stringfunctions.h"
+#include "debugtools.h"
 #include "document.h"
 #include "encodings.h"
 #include "corefonts.h"
@@ -110,14 +111,14 @@ std::vector<std::pair<std::string, int>> font::mapString(const std::string& s)
 
 /*---------------------------------------------------------------------------*/
 
-
 void font::getWidthTable(dictionary& dict, document& d)
 {
   std::map<uint16_t, int> resmap;
-  std::vector<int> widtharray, chararray;
+  std::vector<int> chararray;
+  std::vector<float> widtharray;
   int firstchar;
   std::string widthstrings, fcstrings;
-  std::string numstring = "\\[(\\[|]| |\\d+)+";
+  std::string numstring = "\\[(\\[|]| |\\.|\\d+)+";
   if (dict.has("/Widths"))
   {
     widthstrings = dict.get("/Widths");
@@ -130,10 +131,13 @@ void font::getWidthTable(dictionary& dict, document& d)
         object_class o = d.getobject(os[0]);
         std::string ostring = o.getStream();
         std::vector<std::string> arrstrings = Rex(ostring, numstring);
-        if (arrstrings.size() > 0) widtharray = getints(arrstrings[0]);
+        if (arrstrings.size() > 0)
+        {
+          widtharray = getnums(arrstrings[0]);
+        }
       }
     }
-    else widtharray = dict.getInts("/Widths");
+    else widtharray = dict.getNums("/Widths");
     if (widtharray.size() > 0 && fcstrings.size() > 0)
     {
       std::vector<int> fcnums = getints(fcstrings);
@@ -142,7 +146,7 @@ void font::getWidthTable(dictionary& dict, document& d)
         firstchar = fcnums[0];
         for (unsigned i = 0; i < widtharray.size(); i++)
         {
-          resmap[(uint16_t) firstchar + i] = widtharray[i];
+          resmap[(uint16_t) firstchar + i] = (int) widtharray[i];
         }
         Width = resmap;
       }
@@ -184,6 +188,7 @@ void font::getWidthTable(dictionary& dict, document& d)
   }
   if(Width.size() == 0)
   {
+    std::cout << "No width table found" << std::endl;
     EncMap storeEnc = EncodingMap;
     getCoreFont("/Helvetica");
     EncodingMap = storeEnc;
@@ -384,6 +389,7 @@ void font::parsewidtharray(std::string s)
         switch(a)
         {
         case 'D' : buf += s[i]; break;
+        case '.' : buf += s[i]; break;
         case '[': state = "insubarray";
                   if(buf.size() > 0)
                   {

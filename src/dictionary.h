@@ -22,6 +22,7 @@ public:
   bool hasDictionary(const std::string& Key);
   std::vector<int> getRefs(const std::string& Key);
   std::vector<int> getInts(const std::string& Key);
+  std::vector<float> getNums(const std::string& Key);
   std::vector<std::string> getDictKeys();
   dictionary getDictionary(const std::string& Key);
   std::map<std::string, std::string> R_out() {return this->DictionaryMap;}

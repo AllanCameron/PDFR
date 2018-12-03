@@ -343,6 +343,15 @@ std::vector<int> dictionary::getInts(const std::string& Key)
 
 /*---------------------------------------------------------------------------*/
 
+std::vector<float> dictionary::getNums(const std::string& Key)
+{
+  std::vector<float> blank;
+  if(this->has(Key)) return getnums(this->get(Key));
+  return blank;
+}
+
+/*---------------------------------------------------------------------------*/
+
 dictionary dictionary::getDictionary(const std::string& Key)
 {
   if(this->has(Key))
