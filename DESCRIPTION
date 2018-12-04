@@ -10,8 +10,8 @@ Description: Extracts text from PDF into an R dataframe giving the content,
 License: file LICENSE
 Encoding: UTF-8
 LazyData: true
-Imports: Rcpp (>= 0.12.17), Rcpp11, httr, extrafont, grid
+Imports: Rcpp (>= 0.12.17), Rcpp11
 LinkingTo: Rcpp, Rcpp11
-Depends: ggplot2
+Depends: ggplot2, httr
 RoxygenNote: 6.0.1
 SystemRequirements: C++11

@@ -1,3 +1,5 @@
 exportPattern("^[[:alpha:]]+")
 importFrom(Rcpp, evalCpp)
+importFrom(httr, GET)
+importFrom(ggplot2, ggplot, aes, geom_rect, geom_text, coord_equal, scale_size_identity)
 useDynLib(PDFR)

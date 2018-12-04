@@ -4,14 +4,12 @@
 \alias{pdfplot}
 \title{pdfplot}
 \usage{
-pdfplot(pdf, page = 1, font = "Arial", textsize = 1)
+pdfplot(pdf, page = 1, textsize = 1)
 }
 \arguments{
 \item{pdf}{a valid pdf file location}
 
 \item{page}{the page number to be plotted}
-
-\item{font}{the font to be used to show text on the plot}
 
 \item{textsize}{the scale of the text to be shown}
 }
@@ -24,5 +22,5 @@ The aim is not a complete pdf rendering but to help identify elements of
 interest in the data frame of text elements to convert to data points.
 }
 \examples{
-pdfplot(pdfref, 1)
+pdfplot(testfiles$leeds, 1)
 }

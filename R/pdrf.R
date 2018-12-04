@@ -1,23 +1,47 @@
 
-
+#' Paths to test pdfs
+#'
+#' A list of paths to locally stored test pdfs
+#'
+#' @format A list of 9 pdf files
+#' \describe{
+#'   \item{barcodes}{a pdf constructed in Rstudio}
+#'   \item{chestpain}{a flow-chart for chest pain management}
+#'   \item{pdfinfo}{information about the pdf format}
+#'   \item{adobe}{an official adobe document}
+#'   \item{leeds}{a table-rich local government document}
+#'   \item{sams}{a document based on svg}
+#'   \item{testreader}{a simple pdf test}
+#'   \item{tex}{a simple tex test}
+#'   \item{rcpp}{a CRAN package vignette}
+#' }
+"testfiles"
 testfiles <- list(
   barcodes = system.file("extdata", "barcodes.pdf", package = "PDFR"),
-  barrets = system.file("extdata", "barrets.pdf", package = "PDFR"),
-  pdfref = system.file("extdata", "pdfref.pdf", package = "PDFR"),
-  poster = system.file("extdata", "poster.pdf", package = "PDFR"),
   chestpain = system.file("extdata", "chestpain.pdf", package = "PDFR"),
   pdfinfo = system.file("extdata", "pdfinfo.pdf", package = "PDFR"),
   adobe = system.file("extdata", "adobe.pdf", package = "PDFR"),
   leeds = system.file("extdata", "leeds.pdf", package = "PDFR"),
   sams = system.file("extdata", "sams.pdf", package = "PDFR"),
-  ggp = system.file("extdata", "gg.pdf", package = "PDFR"),
   testreader = system.file("extdata", "testreader.pdf", package = "PDFR"),
   tex = system.file("extdata", "tex.pdf", package = "PDFR"),
-  rcpp = system.file("extdata", "rcpp.pdf", package = "PDFR"),
-  paris = system.file("extdata", "paris.pdf", package = "PDFR"),
-  rexts = system.file("extdata", "R-exts.pdf", package = "PDFR")
+  rcpp = system.file("extdata", "rcpp.pdf", package = "PDFR")
 )
 
+
+
+#' get a file from the internet
+#'
+#' Returns the character string or raw vector (depending on content) from
+#' a given url
+#'
+#' @param x a valid url
+#' @param filename a name for the locally stored file (if required)
+#'
+#' @return either a character string or a raw vector
+#' @export
+#'
+#' @examples internetFile("http://www.google.com")
 internetFile <- function(x, filename = NULL)
 {
   xloc <- tempfile();
@@ -43,13 +67,12 @@ else cat("file saved to ", path.expand("~/"), filename, "\n", collapse = "")
 #'
 #' @param pdf a valid pdf file location
 #' @param page the page number to be plotted
-#' @param font the font to be used to show text on the plot
 #' @param textsize the scale of the text to be shown
 #'
 #' @return a ggplot
 #' @export
 #'
-#' @examples pdfplot(testfiles$pdfref, 1)
+#' @examples pdfplot(testfiles$leeds, 1)
 pdfplot <- function(pdf, page = 1, textsize = 1)
   {
     PDFR::pdfpage(pdf, page) -> x;

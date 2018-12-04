@@ -83,44 +83,64 @@ Rcpp::List PDFpage(document mypdf, page pg);
 
 //---------------------------------------------------------------------------//
 
-// [[Rcpp::export]]
 std::string byteStringToString(const std::string& s);
 
 //---------------------------------------------------------------------------//
 
-// [[Rcpp::export]]
 std::string get_partial_file(const std::string& filename, long start, long stp);
 
 //---------------------------------------------------------------------------//
 
-// [[Rcpp::export]]
 std::string carveout (const std::string& subject, const std::string& precarve,
                       const std::string& postcarve);
 
 //---------------------------------------------------------------------------//
 
-// [[Rcpp::export]]
 std::vector<std::string>
   splitter(const std::string& subject, const std::string& matcher);
 
-//---------------------------------------------------------------------------//
 
+//---------------------------------------------------------------------------//
+//' Rex
+//'
+//' Return substrings matching a given pattern
+//'
+//' @param strvec The string(s) to be searched
+//' @param matcher The regular expression to be matched
+//' @export
 // [[Rcpp::export]]
 std::vector<std::string>
   Rex (const std::vector<std::string>& strvec, std::string matcher);
 
 //---------------------------------------------------------------------------//
-
+//' rc4
+//'
+//' Performs an RC4 hash for a given key
+//'
+//' @param msg The message to be hashed as a raw vector
+//' @param key the raw vector with which to hash
+//' @export
 // [[Rcpp::export]]
 std::vector<uint8_t> rc4(std::vector<uint8_t> msg, std::vector<uint8_t> key);
 
 //---------------------------------------------------------------------------//
-
+//' md5
+//'
+//' returns an md5 hash of a given raw vector as a raw vector
+//'
+//' @param input A raw vector
+//' @export
 // [[Rcpp::export]]
 std::vector<uint8_t> md5(std::vector<uint8_t> input);
 
-/*---------------------------------------------------------------------------*/
 
+//---------------------------------------------------------------------------//
+//' Return the xref table from a PDF document
+//'
+//' Returns a data frame of objects and their byte positions in a pdf
+//'
+//' @param filename the path to a valid PDF file.
+//' @export
 // [[Rcpp::export]]
 Rcpp::DataFrame get_xref(const std::string& filename);
 

@@ -5,55 +5,6 @@
 
 using namespace Rcpp;
 
-// byteStringToString
-std::string byteStringToString(const std::string& s);
-RcppExport SEXP _PDFR_byteStringToString(SEXP sSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const std::string& >::type s(sSEXP);
-    rcpp_result_gen = Rcpp::wrap(byteStringToString(s));
-    return rcpp_result_gen;
-END_RCPP
-}
-// get_partial_file
-std::string get_partial_file(const std::string& filename, long start, long stp);
-RcppExport SEXP _PDFR_get_partial_file(SEXP filenameSEXP, SEXP startSEXP, SEXP stpSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const std::string& >::type filename(filenameSEXP);
-    Rcpp::traits::input_parameter< long >::type start(startSEXP);
-    Rcpp::traits::input_parameter< long >::type stp(stpSEXP);
-    rcpp_result_gen = Rcpp::wrap(get_partial_file(filename, start, stp));
-    return rcpp_result_gen;
-END_RCPP
-}
-// carveout
-std::string carveout(const std::string& subject, const std::string& precarve, const std::string& postcarve);
-RcppExport SEXP _PDFR_carveout(SEXP subjectSEXP, SEXP precarveSEXP, SEXP postcarveSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const std::string& >::type subject(subjectSEXP);
-    Rcpp::traits::input_parameter< const std::string& >::type precarve(precarveSEXP);
-    Rcpp::traits::input_parameter< const std::string& >::type postcarve(postcarveSEXP);
-    rcpp_result_gen = Rcpp::wrap(carveout(subject, precarve, postcarve));
-    return rcpp_result_gen;
-END_RCPP
-}
-// splitter
-std::vector<std::string> splitter(const std::string& subject, const std::string& matcher);
-RcppExport SEXP _PDFR_splitter(SEXP subjectSEXP, SEXP matcherSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const std::string& >::type subject(subjectSEXP);
-    Rcpp::traits::input_parameter< const std::string& >::type matcher(matcherSEXP);
-    rcpp_result_gen = Rcpp::wrap(splitter(subject, matcher));
-    return rcpp_result_gen;
-END_RCPP
-}
 // Rex
 std::vector<std::string> Rex(const std::vector<std::string>& strvec, std::string matcher);
 RcppExport SEXP _PDFR_Rex(SEXP strvecSEXP, SEXP matcherSEXP) {
@@ -161,10 +112,6 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_PDFR_byteStringToString", (DL_FUNC) &_PDFR_byteStringToString, 1},
-    {"_PDFR_get_partial_file", (DL_FUNC) &_PDFR_get_partial_file, 3},
-    {"_PDFR_carveout", (DL_FUNC) &_PDFR_carveout, 3},
-    {"_PDFR_splitter", (DL_FUNC) &_PDFR_splitter, 2},
     {"_PDFR_Rex", (DL_FUNC) &_PDFR_Rex, 2},
     {"_PDFR_rc4", (DL_FUNC) &_PDFR_rc4, 2},
     {"_PDFR_md5", (DL_FUNC) &_PDFR_md5, 1},
