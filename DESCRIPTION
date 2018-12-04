@@ -7,10 +7,11 @@ Maintainer: <Allan.Cameron@nhs.net>
 Description: Extracts text from PDF into an R dataframe giving the content,
     size, position and font of any text elements. This information can then 
     be manipulated in R.
-License: GPL (>= 2)
+License: file LICENSE
 Encoding: UTF-8
 LazyData: true
-Imports: Rcpp (>= 0.12.17), Rcpp11
+Imports: Rcpp (>= 0.12.17), Rcpp11, httr, extrafont, grid
 LinkingTo: Rcpp, Rcpp11
-Depends:
+Depends: ggplot2
 RoxygenNote: 6.0.1
+SystemRequirements: C++11

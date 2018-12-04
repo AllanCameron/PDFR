@@ -188,7 +188,6 @@ void font::getWidthTable(dictionary& dict, document& d)
   }
   if(Width.size() == 0)
   {
-    std::cout << "No width table found" << std::endl;
     EncMap storeEnc = EncodingMap;
     getCoreFont("/Helvetica");
     EncodingMap = storeEnc;

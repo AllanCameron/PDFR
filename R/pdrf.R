@@ -1,36 +1,22 @@
-library(devtools)
-library(Rcpp)
-library(Rcpp11)
-library(ggplot2)
-library(httr)
-library(magrittr)
-library(extrafont)
-library(grid)
-
-Sys.setenv("PKG_CXXFLAGS" = "-std=c++11")
-
-assignInNamespace("version_info",
-                  c(devtools:::version_info,
-                    list("3.5" = list(version_min = "3.3.0",
-                                      version_max = "99.99.99",
-                                      path = "bin"))), "devtools")
 
 
-barcodes   <- "./inst/barcodes.pdf"
-barrets    <- "./inst/barrets.pdf"
-pdfref     <- "./inst/pdfref.pdf"
-poster     <- "./inst/poster.pdf"
-chestpain  <- "./inst/chestpain.pdf"
-pdfinfo    <- "./inst/pdfinfo.pdf"
-adobe      <- "./inst/adobe.pdf"
-leeds      <- "./inst/leeds.pdf"
-sams       <- "./inst/sams.pdf"
-ggp        <- "./inst/gg.pdf"
-testreader <- "./inst/testreader.pdf"
-tex        <- "./inst/tex.pdf"
-rcpp       <- "./inst/rcpp.pdf"
-paris      <- "./inst/paris.pdf"
-rexts      <- "./inst/R-exts.pdf"
+testfiles <- list(
+  barcodes = system.file("extdata", "barcodes.pdf", package = "PDFR"),
+  barrets = system.file("extdata", "barrets.pdf", package = "PDFR"),
+  pdfref = system.file("extdata", "pdfref.pdf", package = "PDFR"),
+  poster = system.file("extdata", "poster.pdf", package = "PDFR"),
+  chestpain = system.file("extdata", "chestpain.pdf", package = "PDFR"),
+  pdfinfo = system.file("extdata", "pdfinfo.pdf", package = "PDFR"),
+  adobe = system.file("extdata", "adobe.pdf", package = "PDFR"),
+  leeds = system.file("extdata", "leeds.pdf", package = "PDFR"),
+  sams = system.file("extdata", "sams.pdf", package = "PDFR"),
+  ggp = system.file("extdata", "gg.pdf", package = "PDFR"),
+  testreader = system.file("extdata", "testreader.pdf", package = "PDFR"),
+  tex = system.file("extdata", "tex.pdf", package = "PDFR"),
+  rcpp = system.file("extdata", "rcpp.pdf", package = "PDFR"),
+  paris = system.file("extdata", "paris.pdf", package = "PDFR"),
+  rexts = system.file("extdata", "R-exts.pdf", package = "PDFR")
+)
 
 internetFile <- function(x, filename = NULL)
 {
@@ -63,35 +49,19 @@ else cat("file saved to ", path.expand("~/"), filename, "\n", collapse = "")
 #' @return a ggplot
 #' @export
 #'
-#' @examples pdfplot(pdfref, 1)
-pdfplot <- function(pdf, page = 1, font = "Arial", textsize = 1)
+#' @examples pdfplot(testfiles$pdfref, 1)
+pdfplot <- function(pdf, page = 1, textsize = 1)
   {
     PDFR::pdfpage(pdf, page) -> x;
     x$Elements -> y;
     ggplot2::ggplot(data = y,
-           ggplot2::aes(x = left, y = bottom, size = I(textsize*170*size/(x$Box[4] - x$Box[2]))),
+           ggplot2::aes(x = y$left, y = y$bottom, size = I(textsize*170*y$size/(x$Box[4] - x$Box[2]))),
            lims = x$Box ) -> G;
     G + ggplot2::geom_rect(ggplot2::aes(xmin = x$Box[1], ymin = x$Box[2],
                       xmax = x$Box[3], ymax = x$Box[4]),
                   fill = "white", colour="black", size=0.2
-      ) + ggplot2::geom_text(ggplot2::aes(label = text), hjust = 0, vjust = 0, family = font
+      ) + ggplot2::geom_text(ggplot2::aes(label = y$text), hjust = 0, vjust = 0,
       ) + ggplot2::coord_equal(
       ) + ggplot2::scale_size_identity();
   }
-
-pdfpageplot <- function(x, font = "Arial", fontsize = 1){
-x$Elements -> y;
-ggplot2::ggplot(data = y,
-       ggplot2::aes(x = left, y = bottom, size = I(fontsize*100*size/(x$Box[4] - x$Box[2]))),
-       lims = x$Box ) -> G;
-G + ggplot2::geom_rect(ggplot2::aes(xmin = x$Box[1], ymin = x$Box[2],
-                  xmax = x$Box[3], ymax = x$Box[4]),
-              fill = "white", colour="black", size=0.2
-) + geom_text(aes(label = Text), hjust = 0, vjust = 0, family = font
-) + coord_equal(
-) + scale_size_identity();
-}
-
-
-
 
