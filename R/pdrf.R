@@ -15,22 +15,22 @@ assignInNamespace("version_info",
                                       version_max = "99.99.99",
                                       path = "bin"))), "devtools")
 
-pdfpath    <- "./tests/"
-barcodes   <- pdfpath %>% paste0("barcodes.pdf")
-barrets    <- pdfpath %>% paste0("barrets.pdf")
-pdfref     <- pdfpath %>% paste0("pdfref.pdf")
-poster     <- pdfpath %>% paste0("poster.pdf")
-chestpain  <- pdfpath %>% paste0("chestpain.pdf")
-pdfinfo    <- pdfpath %>% paste0("pdfinfo.pdf")
-adobe      <- pdfpath %>% paste0("adobe.pdf")
-leeds      <- pdfpath %>% paste0("leeds.pdf")
-sams       <- pdfpath %>% paste0("sams.pdf")
-ggp        <- pdfpath %>% paste0("gg.pdf")
-testreader <- pdfpath %>% paste0("testreader.pdf")
-tex        <- pdfpath %>% paste0("tex.pdf")
-rcpp       <- pdfpath %>% paste0("rcpp.pdf")
-paris      <- pdfpath %>% paste0("paris.pdf")
-rexts      <- pdfpath %>% paste0("R-exts.pdf")
+
+barcodes   <- "./inst/barcodes.pdf"
+barrets    <- "./inst/barrets.pdf"
+pdfref     <- "./inst/pdfref.pdf"
+poster     <- "./inst/poster.pdf"
+chestpain  <- "./inst/chestpain.pdf"
+pdfinfo    <- "./inst/pdfinfo.pdf"
+adobe      <- "./inst/adobe.pdf"
+leeds      <- "./inst/leeds.pdf"
+sams       <- "./inst/sams.pdf"
+ggp        <- "./inst/gg.pdf"
+testreader <- "./inst/testreader.pdf"
+tex        <- "./inst/tex.pdf"
+rcpp       <- "./inst/rcpp.pdf"
+paris      <- "./inst/paris.pdf"
+rexts      <- "./inst/R-exts.pdf"
 
 internetFile <- function(x, filename = NULL)
 {
@@ -69,7 +69,7 @@ pdfplot <- function(pdf, page = 1, font = "Arial", textsize = 1)
     PDFR::pdfpage(pdf, page) -> x;
     x$Elements -> y;
     ggplot2::ggplot(data = y,
-           aes(x = left, y = bottom, size = I(textsize*170*size/(x$Box[4] - x$Box[2]))),
+           ggplot2::aes(x = left, y = bottom, size = I(textsize*170*size/(x$Box[4] - x$Box[2]))),
            lims = x$Box ) -> G;
     G + ggplot2::geom_rect(ggplot2::aes(xmin = x$Box[1], ymin = x$Box[2],
                       xmax = x$Box[3], ymax = x$Box[4]),
@@ -81,10 +81,10 @@ pdfplot <- function(pdf, page = 1, font = "Arial", textsize = 1)
 
 pdfpageplot <- function(x, font = "Arial", fontsize = 1){
 x$Elements -> y;
-ggplot(data = y,
-       aes(x = left, y = bottom, size = I(fontsize*100*size/(x$Box[4] - x$Box[2]))),
+ggplot2::ggplot(data = y,
+       ggplot2::aes(x = left, y = bottom, size = I(fontsize*100*size/(x$Box[4] - x$Box[2]))),
        lims = x$Box ) -> G;
-G + geom_rect(aes(xmin = x$Box[1], ymin = x$Box[2],
+G + ggplot2::geom_rect(ggplot2::aes(xmin = x$Box[1], ymin = x$Box[2],
                   xmax = x$Box[3], ymax = x$Box[4]),
               fill = "white", colour="black", size=0.2
 ) + geom_text(aes(label = Text), hjust = 0, vjust = 0, family = font

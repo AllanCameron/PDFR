@@ -15,14 +15,15 @@ GraphicsState::GraphicsState(page& pag) : p(pag),
   InstructionReader(pag, Instructions);
   MakeGS();
   db =  Rcpp::DataFrame::create(
-    Rcpp::Named("text") = text,
-    Rcpp::Named("left") = left,
-    Rcpp::Named("bottom") = bottom,
-    Rcpp::Named("right") = right,
-    Rcpp::Named("font") = fonts,
-    Rcpp::Named("size") = size,
-    Rcpp::Named("width") = width,
-    Rcpp::Named("stringsAsFactors") = false);
+              Rcpp::Named("text") = text,
+              Rcpp::Named("left") = left,
+              Rcpp::Named("bottom") = bottom,
+              Rcpp::Named("right") = right,
+              Rcpp::Named("font") = fonts,
+              Rcpp::Named("size") = size,
+              Rcpp::Named("width") = width,
+              Rcpp::Named("stringsAsFactors") = false
+              );
 }
 
 /*---------------------------------------------------------------------------*/
@@ -31,7 +32,7 @@ Instructionset GraphicsState::tokenize(std::string s)
 {
   s.push_back(' ');
   std::vector<std::string> token, ttype;
-  unsigned i = 0;
+  size_t i = 0;
   std::string buf, minibuf, state;
   state = "newsymb";
   while(i < s.length())
@@ -39,7 +40,7 @@ Instructionset GraphicsState::tokenize(std::string s)
     char m = s[i];
     char n = symbol_type(s[i]);
 
-    if(state == "newsymb")
+    if (state == "newsymb")
     {
       switch(n)
       {
@@ -59,7 +60,7 @@ Instructionset GraphicsState::tokenize(std::string s)
       i++; continue;
     }
 
-    if(state == "resource")
+    if (state == "resource")
     {
       switch(n)
       {
@@ -94,7 +95,7 @@ Instructionset GraphicsState::tokenize(std::string s)
       i++; continue;
     }
 
-    if(state == "identifier")
+    if (state == "identifier")
     {
       switch(n)
       {
@@ -107,7 +108,7 @@ Instructionset GraphicsState::tokenize(std::string s)
         token.push_back(buf);
         buf = "/";
         ttype.push_back("identifier"); break;
-      case ' ': if(buf == "BI")
+      case ' ': if (buf == "BI")
       {
         buf = "";
         state = "wait";
@@ -136,7 +137,7 @@ Instructionset GraphicsState::tokenize(std::string s)
       i++; continue;
     }
 
-    if(state == "number")
+    if (state == "number")
     {
       switch(n)
       {
@@ -176,7 +177,7 @@ Instructionset GraphicsState::tokenize(std::string s)
       i++; continue;
     }
 
-    if(state == "array")
+    if (state == "array")
     {
       char n = symbol_type(m);
       switch(n)
@@ -189,7 +190,7 @@ Instructionset GraphicsState::tokenize(std::string s)
       i++; continue;
     }
 
-    if(state == "string")
+    if (state == "string")
     {
       minibuf.clear();
       switch(s[i])
@@ -199,7 +200,7 @@ Instructionset GraphicsState::tokenize(std::string s)
       state = "newsymb"; break;
       case '\\': i++;
         n = symbol_type(s[i]);
-        if(n == 'D')
+        if (n == 'D')
         {
           int octcount = 0;
           token.push_back(buf); buf = "";
@@ -223,21 +224,21 @@ Instructionset GraphicsState::tokenize(std::string s)
       i++; continue;
     }
 
-    if(state == "hexstring")
+    if (state == "hexstring")
     {
       switch(n)
       {
       case '<': buf = ""; state = "dict"; break;
       case '\\': buf += m + s[i+1]; i++; break;
-      case '>': if(buf.length() > 0) token.push_back(buf);
-      if(buf.length() > 0) ttype.push_back("hexstring");
+      case '>': if (buf.length() > 0) token.push_back(buf);
+      if (buf.length() > 0) ttype.push_back("hexstring");
       buf = ""; state = "newsymb"; break;
       default: buf += m; break;
       }
       i++; continue;
     }
 
-    if(state == "dict")
+    if (state == "dict")
     {
       switch(n)
       {
@@ -250,18 +251,15 @@ Instructionset GraphicsState::tokenize(std::string s)
       i++; continue;
     }
 
-    // This set of states allows binary data to be skipped if preceeded by
-    // an ID 'inline data' entry
-
-    if(state == "wait"){ if(m == 'E') state = "waitE"; i++; continue;}
-    if(state == "waitE")
+    if (state == "wait"){ if (m == 'E') state = "waitE"; i++; continue;}
+    if (state == "waitE")
     {
-      if(m == 'I') state = "waitEI"; else state = "wait";
+      if (m == 'I') state = "waitEI"; else state = "wait";
       i++; continue;
     }
-    if(state == "waitEI")
+    if (state == "waitEI")
     {
-      if(n == ' ') state = "newsymb"; else state = "wait";
+      if (n == ' ') state = "newsymb"; else state = "wait";
       i++; continue;
     }
 
@@ -273,14 +271,6 @@ Instructionset GraphicsState::tokenize(std::string s)
 
 /*---------------------------------------------------------------------------*/
 
-/* Interpreting arrays requires its own mini-tokenizer to respond
-* differently to the symbols it encounters and is thus a sub-state machine.
-* This could be used in the main body of the tokenizer but is seperated out
-* for clarity and to be used in the seperate dictionary tokenizer
-*/
-
-/*---------------------------------------------------------------------------*/
-
 void GraphicsState::tokenize_array(std::vector<std::string> &ttype,
                                    std::vector<std::string> &token,
                                    std::string &s)
@@ -288,13 +278,13 @@ void GraphicsState::tokenize_array(std::vector<std::string> &ttype,
   std::string buf, minibuf;
   s.push_back(' ');
   std::string state = "newsymb";
-  unsigned i = 0;
+  size_t i = 0;
 
   while(i < s.length())
   {
     char m = s[i];
     char n = symbol_type(m);
-    if(state == "newsymb")
+    if (state == "newsymb")
     {
       switch(n)
       {
@@ -308,7 +298,7 @@ void GraphicsState::tokenize_array(std::vector<std::string> &ttype,
       i++; continue;
     }
 
-    if(state == "number")
+    if (state == "number")
     {
       switch(n)
       {
@@ -344,12 +334,12 @@ void GraphicsState::tokenize_array(std::vector<std::string> &ttype,
       i++; continue;
     }
 
-    if(state == "string")
+    if (state == "string")
     {
       switch(n)
       {
       case '\\':  i++;
-        if(symbol_type(s[i]) == 'D')
+        if (symbol_type(s[i]) == 'D')
         {
           token.push_back(buf); buf = "";
           ttype.push_back("string");
@@ -377,7 +367,7 @@ void GraphicsState::tokenize_array(std::vector<std::string> &ttype,
       i++; continue;
     }
 
-    if(state == "hexstring")
+    if (state == "hexstring")
     {
       switch(n)
       {
@@ -402,13 +392,13 @@ Instructionset GraphicsState::parser(std::vector<std::string> token,
   std::vector<std::vector<std::string>> tmpres;
   std::vector<std::string> tmptype, tmptoken, tmpident;
   std::vector<std::vector<std::vector<std::string>>> res;
-  for(unsigned i = 0; i < ttype.size(); i++)
+  for (size_t i = 0; i < ttype.size(); i++)
   {
     tmptype.push_back(ttype[i]);
     tmptoken.push_back(token[i]);
-    if(ttype[i] == "identifier")
+    if (ttype[i] == "identifier")
     {
-      if( token[i] == "Q"  || token[i] == "q"  ||  token[i] == "BT" ||
+      if ( token[i] == "Q"  || token[i] == "q"  ||  token[i] == "BT" ||
           token[i] == "ET" || token[i] == "TJ" ||  token[i] == "Tj" ||
           token[i] == "TD" || token[i] == "Td" ||  token[i] == "T*" ||
           token[i] == "Tc" || token[i] == "Tw" ||  token[i] == "Tm" ||
@@ -447,9 +437,8 @@ void GraphicsState::q()
 
 void GraphicsState::Do(std::string& a)
 {
-  if(p.XObjects.find(a) != p.XObjects.end())
+  if (p.XObjects.find(a) != p.XObjects.end())
   {
-    std::cout << "Getting xobject " << a << std::endl;
     InstructionReader(p, tokenize(p.XObjects[a]));
   }
 }
@@ -459,7 +448,7 @@ void GraphicsState::Do(std::string& a)
 void GraphicsState::Q(page& pag)
 {
   gs.pop_back();
-  if(fontstack.size() > 0)
+  if (fontstack.size() > 0)
   {
     fontstack.pop_back();
     fontsizestack.pop_back();
@@ -467,7 +456,7 @@ void GraphicsState::Q(page& pag)
   currentfont = fontstack[fontstack.size()-1];
   currfontsize = fontsizestack[fontsizestack.size()-1];
 
-  if(pag.fontmap.find(currentfont) != pag.fontmap.end())
+  if (pag.fontmap.find(currentfont) != pag.fontmap.end())
   {
     wfont = pag.fontmap[currentfont];
   }
@@ -475,13 +464,12 @@ void GraphicsState::Q(page& pag)
 
 /*---------------------------------------------------------------------------*/
 
-
 void GraphicsState::Td(std::string Ins, std::vector<std::string>& Operands)
 {
   std::vector<float> Tds = initstate;
   std::vector<float> tmpvec = stringtofloat(Operands);
   Tds[6] = tmpvec[0]; Tds[7] = tmpvec[1];
-  if(Ins == "TD") Tl = -Tds[7];
+  if (Ins == "TD") Tl = -Tds[7];
   Tdstate = matmul(Tds, Tdstate);
   PRstate = 0;
 }
@@ -500,7 +488,7 @@ void GraphicsState::BT()
 void GraphicsState::Tf(page& pag, std::vector<std::string>& Operands)
 {
   currentfont = Operands[0];
-  if(pag.fontmap.find(currentfont) != pag.fontmap.end())
+  if (pag.fontmap.find(currentfont) != pag.fontmap.end())
   {
     wfont = pag.fontmap[currentfont];
   }
@@ -520,16 +508,16 @@ void GraphicsState::TJ(page& pag, std::vector<std::vector<std::string>>& i)
   std::string& Ins = i[0][0];
   std::vector<std::string> &OperandTypes = i[1];
   std::vector<std::string> &Operands = i[2];
-  if(Ins == "'") Tdstate[7] = Tdstate[7] - Tl;
+  if (Ins == "'") Tdstate[7] = Tdstate[7] - Tl;
   std::vector<float> textspace = matmul(Tmstate, gs.back());
   textspace = matmul(Tdstate, textspace);
   float txtspcinit = textspace[6];
   float scale = currfontsize * textspace[0];
 
-  for(unsigned z = 0; z < OperandTypes.size(); z++)
+  for (size_t z = 0; z < OperandTypes.size(); z++)
   {
     std::vector<std::pair<std::string, int>> kvs;
-    if(OperandTypes[z] == "number")
+    if (OperandTypes[z] == "number")
     {
       PRstate -= std::stof(Operands[z]);
       float PRscaled = PRstate * scale / 1000;
@@ -539,17 +527,17 @@ void GraphicsState::TJ(page& pag, std::vector<std::vector<std::string>>& i)
     {
       float PRscaled = PRstate * scale / 1000;
       textspace[6] = PRscaled + txtspcinit;
-      if(OperandTypes[z] == "hexstring")
+      if (OperandTypes[z] == "hexstring")
       {
         Operands[z] = byteStringToString(Operands[z]);
       }
-      if(Operands[z] == "") continue;
+      if (Operands[z] == "") continue;
       kvs = wfont.mapString(Operands[z]);
-      for(auto j : kvs)
+      for (auto j : kvs)
       {
         float stw;
         statehx.push_back(textspace);
-        if(j.first == "/space" || j.first == "/nbspace")
+        if (j.first == "/space" || j.first == "/nbspace")
         {
           stw = j.second + (Tc + Tw) * 1000;
         }
@@ -571,25 +559,25 @@ void GraphicsState::TJ(page& pag, std::vector<std::vector<std::string>>& i)
 
 void GraphicsState::InstructionReader(page& pag, Instructionset I)
 {
-  for(auto &i : I)
+  for (auto &i : I)
   {
     std::string& Ins = i[0][0];
     std::vector<std::string> &Operands = i[2];
-    if(Ins == "Q" && gs.size() > 0) Q(pag);
-    if(Ins == "q") q();
-    if(Ins == "Th") Th = stof(Operands[0]);
-    if(Ins == "Tw") Tw = stof(Operands[0]);
-    if(Ins == "Tc") Tc = stof(Operands[0]);
-    if(Ins == "TL") Tl = stof(Operands[0]);
-    if(Ins == "T*") { Tdstate[7] = Tdstate[7] - Tl; PRstate = 0;}
-    if(Ins == "Tm") { Tmstate = stringvectomat(Operands);
+    if (Ins == "Q" && gs.size() > 0) Q(pag);
+    if (Ins == "q") q();
+    if (Ins == "Th") Th = stof(Operands[0]);
+    if (Ins == "Tw") Tw = stof(Operands[0]);
+    if (Ins == "Tc") Tc = stof(Operands[0]);
+    if (Ins == "TL") Tl = stof(Operands[0]);
+    if (Ins == "T*") { Tdstate[7] = Tdstate[7] - Tl; PRstate = 0;}
+    if (Ins == "Tm") { Tmstate = stringvectomat(Operands);
                       Tdstate = initstate; PRstate = 0;}
-    if(Ins == "cm") gs.back() = matmul(stringvectomat(Operands), gs.back());
-    if(Ins == "Td" || Ins == "TD") Td(Ins, Operands);
-    if(Ins == "ET" || Ins == "BT") BT();
-    if(Ins == "Tf") Tf(pag, Operands);
-    if(Ins == "Do") Do(Operands[0]);
-    if(Ins == "Tj" || Ins == "'" || Ins == "TJ") TJ(pag, i);
+    if (Ins == "cm") gs.back() = matmul(stringvectomat(Operands), gs.back());
+    if (Ins == "Td" || Ins == "TD") Td(Ins, Operands);
+    if (Ins == "ET" || Ins == "BT") BT();
+    if (Ins == "Tf") Tf(pag, Operands);
+    if (Ins == "Do") Do(Operands[0]);
+    if (Ins == "Tj" || Ins == "'" || Ins == "TJ") TJ(pag, i);
   }
 }
 
@@ -597,16 +585,16 @@ void GraphicsState::InstructionReader(page& pag, Instructionset I)
 
 void GraphicsState::MakeGS()
 {
-  for(auto i : statehx) { xvals.push_back(i[6]); yvals.push_back(i[7]);}
-  for(unsigned i = 0; i < widths.size(); i++)
+  for (auto i : statehx) { xvals.push_back(i[6]); yvals.push_back(i[7]);}
+  for (size_t i = 0; i < widths.size(); i++)
   {
     R.push_back(widths[i] + xvals[i]);
     leftmatch.push_back(-1);
   }
   rightmatch = leftmatch;
-  for(unsigned i = 0; i < widths.size(); i++)
+  for (size_t i = 0; i < widths.size(); i++)
   {
-    if(leftmatch[i] == -1)
+    if (leftmatch[i] == -1)
     {
       text.push_back(stringres[i]);
       left.push_back(xvals[i]);
@@ -623,43 +611,44 @@ void GraphicsState::MakeGS()
 
 void GraphicsState::clump()
 {
-  if(widths.size() > 0) for(unsigned i = 0; i < widths.size(); i++)
+  if (widths.size() > 0) for (size_t i = 0; i < widths.size(); i++)
   {
     std::vector<int> allmatches, isspacematch;
-    for(unsigned j = 0; j < widths.size(); j++)
+    for (size_t j = 0; j < widths.size(); j++)
     {
       float gap = fabs(xvals[i] - R[j]);
-
-      if(i != j && gap < 5 && xvals[i] > xvals[j] && fabs(yvals[i] -yvals[j]) <1)
-      allmatches.push_back(j);
-      if(gap <2) isspacematch.push_back(0);
-      if(gap >= 2 && R[j] < xvals[i]) isspacematch.push_back(1);
+      if (i != j && gap < 5 && xvals[i] > xvals[j] &&
+          fabs(yvals[i] -yvals[j]) <1) allmatches.push_back(j);
+      if (gap < 2) isspacematch.push_back(0);
+      if (gap >= 2 && R[j] < xvals[i]) isspacematch.push_back(1);
     }
-    if(allmatches.size() > 0)
+    if (allmatches.size() > 0)
     {
       int whichmaxmatch = allmatches[0];
       int needsaspace = isspacematch[0];
       float maxmatch = xvals[whichmaxmatch];
-      if(allmatches.size() > 1) for(size_t am = 0; am < allmatches.size(); am++)
-      {
-        if(xvals[allmatches[am]] > maxmatch)
+      if (allmatches.size() > 1)
+        for (size_t am = 0; am < allmatches.size(); am++)
         {
-          whichmaxmatch = allmatches[am];
-          maxmatch = xvals[whichmaxmatch];
-          needsaspace = isspacematch[am];
+          if (xvals[allmatches[am]] > maxmatch)
+          {
+            whichmaxmatch = allmatches[am];
+            maxmatch = xvals[whichmaxmatch];
+            needsaspace = isspacematch[am];
+          }
         }
-      }
-      if(needsaspace == 1) stringres[whichmaxmatch] += ' ';
+      if (needsaspace == 1) stringres[whichmaxmatch] += ' ';
       rightmatch[i] = whichmaxmatch;
       leftmatch[whichmaxmatch] = i;
     }
   }
-  for(unsigned i = 0; i < widths.size(); i++) if(leftmatch[i] > -1)
-  {
-    unsigned j = leftmatch[i];
-    stringres[j] = stringres[i] + stringres[j];
-    xvals[j] = xvals[i];
-    widths[j] = widths[i] + widths[j];
-    leftmatch[i] = -2;
-  }
+  for (size_t i = 0; i < widths.size(); i++)
+    if (leftmatch[i] > -1)
+    {
+      size_t j = leftmatch[i];
+      stringres[j] = stringres[i] + stringres[j];
+      xvals[j] = xvals[i];
+      widths[j] = widths[i] + widths[j];
+      leftmatch[i] = -2;
+    }
 }
