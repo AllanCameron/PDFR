@@ -35,7 +35,7 @@ private:
   void TJ(page& pag, std::vector<std::vector<std::string>>& i);
   void Tf(page& pag, std::vector<std::string>& Operands);
   void MakeGS();
-  void clump();
+  void clump(int a);
   void Do(std::string& xo);
 
 };

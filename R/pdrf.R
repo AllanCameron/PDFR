@@ -88,3 +88,4 @@ pdfplot <- function(pdf, page = 1, textsize = 1)
       ) + ggplot2::scale_size_identity();
   }
 
+# "\\\\XGGC.SCOT.NHS.UK\\GGCData\\FolderRedirects\\GRI5\\cameral931\\My Documents\\suicide.pdf"

@@ -592,6 +592,7 @@ void GraphicsState::MakeGS()
     leftmatch.push_back(-1);
   }
   rightmatch = leftmatch;
+  clump(10);
   for (size_t i = 0; i < widths.size(); i++)
   {
     if (leftmatch[i] == -1)
@@ -609,46 +610,46 @@ void GraphicsState::MakeGS()
 
 /*---------------------------------------------------------------------------*/
 
-void GraphicsState::clump()
+void GraphicsState::clump(int clumpvar)
 {
-  if (widths.size() > 0) for (size_t i = 0; i < widths.size(); i++)
+  std::map<size_t, size_t> Rjoins;
+  if (widths.size() > 0)
   {
-    std::vector<int> allmatches, isspacematch;
-    for (size_t j = 0; j < widths.size(); j++)
+    for (size_t i = 0; i < widths.size(); i++)
     {
-      float gap = fabs(xvals[i] - R[j]);
-      if (i != j && gap < 5 && xvals[i] > xvals[j] &&
-          fabs(yvals[i] -yvals[j]) <1) allmatches.push_back(j);
-      if (gap < 2) isspacematch.push_back(0);
-      if (gap >= 2 && R[j] < xvals[i]) isspacematch.push_back(1);
-    }
-    if (allmatches.size() > 0)
-    {
-      int whichmaxmatch = allmatches[0];
-      int needsaspace = isspacematch[0];
-      float maxmatch = xvals[whichmaxmatch];
-      if (allmatches.size() > 1)
-        for (size_t am = 0; am < allmatches.size(); am++)
+      for (size_t j = 0; j < widths.size(); j++)
+      {
+        bool isVeryNear = fabs(R[i] - xvals[j]) <= (clumpvar);
+        bool isLeftOf = xvals[i] < xvals[j];
+        bool areDifferent = (i != j);
+        bool nothingCloser = true;
+        bool sameY = fabs(yvals[i] - yvals[j]) < 3;
+        if(Rjoins.find(i) != Rjoins.end())
+          nothingCloser = (xvals[Rjoins[i]] > xvals[j]);
+        if(areDifferent && isLeftOf && isVeryNear && nothingCloser && sameY)
         {
-          if (xvals[allmatches[am]] > maxmatch)
-          {
-            whichmaxmatch = allmatches[am];
-            maxmatch = xvals[whichmaxmatch];
-            needsaspace = isspacematch[am];
-          }
+          Rjoins[i] = j;
+          leftmatch[j] = (int) i;
         }
-      if (needsaspace == 1) stringres[whichmaxmatch] += ' ';
-      rightmatch[i] = whichmaxmatch;
-      leftmatch[whichmaxmatch] = i;
+      }
+    }
+    for (size_t i = 0; i < widths.size(); i++)
+    {
+      if(leftmatch[i] == -1)
+      {
+        while(true)
+        {
+          if(Rjoins.find(i) != Rjoins.end())
+          {
+            stringres[i] += stringres[Rjoins[i]];
+            R[i] = R[Rjoins[i]];
+            widths[i] = R[i] - xvals[i];
+            if(Rjoins.find(Rjoins[i]) != Rjoins.end())
+              Rjoins[i] = Rjoins[Rjoins[i]]; else break;
+          }
+          else break;
+        }
+      }
     }
   }
-  for (size_t i = 0; i < widths.size(); i++)
-    if (leftmatch[i] > -1)
-    {
-      size_t j = leftmatch[i];
-      stringres[j] = stringres[i] + stringres[j];
-      xvals[j] = xvals[i];
-      widths[j] = widths[i] + widths[j];
-      leftmatch[i] = -2;
-    }
 }

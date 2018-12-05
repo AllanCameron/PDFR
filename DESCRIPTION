@@ -13,5 +13,5 @@ LazyData: true
 Imports: Rcpp (>= 0.12.17), Rcpp11
 LinkingTo: Rcpp, Rcpp11
 Depends: ggplot2, httr
-RoxygenNote: 6.0.1
+RoxygenNote: 6.1.1
 SystemRequirements: C++11
