@@ -144,26 +144,11 @@ std::vector<uint8_t> md5(std::vector<uint8_t> input);
 // [[Rcpp::export]]
 Rcpp::DataFrame get_xref(const std::string& filename);
 
-//---------------------------------------------------------------------------//
-//' get_object
-//'
-//' Show the key:value pairs in a PDF object dictionary
-//'
-//' @param filename the path to a valid PDF file.
-//' @param o The object number, given as an integer.
-//' @export
-// [[Rcpp::export]]
+
+// [[Rcpp::export(.get_obj)]]
 Rcpp::List get_object(const std::string& filename, int o);
 
-//---------------------------------------------------------------------------//
-//' get_object_stream
-//'
-//' Get a pdf object's stream (if any)
-//'
-//' @param filename the path to a valid PDF file.
-//' @param o The object number, given as an integer.
-//' @export
-// [[Rcpp::export]]
+
 std::string get_obj_stream(const std::string& filename, int o);
 
 //---------------------------------------------------------------------------//
@@ -177,28 +162,12 @@ std::string get_obj_stream(const std::string& filename, int o);
 // [[Rcpp::export]]
 Rcpp::List pdfdoc(const std::string & filepath);
 
-//---------------------------------------------------------------------------//
-//' pdfpage
-//'
-//' Returns a list comprising a page's fonts, its Postscript program as a text
-//' string and its text elements as an R data frame
-//'
-//' @param filename the path to a valid PDF file.
-//' @param pagenum the page to extract
-//' @export
-// [[Rcpp::export]]
+
+// [[Rcpp::export(.pdfpage)]]
 Rcpp::List pdfpage(const std::string& filename, int pagenum);
 
-//---------------------------------------------------------------------------//
-//' pdfpageraw
-//'
-//' Returns a list comprising a page's fonts, its Postscript program as a text
-//' string and its text elements as an R data frame
-//'
-//' @param rawfile raw pdf data
-//' @param pagenum the page to extract
-//' @export
-// [[Rcpp::export]]
+
+// [[Rcpp::export(.pdfpageraw)]]
 Rcpp::List pdfpageraw(const std::vector<uint8_t>& rawfile, int pagenum);
 
 #endif

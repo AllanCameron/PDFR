@@ -43,26 +43,8 @@ get_xref <- function(filename) {
     .Call('_PDFR_get_xref', PACKAGE = 'PDFR', filename)
 }
 
-#' get_object
-#'
-#' Show the key:value pairs in a PDF object dictionary
-#'
-#' @param filename the path to a valid PDF file.
-#' @param o The object number, given as an integer.
-#' @export
-get_object <- function(filename, o) {
+.get_obj <- function(filename, o) {
     .Call('_PDFR_get_object', PACKAGE = 'PDFR', filename, o)
-}
-
-#' get_object_stream
-#'
-#' Get a pdf object's stream (if any)
-#'
-#' @param filename the path to a valid PDF file.
-#' @param o The object number, given as an integer.
-#' @export
-get_obj_stream <- function(filename, o) {
-    .Call('_PDFR_get_obj_stream', PACKAGE = 'PDFR', filename, o)
 }
 
 #' pdfdoc
@@ -76,27 +58,11 @@ pdfdoc <- function(filepath) {
     .Call('_PDFR_pdfdoc', PACKAGE = 'PDFR', filepath)
 }
 
-#' pdfpage
-#'
-#' Returns a list comprising a page's fonts, its Postscript program as a text
-#' string and its text elements as an R data frame
-#'
-#' @param filename the path to a valid PDF file.
-#' @param pagenum the page to extract
-#' @export
-pdfpage <- function(filename, pagenum) {
+.pdfpage <- function(filename, pagenum) {
     .Call('_PDFR_pdfpage', PACKAGE = 'PDFR', filename, pagenum)
 }
 
-#' pdfpageraw
-#'
-#' Returns a list comprising a page's fonts, its Postscript program as a text
-#' string and its text elements as an R data frame
-#'
-#' @param rawfile raw pdf data
-#' @param pagenum the page to extract
-#' @export
-pdfpageraw <- function(rawfile, pagenum) {
+.pdfpageraw <- function(rawfile, pagenum) {
     .Call('_PDFR_pdfpageraw', PACKAGE = 'PDFR', rawfile, pagenum)
 }
 

@@ -63,18 +63,6 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// get_obj_stream
-std::string get_obj_stream(const std::string& filename, int o);
-RcppExport SEXP _PDFR_get_obj_stream(SEXP filenameSEXP, SEXP oSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const std::string& >::type filename(filenameSEXP);
-    Rcpp::traits::input_parameter< int >::type o(oSEXP);
-    rcpp_result_gen = Rcpp::wrap(get_obj_stream(filename, o));
-    return rcpp_result_gen;
-END_RCPP
-}
 // pdfdoc
 Rcpp::List pdfdoc(const std::string& filepath);
 RcppExport SEXP _PDFR_pdfdoc(SEXP filepathSEXP) {
@@ -117,7 +105,6 @@ static const R_CallMethodDef CallEntries[] = {
     {"_PDFR_md5", (DL_FUNC) &_PDFR_md5, 1},
     {"_PDFR_get_xref", (DL_FUNC) &_PDFR_get_xref, 1},
     {"_PDFR_get_object", (DL_FUNC) &_PDFR_get_object, 2},
-    {"_PDFR_get_obj_stream", (DL_FUNC) &_PDFR_get_obj_stream, 2},
     {"_PDFR_pdfdoc", (DL_FUNC) &_PDFR_pdfdoc, 1},
     {"_PDFR_pdfpage", (DL_FUNC) &_PDFR_pdfpage, 2},
     {"_PDFR_pdfpageraw", (DL_FUNC) &_PDFR_pdfpageraw, 2},

@@ -545,11 +545,17 @@ void GraphicsState::TJ(page& pag, std::vector<std::vector<std::string>>& i)
         PRstate += stw;
         std::string tmpchar;
         //Simplest way to deal with ligatures is to specify them here
-        if(j.first == "/fi" || j.first == "/fl" ||  j.first == "/ffi" )
+        if(j.first == "/fi"
+        || j.first == "/fl"
+        || j.first == "/ffi"
+        || j.first == "/ff"
+        || j.first == "/ffl")
         {
           if(j.first == "/fi") tmpchar = "fi";
           if(j.first == "/fl") tmpchar = "fl";
           if(j.first == "/ffi") tmpchar = "ffi";
+          if(j.first == "/ff") tmpchar = "ff";
+          if(j.first == "/ffl") tmpchar = "ffl";
         }
         else tmpchar = namesToChar(j.first, "/WinAnsiEncoding");
         float PRscaled = PRstate * scale / 1000;
@@ -651,7 +657,7 @@ void GraphicsState::clump()
         {
           if(Rjoins.find(i) != Rjoins.end())
           {
-            if((xvals[Rjoins[i]] - R[i]) > (0.2 * fontsize[i]))
+            if((xvals[Rjoins[i]] - R[i]) > (0.19 * fontsize[i]))
               stringres[i] += " ";
             stringres[i] += stringres[Rjoins[i]];
             R[i] = R[Rjoins[i]];

@@ -56,7 +56,24 @@ internetFile <- function(x, filename = NULL)
 else cat("file saved to ", path.expand("~/"), filename, "\n", collapse = "")
 }
 
-
+#' pdfpage
+#'
+#' Returns contents of a pdf page
+#'
+#' @param pdf a valid pdf file location
+#' @param page the page number to be plotted
+#'
+#' @return a list containing data frames
+#' @export
+#'
+#' @examples pdfpage(testfiles$leeds, 1)
+pdfpage <- function(pdf, page){
+  if(class(pdf) == "raw") {
+    return(.pdfpageraw(pdf, page));
+    } else {
+    return(.pdfpage(pdf, page));
+    }
+}
 
 
 #' pdfplot
@@ -67,7 +84,6 @@ else cat("file saved to ", path.expand("~/"), filename, "\n", collapse = "")
 #'
 #' @param pdf a valid pdf file location
 #' @param page the page number to be plotted
-#' @param clump the degree to which text is clumped together (integer)
 #' @param textsize the scale of the text to be shown
 #'
 #' @return a ggplot
@@ -76,7 +92,7 @@ else cat("file saved to ", path.expand("~/"), filename, "\n", collapse = "")
 #' @examples pdfplot(testfiles$leeds, 1)
 pdfplot <- function(pdf, page = 1, textsize = 1)
   {
-    PDFR::pdfpage(pdf, page) -> x;
+  pdfpage(pdf, page) -> x;
     x$Elements -> y;
     ggplot2::ggplot(data = y,
            ggplot2::aes(x = y$left, y = y$bottom, size = I(textsize*170*y$size/(x$Box[4] - x$Box[2]))),
@@ -89,4 +105,4 @@ pdfplot <- function(pdf, page = 1, textsize = 1)
       ) + ggplot2::scale_size_identity();
   }
 
-# "\\\\XGGC.SCOT.NHS.UK\\GGCData\\FolderRedirects\\GRI5\\cameral931\\My Documents\\suicide.pdf"
+# "\\\\XGGC.SCOT.NHS.UK\\GGCData\\FolderRedirects\\GRI5\\cameral931\\My Documents\\tractatus.pdf"
