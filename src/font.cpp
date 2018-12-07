@@ -293,7 +293,7 @@ void font::getEncoding(dictionary& fontref, document& d)
     int a = fontref.getRefs("/Encoding").at(0);
     object_class myobj = d.getobject(a);
     encref = myobj.getDict();
-    encname = encref.get("/BaseEncoding");
+    if(encref.has("/BaseEncoding")) encname = encref.get("/BaseEncoding");
   }
   if( encname == "/WinAnsiEncoding" ||
       encname == "/MacRomanEncoding" ||

@@ -67,6 +67,7 @@ else cat("file saved to ", path.expand("~/"), filename, "\n", collapse = "")
 #'
 #' @param pdf a valid pdf file location
 #' @param page the page number to be plotted
+#' @param clump the degree to which text is clumped together (integer)
 #' @param textsize the scale of the text to be shown
 #'
 #' @return a ggplot
@@ -75,7 +76,7 @@ else cat("file saved to ", path.expand("~/"), filename, "\n", collapse = "")
 #' @examples pdfplot(testfiles$leeds, 1)
 pdfplot <- function(pdf, page = 1, textsize = 1)
   {
-    PDFR::pdfpage(pdf, page) -> x;
+    PDFR::pdfpage(pdf, page, 500) -> x;
     x$Elements -> y;
     ggplot2::ggplot(data = y,
            ggplot2::aes(x = y$left, y = y$bottom, size = I(textsize*170*y$size/(x$Box[4] - x$Box[2]))),

@@ -3,7 +3,7 @@
 #include "document.h"
 #include "GraphicsState.h"
 
-GraphicsState::GraphicsState(page& pag) : p(pag),
+GraphicsState::GraphicsState(page& pag, int clump) : p(pag), clumpvar(clump),
   PRstate(0), Tl(1), Tw(0), Th(100), Tc(0), currfontsize(0), currentfont("")
 {
   Instructions  = tokenize(pag.contentstring);
@@ -543,7 +543,15 @@ void GraphicsState::TJ(page& pag, std::vector<std::vector<std::string>>& i)
         }
         else stw = j.second + Tc * 1000;
         PRstate += stw;
-        std::string tmpchar = namesToChar(j.first, "/WinAnsiEncoding");
+        std::string tmpchar;
+        //Simplest way to deal with ligatures is to specify them here
+        if(j.first == "/fi" || j.first == "/fl" ||  j.first == "/ffi" )
+        {
+          if(j.first == "/fi") tmpchar = "fi";
+          if(j.first == "/fl") tmpchar = "fl";
+          if(j.first == "/ffi") tmpchar = "ffi";
+        }
+        else tmpchar = namesToChar(j.first, "/WinAnsiEncoding");
         float PRscaled = PRstate * scale / 1000;
         textspace[6] = PRscaled + txtspcinit;
         widths.push_back(scale * stw/1000 * Th/100);
@@ -592,7 +600,7 @@ void GraphicsState::MakeGS()
     leftmatch.push_back(-1);
   }
   rightmatch = leftmatch;
-  clump(10);
+  clump();
   for (size_t i = 0; i < widths.size(); i++)
   {
     if (leftmatch[i] == -1)
@@ -610,30 +618,31 @@ void GraphicsState::MakeGS()
 
 /*---------------------------------------------------------------------------*/
 
-void GraphicsState::clump(int clumpvar)
+void GraphicsState::clump()
 {
   std::map<size_t, size_t> Rjoins;
-  if (widths.size() > 0)
+  size_t s = widths.size();
+  if (s > 0)
   {
-    for (size_t i = 0; i < widths.size(); i++)
+    for (size_t i = 0; i < s; i++)
     {
-      for (size_t j = 0; j < widths.size(); j++)
+      for (size_t j = 0; j < s; j++)
       {
-        bool isVeryNear = fabs(R[i] - xvals[j]) <= (clumpvar);
+        bool isNear = fabs(R[i] - xvals[j]) < (fontsize[i] * 0.002 * clumpvar);
         bool isLeftOf = xvals[i] < xvals[j];
         bool areDifferent = (i != j);
         bool nothingCloser = true;
         bool sameY = fabs(yvals[i] - yvals[j]) < 3;
         if(Rjoins.find(i) != Rjoins.end())
           nothingCloser = (xvals[Rjoins[i]] > xvals[j]);
-        if(areDifferent && isLeftOf && isVeryNear && nothingCloser && sameY)
+        if(areDifferent && isLeftOf && isNear && nothingCloser && sameY)
         {
           Rjoins[i] = j;
           leftmatch[j] = (int) i;
         }
       }
     }
-    for (size_t i = 0; i < widths.size(); i++)
+    for (size_t i = 0; i < s; i++)
     {
       if(leftmatch[i] == -1)
       {
@@ -641,6 +650,8 @@ void GraphicsState::clump(int clumpvar)
         {
           if(Rjoins.find(i) != Rjoins.end())
           {
+            if((xvals[Rjoins[i]] - R[i]) > (clumpvar * 0.000019 * fontsize[i]))
+              stringres[i] += " ";
             stringres[i] += stringres[Rjoins[i]];
             R[i] = R[Rjoins[i]];
             widths[i] = R[i] - xvals[i];

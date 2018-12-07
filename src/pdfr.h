@@ -79,7 +79,7 @@ inline std::string getPageString(const std::string& filename, int pagenum)
 
 //---------------------------------------------------------------------------//
 
-Rcpp::List PDFpage(document mypdf, page pg);
+Rcpp::List PDFpage(document mypdf, page pg, int clump);
 
 //---------------------------------------------------------------------------//
 

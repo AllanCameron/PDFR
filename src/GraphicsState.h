@@ -8,7 +8,7 @@ class GraphicsState
 {
 public:
   Rcpp::DataFrame db;
-  GraphicsState(page& pag);
+  GraphicsState(page& pag, int clump);
   page p;
 
 private:
@@ -18,7 +18,7 @@ private:
   left, right, bottom, size, width, fontsizestack, initstate;
   std::vector<std::string> fontname, stringres, text, fonts, fontstack;
   std::vector<int> leftmatch, rightmatch;
-  int PRstate;
+  int clumpvar, PRstate;
   float Tl, Tw, Th, Tc, currfontsize;
   std::string currentfont;
   Instructionset Instructions;
@@ -35,7 +35,7 @@ private:
   void TJ(page& pag, std::vector<std::vector<std::string>>& i);
   void Tf(page& pag, std::vector<std::string>& Operands);
   void MakeGS();
-  void clump(int a);
+  void clump();
   void Do(std::string& xo);
 
 };
