@@ -1201,3 +1201,12 @@ std::string
     return res;
   }
 
+void trimRight(std::string& s)
+{
+  if(s.length() == 0) return;
+  for(int i = s.length() - 1; i >= 0; i--)
+    if(s[i] == ' ' || s[i] == '\t' || s[i] == '\n' || s[i] == '\r')
+      s.resize(i);
+    else
+      break;
+}

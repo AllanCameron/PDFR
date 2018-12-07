@@ -26,7 +26,7 @@
 
 //---------------------------------------------------------------------------//
 
-Rcpp::List PDFpage(document mypdf, page pg, int clump)
+Rcpp::List PDFpage(document mypdf, page pg)
 {
   std::vector<EncMap> fontenc;
   for(auto i : pg.fontnames) fontenc.push_back(pg.fontmap[i].EncodingMap);
@@ -38,7 +38,7 @@ Rcpp::List PDFpage(document mypdf, page pg, int clump)
     Rcpp::Named("Rotate")     =  pg.rotate,
     Rcpp::Named("PageString") =  pg.contentstring,
     Rcpp::Named("Encoding") =  fontenc,
-    Rcpp::Named("Elements")   =  GraphicsState(pg, clump).db
+    Rcpp::Named("Elements")   =  GraphicsState(pg).db
   );
 }
 
@@ -105,7 +105,7 @@ Rcpp::List pdfdoc(const std::vector<uint8_t> & rawfile)
 Rcpp::List pdfpage(const std::string& filename, int pagenum)
 {
   document myfile = document(filename);
-  return PDFpage(myfile, myfile.getPage(pagenum - 1), 500);
+  return PDFpage(myfile, myfile.getPage(pagenum - 1));
 }
 
 //---------------------------------------------------------------------------//
@@ -113,5 +113,5 @@ Rcpp::List pdfpage(const std::string& filename, int pagenum)
 Rcpp::List pdfpageraw(const std::vector<uint8_t>& rawfile, int pagenum)
 {
   document myfile = document(rawfile);
-  return PDFpage(myfile, myfile.getPage(pagenum - 1), 500);
+  return PDFpage(myfile, myfile.getPage(pagenum - 1));
 }

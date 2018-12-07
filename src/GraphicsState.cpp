@@ -3,7 +3,7 @@
 #include "document.h"
 #include "GraphicsState.h"
 
-GraphicsState::GraphicsState(page& pag, int clump) : p(pag), clumpvar(clump),
+GraphicsState::GraphicsState(page& pag) : p(pag),
   PRstate(0), Tl(1), Tw(0), Th(100), Tc(0), currfontsize(0), currentfont("")
 {
   Instructions  = tokenize(pag.contentstring);
@@ -603,8 +603,9 @@ void GraphicsState::MakeGS()
   clump();
   for (size_t i = 0; i < widths.size(); i++)
   {
-    if (leftmatch[i] == -1)
+    if (leftmatch[i] == -1 && stringres[i] != " " && stringres[i] != "  ")
     {
+      trimRight(stringres[i]);
       text.push_back(stringres[i]);
       left.push_back(xvals[i]);
       bottom.push_back(yvals[i]);
@@ -628,7 +629,7 @@ void GraphicsState::clump()
     {
       for (size_t j = 0; j < s; j++)
       {
-        bool isNear = fabs(R[i] - xvals[j]) < (fontsize[i] * 0.002 * clumpvar);
+        bool isNear = fabs(R[i] - xvals[j]) < (fontsize[i]);
         bool isLeftOf = xvals[i] < xvals[j];
         bool areDifferent = (i != j);
         bool nothingCloser = true;
@@ -650,7 +651,7 @@ void GraphicsState::clump()
         {
           if(Rjoins.find(i) != Rjoins.end())
           {
-            if((xvals[Rjoins[i]] - R[i]) > (clumpvar * 0.000019 * fontsize[i]))
+            if((xvals[Rjoins[i]] - R[i]) > (0.2 * fontsize[i]))
               stringres[i] += " ";
             stringres[i] += stringres[Rjoins[i]];
             R[i] = R[Rjoins[i]];
