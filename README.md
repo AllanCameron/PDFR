@@ -2,22 +2,38 @@
 
 ## An R package to extract usable text from portable document format (pdf) files.
 
-The pdf file format is an excellent way of sharing documents so that they
-appear the same independent of the platform on which they are viewed, and
-the file is structured specifically to achieve this goal. As a result,
-it is an extremely common format for sharing information electronically.
+This package was created with the aim of aiding data scientists who use R
+and who need the ability to extract data from files in pdf format.
 
-However, this can be problematic for the data scientist because the pdf file 
-format, while ubiquitous, does not lend itself to sharing machine-readable 
-content in the way that other common file formats used on the web can, such as 
-xml, json, html and csv.
+To install in its current format, type
 
-Some R packages already exist to help extract information from pdfs. In
-particular, [pdftools](https://ropensci.org/blog/2016/03/01/pdftools-and-jeroen/) provides an R interface to some of Poppler's pdf tools, and can quickly and 
-reliably extract text wholesale from pdf. Although this preserves much of the 
-text layout on a page, the precise locations, fonts and sizes of the text 
-elements is lost, reducing the options for extracting semantic information. 
-That was the reason for the creation of the PDFR package.
+```
+devtools::install_github("AllanCameron/PDFR")
+```
+
+Please note, this may take up to five minutes to complete as the source files have 
+to be compiled on your computer as part of the installation.
+
+## Motivation
+
+Extracting useful data from pdf is difficult for two reasons. Firstly, the pdf 
+format primarily consists of binary data, which is laid out in such a way as
+to provide quick random access to *objects* as required by a pdf reader. The text
+elements as seen on the page are usually encoded in a binary stream within the
+document. Even when the binary stream is decoded, the text items exist as
+individual elements within a page description program, which has to be parsed before
+the text can be extracted. It is therefore not a trivial matter to extract the "raw
+text" from a pdf file into a format in which it can be read by R, though there exist 
+some excellent tools that can do this quickly.  In particular, 
+[pdftools](https://ropensci.org/blog/2016/03/01/pdftools-and-jeroen/) provides an R 
+interface to some of Poppler's pdf tools, and can quickly and reliably extract text 
+wholesale from pdf.
+
+The second problem is that, unlike some other common file types used to exchange information
+on the internet (e.g. html, xml, csv, JSON), the raw text extracted from a pdf does not
+have a fixed structure to provide semantic information about the data to allow it to be
+processed easily by a data scientist.
+
 
 PDFR is mostly written in C++. Rather than being based on an existing library
 such as [xpdf](https://www.xpdfreader.com/) or [Poppler](https://poppler.freedesktop.org/), it was written from scratch with the specific goal of making text extraction easier for R users. Most of the design is new, an attempt to implement the text extraction elements of the pdf standard 
