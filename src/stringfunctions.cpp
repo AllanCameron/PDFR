@@ -1,5 +1,6 @@
 #include "pdfr.h"
 #include "stringfunctions.h"
+#include "debugtools.h"
 
 
 /*---------------------------------------------------------------------------*/
@@ -266,7 +267,10 @@ std::vector<float> matmul(std::vector<float> b, std::vector<float> a)
 
 std::vector<float> six2nine(std::vector<float> a)
 {
-  if(a.size() != 6) Rcpp::stop("Vector must have size 6.");
+  if(a.size() != 6) {
+  printvec(a);
+  Rcpp::stop("Vector must have size 6.");
+  }
   std::vector<float> newmat {a[0], a[1], 0, a[2], a[3], 0, a[4], a[5], 1};
   return newmat;
 }
@@ -275,7 +279,11 @@ std::vector<float> six2nine(std::vector<float> a)
 
 std::vector<float> stringvectomat(std::vector<std::string> b)
 {
-  if(b.size() != 6) Rcpp::stop("Vector must have size 6.");
+  if(b.size() != 6)
+  {
+    printvec(b);
+    Rcpp::stop("Vector must have size 6.");
+  }
   std::vector<float> a;
   for(auto i : b) a.push_back(std::stof(i));
   return six2nine(a);

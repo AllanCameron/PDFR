@@ -55,7 +55,11 @@ page::page(document& d, int pagenum) : pagenumber(pagenum)
   if (cts.size() > 0)
   {
     contents = d.expandContents(cts);
-    for (auto m : contents) contentstring += d.getobject(m).getStream();
+    for (auto m : contents)
+    {
+      contentstring += d.getobject(m).getStream();
+      contentstring += "\n";
+    }
   }
 
   if (bleedBS.size() > 0) {bleedbox = boxarray(bleedBS); minbox = bleedbox;}

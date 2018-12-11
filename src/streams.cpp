@@ -143,7 +143,7 @@ plainbytetable(std::vector<int> V, std::vector<int> ArrayWidths)
   {
     std::vector<int> tmprow;
     int cumval = 0;
-    for(int j = 0; j < ncol; j++)
+    for(size_t j = 0; j < ncol; j++)
     {
       cumval += (V[i * ncol + j] * multarray[j]);
       if(multarray[j] == 1)

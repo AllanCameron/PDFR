@@ -56,7 +56,7 @@ tokenize_dict(const std::string& s, unsigned pos)
     std::string state = "preentry";
     std::string buf;
     int minibuf = 0;
-    while(i < s.length() && i < (pos + 10000))
+    while(i < s.length() && i < (pos + 100000))
     {
       if(state == "preentry")
       {
