@@ -31,13 +31,13 @@ Rcpp::List PDFpage(document mypdf, page pg)
   std::vector<EncMap> fontenc;
   for(auto i : pg.fontnames) fontenc.push_back(pg.fontmap[i].EncodingMap);
   return Rcpp::List::create(
-    Rcpp::Named("Resources")  =  pg.resources.R_out(),
-    Rcpp::Named("Fonts")      =  pg.fonts.R_out(),
-    Rcpp::Named("XObjects")   =  pg.XObjects,
+    //Rcpp::Named("Resources")  =  pg.resources.R_out(),
+    //Rcpp::Named("Fonts")      =  pg.fonts.R_out(),
+    //Rcpp::Named("XObjects")   =  pg.XObjects,
     Rcpp::Named("Box")        =  pg.minbox,
-    Rcpp::Named("Rotate")     =  pg.rotate,
+    //Rcpp::Named("Rotate")     =  pg.rotate,
     Rcpp::Named("PageString") =  pg.contentstring,
-    Rcpp::Named("Encoding") =  fontenc,
+    //Rcpp::Named("Encoding") =  fontenc,
     Rcpp::Named("Elements")   =  GraphicsState(pg).db
   );
 }
@@ -67,6 +67,28 @@ Rcpp::DataFrame get_xref(const std::string& filename)
 
 //---------------------------------------------------------------------------//
 
+Rcpp::DataFrame get_xrefraw(const std::vector<uint8_t>& rawfile)
+{
+  document mydoc = document(rawfile);
+  std::vector<int> ob, startb, stopb, inob;
+
+  if(!mydoc.Xref.getObjects().empty())
+  {
+    for(int j : mydoc.Xref.getObjects())
+    {
+      ob.push_back(j);
+      startb.push_back(mydoc.Xref.getStart(j));
+      stopb.push_back(mydoc.Xref.getEnd(j));
+      inob.push_back(mydoc.Xref.inObject(j));
+    }
+  }
+  return Rcpp::DataFrame::create(Rcpp::Named("Object") = ob,
+                                 Rcpp::Named("StartByte") = startb,
+                                 Rcpp::Named("StopByte") = stopb,
+                                 Rcpp::Named("InObject") = inob);
+}
+
+
 Rcpp::List get_object(const std::string& filename, int o)
 {
   document mydoc = document(filename);
@@ -75,11 +97,13 @@ Rcpp::List get_object(const std::string& filename, int o)
     Rcpp::Named("stream") = mydoc.getobject(o).getStream());
 }
 
-//---------------------------------------------------------------------------//
 
-std::string get_obj_stream(const std::string& filename, int o)
+Rcpp::List get_objectraw(const std::vector<uint8_t>& rawfile, int o)
 {
-  return document(filename).getobject(o).getStream();
+  document mydoc = document(rawfile);
+  return Rcpp::List::create(
+    Rcpp::Named("header") = mydoc.getobject(o).getDict().R_out(),
+    Rcpp::Named("stream") = mydoc.getobject(o).getStream());
 }
 
 //---------------------------------------------------------------------------//
@@ -93,7 +117,7 @@ Rcpp::List pdfdoc(const std::string & filepath)
 
 //---------------------------------------------------------------------------//
 
-Rcpp::List pdfdoc(const std::vector<uint8_t> & rawfile)
+Rcpp::List pdfdocraw(const std::vector<uint8_t> & rawfile)
 {
   document myfile = document(rawfile);
   Rcpp::CharacterVector filename = Rcpp::wrap({"From raw data"});

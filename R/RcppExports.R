@@ -33,29 +33,28 @@ md5 <- function(input) {
     .Call('_PDFR_md5', PACKAGE = 'PDFR', input)
 }
 
-#' Return the xref table from a PDF document
-#'
-#' Returns a data frame of objects and their byte positions in a pdf
-#'
-#' @param filename the path to a valid PDF file.
-#' @export
-get_xref <- function(filename) {
+.get_xref <- function(filename) {
     .Call('_PDFR_get_xref', PACKAGE = 'PDFR', filename)
+}
+
+.get_xrefraw <- function(rawfile) {
+    .Call('_PDFR_get_xrefraw', PACKAGE = 'PDFR', rawfile)
 }
 
 .get_obj <- function(filename, o) {
     .Call('_PDFR_get_object', PACKAGE = 'PDFR', filename, o)
 }
 
-#' pdfdoc
-#'
-#' List a PDF document's filename, catalogue dictionary, page dictionaries,
-#' encryption status and file key (if encrypted)
-#'
-#' @param filepath the path to a valid PDF file.
-#' @export
-pdfdoc <- function(filepath) {
+.get_objraw <- function(rawfile, o) {
+    .Call('_PDFR_get_objectraw', PACKAGE = 'PDFR', rawfile, o)
+}
+
+.pdfdoc <- function(filepath) {
     .Call('_PDFR_pdfdoc', PACKAGE = 'PDFR', filepath)
+}
+
+.pdfdocraw <- function(rawfile) {
+    .Call('_PDFR_pdfdocraw', PACKAGE = 'PDFR', rawfile)
 }
 
 .pdfpage <- function(filename, pagenum) {

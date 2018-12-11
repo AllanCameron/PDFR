@@ -9,7 +9,7 @@ class document
 public:
   std::ifstream *fileCon;
   bool linearized, encrypted;
-  int filesize;
+  size_t filesize;
   std::string file, filestring;
   std::vector<dictionary> pageheaders;
   std::vector<uint8_t> filekey;

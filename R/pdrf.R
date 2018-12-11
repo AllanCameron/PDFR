@@ -76,6 +76,41 @@ pdfpage <- function(pdf, page){
 }
 
 
+#' Get a pdf's xref table as an R dataframe
+#'
+#' @param pdf a valid pdf file location or raw data vector
+#'
+#' @return a data frame showing the positions of each object
+#' @export
+#'
+#' @examples get_xref(testfiles$leeds)
+get_xref <- function(pdf){
+  if(class(pdf) == "raw") {
+    return(.get_xrefraw(pdf));
+    } else {
+    return(.get_xref(pdf));
+    }
+}
+
+
+#' Get the contents of a pdf object
+#'
+#' @param pdf a valid pdf file location
+#' @param number the object number
+#'
+#' @return a named vector of the dictionary and stream of the pdf object
+#' @export
+#'
+#' @examples get_object(testfiles$leeds, 1)
+get_object <- function(pdf, number){
+  if(class(pdf) == "raw") {
+    return(.get_objraw(pdf, number));
+    } else {
+    return(.get_obj(pdf, number));
+    }
+}
+
+
 #' pdfplot
 #'
 #' Plots the text elements from a page as a ggplot.
@@ -105,4 +140,4 @@ pdfplot <- function(pdf, page = 1, textsize = 1)
       ) + ggplot2::scale_size_identity();
   }
 
-# "\\\\XGGC.SCOT.NHS.UK\\GGCData\\FolderRedirects\\GRI5\\cameral931\\My Documents\\tractatus.pdf"
+#pdfplot("\\\\XGGC.SCOT.NHS.UK\\GGCData\\FolderRedirects\\GRI5\\cameral931\\My Documents\\probability.pdf")

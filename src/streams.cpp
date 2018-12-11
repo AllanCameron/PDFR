@@ -3,6 +3,7 @@
 #include "document.h"
 #include "stringfunctions.h"
 #include "miniz.h"
+#include "debugtools.h"
 
 
 /*---------------------------------------------------------------------------*/
@@ -114,6 +115,61 @@ std::string objectPreStream(const std::string& filestring, int objectstart)
 
 /*---------------------------------------------------------------------------*/
 
+
+std::vector<std::vector<int> >
+plainbytetable(std::vector<int> V, std::vector<int> ArrayWidths)
+{
+  std::vector<int> multarray;
+  std::vector<std::vector<int> > rowarray;
+  std::vector<int> fixedarray;
+  fixedarray.push_back(1);
+  fixedarray.push_back(256);
+  fixedarray.push_back(256 * 256);
+  fixedarray.push_back(256 * 256 * 256);
+
+  for(size_t i = 0; i < ArrayWidths.size(); i++)
+  {
+    int j = ArrayWidths[i];
+    while (j > 0)
+    {
+      multarray.push_back(fixedarray[j - 1]);
+      j--;
+    }
+  }
+  size_t ncol = multarray.size();
+  if(ncol == 0) Rcpp::stop("No columns");
+  int nrow = V.size() / ncol;
+  for(int i = 0; i < (nrow); i++)
+  {
+    std::vector<int> tmprow;
+    int cumval = 0;
+    for(int j = 0; j < ncol; j++)
+    {
+      cumval += (V[i * ncol + j] * multarray[j]);
+      if(multarray[j] == 1)
+      {
+        tmprow.push_back(cumval);
+        cumval = 0;
+      }
+    }
+    rowarray.push_back(tmprow);
+  }
+  std::vector<std::vector<int> > colarray;
+  for(size_t i = 0; i < rowarray[0].size(); i++)
+  {
+    std::vector<int> newcol;
+    for(size_t j = 0; j < rowarray.size(); j++)
+      newcol.push_back(rowarray[j][i]);
+    colarray.push_back(newcol);
+  }
+  std::vector<int> objind;
+  for(size_t i = 0; i < rowarray.size(); i++)
+    objind.push_back((int) i);
+  colarray.push_back(objind);
+  return colarray;
+}
+
+
 std::vector<std::vector<int>>
 decodeString(document& d, const std::string& filestring, int objstart)
 {
@@ -122,11 +178,6 @@ decodeString(document& d, const std::string& filestring, int objstart)
   int startingobj;
   dictionary dict = dictionary(filestring, objstart);
   std::string CS, IMatch, WM;
-  if(dict.has("/DecodeParms"))
-  {
-    dictionary subdict = dictionary(dict.get("/DecodeParms"));
-    if(subdict.has("/Columns")) CS = subdict.get("/Columns");
-  }
   if(dict.has("/Index")) IMatch = dict.get("/Index");
   if(dict.has("/W"))  WM = dict.get("/W");
   if(IMatch.size() == 0) startingobj = 0;
@@ -136,10 +187,14 @@ decodeString(document& d, const std::string& filestring, int objstart)
     if(IMatchs.size() == 0) startingobj = 0;
     else startingobj = std::stoi(Rex(IMatchs[0], "\\d+")[0]);
   }
-  if(!CS.empty())
+  if(dict.has("/DecodeParms"))
   {
-    int  ncols  =  std::stoi(Rex(CS, "\\d{1,2}")[0]) + 1;
-    if(!WM.empty())
+    dictionary subdict = dictionary(dict.get("/DecodeParms"));
+    if(subdict.has("/Columns")) CS = subdict.get("/Columns");
+  }
+  int ncols = 0;
+  if(!CS.empty()) ncols  =  std::stoi(Rex(CS, "\\d{1,2}")[0]) + 1;
+  if(!WM.empty())
     {
       std::vector<std::string> WMs = Rex(WM, "(\\d|\\s)+");
       WMs = splitter(WMs[0], " ");
@@ -148,6 +203,7 @@ decodeString(document& d, const std::string& filestring, int objstart)
       if(isFlateDecode(filestring, objstart)) SS = FlateDecode(SS);
       std::vector<unsigned char> rawarray(SS.begin(), SS.end());
       std::vector<int> intAr(rawarray.begin(), rawarray.end());
+      if(!dict.has("/DecodeParms")) return plainbytetable(intAr, ArW);
       int nrows = intAr.size() / ncols;
       for(int i = 0; i < nrows; i++)
       {
@@ -184,9 +240,5 @@ decodeString(document& d, const std::string& filestring, int objstart)
       for(size_t i = 0; i<FA[0].size(); i++) objind.push_back(i + startingobj);
       FA.push_back(objind);
     }
-  }
   return FA;
 }
-
-/*---------------------------------------------------------------------------*/
-

@@ -2,6 +2,7 @@
 #include "stringfunctions.h"
 #include "streams.h"
 #include "xref.h"
+#include "debugtools.h"
 
 /*---------------------------------------------------------------------------*/
 
@@ -51,10 +52,10 @@ void xref::xrefstrings()
   {
     size_t nchars = 0;
     std::vector<int> ts;
-    while (ts.size() == 0 && ((int) (i + nchars) < d->filesize))
+    while (ts.size() == 0 && ( (size_t)(i + nchars) < d->filesize))
     {
       nchars += 1000;
-      if((int) (i + nchars) > d->filesize) nchars = d->filesize - i;
+      if(i + nchars > d->filesize) nchars = d->filesize - i;
       std::string hunter = d->filestring.substr(i, nchars);
       ts = stringloc(hunter, "startxref");
     }
@@ -143,10 +144,17 @@ void xref::xrefFromString(std::string& xstr)
 
 void xref::buildXRtable()
 {
+  if (Xreflocations.empty()) Rcpp::stop("Couldn't get xref locations");
   for(size_t i = 0; i < Xreflocations.size(); i++)
   {
-    if(XrefsAreStreams[i]) xrefFromStream(Xreflocations[i]);
-    else xrefFromString(Xrefstrings[i]);
+    if(XrefsAreStreams[i])
+    {
+      xrefFromStream(Xreflocations[i]);
+    }
+    else
+    {
+      xrefFromString(Xrefstrings[i]);
+    }
   }
 }
 
@@ -180,6 +188,7 @@ void xref::findEnds()
       }
       xreftab[objenum[i]].stopbyte = initend;
     }
+    else xreftab[objenum[i]].stopbyte = 0;
   }
 }
 
@@ -188,7 +197,7 @@ void xref::findEnds()
 xref::xref(document& d) : d(&d)
 {
   locateXrefs();
-  xrefstrings();;
+  xrefstrings();
   xrefIsstream();
   buildXRtable();
   findEnds();

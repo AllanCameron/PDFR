@@ -3,6 +3,7 @@
 #include "streams.h"
 #include "stringfunctions.h"
 #include "crypto.h"
+#include "debugtools.h"
 
 /*---------------------------------------------------------------------------*/
 
@@ -23,7 +24,7 @@ document::document(const std::string& filename) : file(filename)
 document::document(const std::vector<uint8_t>& bytevector)
 {
   filestring = bytestostring(bytevector);
-  filesize = (int) filestring.size();
+  filesize = filestring.size();
   Xref = xref(*this);
   trailer = Xref.trailer();
   filekey = get_cryptkey();
@@ -62,10 +63,8 @@ object_class document::getobject(int n)
 void document::getCatalogue()
 {
   std::vector<int> rootnums = trailer.getInts("/Root");
-  int bytenum = 0;
   if (rootnums.size() == 0) Rcpp::stop("Couldn't find catalogue from trailer");
-  if (Xref.objectExists(rootnums.at(0))) bytenum = Xref.getStart(rootnums.at(0));
-  catalogue = dictionary(filestring, bytenum);
+  catalogue = getobject(rootnums.at(0)).getDict();
 }
 
 /*---------------------------------------------------------------------------*/

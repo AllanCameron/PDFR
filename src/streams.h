@@ -16,6 +16,9 @@ bool isObject(const std::string& filestring, int objectstart);
 
 std::string objectPreStream(const std::string& filestring, int objectstart);
 
+std::vector<std::vector<int> >
+plainbytetable(std::vector<int> V, std::vector<int> ArrayWidths);
+
 std::vector<std::vector<int>>
 decodeString(document& d, const std::string& filestring, int objstart);
 

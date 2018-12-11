@@ -134,38 +134,26 @@ std::vector<uint8_t> rc4(std::vector<uint8_t> msg, std::vector<uint8_t> key);
 std::vector<uint8_t> md5(std::vector<uint8_t> input);
 
 
-//---------------------------------------------------------------------------//
-//' Return the xref table from a PDF document
-//'
-//' Returns a data frame of objects and their byte positions in a pdf
-//'
-//' @param filename the path to a valid PDF file.
-//' @export
-// [[Rcpp::export]]
+// [[Rcpp::export(.get_xref)]]
 Rcpp::DataFrame get_xref(const std::string& filename);
 
+// [[Rcpp::export(.get_xrefraw)]]
+Rcpp::DataFrame get_xrefraw(const std::vector<uint8_t>& rawfile);
 
 // [[Rcpp::export(.get_obj)]]
 Rcpp::List get_object(const std::string& filename, int o);
 
+// [[Rcpp::export(.get_objraw)]]
+Rcpp::List get_objectraw(const std::vector<uint8_t>& rawfile, int o);
 
-std::string get_obj_stream(const std::string& filename, int o);
-
-//---------------------------------------------------------------------------//
-//' pdfdoc
-//'
-//' List a PDF document's filename, catalogue dictionary, page dictionaries,
-//' encryption status and file key (if encrypted)
-//'
-//' @param filepath the path to a valid PDF file.
-//' @export
-// [[Rcpp::export]]
+// [[Rcpp::export(.pdfdoc)]]
 Rcpp::List pdfdoc(const std::string & filepath);
 
+// [[Rcpp::export(.pdfdocraw)]]
+Rcpp::List pdfdocraw(const std::vector<uint8_t>& rawfile);
 
 // [[Rcpp::export(.pdfpage)]]
 Rcpp::List pdfpage(const std::string& filename, int pagenum);
-
 
 // [[Rcpp::export(.pdfpageraw)]]
 Rcpp::List pdfpageraw(const std::vector<uint8_t>& rawfile, int pagenum);
