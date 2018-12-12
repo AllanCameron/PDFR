@@ -398,7 +398,7 @@ Instructionset GraphicsState::parser(std::vector<std::string> token,
     tmptoken.push_back(token[i]);
     if (ttype[i] == "identifier")
     {
-      if ( token[i] == "Q"  || token[i] == "q"  ||  token[i] == "BT" ||
+      if (token[i] == "Q"  || token[i] == "q"  ||  token[i] == "BT" ||
           token[i] == "ET" || token[i] == "TJ" ||  token[i] == "Tj" ||
           token[i] == "TD" || token[i] == "Td" ||  token[i] == "T*" ||
           token[i] == "Tc" || token[i] == "Tw" ||  token[i] == "Tm" ||
@@ -439,7 +439,8 @@ void GraphicsState::Do(std::string& a)
 {
   if (p.XObjects.find(a) != p.XObjects.end())
   {
-    InstructionReader(p, tokenize(p.XObjects[a]));
+    if(IsAscii(p.XObjects[a]))
+      InstructionReader(p, tokenize(p.XObjects[a]));
   }
 }
 
@@ -447,15 +448,14 @@ void GraphicsState::Do(std::string& a)
 
 void GraphicsState::Q(page& pag)
 {
-  gs.pop_back();
-  if (fontstack.size() > 0)
+  if(gs.size() > 1) gs.pop_back();
+  if (fontstack.size() > 1)
   {
     fontstack.pop_back();
     fontsizestack.pop_back();
+    currentfont = fontstack.back();
+    currfontsize = fontsizestack.back();
   }
-  currentfont = fontstack[fontstack.size()-1];
-  currfontsize = fontsizestack[fontsizestack.size()-1];
-
   if (pag.fontmap.find(currentfont) != pag.fontmap.end())
   {
     wfont = pag.fontmap[currentfont];
@@ -468,7 +468,7 @@ void GraphicsState::Td(std::string Ins, std::vector<std::string>& Operands)
 {
   std::vector<float> Tds = initstate;
   std::vector<float> tmpvec = stringtofloat(Operands);
-  Tds[6] = tmpvec[0]; Tds[7] = tmpvec[1];
+  Tds.at(6) = tmpvec[0]; Tds[7] = tmpvec[1];
   if (Ins == "TD") Tl = -Tds[7];
   Tdstate = matmul(Tds, Tdstate);
   PRstate = 0;
@@ -487,7 +487,7 @@ void GraphicsState::BT()
 
 void GraphicsState::Tf(page& pag, std::vector<std::string>& Operands)
 {
-  currentfont = Operands[0];
+  currentfont = Operands.at(0);
   if (pag.fontmap.find(currentfont) != pag.fontmap.end())
   {
     wfont = pag.fontmap[currentfont];
@@ -575,22 +575,22 @@ void GraphicsState::InstructionReader(page& pag, Instructionset I)
 {
   for (auto &i : I)
   {
-    std::string& Ins = i[0][0];
-    std::vector<std::string> &Operands = i[2];
+    std::string& Ins = i.at(0).at(0);
+    std::vector<std::string> &Operands = i.at(2);
     if (Ins == "Q" && gs.size() > 0) Q(pag);
     if (Ins == "q") q();
-    if (Ins == "Th") Th = stof(Operands[0]);
-    if (Ins == "Tw") Tw = stof(Operands[0]);
-    if (Ins == "Tc") Tc = stof(Operands[0]);
-    if (Ins == "TL") Tl = stof(Operands[0]);
-    if (Ins == "T*") { Tdstate[7] = Tdstate[7] - Tl; PRstate = 0;}
+    if (Ins == "Th") Th = stof(Operands.at(0));
+    if (Ins == "Tw") Tw = stof(Operands.at(0));
+    if (Ins == "Tc") Tc = stof(Operands.at(0));
+    if (Ins == "TL") Tl = stof(Operands.at(0));
+    if (Ins == "T*") { Tdstate.at(7) = Tdstate.at(7) - Tl; PRstate = 0;}
     if (Ins == "Tm") { Tmstate = stringvectomat(Operands);
                       Tdstate = initstate; PRstate = 0;}
     if (Ins == "cm") gs.back() = matmul(stringvectomat(Operands), gs.back());
     if (Ins == "Td" || Ins == "TD") Td(Ins, Operands);
     if (Ins == "ET" || Ins == "BT") BT();
     if (Ins == "Tf") Tf(pag, Operands);
-    if (Ins == "Do") Do(Operands[0]);
+    if (Ins == "Do") Do(Operands.at(0));
     if (Ins == "Tj" || Ins == "'" || Ins == "TJ") TJ(pag, i);
   }
 }

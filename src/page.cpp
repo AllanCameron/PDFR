@@ -13,7 +13,8 @@ std::vector<double> boxarray(const std::string& box)
   std::vector<double> res;
   std::vector<std::string> ns = Rex(box, "(\\.|0|1|2|3|4|5|6|7|8|9)+").get();
   std::string::size_type sz;
-  for (auto i : ns) res.push_back(stod(i, & sz));
+  for (auto i : ns)
+    res.push_back(stod(i, & sz));
   return res;
 }
 
@@ -35,8 +36,7 @@ page::page(document& d, int pagenum) : pagenumber(pagenum)
   artBS = header.get("/ArtBox");
   trimBS  = header.get("/TrimBox");
   rotate = 0;
-  if (header.has("/Rotate"))  rotate = boxarray(header.get("/Rotate"))[0];
-
+  if (header.has("/Rotate"))  rotate = header.getNums("/Rotate").at(0);
   if (!header.hasDictionary("/Resources"))
     {
       resourceobjs = header.getRefs("/Resources");
@@ -48,12 +48,11 @@ page::page(document& d, int pagenum) : pagenumber(pagenum)
   if (!resources.hasDictionary("/Font"))
   {
     std::vector<int> fontobjs = resources.getRefs("/Font");
-    if (fontobjs.size() == 1) fonts = d.getobject(fontobjs[0]).getDict();
+    if (fontobjs.size() == 1) fonts = d.getobject(fontobjs.at(0)).getDict();
   }
   else fonts = dictionary(resources.get("/Font"));
-
   std::vector<int> cts = header.getRefs("/Contents");
-  if (cts.size() > 0)
+  if (!cts.empty())
   {
     contents = d.expandContents(cts);
     for (auto m : contents)
@@ -62,12 +61,11 @@ page::page(document& d, int pagenum) : pagenumber(pagenum)
       contentstring += "\n";
     }
   }
-
-  if (bleedBS.size() > 0) {bleedbox = boxarray(bleedBS); minbox = bleedbox;}
-  if (mediaBS.size() > 0) {mediabox = boxarray(mediaBS); minbox = mediabox;}
-  if (cropBS.size()  > 0) { cropbox = boxarray(cropBS); minbox = cropbox;}
-  if (trimBS.size()  > 0) { trimbox = boxarray(trimBS); minbox = trimbox;}
-  if (artBS.size()  > 0) { artbox = boxarray(artBS); minbox = artbox;}
+  if (!bleedBS.empty()) {bleedbox = boxarray(bleedBS); minbox = bleedbox;}
+  if (!mediaBS.empty()) {mediabox = boxarray(mediaBS); minbox = mediabox;}
+  if (!cropBS.empty()) { cropbox = boxarray(cropBS); minbox = cropbox;}
+  if (!trimBS.empty()) { trimbox = boxarray(trimBS); minbox = trimbox;}
+  if (!artBS.empty()) { artbox = boxarray(artBS); minbox = artbox;}
 
   fontnames = fonts.getDictKeys();
   for(auto h : fontnames)
