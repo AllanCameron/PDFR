@@ -1,6 +1,7 @@
 #include "pdfr.h"
 #include "streams.h"
 #include "document.h"
+#include "Rex.h"
 #include "stringfunctions.h"
 #include "miniz.h"
 #include "debugtools.h"
@@ -11,7 +12,7 @@
 bool isFlateDecode(const std::string& filestring, int startpos)
 {
   dictionary dict = dictionary(filestring, startpos);
-  return RexIn(dict.get("/Filter"), "/FlateDecode");
+  return Rex(dict.get("/Filter"), "/FlateDecode").has();
 }
 
 /*---------------------------------------------------------------------------*/
@@ -88,7 +89,7 @@ bool isObject(const std::string& filestring, int objectstart)
 {
   std::string ts(filestring.begin() + objectstart,
                  filestring.begin() + objectstart + 20);
-  return  !stringloc(ts, "\\d+ \\d+ obj", "end").empty();
+  return  Rex(ts, "\\d+ \\d+ obj").has();
 }
 
 /*---------------------------------------------------------------------------*/
@@ -103,8 +104,8 @@ std::string objectPreStream(const std::string& filestring, int objectstart)
     nchars += 1500;
     dic.assign(filestring.begin() + objectstart,
                filestring.begin() + objectstart + nchars);
-    streamstart = stringloc(dic, "stream", "start");
-    nextobjstart = stringloc(dic, "endobj", "start");
+    streamstart = Rex(dic, "stream").pos();
+    nextobjstart = Rex(dic, "endobj").pos();
     if(!streamstart.empty()) mn.push_back(streamstart[0]);
     if(!nextobjstart.empty()) mn.push_back(nextobjstart[0]);
   }
@@ -183,9 +184,9 @@ decodeString(document& d, const std::string& filestring, int objstart)
   if(IMatch.size() == 0) startingobj = 0;
   else
   {
-    std::vector<std::string> IMatchs = Rex(IMatch, "(\\d|\\s)+");
+    std::vector<std::string> IMatchs = Rex(IMatch, "(\\d|\\s)+").get();
     if(IMatchs.size() == 0) startingobj = 0;
-    else startingobj = std::stoi(Rex(IMatchs[0], "\\d+")[0]);
+    else startingobj = std::stoi(Rex(IMatchs[0], "\\d+").get()[0]);
   }
   if(dict.has("/DecodeParms"))
   {
@@ -193,10 +194,10 @@ decodeString(document& d, const std::string& filestring, int objstart)
     if(subdict.has("/Columns")) CS = subdict.get("/Columns");
   }
   int ncols = 0;
-  if(!CS.empty()) ncols  =  std::stoi(Rex(CS, "\\d{1,2}")[0]) + 1;
+  if(!CS.empty()) ncols  =  std::stoi(Rex(CS, "\\d{1,2}").get()[0]) + 1;
   if(!WM.empty())
     {
-      std::vector<std::string> WMs = Rex(WM, "(\\d|\\s)+");
+      std::vector<std::string> WMs = Rex(WM, "(\\d|\\s)+").get();
       WMs = splitter(WMs[0], " ");
       for(auto i : WMs) ArW.push_back(std::stoi(i));
       std::string SS = getStreamContents(d, filestring, objstart);

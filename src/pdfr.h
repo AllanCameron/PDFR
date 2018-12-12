@@ -99,19 +99,6 @@ std::string carveout (const std::string& subject, const std::string& precarve,
 std::vector<std::string>
   splitter(const std::string& subject, const std::string& matcher);
 
-
-//---------------------------------------------------------------------------//
-//' Rex
-//'
-//' Return substrings matching a given pattern
-//'
-//' @param strvec The string(s) to be searched
-//' @param matcher The regular expression to be matched
-//' @export
-// [[Rcpp::export]]
-std::vector<std::string>
-  Rex (const std::vector<std::string>& strvec, std::string matcher);
-
 //---------------------------------------------------------------------------//
 //' rc4
 //'

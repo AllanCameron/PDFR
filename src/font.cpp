@@ -1,4 +1,5 @@
 #include "pdfr.h"
+#include "Rex.h"
 #include "stringfunctions.h"
 #include "debugtools.h"
 #include "document.h"
@@ -130,7 +131,7 @@ void font::getWidthTable(dictionary& dict, document& d)
       {
         object_class o = d.getobject(os[0]);
         std::string ostring = o.getStream();
-        std::vector<std::string> arrstrings = Rex(ostring, numstring);
+        std::vector<std::string> arrstrings = Rex(ostring, numstring).get();
         if (arrstrings.size() > 0)
         {
           widtharray = getnums(arrstrings[0]);
@@ -176,7 +177,7 @@ void font::getWidthTable(dictionary& dict, document& d)
                 d.getobject(osss[0]).getStream();
             }
             else widthstrings = descdict.get("/W");
-            std::vector<std::string> tmp = Rex(widthstrings, numstring);
+            std::vector<std::string> tmp = Rex(widthstrings, numstring).get();
             if(tmp.size() > 0)
             {
               parsewidtharray(tmp[0]);
@@ -206,21 +207,22 @@ void font::mapUnicode(dictionary& fontref, document& d)
       int unirefint = unirefints[0];
       std::string x = d.getobject(unirefint).getStream();
       std::string hexfinder = "(\\d|a|b|c|d|e|f|A|B|C|D|E|F)+";
-      bool hasChar =  (stringloc(x, "beginbfchar",  "end").size() > 0) &&
-                      (stringloc(x, "endbfchar",  "start").size() > 0);
-      bool hasRange = (stringloc(x, "beginbfrange", "end").size() > 0) &&
-                      (stringloc(x, "endbfrange", "start").size() > 0);
+      bool hasChar =  Rex(x, "beginbfchar").has() &&
+                      Rex(x, "endbfchar").has();
+      bool hasRange = Rex(x, "beginbfrange").has() &&
+                      Rex(x, "endbfrange").has();
 
       if (hasChar)
       {
-        std::vector<std::string> sv = Rex(x, "beginbfchar(.|\\s)*?endbfchar");
+        std::vector<std::string> sv =
+          Rex(x, "beginbfchar(.|\\s)*?endbfchar").get();
         for(auto j : sv)
         {
           j = carveout(j, "beginbfchar", "endbfchar");
           std::vector<std::string> charentries = splitter(j, "(\n|\r){1,2}");
           for (auto i : charentries)
           {
-            std::vector<std::string> rowentries = Rex(i, hexfinder);
+            std::vector<std::string> rowentries = Rex(i, hexfinder).get();
             if (rowentries.size() == 2)
             {
               std::string myhex = rowentries[1];
@@ -244,7 +246,8 @@ void font::mapUnicode(dictionary& fontref, document& d)
       }
       if (hasRange)
       {
-        std::vector<std::string> sv = Rex(x, "beginbfrange(.|\\s)*?endbfrange");
+        std::vector<std::string> sv =
+          Rex(x, "beginbfrange(.|\\s)*?endbfrange").get();
         for(auto j : sv)
         {
           std::string bfrange = carveout(j, "beginbfrange", "endbfrange");
@@ -253,7 +256,7 @@ void font::mapUnicode(dictionary& fontref, document& d)
 
           for (auto i : Rangenums)
           {
-            std::vector<std::string> rowentries = Rex(i, hexfinder);
+            std::vector<std::string> rowentries = Rex(i, hexfinder).get();
             if (rowentries.size() == 3)
             {
               std::string myhex0 = "0x" + rowentries[0];

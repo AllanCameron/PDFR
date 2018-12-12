@@ -1,4 +1,5 @@
 #include "pdfr.h"
+#include "Rex.h"
 #include "stringfunctions.h"
 #include "streams.h"
 #include "xref.h"
@@ -22,14 +23,14 @@ void xref::locateXrefs()
     {
       int XRS = res.back();
       std::string x = d->filestring.substr(XRS, 2000);
-      std::vector<int> prevstart = stringloc(x, "/Prev *", "end");
+      std::vector<int> prevstart = Rex(x, "/Prev *").ends();
       noprevious = prevstart.size() == 0;
       if(!noprevious)
       {
         x = x.substr(prevstart[0], 10);
-        std::vector<std::vector<int>> stst = stringloc2(x, "\\d+");
-        std::vector<int> start = stst[0];
-        std::vector<int> stop  = stst[1];
+        Rex stst = Rex(x, "\\d+");
+        std::vector<int> start = stst.pos();
+        std::vector<int> stop  = stst.ends();
         if(start.size() == 0 || stop.size() == 0) noprevious = true;
         else
         {
@@ -57,7 +58,7 @@ void xref::xrefstrings()
       nchars += 1000;
       if(i + nchars > d->filesize) nchars = d->filesize - i;
       std::string hunter = d->filestring.substr(i, nchars);
-      ts = stringloc(hunter, "startxref");
+      ts = Rex(hunter, "startxref").pos();
     }
     if (!ts.empty())
     {
@@ -75,7 +76,7 @@ void xref::xrefIsstream()
 {
   for(auto i : Xrefstrings)
   {
-    XrefsAreStreams.push_back(!stringloc(i.substr(0, 15), "<<").empty());
+    XrefsAreStreams.push_back(Rex(i.substr(0, 15), "<<").has());
   }
 }
 
@@ -110,10 +111,10 @@ void xref::xrefFromStream(int xrefloc)
 void xref::xrefFromString(std::string& xstr)
 {
   std::vector<int> inuse, byteloc, objnumber;
-  if(Rex(xstr, "\\d+").empty()) return;
-  int startingobj = std::stoi(Rex(xstr, "\\d+")[0]);
-  std::vector<std::string> bytestrings  = Rex(xstr, "\\d{10}");
-  std::vector<std::string> inusestrings = Rex(xstr, "( )\\d{5} ");
+  if(!Rex(xstr, "\\d+").has()) return;
+  int startingobj = std::stoi(Rex(xstr, "\\d+").get().at(0));
+  std::vector<std::string> bytestrings  = Rex(xstr, "\\d{10}").get();
+  std::vector<std::string> inusestrings = Rex(xstr, "( )\\d{5} ").get();
   if(!bytestrings.empty() && !inusestrings.empty())
   {
     for(unsigned int i = 0; i < bytestrings.size(); i++)
@@ -178,7 +179,7 @@ void xref::findEnds()
         while(foundend.empty())
         {
           std::string endfile = d->filestring.substr(d->filesize - last, last);
-          foundend = stringloc(endfile, "endobj", "end");
+          foundend = Rex(endfile, "endobj").ends();
           if(!foundend.empty())
           {
             initend = d->filesize - last + foundend.back();

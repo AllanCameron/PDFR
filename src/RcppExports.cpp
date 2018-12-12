@@ -5,18 +5,6 @@
 
 using namespace Rcpp;
 
-// Rex
-std::vector<std::string> Rex(const std::vector<std::string>& strvec, std::string matcher);
-RcppExport SEXP _PDFR_Rex(SEXP strvecSEXP, SEXP matcherSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const std::vector<std::string>& >::type strvec(strvecSEXP);
-    Rcpp::traits::input_parameter< std::string >::type matcher(matcherSEXP);
-    rcpp_result_gen = Rcpp::wrap(Rex(strvec, matcher));
-    return rcpp_result_gen;
-END_RCPP
-}
 // rc4
 std::vector<uint8_t> rc4(std::vector<uint8_t> msg, std::vector<uint8_t> key);
 RcppExport SEXP _PDFR_rc4(SEXP msgSEXP, SEXP keySEXP) {
@@ -134,7 +122,6 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_PDFR_Rex", (DL_FUNC) &_PDFR_Rex, 2},
     {"_PDFR_rc4", (DL_FUNC) &_PDFR_rc4, 2},
     {"_PDFR_md5", (DL_FUNC) &_PDFR_md5, 1},
     {"_PDFR_get_xref", (DL_FUNC) &_PDFR_get_xref, 1},

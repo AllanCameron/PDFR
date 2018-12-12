@@ -1,4 +1,5 @@
 #include "pdfr.h"
+#include "Rex.h"
 #include "stringfunctions.h"
 #include "dictionary.h"
 
@@ -327,8 +328,14 @@ std::vector<int> dictionary::getRefs(const std::string& Key)
 {
   std::vector<int> References;
   if(this->has(Key))
-    for (auto i : Rex(this->get(Key), "\\d+ 0 R"))
-      References.push_back(stoi(splitter(i, " ").at(0)));
+  {
+    std::string keyval = this->get(Key);
+    std::string refmatch = "\\d+ 0 R";
+    Rex refrex = Rex(keyval, refmatch);
+    std::vector<std::string> refs = refrex.get();
+    for (auto i : refs)
+      References.push_back(std::stoi(splitter(i, " ").at(0)));
+  }
   return References;
 }
 

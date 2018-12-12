@@ -5,7 +5,7 @@
 #include "pdfr.h"
 
 /*---------------------------------------------------------------------------*/
-
+/*
 std::vector<std::string> Rex(const std::string& s, std::string r);
 
 std::vector<std::string> Rex(const std::vector<std::string>& s, std::string r);
@@ -17,7 +17,7 @@ std::vector<int> stringloc(const std::string& s,
                            std::string sf = "start");
 
 std::vector<std::vector<int>> stringloc2(const std::string& s, std::string r);
-
+*/
 std::vector<std::string> splitter(const std::string& s, const std::string& m);
 
 std::string carveout(const std::string& subject,

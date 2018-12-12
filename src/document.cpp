@@ -1,6 +1,7 @@
 #include "pdfr.h"
 #include "document.h"
 #include "streams.h"
+#include "Rex.h"
 #include "stringfunctions.h"
 #include "crypto.h"
 #include "debugtools.h"
@@ -81,7 +82,7 @@ void document::getPageDir()
 void document::isLinearized()
 {
   std::string tx(subfile(0, 100));
-  std::vector < int > lin = stringloc(tx, "<</Linearized", "start");
+  std::vector < int > lin = Rex(tx, "<</Linearized").pos();
   if (lin.size() == 0) linearized = false; else linearized = true;
 }
 
@@ -177,22 +178,22 @@ std::vector<uint8_t> document::get_cryptkey()
     int ehl = encheader.length();
     if(ehl > 0)
     {
-      std::vector<std::string> ps = Rex(encheader, "/P( )+(-)?\\d+");
+      std::vector<std::string> ps = Rex(encheader, "/P( )+(-)?\\d+").get();
       if(ps.size() > 0)
       {
         pbytes = perm(ps[0].substr(2, ps[0].length() - 2));
       }
-      std::vector<std::string> rs = Rex(encheader, "/R \\d");
+      std::vector<std::string> rs = Rex(encheader, "/R \\d").get();
       if(rs.size() > 0) rnum = stoi(rs[0].substr(3, rs[0].length() - 3));
       else rnum = 2;
-      std::vector<std::string> ls = Rex(encheader, "/Length \\d+");
+      std::vector<std::string> ls = Rex(encheader, "/Length \\d+").get();
       if(ls.size() > 0 && rnum > 2)
       {
         cryptlen = stoi(ls[0].substr(8, ls[0].length() - 8))/8;
       }
       else cryptlen = 5;
-      std::vector<int> ostarts = stringloc(encheader, "/O\\(", "end");
-      std::vector<int> ustarts = stringloc(encheader, "/U\\(", "end");
+      std::vector<int> ostarts = Rex(encheader, "/O\\(").ends();
+      std::vector<int> ustarts = Rex(encheader, "/U\\(").ends();
       if(ostarts.size() > 0)
       {
         int ostart = ostarts[0];

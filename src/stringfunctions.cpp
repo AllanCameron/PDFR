@@ -1,92 +1,25 @@
 #include "pdfr.h"
+#include "Rex.h"
 #include "stringfunctions.h"
 #include "debugtools.h"
-
-/*---------------------------------------------------------------------------*/
-// Uses regex to pull out a vector of matching strings from a given string
-std::vector<std::string> Rex(const std::string& s, std::string r)
-{
-  std::regex w(r);
-  auto R = std::sregex_iterator(s.begin(), s.end(), w);
-  std::vector<std::string> res;
-  for(auto i = R; i != std::sregex_iterator(); ++i) // iterator() is the end
-    res.push_back(i->str());
-  return res;
-}
-
-/*---------------------------------------------------------------------------*/
-// Overloads the Rex function to take string vectors as arguments
-std::vector<std::string> Rex(const std::vector<std::string>& s, std::string r)
-{
-  std::vector<std::string> res;
-  for(auto i : s)
-    for(auto j : Rex(i, r))
-      res.push_back(j);
-  return res;
-}
-
-
-/*---------------------------------------------------------------------------*/
-// Simple boolean test for presence of regex r in string s
-bool RexIn(const std::string& s, std::string r)
-{
-  return !(Rex(s, r).empty());
-}
-
-/*---------------------------------------------------------------------------*/
-// Return a vector of positions of regex r in string s
-std::vector<int>
-stringloc(const std::string& s, const std::string& r, std::string sf)
-{
-  std::regex w(r);
-  auto wb = std::sregex_iterator(s.begin(), s.end(), w);
-  std::vector<int> res;
-  for (auto i = wb; i != std::sregex_iterator(); ++i)
-  {
-    int match_int = i->position();
-    if(sf != "start")
-      match_int += i->length();
-    res.push_back(match_int);
-  }
-  return res;
-}
-
-/*---------------------------------------------------------------------------*/
-//Returns two vectors of starting and ending positions of regex r in string s
-std::vector<std::vector<int>> stringloc2(const std::string& s, std::string r)
-{
-  std::regex w(r);
-  auto wb = std::sregex_iterator(s.begin(), s.end(), w);
-  std::vector<int> resstart, resend;
-  for (auto i = wb; i != std::sregex_iterator(); ++i)
-  {
-    int match_start = i->position();
-    int match_end = match_start + i->length();
-    resstart.push_back(match_start);
-    resend.push_back(match_end);
-  }
-  std::vector<std::vector<int>> res {resstart, resend};
-  return res;
-}
 
 /*---------------------------------------------------------------------------*/
 // Finds matches m in string s, returning a vector of (matches + 1) substrings
 std::vector<std::string> splitter(const std::string& s, const std::string& m)
 {
-  std::vector<std::vector<int>> sl = stringloc2(s, m);
+  Rex sl = Rex(s, m);
   std::vector<std::string> RC, res;
-  if(sl.at(0).empty())
+  if(!sl.has())
   {
-    res.push_back(s);
-    return res;
+    return sl.get();
   }
-  size_t n = sl.at(0).size();
-  RC.push_back(s.substr(0, sl.at(0).at(0)));
+  size_t n = (size_t) sl.n();
+  RC.push_back(s.substr(0, sl.pos().at(0)));
   if(n > 1)
     for(size_t i = 1; i < n; i++)
-      RC.push_back(s.substr(sl.at(1).at(i - 1),
-                            sl.at(0).at(i) - sl.at(1).at(i - 1)));
-  RC.push_back(s.substr(sl.at(1).at(n - 1), s.length() - sl.at(1).at(n - 1)));
+      RC.push_back(s.substr(sl.ends().at(i - 1),
+                            sl.pos().at(i) - sl.ends().at(i - 1)));
+  RC.push_back(s.substr(sl.ends().at(n - 1), s.size() - sl.ends().at(n - 1)));
   for(auto i : RC)
     if(!i.empty())
       res.push_back(i);
@@ -101,8 +34,8 @@ std::string carveout(const std::string& s,
 {
   int firstpos  = 0;
   int secondpos = s.length();
-  std::vector<int> FPV = stringloc(s, precarve, "end");
-  std::vector<int> SPV = stringloc(s, postcarve, "start");
+  std::vector<int> FPV = Rex(s, precarve).ends();
+  std::vector<int> SPV = Rex(s, postcarve).pos();
   int fpvs = FPV.size();
   int spvs = SPV.size();
   // Ensure the match lies between the first balanced matches
@@ -118,7 +51,7 @@ std::string carveout(const std::string& s,
         break;
       }
   }
-  std::string res(subject.begin() + firstpos, subject.begin() + secondpos);
+  std::string res(s.begin() + firstpos, s.begin() + secondpos);
   return res;
 }
 
@@ -161,7 +94,7 @@ std::vector<float> getnums(const std::string& s)
 {
   std::vector<float> res;
   std::string numstring = "(-)?(\\.)?\\d+(\\.)?\\d*"; // float regex
-  std::vector<std::string> strs = Rex(s, numstring);
+  std::vector<std::string> strs = Rex(s, numstring).get();
   for(auto i : strs)
     res.push_back(stof(i));
   return res;
@@ -173,7 +106,7 @@ std::vector<int> getints(const std::string& s)
 {
   std::vector<int> res;
   std::string numstring = "(-)?\\d+"; // int regex
-  std::vector<std::string> strs = Rex(s, numstring);
+  std::vector<std::string> strs = Rex(s, numstring).get();
   for(auto i : strs)
     res.push_back(stoi(i));
   return res;
@@ -213,54 +146,54 @@ int oct2dec(int x)
 //Takes a string of bytes represented in ASCII and converts to actual bytes
 
 std::vector<unsigned char> bytesFromArray(const std::string& s)
+{
+  if(s.empty())
+    Rcpp::stop("Zero-length string passed to bytesFromArray");
+  std::vector<int> tmpvec, res;
+  std::vector<unsigned char> resvec;
+  for(auto a : s)
   {
-    if(s.empty())
-      Rcpp::stop("Zero-length string passed to bytesFromArray");
-    std::vector<int> tmpvec, res;
-    std::vector<unsigned char> resvec;
-    for(auto a : s)
-    {
-      if(a > 47 && a < 58)  tmpvec.push_back(a - 48); //Digits 0-9
-      if(a > 64 && a < 71)  tmpvec.push_back(a - 55); //Uppercase A-F
-      if(a > 96 && a < 103) tmpvec.push_back(a - 87); //Lowercase a-f
-    }
-    size_t ts = tmpvec.size();
-    if(ts == 0)
-      Rcpp::stop("arrayFromBytes not given a byte string");
-    for(size_t i = 0; i < ts; i++)
-      if(i % 2 == 0)
-        tmpvec[i] = 16 * tmpvec[i];
-    for(size_t i = 0; i < (ts - 1); i++)
-      if(i % 2 == 0)
-        res.push_back(tmpvec.at(i) + tmpvec.at(i + 1));
-    if((ts - 1) % 2 == 0)
-      res.push_back(tmpvec.at(ts - 1));
-    for(auto i : res)
-      resvec.push_back(i);
-    return resvec;
+    if(a > 47 && a < 58)  tmpvec.push_back(a - 48); //Digits 0-9
+    if(a > 64 && a < 71)  tmpvec.push_back(a - 55); //Uppercase A-F
+    if(a > 96 && a < 103) tmpvec.push_back(a - 87); //Lowercase a-f
   }
+  size_t ts = tmpvec.size();
+  if(ts == 0)
+    Rcpp::stop("arrayFromBytes not given a byte string");
+  for(size_t i = 0; i < ts; i++)
+    if(i % 2 == 0)
+      tmpvec[i] = 16 * tmpvec[i];
+  for(size_t i = 0; i < (ts - 1); i++)
+    if(i % 2 == 0)
+      res.push_back(tmpvec.at(i) + tmpvec.at(i + 1));
+  if((ts - 1) % 2 == 0)
+    res.push_back(tmpvec.at(ts - 1));
+  for(auto i : res)
+    resvec.push_back(i);
+  return resvec;
+}
 
 /*---------------------------------------------------------------------------*/
 // reinterprets string as vector of bytes
 std::vector<uint8_t> stringtobytes(const std::string& s)
-  {
-    std::vector<uint8_t> res;
-    res.reserve(s.size());
-    for(auto i : s)
-      res.push_back(i);
-    return res;
-  }
+{
+  std::vector<uint8_t> res;
+  res.reserve(s.size());
+  for(auto i : s)
+    res.push_back(i);
+  return res;
+}
 
 /*---------------------------------------------------------------------------*/
 // reinterprets vector of bytes as a std::string
 std::string bytestostring(const std::vector<uint8_t>& v)
-  {
-    std::string res;
-    res.reserve(v.size());
-    for(auto i : v)
-      res += i;
-    return res;
-  }
+{
+  std::string res;
+  res.reserve(v.size());
+  for(auto i : v)
+    res += i;
+  return res;
+}
 
 /*---------------------------------------------------------------------------*/
 // Matrix mulitplication on two 3 x 3 matrices
@@ -334,7 +267,7 @@ std::string intToHexstring(int i)
 }
 
 /*---------------------------------------------------------------------------*/
-
+//Split a string into length-4 elements
 std::vector<std::string> splitfours(std::string s)
 {
   std::vector<std::string> res;
@@ -348,7 +281,7 @@ std::vector<std::string> splitfours(std::string s)
 }
 
 /*--------------------------------------------------------------------------*/
-
+//Split a string into length-2 elements
 std::vector<std::string> splittwos(std::string s)
 {
   std::vector<std::string> res;
@@ -362,7 +295,7 @@ std::vector<std::string> splittwos(std::string s)
 }
 
 /*--------------------------------------------------------------------------*/
-
+//Converts an ASCII encoded string to a (char-based) string
 std::string byteStringToString(const std::string& s)
 {
   std::vector<std::string> sv = splitfours(s);
@@ -380,11 +313,11 @@ std::string byteStringToString(const std::string& s)
 }
 
 /*--------------------------------------------------------------------------*/
-
+// Extracts pdf object references from string
 std::vector<int> getObjRefs(std::string ds)
 {
   std::vector<int> res;
-  for (auto i : Rex(ds, "\\d+ 0 R"))
+  for (auto i : Rex(ds, "\\d+ 0 R").get())
     res.push_back(stoi(splitter(i, " ")[0]));
   return res;
 }
@@ -393,7 +326,7 @@ std::vector<int> getObjRefs(std::string ds)
 //test of whether string s contains a dictionary
 bool isDictString(const std::string& s)
 {
-  return stringloc(s, "<<").size() > 0;
+  return Rex(s, "<<").has();
 }
 
 /*---------------------------------------------------------------------------*/
@@ -408,7 +341,7 @@ char symbol_type(const char c)
 }
 
 /*---------------------------------------------------------------------------*/
-
+// This probably should be in encodings rather than stringfunctions
 std::string namesToChar(std::string s, const std::string& encoding)
 {
   std::map<std::string, char> Rev;

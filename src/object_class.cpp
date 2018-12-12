@@ -1,4 +1,5 @@
 #include "pdfr.h"
+#include "Rex.h"
 #include "stringfunctions.h"
 #include "streams.h"
 #include "dictionary.h"
@@ -17,7 +18,7 @@ object_class::object_class(document& d, int objnum) : number(objnum)
   {
     if(!d.Xref.isInObject(objnum))
     {
-      if(Rex(fs.substr(startbyte, 20), "<<").size() == 0)
+      if(!Rex(fs.substr(startbyte, 20), "<<").has())
       {
         header = dictionary("<<>>");
         stream = fs.substr(startbyte, stopbyte - startbyte);
@@ -101,7 +102,7 @@ object_class::object_class(document& d, std::string str, int objnum)
           header = dictionary();
           stream = H;
           has_stream = true;
-          if(stream.size() < 15 && Rex(stream, "0 R").size() == 1)
+          if(stream.size() < 15 && Rex(stream, "0 R").get().size() == 1)
           {
             *this = object_class(d, getObjRefs(stream)[0]);
           }

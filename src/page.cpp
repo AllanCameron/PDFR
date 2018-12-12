@@ -1,5 +1,6 @@
 #include "pdfr.h"
 #include "stringfunctions.h"
+#include "Rex.h"
 #include "streams.h"
 #include "dictionary.h"
 #include "document.h"
@@ -7,10 +8,10 @@
 
 /*---------------------------------------------------------------------------*/
 
-std::vector<double> boxarray(const std::string& boxstring)
+std::vector<double> boxarray(const std::string& box)
 {
   std::vector<double> res;
-  std::vector<std::string> ns = Rex(boxstring, "(\\.|0|1|2|3|4|5|6|7|8|9)+");
+  std::vector<std::string> ns = Rex(box, "(\\.|0|1|2|3|4|5|6|7|8|9)+").get();
   std::string::size_type sz;
   for (auto i : ns) res.push_back(stod(i, & sz));
   return res;
