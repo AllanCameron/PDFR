@@ -31,7 +31,8 @@
 #include "document.h"
 #include "Rex.h"
 #include "stringfunctions.h"
-#include "external/miniz.h"
+#include "../src/external/miniz.h"
+#include "../src/external/miniz.c"
 #include "debugtools.h"
 
 
