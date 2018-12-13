@@ -1,16 +1,33 @@
 //---------------------------------------------------------------------------//
 //                                                                           //
-//                          PDFR main C++ file                               //
-//                        (C) 2018 Allan Cameron                             //
+//  PDFR main implementation file                                            //
 //                                                                           //
-//          This file provides the library's definitions for the             //
-//        functions that will be exported to be made available in R.         //
+//  Copyright (C) 2018 by Allan Cameron                                      //
+//                                                                           //
+//  Permission is hereby granted, free of charge, to any person obtaining    //
+//  a copy of this software and associated documentation files               //
+//  (the "Software"), to deal in the Software without restriction, including //
+//  without limitation the rights to use, copy, modify, merge, publish,      //
+//  distribute, sublicense, and/or sell copies of the Software, and to       //
+//  permit persons to whom the Software is furnished to do so, subject to    //
+//  the following conditions:                                                //
+//                                                                           //
+//  The above copyright notice and this permission notice shall be included  //
+//  in all copies or substantial portions of the Software.                   //
+//                                                                           //
+//  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS  //
+//  OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF               //
+//  MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.   //
+//  IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY     //
+//  CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,     //
+//  TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE        //
+//  SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                   //
 //                                                                           //
 //---------------------------------------------------------------------------//
+
 //---------------------------------------------------------------------------//
-//  Include Rcpp plugin for c++11:                                           //
+// Include Rcpp plugin for c++11:                                            //
 // [[Rcpp::plugins(cpp11)]]                                                  //
-//---------------------------------------------------------------------------//
 //---------------------------------------------------------------------------//
 
 #include<Rcpp.h>
@@ -31,13 +48,8 @@ Rcpp::List PDFpage(document mypdf, page pg)
   std::vector<EncMap> fontenc;
   for(auto i : pg.fontnames) fontenc.push_back(pg.fontmap[i].EncodingMap);
   return Rcpp::List::create(
-    //Rcpp::Named("Resources")  =  pg.resources.R_out(),
-    //Rcpp::Named("Fonts")      =  pg.fonts.R_out(),
-    //Rcpp::Named("XObjects")   =  pg.XObjects,
     Rcpp::Named("Box")        =  pg.minbox,
-    //Rcpp::Named("Rotate")     =  pg.rotate,
     Rcpp::Named("PageString") =  pg.contentstring,
-    //Rcpp::Named("Encoding") =  fontenc,
     Rcpp::Named("Elements")   =  GraphicsState(pg).db
   );
 }
@@ -48,7 +60,6 @@ Rcpp::DataFrame get_xref(const std::string& filename)
 {
   document mydoc = document(filename);
   std::vector<int> ob, startb, stopb, inob;
-
   if(!mydoc.Xref.getObjects().empty())
   {
     for(int j : mydoc.Xref.getObjects())
@@ -88,6 +99,7 @@ Rcpp::DataFrame get_xrefraw(const std::vector<uint8_t>& rawfile)
                                  Rcpp::Named("InObject") = inob);
 }
 
+//---------------------------------------------------------------------------//
 
 Rcpp::List get_object(const std::string& filename, int o)
 {
@@ -97,6 +109,7 @@ Rcpp::List get_object(const std::string& filename, int o)
     Rcpp::Named("stream") = mydoc.getobject(o).getStream());
 }
 
+//---------------------------------------------------------------------------//
 
 Rcpp::List get_objectraw(const std::vector<uint8_t>& rawfile, int o)
 {
