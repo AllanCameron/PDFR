@@ -305,6 +305,8 @@ dictionary::dictionary(const std::string& s)
   DictionaryMap = tokenize_dict(s, 0);
 }
 
+/*---------------------------------------------------------------------------*/
+
 dictionary::dictionary(const std::string& s, const int& i)
 {
   DictionaryMap = tokenize_dict(s, (unsigned) i);
@@ -327,14 +329,12 @@ std::string dictionary::get(const std::string& Key)
 
 /*---------------------------------------------------------------------------*/
 
-
 bool dictionary::has(const std::string& Key)
 {
   return DictionaryMap.find(Key) != DictionaryMap.end();
 }
 
 /*---------------------------------------------------------------------------*/
-
 
 bool dictionary::hasRefs(const std::string& Key)
 {
@@ -349,7 +349,6 @@ bool dictionary::hasInts(const std::string& Key)
 }
 
 /*---------------------------------------------------------------------------*/
-
 
 std::vector<int> dictionary::getRefs(const std::string& Key)
 {

@@ -148,11 +148,7 @@ plainbytetable(std::vector<int> V, std::vector<int> ArrayWidths)
 {
   std::vector<int> multarray;
   std::vector<std::vector<int> > rowarray;
-  std::vector<int> fixedarray;
-  fixedarray.push_back(1);
-  fixedarray.push_back(256);
-  fixedarray.push_back(256 * 256);
-  fixedarray.push_back(256 * 256 * 256);
+  std::vector<int> fixedarray {1, 256, 256 * 256, 256 * 256 * 256};
 
   for(size_t i = 0; i < ArrayWidths.size(); i++)
   {
@@ -218,7 +214,8 @@ decodeString(document& d, const std::string& filestring, int objstart)
   if(dict.has("/DecodeParms"))
   {
     dictionary subdict = dictionary(dict.get("/DecodeParms"));
-    if(subdict.has("/Columns")) CS = subdict.get("/Columns");
+    if(subdict.has("/Columns"))
+      CS = subdict.get("/Columns");
   }
   int ncols = 0;
   if(!CS.empty()) ncols  =  std::stoi(Rex(CS, "\\d{1,2}").get()[0]) + 1;
@@ -241,12 +238,13 @@ decodeString(document& d, const std::string& filestring, int objstart)
       tmp(intAr.begin() + ncols * i + 1, intAr.begin() + ncols * (i + 1));
       ReAr.push_back(tmp);
     }
-    for(unsigned int i = 0; i < ReAr.size(); i++ ) if(i > 0)
-    {
-      std::vector<int> tAr = ReAr[i];
-      for(size_t j = 0; j<tAr.size(); j++)
-        ReAr[i][j] = tAr[j] + ReAr[i - 1][j];
-    }
+    for(unsigned int i = 0; i < ReAr.size(); i++ )
+      if(i > 0)
+      {
+        std::vector<int> tAr = ReAr[i];
+        for(size_t j = 0; j<tAr.size(); j++)
+          ReAr[i][j] = tAr[j] + ReAr[i - 1][j];
+      }
     for(unsigned int i = 0; i < ReAr[0].size(); i++)
     {
       std::vector<int> temarray;

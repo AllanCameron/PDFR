@@ -36,42 +36,39 @@
 
 /*---------------------------------------------------------------------------*/
 
-std::vector<double> boxarray(const std::string& box)
+void page::boxes()
 {
-  std::vector<double> res;
-  std::vector<std::string> ns = Rex(box, "(\\.|0|1|2|3|4|5|6|7|8|9)+").get();
-  std::string::size_type sz;
-  for (auto i : ns)
-    res.push_back(stod(i, & sz));
-  return res;
+  bleedbox = header.getNums("/BleedBox");
+  cropbox = header.getNums("/CropBox");
+  mediabox = header.getNums("/MediaBox");
+  artbox = header.getNums("/ArtBox");
+  trimbox  = header.getNums("/TrimBox");
+  if (!bleedbox.empty()) { minbox = bleedbox;}
+  if (!mediabox.empty()) { minbox = mediabox;}
+  if (!cropbox.empty()) {  minbox = cropbox;}
+  if (!trimbox.empty()) { minbox = trimbox;}
+  if (!artbox.empty()) { minbox = artbox;}
 }
 
 /*--------------------------------------------------------------------------*/
 
-page::page(document& d, int pagenum) : pagenumber(pagenum)
+page::page(document& d, int pagenum) : pagenumber(pagenum), rotate(0)
 {
   std::map<std::string, std::string> blankmap;
-  std::string bleedBS, cropBS, mediaBS, artBS, trimBS, noheader;
-  noheader += "Page range error. No header found for page ";
-  noheader += std::to_string(pagenum);
-  if (d.pageheaders.size() < (size_t) pagenum) Rcpp::stop(noheader);
-  header = d.pageheaders[pagenum];
-  if (!header.has("/Type")) Rcpp::stop(noheader);
-  if(header.get("/Type") != "/Page") Rcpp::stop(noheader);
-  bleedBS = header.get("/BleedBox");
-  cropBS = header.get("/CropBox");
-  mediaBS = header.get("/MediaBox");
-  artBS = header.get("/ArtBox");
-  trimBS  = header.get("/TrimBox");
-  rotate = 0;
-  if (header.has("/Rotate"))  rotate = header.getNums("/Rotate").at(0);
+  auto E = std::string("No header found for page ") + std::to_string(pagenum);
+  if (d.pageheaders.size() >= (size_t) pagenum) header = d.pageheaders[pagenum];
+  else Rcpp::stop(E);
+  if (!header.has("/Type")) Rcpp::stop(E);
+  if(header.get("/Type") != "/Page") Rcpp::stop(E);
+  if (header.has("/Rotate")) rotate = header.getNums("/Rotate").at(0);
   if (!header.hasDictionary("/Resources"))
-    {
-      resourceobjs = header.getRefs("/Resources");
-      for (auto q : resourceobjs) resources = d.getobject(q).getDict();
-    }
+  {
+    resourceobjs = header.getRefs("/Resources");
+    for (auto q : resourceobjs) resources = d.getobject(q).getDict();
+  }
   else resources = dictionary(header.get("/Resources"));
-  if (resources.has("/XObject")) xobjstring = resources.get("/XObject");
+  if (resources.has("/XObject"))
+    xobjstring = resources.get("/XObject");
   parseXObjStream(d);
   if (!resources.hasDictionary("/Font"))
   {
@@ -84,27 +81,18 @@ page::page(document& d, int pagenum) : pagenumber(pagenum)
   {
     contents = d.expandContents(cts);
     for (auto m : contents)
-    {
-      contentstring += d.getobject(m).getStream();
-      contentstring += "\n";
-    }
+      contentstring += d.getobject(m).getStream() + std::string("\n");
   }
-  if (!bleedBS.empty()) {bleedbox = boxarray(bleedBS); minbox = bleedbox;}
-  if (!mediaBS.empty()) {mediabox = boxarray(mediaBS); minbox = mediabox;}
-  if (!cropBS.empty()) { cropbox = boxarray(cropBS); minbox = cropbox;}
-  if (!trimBS.empty()) { trimbox = boxarray(trimBS); minbox = trimbox;}
-  if (!artBS.empty()) { artbox = boxarray(artBS); minbox = artbox;}
-
   fontnames = fonts.getDictKeys();
   for(auto h : fontnames)
     for(auto hh : fonts.getRefs(h))
     {
       fontmap[h] = font(d, d.getobject(hh).getDict(), h);
     }
+  boxes();
 }
 
 /*---------------------------------------------------------------------------*/
-
 
 void page::parseXObjStream(document& d)
 {

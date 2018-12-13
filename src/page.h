@@ -38,7 +38,7 @@ struct page
   std::string contentstring, xobjstring;
   std::map<std::string, std::string> XObjects;
   std::vector<int> resourceobjs, contents;
-  std::vector<double> bleedbox, cropbox, mediabox, trimbox, artbox, minbox;
+  std::vector<float> bleedbox, cropbox, mediabox, trimbox, artbox, minbox;
   double rotate;
   std::vector<std::string> fontnames;
   std::vector<bool> hasUnicodeMap;
@@ -46,6 +46,7 @@ struct page
   std::map<std::string, std::map<uint16_t,int>> WidthTables;
   std::map<std::string, font> fontmap;
   void parseXObjStream(document& d);
+  void boxes();
   page(document& pdfdoc, int pagenum);
 };
 

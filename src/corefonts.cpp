@@ -836,9 +836,6 @@ font getDingbats()
   }
 
 
-
-
-
 std::map<int, std::string> ligatures()
   {
     std::map<int, std::string> res;
