@@ -37,7 +37,6 @@
 #include "dictionary.h"
 #include "stringfunctions.h"
 #include "document.h"
-#include "miniz.h"
 #include "crypto.h"
 #include "streams.h"
 
