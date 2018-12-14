@@ -134,7 +134,9 @@ std::vector<std::pair<std::string, int>> font::mapString(const std::string& s)
 {
   GlyphMap &G = glyphmap;
   std::vector<std::pair<std::string, int>> res;
-  for(auto i : strtoint(s)) if(G.find(i) != G.end()) res.push_back(G[i]);
+  for(auto i : strtoint(s))
+    if(G.find(i) != G.end())
+      res.push_back(G[i]);
   return res;
 }
 
@@ -445,7 +447,7 @@ void font::parsewidtharray(std::string s)
                   buf = "";
                   vecbuf.clear();
                   break;
-        default: Rcpp::stop("Error parsing string " + s);
+        default: throw (std::string("Error parsing string ") + s);
 
         }
         i++; continue;
@@ -462,7 +464,7 @@ void font::parsewidtharray(std::string s)
                   vecbuf.clear();
                   buf = ""; break;
         case 'D': buf += s[i]; break;
-        default: Rcpp::stop("Error parsing string " + s);
+        default: throw (std::string("Error parsing string ") + s);
         }
         i++; continue;
       }
@@ -474,18 +476,10 @@ void font::parsewidtharray(std::string s)
   }
   std::map<uint16_t, int> resultmap;
 
-  if((resultint.size() == resultvec.size()) && (resultint.size() > 0))
-  {
+  if((resultint.size() == resultvec.size()) && !resultint.empty() )
     for(size_t i = 0; i < resultint.size(); i++)
-    {
-      if(resultvec[i].size() > 0)
-      {
+      if(!resultvec[i].empty())
         for(size_t j = 0; j < resultvec[i].size(); j++)
-        {
           resultmap[(uint16_t) resultint[i] + j] = resultvec[i][j];
-        }
-      }
-    }
-  }
   Width = resultmap;
 }

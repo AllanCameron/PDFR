@@ -25,7 +25,6 @@
 //                                                                           //
 //---------------------------------------------------------------------------//
 
-
 #include "pdfr.h"
 #include "Rex.h"
 #include "stringfunctions.h"
@@ -164,7 +163,7 @@ int oct2dec(int x)
   for (int i = 0; i < l; i++)
   {
     int e = std::stoi(str.substr(i,1));
-    if(e > 7) Rcpp::stop("Invalid octal");
+    if(e > 7) throw "Invalid octal";
     res += (e * pow(8, l - i - 1));
   }
   return res;
@@ -176,7 +175,7 @@ int oct2dec(int x)
 std::vector<unsigned char> bytesFromArray(const std::string& s)
 {
   if(s.empty())
-    Rcpp::stop("Zero-length string passed to bytesFromArray");
+    throw "Zero-length string passed to bytesFromArray";
   std::vector<int> tmpvec, res;
   std::vector<unsigned char> resvec;
   for(auto a : s)
@@ -187,7 +186,7 @@ std::vector<unsigned char> bytesFromArray(const std::string& s)
   }
   size_t ts = tmpvec.size();
   if(ts == 0)
-    Rcpp::stop("arrayFromBytes not given a byte string");
+    throw "arrayFromBytes not given a byte string";
   for(size_t i = 0; i < ts; i++)
     if(i % 2 == 0)
       tmpvec[i] = 16 * tmpvec[i];
@@ -228,9 +227,9 @@ std::string bytestostring(const std::vector<uint8_t>& v)
 std::vector<float> matmul(std::vector<float> b, std::vector<float> a)
 {
   if(a.size() != b.size())
-    Rcpp::stop("Vectors must have same size.");
+    throw "Error in Stringfunctions: matmul: Vectors must have same size.";
   if(a.size() != 9)
-    Rcpp::stop("Vectors must have size 9.");
+    throw "Error in Stringfunctions: matmul: Vectors must be size 9.";
   std::vector<float> newmat;
   for(size_t i = 0; i < 9; i++) //clever use of indices to allow fill by loop
     newmat.push_back(a[i % 3 + 0] * b[3 * (i / 3) + 0] +
@@ -245,7 +244,7 @@ std::vector<float> matmul(std::vector<float> b, std::vector<float> a)
 std::vector<float> six2nine(std::vector<float> a)
 {
   if(a.size() != 6)
-    Rcpp::stop("Vector must have size 6.");
+    throw "Error in Stringfunctions: six2nine: Vectors must be size 6.";
   std::vector<float> newmat {a[0], a[1], 0, a[2], a[3], 0, a[4], a[5], 1};
   return newmat;
 }
@@ -255,7 +254,7 @@ std::vector<float> six2nine(std::vector<float> a)
 std::vector<float> stringvectomat(std::vector<std::string> b)
 {
   if(b.size() != 6)
-    Rcpp::stop("Vector must have size 6.");
+    throw "Error in Stringfunctions: stringvectomat: Vectors must be size 6.";
   std::vector<float> a;
   for(auto i : b) a.push_back(std::stof(i));
   return six2nine(a);

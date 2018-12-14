@@ -91,7 +91,7 @@ object_class document::getobject(int n)
 void document::getCatalogue()
 {
   std::vector<int> rootnums = trailer.getInts("/Root");
-  if (rootnums.size() == 0) Rcpp::stop("Couldn't find catalogue from trailer");
+  if (rootnums.size() == 0) throw "Couldn't find catalogue from trailer";
   catalogue = getobject(rootnums.at(0)).getDict();
 }
 
@@ -99,7 +99,7 @@ void document::getCatalogue()
 
 void document::getPageDir()
 {
-  if(!catalogue.hasInts("/Pages")) Rcpp::stop("No valid /Pages entry");
+  if(!catalogue.hasInts("/Pages")) throw "No valid /Pages entry";
   int pagenum = catalogue.getInts("/Pages").at(0);
   pagedir = getobject(pagenum);
 }
@@ -207,30 +207,25 @@ std::vector<uint8_t> document::get_cryptkey()
     {
       std::vector<std::string> ps = Rex(encheader, "/P( )+(-)?\\d+").get();
       if(ps.size() > 0)
-      {
         pbytes = perm(ps[0].substr(2, ps[0].length() - 2));
-      }
       std::vector<std::string> rs = Rex(encheader, "/R \\d").get();
-      if(rs.size() > 0) rnum = stoi(rs[0].substr(3, rs[0].length() - 3));
+      if(rs.size() > 0)
+        rnum = stoi(rs[0].substr(3, rs[0].length() - 3));
       else rnum = 2;
       std::vector<std::string> ls = Rex(encheader, "/Length \\d+").get();
       if(ls.size() > 0 && rnum > 2)
-      {
         cryptlen = stoi(ls[0].substr(8, ls[0].length() - 8))/8;
-      }
       else cryptlen = 5;
       std::vector<int> ostarts = Rex(encheader, "/O\\(").ends();
       std::vector<int> ustarts = Rex(encheader, "/U\\(").ends();
-      if(ostarts.size() > 0)
-      {
-        int ostart = ostarts[0];
-        if(ostart + 32 < ehl)
+      if(!ostarts.empty())
+        if(ostarts[0] + 32 < ehl)
         {
-          std::string ostring = encheader.substr(ostart, 32);
+          std::string ostring = encheader.substr(ostarts[0], 32);
           for(auto j : ostring) obytes.push_back(j);
         }
-      }
-      if(ustarts.size() > 0)
+
+      if(!ustarts.empty())
       {
         int ustart = ustarts[0];
         if(ustart + 32 < ehl)
@@ -272,7 +267,10 @@ std::vector<uint8_t> document::get_cryptkey()
             if(checkans[l] != ubytes[l]) break;
             m++;
           }
-          if(m == 32) return filekey; else return blank;
+          if(m == 32)
+            return filekey;
+          else
+            return blank;
         }
       }
       if(rnum > 2)

@@ -25,9 +25,10 @@
 //                                                                           //
 //---------------------------------------------------------------------------//
 
-
 #include "pdfr.h"
 #include "fileio.h"
+
+//---------------------------------------------------------------------------//
 
 std::string get_file_contents(const std::string& filename)
 {
@@ -42,28 +43,29 @@ std::string get_file_contents(const std::string& filename)
     in.close();
     return(contents);
   }
-  Rcpp::stop("Unable to read pdf file");
+  throw "Unable to read pdf file";
 }
 
+//---------------------------------------------------------------------------//
 
 std::string get_partial_file(const std::string& filename, long start, long stop)
 {
-  if(stop < start || start < 0) Rcpp::stop("Invalid file pointers");
+  if(stop < start || start < 0)
+    throw "Invalid file pointers";
   std::ifstream in(filename.c_str(), std::ios::in | std::ios::binary);
   if(in)
   {
     std::string contents;
     contents.resize(stop - start);
     in.seekg(0, std::ios::end);
-    if(stop > ((long) in.tellg())) Rcpp::stop("Invalid file pointers");
+    if(stop > ((long) in.tellg())) throw "Invalid file pointers";
     in.seekg(0, std::ios::beg);
     in.read(&contents[0], contents.size());
     in.close();
     return(contents);
   }
-  Rcpp::stop("Unable to read pdf file");
+  throw "Unable to read pdf file";
 }
-
 
 /*---------------------------------------------------------------------------*/
 
@@ -84,12 +86,13 @@ std::vector<uint8_t> read_file_bytes(const std::string& filename)
 
 std::vector<std::string> sanitize_string(std::string x)
 {
-  std::vector<char>   charraw;
+  std::vector<char> charraw;
   std::vector<std::string> restring;
 
   for(std::string::iterator i = x.begin(); i != x.end(); i++)
   {
-    if(*i != 0 && *i != 10 && *i != 13) charraw.push_back(*i);
+    if(*i != 0 && *i != 10 && *i != 13)
+      charraw.push_back(*i);
     if((*i == 10 || *i == 13) && !charraw.empty())
     {
       restring.push_back(std::string(charraw.data(), charraw.size()));
@@ -141,7 +144,7 @@ std::string partial_file(const std::string& filename, int startpos, int endpos)
       return(contents);
     }
   }
-  Rcpp::stop("Couldn't load file.");
+  throw "Couldn't load file.";
 }
 
 
