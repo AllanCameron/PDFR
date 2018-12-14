@@ -68,7 +68,7 @@ UL md5mix(int n, UL a, UL b, UL c, UL d, UL e, UL f, UL g)
     case 2  : mixer = (a + ((b & d) | (c & ~d)) + e + f); break;
     case 3  : mixer = (a + (b ^ c ^ d) + e + f); break;
     case 4  : mixer = (a + (c ^ (b | ~d)) + e + f); break;
-    default : Rcpp::stop("MD5 error");
+    default : throw "MD5 error";
   }
   mixer &= 4294967295;
   return b + (((mixer << g) | (mixer >> (32 - g))) & 4294967295);
