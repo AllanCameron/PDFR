@@ -279,7 +279,7 @@ std::string decryptStream(std::string streamstr, std::vector<uint8_t> key,
     objkey.push_back((objGen >> 8) & 0xff);
     uint8_t objkeysize = objkey.size();
     objkey = md5(objkey);
-    while(objkey.size() > objkeysize) {objkey.pop_back();}
+    while(objkey.size() > objkeysize) objkey.pop_back();
     std::vector<uint8_t> bytevec = rc4(streambytes, objkey);
     std::string restring =  bytestostring(bytevec);
     return restring;

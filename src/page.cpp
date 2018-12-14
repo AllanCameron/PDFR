@@ -39,43 +39,69 @@
 void page::boxes()
 {
   bleedbox = header.getNums("/BleedBox");
-  cropbox = header.getNums("/CropBox");
+  cropbox  = header.getNums("/CropBox");
   mediabox = header.getNums("/MediaBox");
-  artbox = header.getNums("/ArtBox");
+  artbox   = header.getNums("/ArtBox");
   trimbox  = header.getNums("/TrimBox");
-  if (!bleedbox.empty()) { minbox = bleedbox;}
-  if (!mediabox.empty()) { minbox = mediabox;}
-  if (!cropbox.empty()) {  minbox = cropbox;}
-  if (!trimbox.empty()) { minbox = trimbox;}
-  if (!artbox.empty()) { minbox = artbox;}
+  if (!bleedbox.empty()) minbox = bleedbox;
+  if (!mediabox.empty()) minbox = mediabox;
+  if (!cropbox.empty())  minbox = cropbox;
+  if (!trimbox.empty())  minbox = trimbox;
+  if (!artbox.empty())   minbox = artbox;
+  if (header.has("/Rotate")) rotate = header.getNums("/Rotate").at(0);
 }
 
 /*--------------------------------------------------------------------------*/
 
-page::page(document& d, int pagenum) : pagenumber(pagenum), rotate(0)
+void page::getHeader(document& d)
 {
-  std::map<std::string, std::string> blankmap;
-  auto E = std::string("No header found for page ") + std::to_string(pagenum);
-  if (d.pageheaders.size() >= (size_t) pagenum) header = d.pageheaders[pagenum];
-  else Rcpp::stop(E);
-  if (!header.has("/Type")) Rcpp::stop(E);
-  if(header.get("/Type") != "/Page") Rcpp::stop(E);
-  if (header.has("/Rotate")) rotate = header.getNums("/Rotate").at(0);
+  std::string E = "No header found for page ";
+  E += std::to_string(pagenumber);
+  if ((int) d.pageheaders.size() >= pagenumber)
+    header = d.pageheaders[pagenumber];
+  else
+    Rcpp::stop(E);
+  if (!header.has("/Type"))
+    Rcpp::stop(E);
+  if(header.get("/Type") != "/Page")
+    Rcpp::stop(E);
+}
+
+/*--------------------------------------------------------------------------*/
+
+void page::getResources(document& d)
+{
   if (!header.hasDictionary("/Resources"))
   {
     resourceobjs = header.getRefs("/Resources");
-    for (auto q : resourceobjs) resources = d.getobject(q).getDict();
+    for (auto q : resourceobjs)
+      resources = d.getobject(q).getDict();
   }
   else resources = dictionary(header.get("/Resources"));
-  if (resources.has("/XObject"))
-    xobjstring = resources.get("/XObject");
-  parseXObjStream(d);
+}
+
+/*--------------------------------------------------------------------------*/
+
+void page::getFonts(document& d)
+{
   if (!resources.hasDictionary("/Font"))
   {
     std::vector<int> fontobjs = resources.getRefs("/Font");
-    if (fontobjs.size() == 1) fonts = d.getobject(fontobjs.at(0)).getDict();
+    if (fontobjs.size() == 1)
+      fonts = d.getobject(fontobjs.at(0)).getDict();
   }
-  else fonts = dictionary(resources.get("/Font"));
+  else
+    fonts = dictionary(resources.get("/Font"));
+  fontnames = fonts.getDictKeys();
+  for(auto h : fontnames)
+    for(auto hh : fonts.getRefs(h))
+      fontmap[h] = font(d, d.getobject(hh).getDict(), h);
+}
+
+/*--------------------------------------------------------------------------*/
+
+void page::getContents(document& d)
+{
   std::vector<int> cts = header.getRefs("/Contents");
   if (!cts.empty())
   {
@@ -83,19 +109,14 @@ page::page(document& d, int pagenum) : pagenumber(pagenum), rotate(0)
     for (auto m : contents)
       contentstring += d.getobject(m).getStream() + std::string("\n");
   }
-  fontnames = fonts.getDictKeys();
-  for(auto h : fontnames)
-    for(auto hh : fonts.getRefs(h))
-    {
-      fontmap[h] = font(d, d.getobject(hh).getDict(), h);
-    }
-  boxes();
 }
 
 /*---------------------------------------------------------------------------*/
 
 void page::parseXObjStream(document& d)
 {
+  if (resources.has("/XObject"))
+    xobjstring = resources.get("/XObject");
   if(xobjstring.length() > 0)
   {
     if(isDictString(xobjstring))
@@ -110,4 +131,17 @@ void page::parseXObjStream(document& d)
       }
     }
   }
+}
+
+/*--------------------------------------------------------------------------*/
+
+page::page(document& d, int pagenum) : pagenumber(pagenum), rotate(0)
+{
+  std::map<std::string, std::string> blankmap;
+  getHeader(d);
+  getResources(d);
+  parseXObjStream(d);
+  getFonts(d);
+  getContents(d);
+  boxes();
 }

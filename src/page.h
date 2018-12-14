@@ -31,8 +31,10 @@
 
 #include "pdfr.h"
 
-struct page
+class page
 {
+public:
+  page(document& pdfdoc, int pagenum);
   int pagenumber, objectnumber, parent;
   dictionary header, resources, fonts, realfonts;
   std::string contentstring, xobjstring;
@@ -45,9 +47,14 @@ struct page
   std::vector<dictionary> UnicodeMaps, fontrefs;
   std::map<std::string, std::map<uint16_t,int>> WidthTables;
   std::map<std::string, font> fontmap;
+
+private:
   void parseXObjStream(document& d);
   void boxes();
-  page(document& pdfdoc, int pagenum);
+  void getHeader(document& d);
+  void getResources(document& d);
+  void getFonts(document& d);
+  void getContents(document& d);
 };
 
 #endif
