@@ -29,59 +29,58 @@
 #ifndef PDFR_STRINGFUNCTIONS
 #define PDFR_STRINGFUNCTIONS
 
+using namespace std;
 #include <Rcpp.h>
 #include "pdfr.h"
 
 /*---------------------------------------------------------------------------*/
 
-std::vector<std::string> splitter(const std::string& s, const std::string& m);
+vector<string> splitter(const string& s, const string& m);
 
-std::string carveout(const std::string& subject,
-                     const std::string& precarve,
-                     const std::string& postcarve);
+string carveout(const string& subject, const string& pre, const string& post);
 
-bool IsAscii(const std::string& tempint);
+bool IsAscii(const string& tempint);
 
-std::vector<uint16_t> strtoint(std::string x);
+vector<uint16_t> strtoint(string x);
 
-std::string intToString(uint16_t a);
+string intToString(uint16_t a);
 
-std::vector<float> getnums(const std::string& s);
+vector<float> getnums(const string& s);
 
-std::vector<int> getints(const std::string& s);
+vector<int> getints(const string& s);
 
 int dec2oct(int x);
 
 int oct2dec(int x);
 
-std::vector<unsigned char> bytesFromArray(const std::string& s);
+vector<unsigned char> bytesFromArray(const string& s);
 
-std::vector<uint8_t> stringtobytes(const std::string& s);
+vector<uint8_t> stringtobytes(const string& s);
 
-std::string bytestostring(const std::vector<uint8_t>& v);
+string bytestostring(const vector<uint8_t>& v);
 
-std::vector<float> matmul(std::vector<float> b, std::vector<float> a);
+vector<float> matmul(vector<float> b, vector<float> a);
 
-std::vector<float> six2nine(std::vector<float> a);
+vector<float> six2nine(vector<float> a);
 
-std::vector<float> stringvectomat(std::vector<std::string> b);
+vector<float> stringvectomat(vector<string> b);
 
-std::vector<float> stringtofloat(std::vector<std::string> b);
+vector<float> stringtofloat(vector<string> b);
 
-std::string intToHexstring(int i);
+string intToHexstring(int i);
 
-std::vector<std::string> splitfours(std::string s);
+vector<string> splitfours(string s);
 
-std::vector<std::string> splittwos(std::string s);
+vector<string> splittwos(string s);
 
-std::string byteStringToString(const std::string& s);
+string byteStringToString(const string& s);
 
-std::vector<int> getObjRefs(std::string ds);
+vector<int> getObjRefs(string ds);
 
-bool isDictString(const std::string& s);
+bool isDictString(const string& s);
 
 char symbol_type(const char c);
 
-void trimRight(std::string& s);
+void trimRight(string& s);
 
 #endif

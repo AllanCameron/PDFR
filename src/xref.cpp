@@ -38,12 +38,10 @@
 void xref::locateXrefs()
 {
   std::vector<int> res;
-  std::string precarve   =  "startxref";
-  std::string postcarve  =  "%%EOF";
   std::string partial = d->filestring.substr(d->filesize - 50, 50);
-  std::string xrefstring =  carveout(partial, precarve, postcarve);
+  std::string xrefstring =  carveout(partial, "startxref", "%%EOF");
   res.push_back(stoi(xrefstring));
-  if(res.size() == 0) Xreflocations = res;
+  if(res.empty()) Xreflocations = res;
   else
   {
     bool noprevious = false;
@@ -57,14 +55,10 @@ void xref::locateXrefs()
       {
         x = x.substr(prevstart[0], 10);
         Rex stst = Rex(x, "\\d+");
-        std::vector<int> start = stst.pos();
-        std::vector<int> stop  = stst.ends();
-        if(start.size() == 0 || stop.size() == 0) noprevious = true;
+        if(stst.pos().empty() || stst.ends().empty())
+          noprevious = true;
         else
-        {
-          x = x.substr(start[0], stop[0]);
-          res.push_back(stoi(x));
-        }
+          res.push_back(stoi(x.substr(stst.pos()[0], stst.ends()[0])));
       }
     }
     Xreflocations = res;
@@ -93,7 +87,8 @@ void xref::xrefstrings()
       int minloc = *min_element(ts.begin(), ts.end());
       res.push_back(d->filestring.substr(i + 5, minloc + 4));
     }
-    else Rcpp::stop( "No object found at location");
+    else
+      throw "No object found at location";
   }
   Xrefstrings = res;
 }
@@ -103,9 +98,7 @@ void xref::xrefstrings()
 void xref::xrefIsstream()
 {
   for(auto i : Xrefstrings)
-  {
     XrefsAreStreams.push_back(Rex(i.substr(0, 15), "<<").has());
-  }
 }
 
 /*---------------------------------------------------------------------------*/
@@ -113,7 +106,8 @@ void xref::xrefIsstream()
 void xref::getTrailer()
 {
   TrailerDictionary = dictionary(this->d->filestring, Xreflocations[0]);
-  if(!TrailerDictionary.has("/Root")) Rcpp::stop("Didn't find trailer");
+  if(!TrailerDictionary.has("/Root"))
+    throw "Didn't find trailer";
 }
 
 /*---------------------------------------------------------------------------*/
@@ -139,7 +133,8 @@ void xref::xrefFromStream(int xrefloc)
 void xref::xrefFromString(std::string& xstr)
 {
   std::vector<int> inuse, byteloc, objnumber;
-  if(!Rex(xstr, "\\d+").has()) return;
+  if(!Rex(xstr, "\\d+").has())
+    return;
   int startingobj = std::stoi(Rex(xstr, "\\d+").get().at(0));
   std::vector<std::string> bytestrings  = Rex(xstr, "\\d{10}").get();
   std::vector<std::string> inusestrings = Rex(xstr, "( )\\d{5} ").get();
@@ -173,17 +168,14 @@ void xref::xrefFromString(std::string& xstr)
 
 void xref::buildXRtable()
 {
-  if (Xreflocations.empty()) Rcpp::stop("Couldn't get xref locations");
+  if (Xreflocations.empty())
+    throw "Couldn't get xref locations";
   for(size_t i = 0; i < Xreflocations.size(); i++)
   {
     if(XrefsAreStreams[i])
-    {
       xrefFromStream(Xreflocations[i]);
-    }
     else
-    {
       xrefFromString(Xrefstrings[i]);
-    }
   }
 }
 
@@ -192,14 +184,11 @@ void xref::buildXRtable()
 void xref::findEnds()
 {
   for(size_t i = 0; i < objenum.size(); i++)
-  {
     if((xreftab[objenum[i]].startbyte > 0))
     {
       int initend = 0;
       if(i < objenum.size() - 1)
-      {
         initend = xreftab[objenum[i + 1]].startbyte - 1;
-      }
       else
       {
         int last = 500;
@@ -209,16 +198,15 @@ void xref::findEnds()
           std::string endfile = d->filestring.substr(d->filesize - last, last);
           foundend = Rex(endfile, "endobj").ends();
           if(!foundend.empty())
-          {
             initend = d->filesize - last + foundend.back();
-          }
-          else last += 500;
+          else
+            last += 500;
         }
       }
       xreftab[objenum[i]].stopbyte = initend;
     }
-    else xreftab[objenum[i]].stopbyte = 0;
-  }
+    else
+      xreftab[objenum[i]].stopbyte = 0;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -243,32 +231,40 @@ bool xref::objectExists(int objnum)
 
 size_t xref::getStart(int objnum)
 {
-  if(objectExists(objnum)) return (size_t) xreftab.at(objnum).startbyte;
-  else Rcpp::stop("Object does not exist");
+  if(objectExists(objnum))
+    return (size_t) xreftab.at(objnum).startbyte;
+  else
+    throw "Object does not exist";
 }
 
 /*---------------------------------------------------------------------------*/
 
 size_t xref::getEnd(int objnum)
 {
-  if(objectExists(objnum)) return (size_t) xreftab.at(objnum).stopbyte;
-  else Rcpp::stop("Object does not exist");
+  if(objectExists(objnum))
+    return (size_t) xreftab.at(objnum).stopbyte;
+  else
+    throw "Object does not exist";
 }
 
 /*---------------------------------------------------------------------------*/
 
 bool xref::isInObject(int objnum)
 {
-  if(objectExists(objnum)) return xreftab.at(objnum).in_object != 0;
-  else Rcpp::stop("Object does not exist");
+  if(objectExists(objnum))
+    return xreftab.at(objnum).in_object != 0;
+  else
+    throw "Object does not exist";
 };
 
 /*---------------------------------------------------------------------------*/
 
 size_t xref::inObject(int objnum)
 {
-  if(objectExists(objnum)) return (size_t) xreftab.at(objnum).in_object;
-  else Rcpp::stop("Object does not exist");
+  if(objectExists(objnum))
+    return (size_t) xreftab.at(objnum).in_object;
+  else
+    throw "Object does not exist";
 }
 
 /*---------------------------------------------------------------------------*/

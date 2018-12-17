@@ -91,16 +91,18 @@ object_class document::getobject(int n)
 void document::getCatalogue()
 {
   std::vector<int> rootnums = trailer.getInts("/Root");
-  if (rootnums.size() == 0) throw "Couldn't find catalogue from trailer";
-  catalogue = getobject(rootnums.at(0)).getDict();
+  if (rootnums.empty())
+    throw "Couldn't find catalogue from trailer";
+  catalogue = getobject(rootnums[0]).getDict();
 }
 
 /*---------------------------------------------------------------------------*/
 
 void document::getPageDir()
 {
-  if(!catalogue.hasInts("/Pages")) throw "No valid /Pages entry";
-  int pagenum = catalogue.getInts("/Pages").at(0);
+  if(!catalogue.hasInts("/Pages"))
+    throw "No valid /Pages entry";
+  int pagenum = catalogue.getInts("/Pages")[0];
   pagedir = getobject(pagenum);
 }
 
@@ -110,7 +112,10 @@ void document::isLinearized()
 {
   std::string tx(subfile(0, 100));
   std::vector < int > lin = Rex(tx, "<</Linearized").pos();
-  if (lin.size() == 0) linearized = false; else linearized = true;
+  if (lin.empty())
+    linearized = false;
+  else
+    linearized = true;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -132,7 +137,9 @@ std::vector <int> document::expandKids(std::vector<int> objnums)
     i++;
   }
   std::vector<int> res;
-  for(i = 0; i < objnums.size(); i++) if(ispage[i]) res.push_back(objnums[i]);
+  for(i = 0; i < objnums.size(); i++)
+    if(ispage[i])
+      res.push_back(objnums[i]);
   return res;
 }
 
@@ -140,7 +147,7 @@ std::vector <int> document::expandKids(std::vector<int> objnums)
 
 std::vector <int> document::expandContents(std::vector<int> objnums)
 {
-  unsigned int i = 0;
+  size_t i = 0;
   while (i < objnums.size())
   {
     object_class o = getobject(objnums[i]);
@@ -163,7 +170,8 @@ void document::getPageHeaders()
   if (pagedir.hasKids())
   {
     std::vector<int> finalkids = expandKids(pagedir.getKids());
-    for (auto i : finalkids) pageheaders.push_back(getobject(i).getDict());
+    for (auto i : finalkids)
+      pageheaders.push_back(getobject(i).getDict());
   }
 }
 
@@ -206,12 +214,13 @@ std::vector<uint8_t> document::get_cryptkey()
     if(ehl > 0)
     {
       std::vector<std::string> ps = Rex(encheader, "/P( )+(-)?\\d+").get();
-      if(ps.size() > 0)
+      if(!ps.empty())
         pbytes = perm(ps[0].substr(2, ps[0].length() - 2));
       std::vector<std::string> rs = Rex(encheader, "/R \\d").get();
-      if(rs.size() > 0)
+      if(!rs.empty())
         rnum = stoi(rs[0].substr(3, rs[0].length() - 3));
-      else rnum = 2;
+      else
+        rnum = 2;
       std::vector<std::string> ls = Rex(encheader, "/Length \\d+").get();
       if(ls.size() > 0 && rnum > 2)
         cryptlen = stoi(ls[0].substr(8, ls[0].length() - 8))/8;
@@ -222,7 +231,8 @@ std::vector<uint8_t> document::get_cryptkey()
         if(ostarts[0] + 32 < ehl)
         {
           std::string ostring = encheader.substr(ostarts[0], 32);
-          for(auto j : ostring) obytes.push_back(j);
+          for(auto j : ostring)
+            obytes.push_back(j);
         }
 
       if(!ustarts.empty())
@@ -235,10 +245,11 @@ std::vector<uint8_t> document::get_cryptkey()
         }
       }
       std::string idstr = dict.get("/ID");
-      if(idstr.length() > 0)
+      if(!idstr.empty())
       {
         idbytes = bytesFromArray(idstr);
-        while(idbytes.size() > 16) idbytes.pop_back();
+        while(idbytes.size() > 16)
+          idbytes.pop_back();
       }
       std::vector<uint8_t> up = upw();
       Fstring = up;
@@ -246,13 +257,15 @@ std::vector<uint8_t> document::get_cryptkey()
       Fstring.insert(Fstring.end(), pbytes.begin(), pbytes.end());
       Fstring.insert(Fstring.end(), idbytes.begin(), idbytes.end());
       std::vector<uint8_t> filekey = md5(Fstring);
-      while(filekey.size() > cryptlen) filekey.pop_back();
+      while(filekey.size() > cryptlen)
+        filekey.pop_back();
       if(rnum > 2)
       {
         for(unsigned it = 0; it < 50; it++)
         {
           filekey = md5(filekey);
-          while(filekey.size() > cryptlen) filekey.pop_back();
+          while(filekey.size() > cryptlen)
+            filekey.pop_back();
         }
       }
       std::vector<uint8_t> checkans;
@@ -264,7 +277,8 @@ std::vector<uint8_t> document::get_cryptkey()
           int m = 0;
           for(unsigned int l = 0; l < 32; l++)
           {
-            if(checkans[l] != ubytes[l]) break;
+            if(checkans[l] != ubytes[l])
+              break;
             m++;
           }
           if(m == 32)
@@ -281,18 +295,16 @@ std::vector<uint8_t> document::get_cryptkey()
         checkans = rc4(checkans, filekey);
         for (int iii = 19; iii >= 0; iii--)
         {
-          uint8_t ii = iii;
           std::vector<uint8_t> tmpkey;
-          for (unsigned int jj = 0; jj < filekey.size(); ++jj)
-          {
-            tmpkey.push_back(filekey[jj] ^ ii);
-          }
+          for (auto jj : filekey)
+            tmpkey.push_back(jj ^ ((uint8_t) iii));
           checkans = rc4(checkans, tmpkey);
         }
         int m = 0;
         for(unsigned int l = 0; l < 16; l++)
         {
-          if(checkans[l] != ubytes[l]) break;
+          if(checkans[l] != ubytes[l])
+            break;
           m++;
         }
         return filekey;

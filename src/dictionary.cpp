@@ -56,7 +56,6 @@ void dictionary_parser(std::vector<std::vector<std::string>>& s)
       tmpident.push_back(token[i]);
     }
     if(i > 0 && i < ttype.size() && tmpident.size() > 0)
-    {
       if (ttype[i] == "keyname" && ttype[i - 1] == "keyname" &&
           tmpident[tmpident.size() - 2] == "true")
       {
@@ -64,7 +63,6 @@ void dictionary_parser(std::vector<std::vector<std::string>>& s)
         tmpident.pop_back();
         tmpident.back() = token[i];
       }
-    }
   }
   res.push_back(tmptoken);
   res.push_back(tmpident);
@@ -86,9 +84,10 @@ tokenize_dict(const std::string& s, unsigned pos)
     int minibuf = 0;
     while(i < s.length() && i < (pos + 100000))
     {
+      char n = symbol_type(s[i]);
+
       if(state == "preentry")
       {
-        char n = symbol_type(s[i]);
         switch(n)
         {
         case '<': state = "maybe"; break;
@@ -97,9 +96,9 @@ tokenize_dict(const std::string& s, unsigned pos)
         i++;
         continue;
       }
+
       if(state == "maybe")
       {
-        char n = symbol_type(s[i]);
         switch(n)
         {
         case '<': state = "start"; break;
@@ -108,9 +107,9 @@ tokenize_dict(const std::string& s, unsigned pos)
         i++;
         continue;
       }
+
       if(state == "start")
       {
-        char n = symbol_type(s[i]);
         switch(n)
         {
         case '/': buf += '/'; state = "key"; break;
@@ -123,7 +122,6 @@ tokenize_dict(const std::string& s, unsigned pos)
 
       if(state == "key")
       {
-        char n = symbol_type(s[i]);
         switch(n)
         {
         case 'L': buf += s[i]; break;
@@ -153,9 +151,9 @@ tokenize_dict(const std::string& s, unsigned pos)
         i++;
         continue;
       }
+
       if(state == "prevalue")
       {
-        char n = symbol_type(s[i]);
         switch(n)
         {
         case ' ': state = "prevalue"; break;
@@ -170,7 +168,6 @@ tokenize_dict(const std::string& s, unsigned pos)
       }
       if(state == "value")
       {
-        char n = symbol_type(s[i]);
         switch(n)
         {
         case '/': token.push_back(buf); buf = "/";
@@ -193,7 +190,6 @@ tokenize_dict(const std::string& s, unsigned pos)
 
       if(state == "arrayval")
       {
-        char n = symbol_type(s[i]);
         switch(n)
         {
         case ']': buf += "]";
@@ -208,8 +204,7 @@ tokenize_dict(const std::string& s, unsigned pos)
       }
 
       if(state == "querydict")
-      {
-        char n = symbol_type(s[i]);
+      {;
         switch(n)
         {
         case '<': buf = "<<"; state = "subdict"; minibuf = 2; break;
@@ -221,7 +216,6 @@ tokenize_dict(const std::string& s, unsigned pos)
 
       if(state == "queryclose")
       {
-        char n = symbol_type(s[i]);
         switch(n)
         {
         case '>': state = "close"; break;
@@ -233,7 +227,6 @@ tokenize_dict(const std::string& s, unsigned pos)
 
       if(state == "close")
       {
-        char n = symbol_type(s[i]);
         switch(n)
         {
         case ' ': state = "close"; break;
@@ -262,7 +255,6 @@ tokenize_dict(const std::string& s, unsigned pos)
 
       if(state == "subdict")
       {
-        char n = symbol_type(s[i]);
         switch(n)
         {
         case '<': buf += s[i]; minibuf ++; break;
