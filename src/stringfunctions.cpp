@@ -30,12 +30,14 @@
 #include "stringfunctions.h"
 #include "debugtools.h"
 
+using namespace std;
+
 /*---------------------------------------------------------------------------*/
 // Finds matches m in string s, returning a vector of (matches + 1) substrings
-std::vector<std::string> splitter(const std::string& s, const std::string& m)
+vector<string> splitter(const string& s, const string& m)
 {
   Rex sl = Rex(s, m);
-  std::vector<std::string> RC, res;
+  vector<string> RC, res;
   if(!sl.has())
   {
     return sl.get();
@@ -55,14 +57,12 @@ std::vector<std::string> splitter(const std::string& s, const std::string& m)
 
 /*---------------------------------------------------------------------------*/
 // Return the first substring of s that lies between two regexes
-std::string carveout(const std::string& s,
-                const std::string& precarve,
-                const std::string& postcarve)
+string carveout(const string& s, const string& pre, const string& post)
 {
   int firstpos  = 0;
   int secondpos = s.length();
-  std::vector<int> FPV = Rex(s, precarve).ends();
-  std::vector<int> SPV = Rex(s, postcarve).pos();
+  vector<int> FPV = Rex(s, pre).ends();
+  vector<int> SPV = Rex(s, post).pos();
   int fpvs = FPV.size();
   int spvs = SPV.size();
   // Ensure the match lies between the first balanced matches
@@ -78,24 +78,24 @@ std::string carveout(const std::string& s,
         break;
       }
   }
-  std::string res(s.begin() + firstpos, s.begin() + secondpos);
+  string res(s.begin() + firstpos, s.begin() + secondpos);
   return res;
 }
 
 /*---------------------------------------------------------------------------*/
 // Decent approximation of whether a string contains binary data or not
-bool IsAscii(const std::string& tempint)
+bool IsAscii(const string& tempint)
 {
-  int mymin = *std::min_element(tempint.begin(), tempint.end());
-  int mymax = *std::max_element(tempint.begin(), tempint.end());
+  int mymin = *min_element(tempint.begin(), tempint.end());
+  int mymax = *max_element(tempint.begin(), tempint.end());
   return (mymin > 7) && (mymax < 126);
 }
 
 /*---------------------------------------------------------------------------*/
 //Casts a string to vector of unsigned ints
-std::vector<uint16_t> strtoint(std::string x)
+vector<uint16_t> strtoint(string x)
 {
-  std::vector<uint16_t> res;
+  vector<uint16_t> res;
   for(auto i : x)
   {
     uint16_t a = i;
@@ -106,10 +106,11 @@ std::vector<uint16_t> strtoint(std::string x)
 
 /*---------------------------------------------------------------------------*/
 // Casts a single unsigned int to a length 1 string
-std::string intToString(uint16_t a)
+string intToString(uint16_t a)
 {
-  std::string b;
-  if (a > 0x00ff) return "*";
+  string b;
+  if (a > 0x00ff)
+    return "*";
   uint8_t d = (uint8_t) a;
   b += (char) d;
   return b;
@@ -117,11 +118,11 @@ std::string intToString(uint16_t a)
 
 /*---------------------------------------------------------------------------*/
 // Generalizes stof to allow multiple floats from a single string
-std::vector<float> getnums(const std::string& s)
+vector<float> getnums(const string& s)
 {
-  std::vector<float> res;
-  std::string numstring = "(-)?(\\.)?\\d+(\\.)?\\d*"; // float regex
-  std::vector<std::string> strs = Rex(s, numstring).get();
+  vector<float> res;
+  string numstring = "(-)?(\\.)?\\d+(\\.)?\\d*"; // float regex
+  vector<string> strs = Rex(s, numstring).get();
   for(auto i : strs)
     res.push_back(stof(i));
   return res;
@@ -129,11 +130,11 @@ std::vector<float> getnums(const std::string& s)
 
 /*---------------------------------------------------------------------------*/
 // Generalizes stoi to allow multiple ints to be derived from a string
-std::vector<int> getints(const std::string& s)
+vector<int> getints(const string& s)
 {
-  std::vector<int> res;
-  std::string numstring = "(-)?\\d+"; // int regex
-  std::vector<std::string> strs = Rex(s, numstring).get();
+  vector<int> res;
+  string numstring = "(-)?\\d+"; // int regex
+  vector<string> strs = Rex(s, numstring).get();
   for(auto i : strs)
     res.push_back(stoi(i));
   return res;
@@ -146,9 +147,9 @@ int dec2oct(int x)
   int a = (x / 64);
   int b = (x - a * 64) / 8;
   int c = (x - a * 64 - 8 * b);
-  std::string res = std::to_string(a);
-  res += std::to_string(b);
-  res += std::to_string(c);
+  string res = to_string(a);
+  res += to_string(b);
+  res += to_string(c);
   return stoi(res);
 }
 
@@ -157,13 +158,15 @@ int dec2oct(int x)
 int oct2dec(int x)
 {
   int res = 0;
-  std::string str = std::to_string(x);
+  string str = to_string(x);
   int l = str.length();
-  if(l == 0) return res;
+  if(l == 0)
+    return res;
   for (int i = 0; i < l; i++)
   {
-    int e = std::stoi(str.substr(i,1));
-    if(e > 7) throw "Invalid octal";
+    int e = stoi(str.substr(i,1));
+    if(e > 7)
+      throw "Invalid octal";
     res += (e * pow(8, l - i - 1));
   }
   return res;
@@ -172,12 +175,12 @@ int oct2dec(int x)
 /*---------------------------------------------------------------------------*/
 //Takes a string of bytes represented in ASCII and converts to actual bytes
 
-std::vector<unsigned char> bytesFromArray(const std::string& s)
+vector<unsigned char> bytesFromArray(const string& s)
 {
   if(s.empty())
     throw "Zero-length string passed to bytesFromArray";
-  std::vector<int> tmpvec, res;
-  std::vector<unsigned char> resvec;
+  vector<int> tmpvec, res;
+  vector<unsigned char> resvec;
   for(auto a : s)
   {
     if(a > 47 && a < 58)  tmpvec.push_back(a - 48); //Digits 0-9
@@ -202,9 +205,9 @@ std::vector<unsigned char> bytesFromArray(const std::string& s)
 
 /*---------------------------------------------------------------------------*/
 // reinterprets string as vector of bytes
-std::vector<uint8_t> stringtobytes(const std::string& s)
+vector<uint8_t> stringtobytes(const string& s)
 {
-  std::vector<uint8_t> res;
+  vector<uint8_t> res;
   res.reserve(s.size());
   for(auto i : s)
     res.push_back(i);
@@ -212,10 +215,10 @@ std::vector<uint8_t> stringtobytes(const std::string& s)
 }
 
 /*---------------------------------------------------------------------------*/
-// reinterprets vector of bytes as a std::string
-std::string bytestostring(const std::vector<uint8_t>& v)
+// reinterprets vector of bytes as a string
+string bytestostring(const vector<uint8_t>& v)
 {
-  std::string res;
+  string res;
   res.reserve(v.size());
   for(auto i : v)
     res += i;
@@ -224,13 +227,13 @@ std::string bytestostring(const std::vector<uint8_t>& v)
 
 /*---------------------------------------------------------------------------*/
 // Matrix mulitplication on two 3 x 3 matrices
-std::vector<float> matmul(std::vector<float> b, std::vector<float> a)
+vector<float> matmul(vector<float> b, vector<float> a)
 {
   if(a.size() != b.size())
     throw "Error in Stringfunctions: matmul: Vectors must have same size.";
   if(a.size() != 9)
     throw "Error in Stringfunctions: matmul: Vectors must be size 9.";
-  std::vector<float> newmat;
+  vector<float> newmat;
   for(size_t i = 0; i < 9; i++) //clever use of indices to allow fill by loop
     newmat.push_back(a[i % 3 + 0] * b[3 * (i / 3) + 0] +
                      a[i % 3 + 3] * b[3 * (i / 3) + 1] +
@@ -241,41 +244,41 @@ std::vector<float> matmul(std::vector<float> b, std::vector<float> a)
 /*---------------------------------------------------------------------------*/
 // Converts a pdf style transformation sequence of 6 numbers to a 3x3 matrix
 // simply by adding the "missing" invariant final column
-std::vector<float> six2nine(std::vector<float> a)
+vector<float> six2nine(vector<float> a)
 {
   if(a.size() != 6)
     throw "Error in Stringfunctions: six2nine: Vectors must be size 6.";
-  std::vector<float> newmat {a[0], a[1], 0, a[2], a[3], 0, a[4], a[5], 1};
+  vector<float> newmat {a[0], a[1], 0, a[2], a[3], 0, a[4], a[5], 1};
   return newmat;
 }
 
 /*---------------------------------------------------------------------------*/
 // Allows a length-6 vector of number strings to be converted to 3x3 matrix
-std::vector<float> stringvectomat(std::vector<std::string> b)
+vector<float> stringvectomat(vector<string> b)
 {
   if(b.size() != 6)
     throw "Error in Stringfunctions: stringvectomat: Vectors must be size 6.";
-  std::vector<float> a;
-  for(auto i : b) a.push_back(std::stof(i));
+  vector<float> a;
+  for(auto i : b) a.push_back(stof(i));
   return six2nine(a);
 }
 
 /*---------------------------------------------------------------------------*/
 // generalizes stof to vectors
-std::vector<float> stringtofloat(std::vector<std::string> b)
+vector<float> stringtofloat(vector<string> b)
 {
-  std::vector<float> r;
+  vector<float> r;
   for(auto i : b)
-    r.push_back(std::stof(i));
+    r.push_back(stof(i));
   return r;
 }
 
 /*---------------------------------------------------------------------------*/
 //Converts an int to the relevant 2-byte ASCII hex (4 characters long)
-std::string intToHexstring(int i)
+string intToHexstring(int i)
 {
-  std::string hex = "0123456789ABCDEF";
-  std::string res;
+  string hex = "0123456789ABCDEF";
+  string res;
   int firstnum = i / (16 * 16 * 16);
   i -= firstnum * (16 * 16 * 16);
   int secondnum = i / (16 * 16);
@@ -288,16 +291,16 @@ std::string intToHexstring(int i)
   res += hex[i];
   while(res.length() < 4)
     res = "0" + res;
-  std::transform(res.begin(), res.end(), res.begin(),
-                 std::ptr_fun<int, int>(std::toupper));
+  transform(res.begin(), res.end(), res.begin(),
+                 ptr_fun<int, int>(toupper));
   return res;
 }
 
 /*---------------------------------------------------------------------------*/
 //Split a string into length-4 elements
-std::vector<std::string> splitfours(std::string s)
+vector<string> splitfours(string s)
 {
-  std::vector<std::string> res;
+  vector<string> res;
   if(s.empty())
     return res;
   while(s.size() % 4 != 0)
@@ -309,9 +312,9 @@ std::vector<std::string> splitfours(std::string s)
 
 /*--------------------------------------------------------------------------*/
 //Split a string into length-2 elements
-std::vector<std::string> splittwos(std::string s)
+vector<string> splittwos(string s)
 {
-  std::vector<std::string> res;
+  vector<string> res;
   if(s.empty())
     return res;
   while(s.size() % 2 != 0)
@@ -323,11 +326,11 @@ std::vector<std::string> splittwos(std::string s)
 
 /*--------------------------------------------------------------------------*/
 //Converts an ASCII encoded string to a (char-based) string
-std::string byteStringToString(const std::string& s)
+string byteStringToString(const string& s)
 {
-  std::vector<std::string> sv = splitfours(s);
-  std::vector<unsigned int> uv;
-  std::string res;
+  vector<string> sv = splitfours(s);
+  vector<unsigned int> uv;
+  string res;
   for(auto i : sv)
     uv.push_back((unsigned) stoul("0x" + i, nullptr, 0));
   for(auto i : uv)
@@ -341,9 +344,9 @@ std::string byteStringToString(const std::string& s)
 
 /*--------------------------------------------------------------------------*/
 // Extracts pdf object references from string
-std::vector<int> getObjRefs(std::string ds)
+vector<int> getObjRefs(string ds)
 {
-  std::vector<int> res;
+  vector<int> res;
   for (auto i : Rex(ds, "\\d+ 0 R").get())
     res.push_back(stoi(splitter(i, " ")[0]));
   return res;
@@ -351,7 +354,7 @@ std::vector<int> getObjRefs(std::string ds)
 
 /*--------------------------------------------------------------------------*/
 //test of whether string s contains a dictionary
-bool isDictString(const std::string& s)
+bool isDictString(const string& s)
 {
   return Rex(s, "<<").has();
 }
@@ -369,9 +372,9 @@ char symbol_type(const char c)
 
 /*---------------------------------------------------------------------------*/
 // This probably should be in encodings rather than stringfunctions
-std::string namesToChar(std::string s, const std::string& encoding)
+string namesToChar(string s, const string& encoding)
 {
-  std::map<std::string, char> Rev;
+  map<string, char> Rev;
   if(encoding == "/StandardEncoding")
   {
     Rev["/A"] = 0x41;
@@ -1192,7 +1195,7 @@ std::string namesToChar(std::string s, const std::string& encoding)
     Rev["/zero"] = 0x30;
   }
 
-  std::string res;
+  string res;
   if(Rev.find(s) != Rev.end()) res += (char) Rev[s];
   if(s == "/fi") return "fi";
   if(s == "/fl") return "fl";
@@ -1201,9 +1204,10 @@ std::string namesToChar(std::string s, const std::string& encoding)
 
 /*--------------------------------------------------------------------------*/
 // Removes whitespace from right of a string
-void trimRight(std::string& s)
+void trimRight(string& s)
 {
-  if(s.length() == 0) return;
+  if(s.length() == 0)
+    return;
   for(int i = s.length() - 1; i >= 0; i--)
     if(s[i] == ' ' || s[i] == '\t' || s[i] == '\n' || s[i] == '\r')
       s.resize(i);

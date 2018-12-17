@@ -73,18 +73,39 @@ Instructionset GraphicsState::tokenize(std::string s)
     {
       switch(n)
       {
-      case 'L': buf += m; state = "identifier"; break;
-      case 'D': buf += m; state = "number"; break;
-      case '-': buf += m; state = "number"; break;
-      case '.': buf += "0."; state = "number"; break;
-      case '_': buf += '_';  state = "identifier"; break;
-      case '*': buf += '*';  state = "identifier"; break;
-      case '\'': buf += '\''; state = "identifier"; break;
-      case '/': buf += '/'; state = "resource"; break;
-      case '[': state = "array"; break;
-      case '(': state = "string"; break;
-      case '<': state = "hexstring"; break;
-      default: state = "newsymb"; buf =""; break;
+        case 'L': buf += m;
+                  state = "identifier";
+                  break;
+        case 'D': buf += m;
+                  state = "number";
+                  break;
+        case '-': buf += m;
+                  state = "number";
+                  break;
+        case '.': buf += "0.";
+                  state = "number";
+                  break;
+        case '_': buf += '_';
+                  state = "identifier";
+                  break;
+        case '*': buf += '*';
+                  state = "identifier";
+                  break;
+        case '\'': buf += '\'';
+                  state = "identifier";
+                  break;
+        case '/': buf += '/';
+                  state = "resource";
+                  break;
+        case '[': state = "array";
+                  break;
+        case '(': state = "string";
+                  break;
+        case '<': state = "hexstring";
+                  break;
+        default:  state = "newsymb";
+                  buf ="";
+                  break;
       }
       i++; continue;
     }
@@ -93,117 +114,153 @@ Instructionset GraphicsState::tokenize(std::string s)
     {
       switch(n)
       {
-      case 'L': buf += m; break;
-      case 'D': buf += m; break;
-      case '-': buf += '-'; break;
-      case '+': buf += '+'; break;
-      case '_': buf += '_'; break;
-      case '*': buf += '*'; break;
-      case '/': state = "resource";
-        token.push_back(buf);
-        buf = "";
-        ttype.push_back("resource"); break;
-      case ' ': state = "newsymb";
-        token.push_back(buf);
-        buf = "";
-        ttype.push_back("resource");
-        break;
-      case '[': state = "array";
-        token.push_back(buf);
-        buf = "";
-        ttype.push_back("resource"); break;
-      case '(': state = "string";
-        token.push_back(buf);
-        buf = "";
-        ttype.push_back("resource"); break;
-      case '<': state = "hexstring";
-        token.push_back(buf);
-        buf = "";
-        ttype.push_back("resource"); break;
+        case 'L': buf += m;
+                  break;
+        case 'D': buf += m;
+                  break;
+        case '-': buf += '-';
+                  break;
+        case '+': buf += '+';
+                  break;
+        case '_': buf += '_';
+                  break;
+        case '*': buf += '*';
+                  break;
+        case '/': state = "resource";
+                  token.push_back(buf);
+                  buf = "";
+                  ttype.push_back("resource");
+                  break;
+        case ' ': state = "newsymb";
+                  token.push_back(buf);
+                  buf = "";
+                  ttype.push_back("resource");
+                  break;
+        case '[': state = "array";
+                  token.push_back(buf);
+                  buf = "";
+                  ttype.push_back("resource");
+                  break;
+        case '(': state = "string";
+                  token.push_back(buf);
+                  buf = "";
+                  ttype.push_back("resource");
+                  break;
+        case '<': state = "hexstring";
+                  token.push_back(buf);
+                  buf = "";
+                  ttype.push_back("resource");
+                  break;
       }
-      i++; continue;
+      i++;
+      continue;
     }
 
     if (state == "identifier")
     {
       switch(n)
       {
-      case 'L': buf += m; break;
-      case 'D': buf += m; break;
-      case '-': buf += m; break;
-      case '_': buf += '_'; break;
-      case '*': buf += '*'; break;
-      case '/': state = "resource";
-        token.push_back(buf);
-        buf = "/";
-        ttype.push_back("identifier"); break;
-      case ' ': if (buf == "BI")
-      {
-        buf = "";
-        state = "wait";
+        case 'L': buf += m;
+                  break;
+        case 'D': buf += m;
+                  break;
+        case '-': buf += m;
+                  break;
+        case '_': buf += '_';
+                  break;
+        case '*': buf += '*';
+                  break;
+        case '/': state = "resource";
+                  token.push_back(buf);
+                  buf = "/";
+                  ttype.push_back("identifier");
+                  break;
+        case ' ': if (buf == "BI")
+                  {
+                    buf = "";
+                    state = "wait";
+                  }
+                  else
+                  {
+                    state = "newsymb";
+                    token.push_back(buf);
+                    buf = "";
+                    ttype.push_back("identifier");
+                  }
+                  break;
+        case '[': state = "array";
+                  token.push_back(buf);
+                  buf = "";
+                  ttype.push_back("identifier");
+                  break;
+        case '(': state = "string";
+                  token.push_back(buf);
+                  buf = "";
+                  ttype.push_back("identifier");
+                  break;
+        case '<': state = "hexstring";
+                  token.push_back(buf);
+                  buf = "";
+                  ttype.push_back("identifier");
+                  break;
       }
-      else
-      {
-        state = "newsymb";
-        token.push_back(buf);
-        buf = "";
-        ttype.push_back("identifier");
-      }
-      break;
-      case '[': state = "array";
-        token.push_back(buf);
-        buf = "";
-        ttype.push_back("identifier"); break;
-      case '(': state = "string";
-        token.push_back(buf);
-        buf = "";
-        ttype.push_back("identifier"); break;
-      case '<': state = "hexstring";
-        token.push_back(buf);
-        buf = "";
-        ttype.push_back("identifier"); break;
-      }
-      i++; continue;
+      i++;
+      continue;
     }
 
     if (state == "number")
     {
       switch(n)
       {
-      case 'L': buf += m; break;
-      case 'D': buf += m; break;
-      case '.': buf += '.'; break;
-      case '-': token.push_back(buf); buf = "";
-      token.push_back("-");
-      ttype.push_back("number");
-      ttype.push_back("operator"); break;
-      case '_': buf += '_'; break;
-      case '*': token.push_back(buf); buf = "";
-      token.push_back("*");
-      ttype.push_back("number");
-      ttype.push_back("operator"); break;
-      case '/': token.push_back(buf); buf = "";
-      token.push_back("/");
-      ttype.push_back("number");
-      ttype.push_back("operator"); break;
-      case ' ': state = "newsymb";
-        token.push_back(buf);
-        buf = "";
-        ttype.push_back("number"); break;
-      case '[': state = "array";
-        token.push_back(buf);
-        buf = "";
-        ttype.push_back("number"); break;
-      case '(': state = "string";
-        token.push_back(buf);
-        buf = "";
-        ttype.push_back("number"); break;
-      case '<': state = "hexstring";
-        token.push_back(buf);
-        buf = "";
-        ttype.push_back("identifier"); break;
+        case 'L': buf += m;
+                  break;
+        case 'D': buf += m;
+                  break;
+        case '.': buf += '.';
+                  break;
+        case '-': token.push_back(buf);
+                  buf = "";
+                  token.push_back("-");
+                  ttype.push_back("number");
+                  ttype.push_back("operator");
+                  break;
+        case '_': buf += '_';
+                  break;
+        case '*': token.push_back(buf);
+                  buf = "";
+                  token.push_back("*");
+                  ttype.push_back("number");
+                  ttype.push_back("operator");
+                  break;
+        case '/': token.push_back(buf);
+                  buf = "";
+                  token.push_back("/");
+                  ttype.push_back("number");
+                  ttype.push_back("operator");
+                  break;
+        case ' ': state = "newsymb";
+                  token.push_back(buf);
+                  buf = "";
+                  ttype.push_back("number");
+                  break;
+        case '[': state = "array";
+                  token.push_back(buf);
+                  buf = "";
+                  ttype.push_back("number");
+                  break;
+        case '(': state = "string";
+                  token.push_back(buf);
+                  buf = "";
+                  ttype.push_back("number");
+                  break;
+        case '<': state = "hexstring";
+                  token.push_back(buf);
+                  buf = "";
+                  ttype.push_back("identifier");
+                  break;
       }
-      i++; continue;
+      i++;
+      continue;
     }
 
     if (state == "array")
@@ -211,12 +268,19 @@ Instructionset GraphicsState::tokenize(std::string s)
       char n = symbol_type(m);
       switch(n)
       {
-      case '\\': buf += s[i]; i++; buf += s[i]; break;
-      case ']': tokenize_array(ttype, token, buf);
-        state = "newsymb"; buf = ""; break;
-      default: buf += m; break;
+        case '\\': buf += s[i];
+                   i++;
+                   buf += s[i];
+                   break;
+        case ']':  tokenize_array(ttype, token, buf);
+                   state = "newsymb";
+                   buf = "";
+                   break;
+        default:   buf += m;
+                   break;
       }
-      i++; continue;
+      i++;
+      continue;
     }
 
     if (state == "string")
@@ -224,75 +288,114 @@ Instructionset GraphicsState::tokenize(std::string s)
       minibuf.clear();
       switch(s[i])
       {
-      case ')': token.push_back(buf); buf = "";
-      ttype.push_back("string");
-      state = "newsymb"; break;
-      case '\\': i++;
-        n = symbol_type(s[i]);
-        if (n == 'D')
-        {
-          int octcount = 0;
-          token.push_back(buf); buf = "";
-          ttype.push_back("string");
-          while(n == 'D' && octcount < 3)
-          {
-            minibuf += s[i];
-            i++; octcount ++;
-            n = symbol_type(s[i]);
-          }
-          int newint = oct2dec(std::stoi(minibuf));
-          token.push_back(intToHexstring(newint));
-          ttype.push_back("hexstring");
-          minibuf = "";
-          i--;
-        }
-        else buf += s[i];
-        break;
-      default: buf += s[i]; break;
+        case ')':  token.push_back(buf);
+                   buf = "";
+                   ttype.push_back("string");
+                   state = "newsymb";
+                   break;
+        case '\\': i++;
+                   n = symbol_type(s[i]);
+                   if (n == 'D')
+                   {
+                      int octcount = 0;
+                      token.push_back(buf); buf = "";
+                      ttype.push_back("string");
+                      while(n == 'D' && octcount < 3)
+                      {
+                        minibuf += s[i];
+                        i++; octcount ++;
+                        n = symbol_type(s[i]);
+                      }
+                      int newint = oct2dec(std::stoi(minibuf));
+                      token.push_back(intToHexstring(newint));
+                      ttype.push_back("hexstring");
+                      minibuf = "";
+                      i--;
+                    }
+                    else
+                      buf += s[i];
+                    break;
+        default:    buf += s[i];
+                    break;
       }
-      i++; continue;
+      i++;
+      continue;
     }
 
     if (state == "hexstring")
     {
       switch(n)
       {
-      case '<': buf = ""; state = "dict"; break;
-      case '\\': buf += m + s[i+1]; i++; break;
-      case '>': if (buf.length() > 0) token.push_back(buf);
-      if (buf.length() > 0) ttype.push_back("hexstring");
-      buf = ""; state = "newsymb"; break;
-      default: buf += m; break;
+        case '<':  buf = "";
+                   state = "dict";
+                   break;
+        case '\\': buf += m + s[i+1];
+                   i++;
+                   break;
+        case '>':  if (!buf.empty())
+                   {
+                     token.push_back(buf);
+                     ttype.push_back("hexstring");
+                   }
+                   buf = "";
+                   state = "newsymb";
+                   break;
+        default:   buf += m;
+                   break;
       }
-      i++; continue;
+      i++;
+      continue;
     }
 
     if (state == "dict")
     {
       switch(n)
       {
-      case '\\': buf += m + s[i+1]; i++; break;
-      case '>': token.push_back(buf); buf = "";
-      ttype.push_back("dict");
-      state = "hexstring"; break;
-      default:  buf += m; break;
+        case '\\': buf += m + s[i+1];
+                   i++;
+                   break;
+        case '>':  token.push_back(buf);
+                   buf = "";
+                   ttype.push_back("dict");
+                   state = "hexstring";
+                   break;
+        default:   buf += m;
+                   break;
       }
-      i++; continue;
+      i++;
+      continue;
     }
 
-    if (state == "wait"){ if (m == 'E') state = "waitE"; i++; continue;}
+    if (state == "wait")
+    {
+      if (m == 'E')
+        state = "waitE";
+      i++;
+      continue;
+    }
     if (state == "waitE")
     {
-      if (m == 'I') state = "waitEI"; else state = "wait";
-      i++; continue;
+      if (m == 'I')
+        state = "waitEI";
+      else
+        state = "wait";
+      i++;
+      continue;
     }
     if (state == "waitEI")
     {
-      if (n == ' ') state = "newsymb"; else state = "wait";
-      i++; continue;
+      if (n == ' ')
+        state = "newsymb";
+      else
+        state = "wait";
+      i++;
+      continue;
     }
-
-    else { i++; continue; }
+    else
+    {
+      i++;
+      continue;
+    }
   }
 
   return parser(token, ttype);
@@ -317,94 +420,129 @@ void GraphicsState::tokenize_array(std::vector<std::string> &ttype,
     {
       switch(n)
       {
-      case 'D': buf += m; state = "number"; break;
-      case '.': buf += '0'; buf += '.'; state = "number"; break;
-      case '-': buf += m; state = "number"; break;
-      case '(': state = "string"; break;
-      case '<': state = "hexstring"; break;
-      default: state = "newsymb"; buf =""; break;
+        case 'D': buf += m;
+                  state = "number";
+                  break;
+        case '.': buf += '0';
+                  buf += '.';
+                  state = "number";
+                  break;
+        case '-': buf += m;
+                  state = "number";
+                  break;
+        case '(': state = "string";
+                  break;
+        case '<': state = "hexstring";
+                  break;
+        default:  state = "newsymb";
+                  buf ="";
+                  break;
       }
-      i++; continue;
+      i++;
+      continue;
     }
 
     if (state == "number")
     {
       switch(n)
       {
-      case 'L': buf += m; break;
-      case 'D': buf += m; break;
-      case '.': buf += '.'; break;
-      case '-': token.push_back(buf); buf = "";
-      token.push_back("-");
-      ttype.push_back("number");
-      ttype.push_back("operator"); break;
-      case '_': buf += '_'; break;
-      case '*': token.push_back(buf); buf = "";
-      token.push_back("*");
-      ttype.push_back("number");
-      ttype.push_back("operator"); break;
-      case '/': token.push_back(buf); buf = "";
-      token.push_back("/");
-      ttype.push_back("number");
-      ttype.push_back("operator"); break;
-      case ' ': state = "newsymb";
-        token.push_back(buf);
-        buf = "";
-        ttype.push_back("number"); break;
-      case '(': state = "string";
-        token.push_back(buf);
-        buf = "";
-        ttype.push_back("number"); break;
-      case '<': state = "hexstring";
-        token.push_back(buf);
-        buf = "";
-        ttype.push_back("number"); break;
+        case 'L': buf += m;
+                  break;
+        case 'D': buf += m;
+                  break;
+        case '.': buf += '.';
+                  break;
+        case '-': token.push_back(buf);
+                  buf = "";
+                  token.push_back("-");
+                  ttype.push_back("number");
+                  ttype.push_back("operator");
+                  break;
+        case '_': buf += '_';
+                  break;
+        case '*': token.push_back(buf);
+                  buf = "";
+                  token.push_back("*");
+                  ttype.push_back("number");
+                  ttype.push_back("operator");
+                  break;
+        case '/': token.push_back(buf);
+                  buf = "";
+                  token.push_back("/");
+                  ttype.push_back("number");
+                  ttype.push_back("operator");
+                  break;
+        case ' ': state = "newsymb";
+                  token.push_back(buf);
+                  buf = "";
+                  ttype.push_back("number");
+                  break;
+        case '(': state = "string";
+                  token.push_back(buf);
+                  buf = "";
+                  ttype.push_back("number");
+                  break;
+        case '<': state = "hexstring";
+                  token.push_back(buf);
+                  buf = "";
+                  ttype.push_back("number");
+                  break;
       }
-      i++; continue;
+      i++;
+      continue;
     }
 
     if (state == "string")
     {
       switch(n)
       {
-      case '\\':  i++;
-        if (symbol_type(s[i]) == 'D')
-        {
-          token.push_back(buf); buf = "";
-          ttype.push_back("string");
-          int octcount = 0;
-          while(symbol_type(s[i]) == 'D' && octcount < 3)
-          {
-            minibuf += s[i]; i++; octcount++;
-          }
-          int newint = oct2dec(std::stoi(minibuf));
-          token.push_back(intToHexstring(newint));
-          ttype.push_back("hexstring");
-          minibuf = "";
-          i--;
-        }
-        else
-        {
-          buf += s[i];
-        }
-        break;
-      case ')':   token.push_back(buf); buf = "";
-      ttype.push_back("string");
-      state = "newsymb"; break;
-      default :   buf += m; break;
+        case '\\':  i++;
+                    if (symbol_type(s[i]) == 'D')
+                    {
+                      token.push_back(buf); buf = "";
+                      ttype.push_back("string");
+                      int octcount = 0;
+                      while(symbol_type(s[i]) == 'D' && octcount < 3)
+                      {
+                        minibuf += s[i]; i++; octcount++;
+                      }
+                      int newint = oct2dec(std::stoi(minibuf));
+                      token.push_back(intToHexstring(newint));
+                      ttype.push_back("hexstring");
+                      minibuf = "";
+                      i--;
+                    }
+                    else
+                    {
+                      buf += s[i];
+                    }
+                    break;
+        case ')':   token.push_back(buf);
+                    buf = "";
+                    ttype.push_back("string");
+                    state = "newsymb";
+                    break;
+        default :   buf += m;
+                    break;
       }
-      i++; continue;
+      i++;
+      continue;
     }
 
     if (state == "hexstring")
     {
       switch(n)
       {
-      case '\\': buf += m + s[i+1]; i++; break;
-      case '>':   token.push_back(buf); buf = "";
-      ttype.push_back("hexstring");
-      state = "newsymb"; break;
-      default:  buf += m; break;
+        case '\\':  buf += m + s[i+1];
+                    i++;
+                    break;
+        case '>':   token.push_back(buf);
+                    buf = "";
+                    ttype.push_back("hexstring");
+                    state = "newsymb";
+                    break;
+        default:    buf += m;
+                    break;
       }
       i++;
       continue;
@@ -628,7 +766,11 @@ void GraphicsState::InstructionReader(page& pag, Instructionset I)
 
 void GraphicsState::MakeGS()
 {
-  for (auto i : statehx) { xvals.push_back(i[6]); yvals.push_back(i[7]);}
+  for (auto i : statehx)
+  {
+    xvals.push_back(i[6]);
+    yvals.push_back(i[7]);
+  }
   for (size_t i = 0; i < widths.size(); i++)
   {
     R.push_back(widths[i] + xvals[i]);
