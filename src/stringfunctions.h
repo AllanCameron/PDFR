@@ -82,8 +82,6 @@ bool isDictString(const std::string& s);
 
 char symbol_type(const char c);
 
-std::string namesToChar(std::string s, const std::string& encoding);
-
 void trimRight(std::string& s);
 
 #endif

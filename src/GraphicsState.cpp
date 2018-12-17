@@ -25,12 +25,11 @@
 //                                                                           //
 //---------------------------------------------------------------------------//
 
-
-
 #include "pdfr.h"
 #include "stringfunctions.h"
 #include "document.h"
 #include "GraphicsState.h"
+#include "encodings.h"
 
 GraphicsState::GraphicsState(page& pag) : p(pag),
   PRstate(0), Tl(1), Tw(0), Th(100), Tc(0), currfontsize(0), currentfont("")

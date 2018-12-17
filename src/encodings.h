@@ -59,5 +59,6 @@ EncMap getBaseEncode(const std::string& encoding);
 std::string parseUnicode(std::string s, std::map<std::string, std::string>& UM);
 std::string defaultUnicode(document& d, std::string s);
 std::vector<std::string> baseEncoding(const std::string& enc);
+std::string namesToChar(std::string s, const std::string& encoding);
 
 #endif
