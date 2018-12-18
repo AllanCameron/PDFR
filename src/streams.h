@@ -30,6 +30,7 @@
 #define PDFR
 
 #include "pdfr.h"
+using namespace std;
 
 bool isFlateDecode(const std::string& filestring, int startpos);
 

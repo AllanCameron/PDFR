@@ -83,21 +83,20 @@ std::string
 getStreamContents(document& d, const std::string& filestring, int objstart)
 {
   dictionary dict = dictionary(filestring, objstart);
-  if(dict.has("stream")) if(dict.has("/Length"))
-  {
-    int streamlen;
-    if(dict.hasRefs("/Length"))
+  if(dict.has("stream"))
+    if(dict.has("/Length"))
     {
-      int lengthob = dict.getRefs("/Length")[0];
-      streamlen = std::stoi(d.getobject(lengthob).getStream());
+      int streamlen;
+      if(dict.hasRefs("/Length"))
+      {
+        int lengthob = dict.getRefs("/Length")[0];
+        streamlen = std::stoi(d.getobject(lengthob).getStream());
+      }
+      else
+        streamlen = std::stoi(dict.get("/Length"));
+      int streamstart = std::stoi(dict.get("stream"));
+      return filestring.substr(streamstart, streamlen);
     }
-    else
-    {
-      streamlen = std::stoi(dict.get("/Length"));
-    }
-    int streamstart = std::stoi(dict.get("stream"));
-    return filestring.substr(streamstart, streamlen);
-  }
   return "";
 }
 
@@ -138,7 +137,7 @@ std::string objectPreStream(const std::string& filestring, int objectstart)
   if(mn.size()>0)
     return dic.substr(0, *std::min_element(mn.begin(), mn.end()));
 
-  Rcpp::stop("No object found");
+  throw "No object found";
 }
 
 /*---------------------------------------------------------------------------*/
@@ -160,7 +159,8 @@ plainbytetable(std::vector<int> V, std::vector<int> ArrayWidths)
     }
   }
   size_t ncol = multarray.size();
-  if(ncol == 0) Rcpp::stop("No columns");
+  if(ncol == 0)
+    throw "No columns";
   int nrow = V.size() / ncol;
   for(int i = 0; i < (nrow); i++)
   {
@@ -198,39 +198,44 @@ std::vector<std::vector<int>>
 decodeString(document& d, const std::string& filestring, int objstart)
 {
   std::vector<std::vector<int>> ReAr, FAr, FA;
-  std::vector<int> ArW, objind;
-  int startingobj;
+  std::vector<int> ArW, objind, obnum, allobs;
+  int ncols, indexob, predictor;
+  ncols = indexob = predictor = 0;
+  std::string WM;
+
   dictionary dict = dictionary(filestring, objstart);
-  std::string CS, IMatch, WM;
-  if(dict.has("/Index")) IMatch = dict.get("/Index");
-  if(dict.has("/W"))  WM = dict.get("/W");
-  if(IMatch.size() == 0) startingobj = 0;
+  dictionary subdict = dictionary(dict.get("/DecodeParms"));
+
+  if(dict.hasInts("/Index"))
+    allobs = dict.getInts("/Index");
+  if(allobs.empty())
+    obnum = {0};
   else
-  {
-    std::vector<std::string> IMatchs = Rex(IMatch, "(\\d|\\s)+").get();
-    if(IMatchs.size() == 0) startingobj = 0;
-    else startingobj = std::stoi(Rex(IMatchs[0], "\\d+").get()[0]);
-  }
+    for(size_t i = 0; i < allobs.size(); i++)
+      if(i % 2 == 0)
+        indexob = allobs[i];
+      else
+        for(auto j = 0; j < allobs[i]; j++)
+          obnum.push_back(indexob + j);
+
   if(dict.has("/DecodeParms"))
   {
-    dictionary subdict = dictionary(dict.get("/DecodeParms"));
-    if(subdict.has("/Columns"))
-      CS = subdict.get("/Columns");
+    if(subdict.hasInts("/Columns"))
+      ncols = subdict.getInts("/Columns")[0] + 1;
+    if(subdict.hasInts("/Predictor"))
+      predictor = subdict.getInts("/Predictor")[0];
   }
-  int ncols = 0;
-  if(!CS.empty()) ncols  =  std::stoi(Rex(CS, "\\d{1,2}").get()[0]) + 1;
-  if(!WM.empty())
+
+  if(dict.hasInts("/W"))
   {
-    std::vector<std::string> WMs = Rex(WM, "(\\d|\\s)+").get();
-    WMs = splitter(WMs[0], " ");
-    for(auto i : WMs)
-      ArW.push_back(std::stoi(i));
+    ArW = dict.getInts("/W");
     std::string SS = getStreamContents(d, filestring, objstart);
     if(isFlateDecode(filestring, objstart))
       SS = FlateDecode(SS);
     std::vector<unsigned char> rawarray(SS.begin(), SS.end());
     std::vector<int> intAr(rawarray.begin(), rawarray.end());
-    if(!dict.has("/DecodeParms")) return plainbytetable(intAr, ArW);
+    if(!dict.has("/DecodeParms"))
+      return plainbytetable(intAr, ArW);
     int nrows = intAr.size() / ncols;
     for(int i = 0; i < nrows; i++)
     {
@@ -270,7 +275,7 @@ decodeString(document& d, const std::string& filestring, int objstart)
       FA.push_back(newcolumn);
       cumsum += i;
     }
-    for(size_t i = 0; i<FA[0].size(); i++) objind.push_back(i + startingobj);
+    for(size_t i = 0; i<FA[0].size(); i++) objind.push_back(i + obnum[0]);
     FA.push_back(objind);
   }
   return FA;

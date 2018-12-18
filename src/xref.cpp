@@ -90,6 +90,7 @@ void xref::xrefstrings()
     else
       throw "No object found at location";
   }
+  printvec(res);
   Xrefstrings = res;
 }
 
@@ -114,7 +115,17 @@ void xref::getTrailer()
 
 void xref::xrefFromStream(int xrefloc)
 {
-  XRtab xreftable = decodeString(*d, d->filestring, xrefloc);
+  XRtab xreftable;
+  try
+  {
+    xreftable = decodeString(*d, d->filestring, xrefloc);
+  }
+  catch(...)
+  {
+    throw "couldn't decode string";
+  }
+  if(xreftable.empty())
+    throw "xreftable empty";
   for (size_t j = 0; j < xreftable[0].size(); j++)
   {
     xrefrow txr;
@@ -214,9 +225,13 @@ void xref::findEnds()
 xref::xref(document& d) : d(&d)
 {
   locateXrefs();
+  std::cout << "Located xrefs" << std::endl;
   xrefstrings();
+    std::cout << "Got xref strings" << std::endl;
   xrefIsstream();
+    std::cout << "Established streaminess" << std::endl;
   buildXRtable();
+    std::cout << "Built table" << std::endl;
   findEnds();
 }
 
