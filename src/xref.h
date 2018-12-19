@@ -67,4 +67,25 @@ public:
   bool objectExists(int objnum);
 };
 
+class xrefstream
+{
+  document* d;
+  dictionary dict, subdict;
+  std::vector<std::vector<int>> rawMatrix, finalArray, result;
+  std::vector<int> arrayWidths, objectIndex, objectNumbers, indexEntries;
+  int ncols, nrows, firstObject, predictor, objstart;
+  void getIndex();
+  void getParms();
+  void getRawMatrix();
+  void diffup();
+  void modulotranspose();
+  void expandbytes();
+  void mergecolumns();
+  void numberRows();
+
+public:
+  xrefstream(document& d, int objstart);
+  std::vector<std::vector<int>> table();
+};
+
 #endif

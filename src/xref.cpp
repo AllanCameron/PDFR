@@ -117,7 +117,7 @@ void xref::xrefFromStream(int xrefloc)
   XRtab xreftable;
   try
   {
-    xreftable = decodeString(*d, d->filestring, xrefloc);
+    xreftable = xrefstream(*d, xrefloc).table();
   }
   catch(...)
   {
@@ -139,6 +139,162 @@ void xref::xrefFromStream(int xrefloc)
 
 /*---------------------------------------------------------------------------*/
 
+void xrefstream::getIndex()
+{
+  if(dict.hasInts("/Index"))
+    indexEntries = dict.getInts("/Index");
+  if(indexEntries.empty())
+    objectNumbers = {0};
+  else
+    for(size_t i = 0; i < indexEntries.size(); i++)
+      if(i % 2 == 0)
+        firstObject = indexEntries[i];
+      else
+        for(auto j = 0; j < indexEntries[i]; j++)
+          objectNumbers.push_back(firstObject + j);
+}
+
+/*---------------------------------------------------------------------------*/
+
+void xrefstream::getParms()
+{
+  if(dict.has("/DecodeParms"))
+  {
+    if(subdict.hasInts("/Columns"))
+      ncols = subdict.getInts("/Columns")[0];
+    if(subdict.hasInts("/Predictor"))
+      predictor = subdict.getInts("/Predictor")[0];
+    if(predictor > 9) ncols++;
+  }
+}
+
+/*---------------------------------------------------------------------------*/
+
+void xrefstream::getRawMatrix()
+{
+    std::vector<int> tmparraywidths = dict.getInts("/W");
+    for(auto i : tmparraywidths)
+      if(i > 0)
+        arrayWidths.push_back(i);
+    std::string SS = getStreamContents(*d, d->filestring, objstart);
+    if(isFlateDecode(d->filestring, objstart))
+      SS = FlateDecode(SS);
+    std::vector<unsigned char> rawarray(SS.begin(), SS.end());
+    std::vector<int> intstrm(rawarray.begin(), rawarray.end());
+    if(ncols == 0)
+      throw std::runtime_error("divide by zero error");
+    int nrows = intstrm.size() / ncols;
+    for(int i = 0; i < nrows; i++)
+    {
+      std::vector<int>
+      tmprow(intstrm.begin() + ncols * i, intstrm.begin() + ncols * (i + 1));
+      rawMatrix.push_back(tmprow);
+    }
+}
+
+/*---------------------------------------------------------------------------*/
+
+void xrefstream::diffup()
+{
+  for(size_t i = 0; i < rawMatrix.size(); i++ )
+  if(i > 0)
+    for(size_t j = 0; j < rawMatrix.at(i).size(); j++)
+      rawMatrix.at(i).at(j) += rawMatrix.at(i - 1).at(j);
+}
+
+/*---------------------------------------------------------------------------*/
+
+void xrefstream::modulotranspose()
+{
+  for(size_t i = 0; i < rawMatrix.at(0).size(); i++)
+  {
+    std::vector<int> tempcol;
+    for(size_t j = 0; j < rawMatrix.size(); j++)
+      tempcol.push_back(rawMatrix.at(j).at(i) % 256);
+    if(predictor < 10 || i > 0)
+      finalArray.push_back(tempcol);
+  }
+}
+
+/*---------------------------------------------------------------------------*/
+
+void xrefstream::expandbytes()
+{
+    std::vector<int> byteValues {16777216, 65536, 256, 1};
+    std::vector<int> columnMultiples;
+    for(auto i: arrayWidths)
+    {
+      columnMultiples.insert(columnMultiples.end(),
+                               byteValues.end() - i, byteValues.end());
+    }
+    for(size_t i = 0; i < finalArray.size(); i++)
+      for(auto &j : finalArray.at(i))
+        j *= columnMultiples.at(i);
+}
+
+/*---------------------------------------------------------------------------*/
+
+void xrefstream::mergecolumns()
+{
+  int cumsum = 0;
+  for(auto i : arrayWidths)
+  {
+    std::vector<int> newcolumn = finalArray.at(cumsum);
+    if(i > 1)
+      for(int j = 1; j < i; j++)
+        for(size_t k = 0; k < finalArray.at(cumsum + j).size(); k++)
+          newcolumn.at(k) += finalArray.at(cumsum + j).at(k);
+    result.push_back(newcolumn);
+    cumsum += i;
+  }
+  if(result.size() == 2)
+  {
+    std::vector<int> zeroArray(result.at(0).size(), 0);
+    result.push_back(zeroArray);
+  }
+}
+
+/*---------------------------------------------------------------------------*/
+
+void xrefstream::numberRows()
+{
+  if(indexEntries.empty())
+  {
+    for(size_t i = 0; i < result.at(0).size(); i++)
+      objectIndex.push_back(i + objectNumbers.at(0));
+    result.push_back(objectIndex);
+  }
+  else
+    result.push_back(objectNumbers);
+}
+
+/*---------------------------------------------------------------------------*/
+
+std::vector<std::vector<int>> xrefstream::table()
+{
+  return result;
+}
+
+/*---------------------------------------------------------------------------*/
+
+xrefstream::xrefstream(document& doc, int starts) : ncols(0), firstObject(0),
+predictor(0), objstart(starts)
+{
+  d = &doc;
+  dict = dictionary(d->filestring, objstart);
+  subdict = dictionary(dict.get("/DecodeParms"));
+  getIndex();
+  getParms();
+  if(!dict.hasInts("/W")) throw std::runtime_error("Malformed xref stream");
+  getRawMatrix();
+  if(predictor == 12) diffup();
+  modulotranspose();
+  expandbytes();
+  mergecolumns();
+  numberRows();
+}
+
+/*---------------------------------------------------------------------------*/
 
 void xref::xrefFromString(std::string& xstr)
 {

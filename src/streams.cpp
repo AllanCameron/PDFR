@@ -185,101 +185,11 @@ plainbytetable(std::vector<int> V, std::vector<int> ArrayWidths)
       newcol.push_back(rowarray[j][i]);
     colarray.push_back(newcol);
   }
-  std::vector<int> objind;
+  std::vector<int> objectIndex;
   for(size_t i = 0; i < rowarray.size(); i++)
-    objind.push_back((int) i);
-  colarray.push_back(objind);
+    objectIndex.push_back((int) i);
+  colarray.push_back(objectIndex);
   return colarray;
 }
 
 /*---------------------------------------------------------------------------*/
-
-std::vector<std::vector<int>>
-decodeString(document& d, const std::string& filestring, int objstart)
-{
-  std::vector<std::vector<int>> ReAr, FAr, FA;
-  std::vector<int> ArW, objind, obnum, allobs;
-  int ncols, indexob, predictor;
-  ncols = indexob = predictor = 0;
-  std::string WM;
-
-  dictionary dict = dictionary(filestring, objstart);
-  dictionary subdict = dictionary(dict.get("/DecodeParms"));
-
-  if(dict.hasInts("/Index"))
-    allobs = dict.getInts("/Index");
-  if(allobs.empty())
-    obnum = {0};
-  else
-    for(size_t i = 0; i < allobs.size(); i++)
-      if(i % 2 == 0)
-        indexob = allobs[i];
-      else
-        for(auto j = 0; j < allobs[i]; j++)
-          obnum.push_back(indexob + j);
-
-  if(dict.has("/DecodeParms"))
-  {
-    if(subdict.hasInts("/Columns"))
-      ncols = subdict.getInts("/Columns")[0] + 1;
-    if(subdict.hasInts("/Predictor"))
-      predictor = subdict.getInts("/Predictor")[0];
-  }
-
-  if(dict.hasInts("/W"))
-  {
-    ArW = dict.getInts("/W");
-    std::string SS = getStreamContents(d, filestring, objstart);
-    if(isFlateDecode(filestring, objstart))
-      SS = FlateDecode(SS);
-    std::vector<unsigned char> rawarray(SS.begin(), SS.end());
-    std::vector<int> intAr(rawarray.begin(), rawarray.end());
-    if(!dict.has("/DecodeParms"))
-      return plainbytetable(intAr, ArW);
-    if(ncols == 0)
-      throw std::runtime_error("divide by zero error");
-    int nrows = intAr.size() / ncols;
-    for(int i = 0; i < nrows; i++)
-    {
-      std::vector<int>
-      tmp(intAr.begin() + ncols * i + 1, intAr.begin() + ncols * (i + 1));
-      ReAr.push_back(tmp);
-    }
-    for(size_t i = 0; i < ReAr.size(); i++ )
-      if(i > 0)
-      {
-        std::vector<int> tAr = ReAr.at(i);
-        for(size_t j = 0; j < tAr.size(); j++)
-          ReAr.at(i).at(j) = tAr.at(j) + ReAr.at(i - 1).at(j);
-      }
-    for(unsigned int i = 0; i < ReAr.at(0).size(); i++)
-    {
-      std::vector<int> temarray;
-      for(int j = 0; j < nrows; j++)
-        temarray.push_back(ReAr.at(j).at(i) % 256);
-      FAr.push_back(temarray);
-    }
-    std::vector<int> BI {16777216, 65536, 256, 1};
-    std::vector<int> CA;
-    for(auto i: ArW)
-      CA.insert(CA.end(), BI.end() - i, BI.end());
-    for(size_t i = 0; i < FAr.size(); i++)
-      for(auto &j : FAr.at(i))
-        j *= CA.at(i);
-    int cumsum = 0;
-    for(auto i : ArW)
-    {
-      std::vector<int> newcolumn = FAr.at(cumsum);
-      if(i > 1)
-        for(int j = 1; j < i; j++)
-          for(size_t k = 0; k < FAr.at(cumsum + j).size(); k++)
-            newcolumn.at(k) += FAr.at(cumsum + j).at(k);
-      FA.push_back(newcolumn);
-      cumsum += i;
-    }
-    for(size_t i = 0; i < FA.at(0).size(); i++)
-      objind.push_back(i + obnum.at(0));
-    FA.push_back(objind);
-  }
-  return FA;
-}
