@@ -137,7 +137,7 @@ std::string objectPreStream(const std::string& filestring, int objectstart)
   if(mn.size()>0)
     return dic.substr(0, *std::min_element(mn.begin(), mn.end()));
 
-  throw "No object found";
+  throw std::runtime_error("No object found");
 }
 
 /*---------------------------------------------------------------------------*/
@@ -160,7 +160,7 @@ plainbytetable(std::vector<int> V, std::vector<int> ArrayWidths)
   }
   size_t ncol = multarray.size();
   if(ncol == 0)
-    throw "No columns";
+    throw std::runtime_error("No columns");
   int nrow = V.size() / ncol;
   for(int i = 0; i < (nrow); i++)
   {
@@ -236,6 +236,8 @@ decodeString(document& d, const std::string& filestring, int objstart)
     std::vector<int> intAr(rawarray.begin(), rawarray.end());
     if(!dict.has("/DecodeParms"))
       return plainbytetable(intAr, ArW);
+    if(ncols == 0)
+      throw std::runtime_error("divide by zero error");
     int nrows = intAr.size() / ncols;
     for(int i = 0; i < nrows; i++)
     {
@@ -243,18 +245,18 @@ decodeString(document& d, const std::string& filestring, int objstart)
       tmp(intAr.begin() + ncols * i + 1, intAr.begin() + ncols * (i + 1));
       ReAr.push_back(tmp);
     }
-    for(unsigned int i = 0; i < ReAr.size(); i++ )
+    for(size_t i = 0; i < ReAr.size(); i++ )
       if(i > 0)
       {
-        std::vector<int> tAr = ReAr[i];
-        for(size_t j = 0; j<tAr.size(); j++)
-          ReAr[i][j] = tAr[j] + ReAr[i - 1][j];
+        std::vector<int> tAr = ReAr.at(i);
+        for(size_t j = 0; j < tAr.size(); j++)
+          ReAr.at(i).at(j) = tAr.at(j) + ReAr.at(i - 1).at(j);
       }
-    for(unsigned int i = 0; i < ReAr[0].size(); i++)
+    for(unsigned int i = 0; i < ReAr.at(0).size(); i++)
     {
       std::vector<int> temarray;
       for(int j = 0; j < nrows; j++)
-        temarray.push_back(ReAr[j][i] % 256);
+        temarray.push_back(ReAr.at(j).at(i) % 256);
       FAr.push_back(temarray);
     }
     std::vector<int> BI {16777216, 65536, 256, 1};
@@ -262,20 +264,21 @@ decodeString(document& d, const std::string& filestring, int objstart)
     for(auto i: ArW)
       CA.insert(CA.end(), BI.end() - i, BI.end());
     for(size_t i = 0; i < FAr.size(); i++)
-      for(auto &j : FAr[i])
-        j *= CA[i];
+      for(auto &j : FAr.at(i))
+        j *= CA.at(i);
     int cumsum = 0;
     for(auto i : ArW)
     {
-      std::vector<int> newcolumn = FAr[cumsum];
+      std::vector<int> newcolumn = FAr.at(cumsum);
       if(i > 1)
         for(int j = 1; j < i; j++)
-          for(size_t k = 0; k < FAr[cumsum + j].size(); k++)
-            newcolumn[k] += FAr[cumsum + j][k];
+          for(size_t k = 0; k < FAr.at(cumsum + j).size(); k++)
+            newcolumn.at(k) += FAr.at(cumsum + j).at(k);
       FA.push_back(newcolumn);
       cumsum += i;
     }
-    for(size_t i = 0; i<FA[0].size(); i++) objind.push_back(i + obnum[0]);
+    for(size_t i = 0; i < FA.at(0).size(); i++)
+      objind.push_back(i + obnum.at(0));
     FA.push_back(objind);
   }
   return FA;

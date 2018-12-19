@@ -662,7 +662,7 @@ void GraphicsState::Tf(page& pag, std::vector<std::string>& Operands)
   {
     std::string stopmessage = "Could not find font ";
     stopmessage += currentfont;
-    throw stopmessage;
+    throw std::runtime_error(stopmessage);
   }
   currfontsize = std::stof(Operands[1]);
 }

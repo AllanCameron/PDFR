@@ -88,9 +88,8 @@ void xref::xrefstrings()
       res.push_back(d->filestring.substr(i + 5, minloc + 4));
     }
     else
-      throw "No object found at location";
+      throw std::runtime_error("No object found at location");
   }
-  printvec(res);
   Xrefstrings = res;
 }
 
@@ -108,7 +107,7 @@ void xref::getTrailer()
 {
   TrailerDictionary = dictionary(this->d->filestring, Xreflocations[0]);
   if(!TrailerDictionary.has("/Root"))
-    throw "Didn't find trailer";
+    throw std::runtime_error("Didn't find trailer");
 }
 
 /*---------------------------------------------------------------------------*/
@@ -122,10 +121,10 @@ void xref::xrefFromStream(int xrefloc)
   }
   catch(...)
   {
-    throw "couldn't decode string";
+    throw std::runtime_error("couldn't decode string");
   }
   if(xreftable.empty())
-    throw "xreftable empty";
+    throw std::runtime_error("xreftable empty");
   for (size_t j = 0; j < xreftable[0].size(); j++)
   {
     xrefrow txr;
@@ -180,7 +179,7 @@ void xref::xrefFromString(std::string& xstr)
 void xref::buildXRtable()
 {
   if (Xreflocations.empty())
-    throw "Couldn't get xref locations";
+    throw std::runtime_error("Couldn't get xref locations");
   for(size_t i = 0; i < Xreflocations.size(); i++)
   {
     if(XrefsAreStreams[i])
@@ -225,13 +224,9 @@ void xref::findEnds()
 xref::xref(document& d) : d(&d)
 {
   locateXrefs();
-  std::cout << "Located xrefs" << std::endl;
   xrefstrings();
-    std::cout << "Got xref strings" << std::endl;
   xrefIsstream();
-    std::cout << "Established streaminess" << std::endl;
   buildXRtable();
-    std::cout << "Built table" << std::endl;
   findEnds();
 }
 
@@ -249,7 +244,7 @@ size_t xref::getStart(int objnum)
   if(objectExists(objnum))
     return (size_t) xreftab.at(objnum).startbyte;
   else
-    throw "Object does not exist";
+    throw std::runtime_error("Object does not exist");
 }
 
 /*---------------------------------------------------------------------------*/
@@ -259,7 +254,7 @@ size_t xref::getEnd(int objnum)
   if(objectExists(objnum))
     return (size_t) xreftab.at(objnum).stopbyte;
   else
-    throw "Object does not exist";
+    throw std::runtime_error("Object does not exist");
 }
 
 /*---------------------------------------------------------------------------*/
@@ -269,7 +264,7 @@ bool xref::isInObject(int objnum)
   if(objectExists(objnum))
     return xreftab.at(objnum).in_object != 0;
   else
-    throw "Object does not exist";
+    throw std::runtime_error("Object does not exist");
 };
 
 /*---------------------------------------------------------------------------*/
@@ -279,7 +274,7 @@ size_t xref::inObject(int objnum)
   if(objectExists(objnum))
     return (size_t) xreftab.at(objnum).in_object;
   else
-    throw "Object does not exist";
+    throw std::runtime_error("Object does not exist");
 }
 
 /*---------------------------------------------------------------------------*/

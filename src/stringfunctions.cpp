@@ -166,7 +166,7 @@ int oct2dec(int x)
   {
     int e = stoi(str.substr(i,1));
     if(e > 7)
-      throw "Invalid octal";
+      throw std::runtime_error("Invalid octal");
     res += (e * pow(8, l - i - 1));
   }
   return res;
@@ -178,7 +178,7 @@ int oct2dec(int x)
 vector<unsigned char> bytesFromArray(const string& s)
 {
   if(s.empty())
-    throw "Zero-length string passed to bytesFromArray";
+    throw std::runtime_error("Zero-length string passed to bytesFromArray");
   vector<int> tmpvec, res;
   vector<unsigned char> resvec;
   for(auto a : s)
@@ -189,7 +189,7 @@ vector<unsigned char> bytesFromArray(const string& s)
   }
   size_t ts = tmpvec.size();
   if(ts == 0)
-    throw "arrayFromBytes not given a byte string";
+    throw std::runtime_error("arrayFromBytes not given a byte string");
   for(size_t i = 0; i < ts; i++)
     if(i % 2 == 0)
       tmpvec[i] = 16 * tmpvec[i];
@@ -230,9 +230,9 @@ string bytestostring(const vector<uint8_t>& v)
 vector<float> matmul(vector<float> b, vector<float> a)
 {
   if(a.size() != b.size())
-    throw "Error in Stringfunctions: matmul: Vectors must have same size.";
+    throw std::runtime_error("matmul: Vectors must have same size.");
   if(a.size() != 9)
-    throw "Error in Stringfunctions: matmul: Vectors must be size 9.";
+    throw std::runtime_error("matmul: Vectors must be size 9.");
   vector<float> newmat;
   for(size_t i = 0; i < 9; i++) //clever use of indices to allow fill by loop
     newmat.push_back(a[i % 3 + 0] * b[3 * (i / 3) + 0] +
@@ -247,7 +247,7 @@ vector<float> matmul(vector<float> b, vector<float> a)
 vector<float> six2nine(vector<float> a)
 {
   if(a.size() != 6)
-    throw "Error in Stringfunctions: six2nine: Vectors must be size 6.";
+    throw std::runtime_error("six2nine: Vectors must be size 6.");
   vector<float> newmat {a[0], a[1], 0, a[2], a[3], 0, a[4], a[5], 1};
   return newmat;
 }
@@ -257,7 +257,7 @@ vector<float> six2nine(vector<float> a)
 vector<float> stringvectomat(vector<string> b)
 {
   if(b.size() != 6)
-    throw "Error in Stringfunctions: stringvectomat: Vectors must be size 6.";
+    throw std::runtime_error("stringvectomat: Vectors must be size 6.");
   vector<float> a;
   for(auto i : b) a.push_back(stof(i));
   return six2nine(a);

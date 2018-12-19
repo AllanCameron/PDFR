@@ -38,20 +38,13 @@
 document::document(const std::string& filename) : file(filename)
 {
   get_file();
-  std::cout << "Got file" << std::endl;
   Xref = xref(*this);
-    std::cout << "Got xref" << std::endl;
   trailer = Xref.trailer();
-    std::cout << "Got trailer" << std::endl;
   filekey = get_cryptkey();
-    std::cout << "Got cryptkey" << std::endl;
   getCatalogue();
-    std::cout << "Got catalogue" << std::endl;
   getPageDir();
-    std::cout << "Got pagedir" << std::endl;
   isLinearized();
   getPageHeaders();
-    std::cout << "Made document" << std::endl;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -99,7 +92,7 @@ void document::getCatalogue()
 {
   std::vector<int> rootnums = trailer.getInts("/Root");
   if (rootnums.empty())
-    throw "Couldn't find catalogue from trailer";
+    throw std::runtime_error("Couldn't find catalogue from trailer");
   catalogue = getobject(rootnums[0]).getDict();
 }
 
@@ -108,7 +101,7 @@ void document::getCatalogue()
 void document::getPageDir()
 {
   if(!catalogue.hasInts("/Pages"))
-    throw "No valid /Pages entry";
+    throw std::runtime_error("No valid /Pages entry");
   int pagenum = catalogue.getInts("/Pages")[0];
   pagedir = getobject(pagenum);
 }
