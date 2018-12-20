@@ -164,7 +164,6 @@ void xrefstream::getParms()
       ncols = subdict.getInts("/Columns")[0];
     if(subdict.hasInts("/Predictor"))
       predictor = subdict.getInts("/Predictor")[0];
-    if(predictor > 9) ncols++;
   }
 }
 
@@ -172,24 +171,31 @@ void xrefstream::getParms()
 
 void xrefstream::getRawMatrix()
 {
-    std::vector<int> tmparraywidths = dict.getInts("/W");
-    for(auto i : tmparraywidths)
-      if(i > 0)
-        arrayWidths.push_back(i);
-    std::string SS = getStreamContents(*d, d->filestring, objstart);
-    if(isFlateDecode(d->filestring, objstart))
-      SS = FlateDecode(SS);
-    std::vector<unsigned char> rawarray(SS.begin(), SS.end());
-    std::vector<int> intstrm(rawarray.begin(), rawarray.end());
-    if(ncols == 0)
-      throw std::runtime_error("divide by zero error");
-    int nrows = intstrm.size() / ncols;
-    for(int i = 0; i < nrows; i++)
-    {
-      std::vector<int>
-      tmprow(intstrm.begin() + ncols * i, intstrm.begin() + ncols * (i + 1));
-      rawMatrix.push_back(tmprow);
-    }
+  std::string SS = getStreamContents(*d, d->filestring, objstart);
+  if(isFlateDecode(d->filestring, objstart))
+    SS = FlateDecode(SS);
+  std::vector<unsigned char> rawarray(SS.begin(), SS.end());
+  std::vector<int> intstrm(rawarray.begin(), rawarray.end());
+
+  std::vector<int> tmparraywidths = dict.getInts("/W");
+  for(auto i : tmparraywidths)
+  {
+    if(i > 0)
+      arrayWidths.push_back(i);
+  }
+  if(ncols == 0)
+    for(auto i : arrayWidths)
+      ncols += i;
+  if(predictor > 9) ncols++;
+  if(ncols == 0)
+    throw std::runtime_error("divide by zero error");
+  int nrows = intstrm.size() / ncols;
+  for(int i = 0; i < nrows; i++)
+  {
+    std::vector<int>
+    tmprow(intstrm.begin() + ncols * i, intstrm.begin() + ncols * (i + 1));
+    rawMatrix.push_back(tmprow);
+  }
 }
 
 /*---------------------------------------------------------------------------*/

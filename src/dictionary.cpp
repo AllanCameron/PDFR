@@ -348,7 +348,7 @@ std::vector<int> dictionary::getRefs(const std::string& Key)
   if(this->has(Key))
   {
     std::string keyval = this->get(Key);
-    std::string refmatch = "\\d+ 0 R";
+    std::string refmatch = "\\d+ \\d+ R";
     Rex refrex = Rex(keyval, refmatch);
     std::vector<std::string> refs = refrex.get();
     for (auto i : refs)

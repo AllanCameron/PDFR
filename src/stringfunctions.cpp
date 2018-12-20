@@ -347,7 +347,7 @@ string byteStringToString(const string& s)
 vector<int> getObjRefs(string ds)
 {
   vector<int> res;
-  for (auto i : Rex(ds, "\\d+ 0 R").get())
+  for (auto i : Rex(ds, "\\d+ \\d+ R").get())
     res.push_back(stoi(splitter(i, " ")[0]));
   return res;
 }

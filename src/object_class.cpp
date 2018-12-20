@@ -130,7 +130,7 @@ object_class::object_class(document& d, std::string str, int objnum)
           header = dictionary();
           stream = H;
           has_stream = true;
-          if(stream.size() < 15 && Rex(stream, "0 R").get().size() == 1)
+          if(stream.size() < 15 && Rex(stream, "\\d+ R").get().size() == 1)
           {
             *this = object_class(d, getObjRefs(stream)[0]);
           }
@@ -159,7 +159,7 @@ void object_class::findKids()
 {
   std::vector <int> resvec;
   std::string rawkidsstring = carveout(header.get("/Kids"), "\\[", "\\]");
-  std::vector<std::string> kidStrings = splitter(rawkidsstring, " 0 R( )*");
+  std::vector<std::string> kidStrings = splitter(rawkidsstring, " \\d+ R( )*");
   for(auto i : kidStrings) if(stoi(i) != 0) resvec.push_back(stoi(i));
   Kids = resvec;
 }
@@ -178,7 +178,7 @@ void object_class::findContents()
 {
   std::vector <int> resvec;
   std::string rawcontentsstring = carveout(header.get("/Contents"), "\\[", "\\]");
-  std::vector<std::string> conStrings = splitter(rawcontentsstring, " 0 R( )*");
+  std::vector<std::string> conStrings = splitter(rawcontentsstring, " \\d+ R( )*");
   for(auto i : conStrings) if(stoi(i) != 0) resvec.push_back(stoi(i));
   Contents = resvec;
 }
