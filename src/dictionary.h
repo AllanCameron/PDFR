@@ -32,6 +32,9 @@
 #include<map>
 #include<vector>
 
+
+enum Types {Boolean, Name, String, Number, Reference, Array, Dictionary};
+
 class dictionary
 {
   std::map<std::string, std::string> DictionaryMap;
@@ -54,5 +57,6 @@ public:
   dictionary getDictionary(const std::string& Key);
   std::map<std::string, std::string> R_out() {return this->DictionaryMap;}
 };
+
 
 #endif

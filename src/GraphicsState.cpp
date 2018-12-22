@@ -40,7 +40,7 @@ GraphicsState::GraphicsState(page& pag) : p(pag),
   Tmstate = Tdstate = initstate;
   gs.push_back(initstate);
   fontsizestack.push_back(currfontsize);
-  InstructionReader(pag, Instructions);
+  InstructionReader(pag, Instructions, "");
   MakeGS();
   db =  Rcpp::DataFrame::create(
               Rcpp::Named("text") = text,
@@ -606,7 +606,7 @@ void GraphicsState::Do(std::string& a)
   if (p.XObjects.find(a) != p.XObjects.end())
   {
     if(IsAscii(p.XObjects[a]))
-      InstructionReader(p, tokenize(p.XObjects[a]));
+      InstructionReader(p, tokenize(p.XObjects[a]), a);
   }
 }
 
@@ -737,7 +737,8 @@ void GraphicsState::TJ(page& pag, std::vector<std::vector<std::string>>& i)
 
 /*---------------------------------------------------------------------------*/
 
-void GraphicsState::InstructionReader(page& pag, Instructionset I)
+void GraphicsState::InstructionReader(page& pag, Instructionset I,
+                                      const std::string& insubloop)
 {
   for (auto &i : I)
   {
@@ -756,7 +757,7 @@ void GraphicsState::InstructionReader(page& pag, Instructionset I)
     if (Ins == "Td" || Ins == "TD") Td(Ins, Operands);
     if (Ins == "ET" || Ins == "BT") BT();
     if (Ins == "Tf") Tf(pag, Operands);
-    if (Ins == "Do") Do(Operands.at(0));
+    if (Ins == "Do") if(insubloop != Operands.at(0)) Do(Operands.at(0));
     if (Ins == "Tj" || Ins == "'" || Ins == "TJ") TJ(pag, i);
   }
 }

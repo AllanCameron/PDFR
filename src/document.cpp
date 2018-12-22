@@ -66,15 +66,15 @@ document::document(const std::vector<uint8_t>& bytevector)
 
 void document::get_file()
 {
-    std::ifstream in(file.c_str(), std::ios::in | std::ios::binary);
-    fileCon = &in;
-    fileCon->seekg(0, std::ios::end);
-    filesize = fileCon->tellg();
-    filestring.resize(filesize);
-    fileCon->seekg(0, std::ios::beg);
-    fileCon->read(&filestring[0], filestring.size());
-    fileCon->seekg(0, std::ios::beg);
-    fileCon->close();
+  std::ifstream in(file.c_str(), std::ios::in | std::ios::binary);
+  fileCon = &in;
+  fileCon->seekg(0, std::ios::end);
+  filesize = fileCon->tellg();
+  filestring.resize(filesize);
+  fileCon->seekg(0, std::ios::beg);
+  fileCon->read(&filestring[0], filestring.size());
+  fileCon->seekg(0, std::ios::beg);
+  fileCon->close();
 }
 
 /*---------------------------------------------------------------------------*/
@@ -90,19 +90,19 @@ object_class document::getobject(int n)
 
 void document::getCatalogue()
 {
-  std::vector<int> rootnums = trailer.getInts("/Root");
+  std::vector<int> rootnums = trailer.getRefs("/Root");
   if (rootnums.empty())
     throw std::runtime_error("Couldn't find catalogue from trailer");
-  catalogue = getobject(rootnums[0]).getDict();
+  catalogue = getobject(rootnums.at(0)).getDict();
 }
 
 /*---------------------------------------------------------------------------*/
 
 void document::getPageDir()
 {
-  if(!catalogue.hasInts("/Pages"))
+  if(!catalogue.hasRefs("/Pages"))
     throw std::runtime_error("No valid /Pages entry");
-  int pagenum = catalogue.getInts("/Pages")[0];
+  int pagenum = catalogue.getRefs("/Pages").at(0);
   pagedir = getobject(pagenum);
 }
 
@@ -110,20 +110,17 @@ void document::getPageDir()
 
 void document::isLinearized()
 {
-  std::string tx(subfile(0, 100));
-  std::vector < int > lin = Rex(tx, "<</Linearized").pos();
-  if (lin.empty())
-    linearized = false;
-  else
-    linearized = true;
+  linearized = Rex(subfile(0, 100), "<</Linearized").has();
 }
 
 /*---------------------------------------------------------------------------*/
 
 std::vector <int> document::expandKids(std::vector<int> objnums)
 {
+  if(objnums.size() == 0)
+    throw std::runtime_error("No pages found");
   std::vector<bool> ispage(objnums.size(), true);
-  unsigned int i = 0;
+  size_t i = 0;
   while (i < objnums.size())
   {
     object_class o = getobject(objnums[i]);
@@ -147,6 +144,8 @@ std::vector <int> document::expandKids(std::vector<int> objnums)
 
 std::vector <int> document::expandContents(std::vector<int> objnums)
 {
+  if(objnums.size() == 0)
+    return objnums;
   size_t i = 0;
   while (i < objnums.size())
   {
@@ -193,122 +192,86 @@ std::string document::subfile(int startbyte, int len)
 
 std::vector<uint8_t> document::get_cryptkey()
 {
-  dictionary dict = this->trailer;
-  std::vector<std::string> res;
-  std::vector<uint8_t> ubytes, obytes, idbytes, pbytes, Fstring, blank;
-  std::vector<std::vector<uint8_t>> vecvec;
-  std::string encstr, idstr;
-  int rnum;
-  unsigned int cryptlen;
-  if(dict.has("/Encrypt"))
+  std::vector<uint8_t> blank;
+  if(trailer.has("/Encrypt"))
   {
     this->encrypted = true;
-    std::string encheader;
-    int encnum = dict.getInts("/Encrypt")[0];
+    int encnum = trailer.getRefs("/Encrypt").at(0);
+    dictionary encdict;
     if(this->Xref.objectExists(encnum))
-    {
-      encheader = objectPreStream(this->filestring,
-                                  this->Xref.getStart(encnum));
-    }
-    int ehl = encheader.length();
-    if(ehl > 0)
-    {
-      std::vector<std::string> ps = Rex(encheader, "/P( )+(-)?\\d+").get();
-      if(!ps.empty())
-        pbytes = perm(ps[0].substr(2, ps[0].length() - 2));
-      std::vector<std::string> rs = Rex(encheader, "/R \\d").get();
-      if(!rs.empty())
-        rnum = stoi(rs[0].substr(3, rs[0].length() - 3));
-      else
-        rnum = 2;
-      std::vector<std::string> ls = Rex(encheader, "/Length \\d+").get();
-      if(ls.size() > 0 && rnum > 2)
-        cryptlen = stoi(ls[0].substr(8, ls[0].length() - 8))/8;
-      else cryptlen = 5;
-      std::vector<int> ostarts = Rex(encheader, "/O\\(").ends();
-      std::vector<int> ustarts = Rex(encheader, "/U\\(").ends();
-      if(!ostarts.empty())
-        if(ostarts[0] + 32 < ehl)
-        {
-          std::string ostring = encheader.substr(ostarts[0], 32);
-          for(auto j : ostring)
-            obytes.push_back(j);
-        }
+      encdict = getobject(encnum).getDict();
+    std::vector<uint8_t> pbytes = perm(encdict.get("/P"));
+    int rnum = 2;
+    if(encdict.hasInts("/R"))
+      rnum = encdict.getInts("/R").at(0);
+    size_t cryptlen = 5;
+    if(encdict.hasInts("/Length"))
+      cryptlen = encdict.getInts("/Length").at(0) / 8;
+    std::string ostarts = encdict.get("/O");
+    std::string ustarts = encdict.get("/U");
+    std::vector<uint8_t> obytes;
+    if(ostarts.size() > 32)
+      for(auto j : ostarts.substr(1, 32))
+        obytes.push_back(j);
+    std::vector<uint8_t> ubytes;
+    if(ustarts.size() > 32)
+      for(auto j : ustarts.substr(1, 32))
+        ubytes.push_back(j);
+    std::vector<uint8_t> idbytes;
+    if(trailer.has("/ID"))
+      idbytes = bytesFromArray(trailer.get("/ID"));
+    idbytes.resize(16);
 
-      if(!ustarts.empty())
+    std::vector<uint8_t> Fstring = upw();
+    concat(Fstring, obytes);
+    concat(Fstring, pbytes);
+    concat(Fstring, idbytes);
+    std::vector<uint8_t> filekey = md5(Fstring);
+    filekey.resize(cryptlen);
+    if(rnum > 2)
+    {
+      for(int i = 0; i < 50; i++)
       {
-        int ustart = ustarts[0];
-        if(ustart + 32 < ehl)
-        {
-          std::string ustring = encheader.substr(ustart, 32);
-          for(auto j : ustring) ubytes.push_back(j);
-        }
+        filekey = md5(filekey);
+        filekey.resize(cryptlen);
       }
-      std::string idstr = dict.get("/ID");
-      if(!idstr.empty())
+    }
+    std::vector<uint8_t> checkans;
+    if(rnum == 2)
+    {
+      checkans = rc4(upw(), filekey);
+      if(checkans.size() == 32)
       {
-        idbytes = bytesFromArray(idstr);
-        while(idbytes.size() > 16)
-          idbytes.pop_back();
-      }
-      std::vector<uint8_t> up = upw();
-      Fstring = up;
-      Fstring.insert(Fstring.end(), obytes.begin(), obytes.end());
-      Fstring.insert(Fstring.end(), pbytes.begin(), pbytes.end());
-      Fstring.insert(Fstring.end(), idbytes.begin(), idbytes.end());
-      std::vector<uint8_t> filekey = md5(Fstring);
-      while(filekey.size() > cryptlen)
-        filekey.pop_back();
-      if(rnum > 2)
-      {
-        for(unsigned it = 0; it < 50; it++)
-        {
-          filekey = md5(filekey);
-          while(filekey.size() > cryptlen)
-            filekey.pop_back();
-        }
-      }
-      std::vector<uint8_t> checkans;
-      if(rnum == 2)
-      {
-        checkans = rc4(up, filekey);
-        if(checkans.size() == 32)
-        {
-          int m = 0;
-          for(unsigned int l = 0; l < 32; l++)
-          {
-            if(checkans[l] != ubytes[l])
-              break;
-            m++;
-          }
-          if(m == 32)
-            return filekey;
-          else
-            return blank;
-        }
-      }
-      if(rnum > 2)
-      {
-        std::vector<uint8_t> buf = up;
-        buf.insert(buf.end(), idbytes.begin(), idbytes.end());
-        checkans = md5(buf);
-        checkans = rc4(checkans, filekey);
-        for (int iii = 19; iii >= 0; iii--)
-        {
-          std::vector<uint8_t> tmpkey;
-          for (auto jj : filekey)
-            tmpkey.push_back(jj ^ ((uint8_t) iii));
-          checkans = rc4(checkans, tmpkey);
-        }
         int m = 0;
-        for(unsigned int l = 0; l < 16; l++)
+        for(int l = 0; l < 32; l++)
         {
-          if(checkans[l] != ubytes[l])
-            break;
+          if(checkans[l] != ubytes[l]) break;
           m++;
         }
-        return filekey;
+        if(m == 32) return filekey;
+        else return blank;
       }
+    }
+    if(rnum > 2)
+    {
+      std::vector<uint8_t> buf = upw();
+      buf.insert(buf.end(), idbytes.begin(), idbytes.end());
+      checkans = md5(buf);
+      checkans = rc4(checkans, filekey);
+      for (int i = 19; i >= 0; i--)
+      {
+        std::vector<uint8_t> tmpkey;
+        for (auto j : filekey)
+          tmpkey.push_back(j ^ ((uint8_t) i));
+        checkans = rc4(checkans, tmpkey);
+      }
+        int m = 0;
+        for(int l = 0; l < 16; l++)
+        {
+          if(checkans[l] != ubytes[l]) break;
+          m++;
+        }
+      return filekey;
     }
   }
   this->encrypted = false;

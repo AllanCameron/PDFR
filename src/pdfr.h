@@ -77,6 +77,12 @@ std::vector<Mt> getKeys(std::map<Mt, T> Map)
   return keyvec;
 }
 
+template <typename T>
+void concat(std::vector<T>& A, const std::vector<T>& B)
+{
+  A.insert(A.end(), B.begin(), B.end());
+}
+
 //---------------------------------------------------------------------------//
 
 inline void createpdf(const std::string& filename)

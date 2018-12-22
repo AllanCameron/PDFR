@@ -55,7 +55,7 @@ private:
                       std::vector<std::string> &token, std::string &s);
   Instructionset parser(std::vector<std::string> token,
                         std::vector<std::string> ttype);
-  void InstructionReader(page& p, Instructionset I);
+  void InstructionReader(page& p, Instructionset I, const std::string& subloop);
   void Q(page& p);
   void q();
   void Td(std::string Ins, std::vector<std::string>& Operands);

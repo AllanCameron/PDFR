@@ -34,6 +34,8 @@
 
 std::vector<uint8_t> perm(std::string str)
 {
+  if(str.length() == 0)
+    throw std::runtime_error("Could not determine permission flags");
   int a = stoi(str);
   uint8_t b = a & 0xff;
   uint8_t c = (a >> 8) & 0xff;
