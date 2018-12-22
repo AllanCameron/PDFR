@@ -13,6 +13,17 @@ in the R console.
 **Please note, this may take up to five minutes to complete as the source files 
 have to be compiled on your computer as part of the installation.**
 
+The current version passes all CRAN tests, but is at an early stage of
+development. It will work with most pdfs, but there are some unsupported
+features which may lead to some pdfs producing runtime errors.
+
+Documents encrypted using the standard method and which can be opened
+without a password are supported. Password-based encryption is currently
+unsupported.
+
+If there are any suggestions for development please submit a feature request,
+or let me know about pdfs that break the package.
+
 ## Motivation 
 Extracting useful data from pdf is difficult for two reasons. Firstly, the pdf 
 format primarily consists of binary data, which is laid out in such a way as to 
