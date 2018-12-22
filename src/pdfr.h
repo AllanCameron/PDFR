@@ -52,7 +52,6 @@ class page;
 class xref;
 class document;
 
-#include "fileio.h"
 #include "stringfunctions.h"
 #include "streams.h"
 #include "dictionary.h"
@@ -76,6 +75,8 @@ std::vector<Mt> getKeys(std::map<Mt, T> Map)
   }
   return keyvec;
 }
+
+//---------------------------------------------------------------------------//
 
 template <typename T>
 void concat(std::vector<T>& A, const std::vector<T>& B)
@@ -104,24 +105,6 @@ inline std::string getPageString(const std::string& filename, int pagenum)
 //---------------------------------------------------------------------------//
 
 Rcpp::List PDFpage(document mypdf, page pg, int clump);
-
-//---------------------------------------------------------------------------//
-
-std::string byteStringToString(const std::string& s);
-
-//---------------------------------------------------------------------------//
-
-std::string get_partial_file(const std::string& filename, long start, long stp);
-
-//---------------------------------------------------------------------------//
-
-std::string carveout (const std::string& subject, const std::string& precarve,
-                      const std::string& postcarve);
-
-//---------------------------------------------------------------------------//
-
-std::vector<std::string>
-  splitter(const std::string& subject, const std::string& matcher);
 
 //---------------------------------------------------------------------------//
 //' rc4

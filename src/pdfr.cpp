@@ -32,7 +32,6 @@
 
 #include<Rcpp.h>
 #include "pdfr.h"
-#include "fileio.h"
 #include "debugtools.h"
 #include "dictionary.h"
 #include "stringfunctions.h"

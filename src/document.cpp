@@ -33,9 +33,13 @@
 #include "crypto.h"
 #include "debugtools.h"
 
+using namespace std;
+
+
+
 /*---------------------------------------------------------------------------*/
 
-document::document(const std::string& filename) : file(filename)
+document::document(const string& filename) : file(filename)
 {
   get_file();
   Xref = xref(*this);
@@ -49,7 +53,7 @@ document::document(const std::string& filename) : file(filename)
 
 /*---------------------------------------------------------------------------*/
 
-document::document(const std::vector<uint8_t>& bytevector)
+document::document(const vector<uint8_t>& bytevector)
 {
   filestring = bytestostring(bytevector);
   filesize = filestring.size();
@@ -66,14 +70,14 @@ document::document(const std::vector<uint8_t>& bytevector)
 
 void document::get_file()
 {
-  std::ifstream in(file.c_str(), std::ios::in | std::ios::binary);
+  ifstream in(file.c_str(), ios::in | ios::binary);
   fileCon = &in;
-  fileCon->seekg(0, std::ios::end);
+  fileCon->seekg(0, ios::end);
   filesize = fileCon->tellg();
   filestring.resize(filesize);
-  fileCon->seekg(0, std::ios::beg);
+  fileCon->seekg(0, ios::beg);
   fileCon->read(&filestring[0], filestring.size());
-  fileCon->seekg(0, std::ios::beg);
+  fileCon->seekg(0, ios::beg);
   fileCon->close();
 }
 
@@ -90,9 +94,9 @@ object_class document::getobject(int n)
 
 void document::getCatalogue()
 {
-  std::vector<int> rootnums = trailer.getRefs("/Root");
+  vector<int> rootnums = trailer.getRefs("/Root");
   if (rootnums.empty())
-    throw std::runtime_error("Couldn't find catalogue from trailer");
+    throw runtime_error("Couldn't find catalogue from trailer");
   catalogue = getobject(rootnums.at(0)).getDict();
 }
 
@@ -101,7 +105,7 @@ void document::getCatalogue()
 void document::getPageDir()
 {
   if(!catalogue.hasRefs("/Pages"))
-    throw std::runtime_error("No valid /Pages entry");
+    throw runtime_error("No valid /Pages entry");
   int pagenum = catalogue.getRefs("/Pages").at(0);
   pagedir = getobject(pagenum);
 }
@@ -115,25 +119,25 @@ void document::isLinearized()
 
 /*---------------------------------------------------------------------------*/
 
-std::vector <int> document::expandKids(std::vector<int> objnums)
+vector <int> document::expandKids(vector<int> objnums)
 {
   if(objnums.size() == 0)
-    throw std::runtime_error("No pages found");
-  std::vector<bool> ispage(objnums.size(), true);
+    throw runtime_error("No pages found");
+  vector<bool> ispage(objnums.size(), true);
   size_t i = 0;
   while (i < objnums.size())
   {
     object_class o = getobject(objnums[i]);
     if (o.hasKids())
     {
-      std::vector<int> tmpvec = o.getKids();
+      vector<int> tmpvec = o.getKids();
       objnums.insert( objnums.end(), tmpvec.begin(), tmpvec.end() );
       while(ispage.size() < objnums.size()) ispage.push_back(true);
       ispage[i] = false;
     }
     i++;
   }
-  std::vector<int> res;
+  vector<int> res;
   for(i = 0; i < objnums.size(); i++)
     if(ispage[i])
       res.push_back(objnums[i]);
@@ -142,7 +146,7 @@ std::vector <int> document::expandKids(std::vector<int> objnums)
 
 /*---------------------------------------------------------------------------*/
 
-std::vector <int> document::expandContents(std::vector<int> objnums)
+vector <int> document::expandContents(vector<int> objnums)
 {
   if(objnums.size() == 0)
     return objnums;
@@ -152,7 +156,7 @@ std::vector <int> document::expandContents(std::vector<int> objnums)
     object_class o = getobject(objnums[i]);
     if (o.hasContents())
     {
-      std::vector<int> tmpvec = o.getContents();
+      vector<int> tmpvec = o.getContents();
       objnums.erase(objnums.begin() + i);
       objnums.insert(objnums.begin() + i, tmpvec.begin(), tmpvec.end());
       i = 0;
@@ -168,7 +172,7 @@ void document::getPageHeaders()
 {
   if (pagedir.hasKids())
   {
-    std::vector<int> finalkids = expandKids(pagedir.getKids());
+    vector<int> finalkids = expandKids(pagedir.getKids());
     for (auto i : finalkids)
       pageheaders.push_back(getobject(i).getDict());
   }
@@ -183,16 +187,16 @@ page document::getPage(int pagenum)
 
 /*---------------------------------------------------------------------------*/
 
-std::string document::subfile(int startbyte, int len)
+string document::subfile(int startbyte, int len)
 {
   return filestring.substr(startbyte, len);
 }
 
 /*---------------------------------------------------------------------------*/
 
-std::vector<uint8_t> document::get_cryptkey()
+vector<uint8_t> document::get_cryptkey()
 {
-  std::vector<uint8_t> blank;
+  vector<uint8_t> blank;
   if(trailer.has("/Encrypt"))
   {
     this->encrypted = true;
@@ -200,33 +204,33 @@ std::vector<uint8_t> document::get_cryptkey()
     dictionary encdict;
     if(this->Xref.objectExists(encnum))
       encdict = getobject(encnum).getDict();
-    std::vector<uint8_t> pbytes = perm(encdict.get("/P"));
+    vector<uint8_t> pbytes = perm(encdict.get("/P"));
     int rnum = 2;
     if(encdict.hasInts("/R"))
       rnum = encdict.getInts("/R").at(0);
     size_t cryptlen = 5;
     if(encdict.hasInts("/Length"))
       cryptlen = encdict.getInts("/Length").at(0) / 8;
-    std::string ostarts = encdict.get("/O");
-    std::string ustarts = encdict.get("/U");
-    std::vector<uint8_t> obytes;
+    string ostarts = encdict.get("/O");
+    string ustarts = encdict.get("/U");
+    vector<uint8_t> obytes;
     if(ostarts.size() > 32)
       for(auto j : ostarts.substr(1, 32))
         obytes.push_back(j);
-    std::vector<uint8_t> ubytes;
+    vector<uint8_t> ubytes;
     if(ustarts.size() > 32)
       for(auto j : ustarts.substr(1, 32))
         ubytes.push_back(j);
-    std::vector<uint8_t> idbytes;
+    vector<uint8_t> idbytes;
     if(trailer.has("/ID"))
       idbytes = bytesFromArray(trailer.get("/ID"));
     idbytes.resize(16);
 
-    std::vector<uint8_t> Fstring = UPW;
+    vector<uint8_t> Fstring = UPW;
     concat(Fstring, obytes);
     concat(Fstring, pbytes);
     concat(Fstring, idbytes);
-    std::vector<uint8_t> filekey = md5(Fstring);
+    vector<uint8_t> filekey = md5(Fstring);
     filekey.resize(cryptlen);
     if(rnum > 2)
     {
@@ -236,7 +240,7 @@ std::vector<uint8_t> document::get_cryptkey()
         filekey.resize(cryptlen);
       }
     }
-    std::vector<uint8_t> checkans;
+    vector<uint8_t> checkans;
     if(rnum == 2)
     {
       checkans = rc4(UPW, filekey);
@@ -254,13 +258,13 @@ std::vector<uint8_t> document::get_cryptkey()
     }
     if(rnum > 2)
     {
-      std::vector<uint8_t> buf = UPW;
+      vector<uint8_t> buf = UPW;
       buf.insert(buf.end(), idbytes.begin(), idbytes.end());
       checkans = md5(buf);
       checkans = rc4(checkans, filekey);
       for (int i = 19; i >= 0; i--)
       {
-        std::vector<uint8_t> tmpkey;
+        vector<uint8_t> tmpkey;
         for (auto j : filekey)
           tmpkey.push_back(j ^ ((uint8_t) i));
         checkans = rc4(checkans, tmpkey);
