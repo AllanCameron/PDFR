@@ -45,12 +45,12 @@ void xref::locateXrefs()
   else
   {
     bool noprevious = false;
-    while ((res.back() != 0) && (noprevious == false))
+    while ((res.back() != 0) && !noprevious)
     {
       int XRS = res.back();
       std::string x = d->filestring.substr(XRS, 2000);
       std::vector<int> prevstart = Rex(x, "/Prev *").ends();
-      noprevious = prevstart.size() == 0;
+      noprevious = prevstart.empty();
       if(!noprevious)
       {
         x = x.substr(prevstart[0], 10);
@@ -75,7 +75,7 @@ void xref::xrefstrings()
   {
     size_t nchars = 0;
     std::vector<int> ts;
-    while (ts.size() == 0 && ( (size_t)(i + nchars) < d->filesize))
+    while (ts.empty() && ( (size_t)(i + nchars) < d->filesize))
     {
       nchars += 1000;
       if(i + nchars > d->filesize) nchars = d->filesize - i;

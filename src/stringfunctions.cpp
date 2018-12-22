@@ -39,15 +39,12 @@ vector<string> splitter(const string& s, const string& m)
   Rex sl = Rex(s, m);
   vector<string> RC, res;
   if(!sl.has())
-  {
     return sl.get();
-  }
-  size_t n = (size_t) sl.n();
+  size_t n = sl.n();
   RC.push_back(s.substr(0, sl.pos().at(0)));
   if(n > 1)
     for(size_t i = 1; i < n; i++)
-      RC.push_back(s.substr(sl.ends().at(i - 1),
-                            sl.pos().at(i) - sl.ends().at(i - 1)));
+      RC.push_back(s.substr(sl.ends()[i - 1], sl.pos()[i] - sl.ends()[i - 1]));
   RC.push_back(s.substr(sl.ends().at(n - 1), s.size() - sl.ends().at(n - 1)));
   for(auto i : RC)
     if(!i.empty())
@@ -96,11 +93,7 @@ bool IsAscii(const string& tempint)
 vector<uint16_t> strtoint(string x)
 {
   vector<uint16_t> res;
-  for(auto i : x)
-  {
-    uint16_t a = i;
-    res.push_back(a % 255);
-  }
+  for(auto i : x) res.push_back(((uint16_t) i) % 255);
   return res;
 }
 
@@ -160,8 +153,7 @@ int oct2dec(int x)
   int res = 0;
   string str = to_string(x);
   int l = str.length();
-  if(l == 0)
-    return res;
+  if(l == 0) return res;
   for (int i = 0; i < l; i++)
   {
     int e = stoi(str.substr(i,1));
@@ -179,8 +171,7 @@ vector<unsigned char> bytesFromArray(const string& s)
 {
   if(s.empty())
     throw std::runtime_error("Zero-length string passed to bytesFromArray");
-  vector<int> tmpvec, res;
-  vector<unsigned char> resvec;
+  vector<int> tmpvec;
   for(auto a : s)
   {
     if(a > 47 && a < 58)  tmpvec.push_back(a - 48); //Digits 0-9
@@ -190,16 +181,11 @@ vector<unsigned char> bytesFromArray(const string& s)
   size_t ts = tmpvec.size();
   if(ts == 0)
     throw std::runtime_error("arrayFromBytes not given a byte string");
-  for(size_t i = 0; i < ts; i++)
-    if(i % 2 == 0)
-      tmpvec[i] = 16 * tmpvec[i];
-  for(size_t i = 0; i < (ts - 1); i++)
-    if(i % 2 == 0)
-      res.push_back(tmpvec.at(i) + tmpvec.at(i + 1));
-  if((ts - 1) % 2 == 0)
-    res.push_back(tmpvec.at(ts - 1));
-  for(auto i : res)
-    resvec.push_back(i);
+  if(ts % 2 == 1)
+    tmpvec.push_back(0);
+  vector<unsigned char> resvec;
+  for(size_t i = 0; i < ts; i += 2)
+    resvec.push_back((unsigned char) (16 * tmpvec.at(i) + tmpvec.at(i + 1)));
   return resvec;
 }
 

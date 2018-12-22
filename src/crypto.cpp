@@ -45,19 +45,6 @@ std::vector<uint8_t> perm(std::string str)
   return res;
 }
 
-/*---------------------------------------------------------------------------*/
-
-std::vector<uint8_t> upw()
-{
-  uint8_t c[32] = { 0x28, 0xBF, 0x4E, 0x5E, 0x4E, 0x75, 0x8A, 0x41,
-                    0x64, 0x00, 0x4E, 0x56, 0xFF, 0xFA, 0x01, 0x08,
-                    0x2E, 0x2E, 0x00, 0xB6, 0xD0, 0x68, 0x3E, 0x80,
-                    0x2F, 0x0C, 0xA9, 0xFE, 0x64, 0x53, 0x69, 0x7A };
-  std::vector<uint8_t> s;
-  for(int i = 0; i < 32; i++)
-    s.push_back(c[i]);
-  return s;
-}
 
 /*---------------------------------------------------------------------------*/
 

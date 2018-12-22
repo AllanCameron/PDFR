@@ -29,16 +29,17 @@
 #define PDFR_CRYPTO
 
 typedef unsigned long UL;
+typedef std::vector<uint8_t> bytes;
 
-std::vector<uint8_t> perm(std::string str);
-std::vector<uint8_t> upw();
+static bytes UPW = { 0x28, 0xBF, 0x4E, 0x5E, 0x4E, 0x75, 0x8A, 0x41,
+                     0x64, 0x00, 0x4E, 0x56, 0xFF, 0xFA, 0x01, 0x08,
+                     0x2E, 0x2E, 0x00, 0xB6, 0xD0, 0x68, 0x3E, 0x80,
+                     0x2F, 0x0C, 0xA9, 0xFE, 0x64, 0x53, 0x69, 0x7A };
 
-
-std::vector<uint8_t> md5(std::vector<uint8_t> input);
-std::vector<uint8_t> md5(std::string input);
-std::vector<uint8_t> rc4(std::vector<uint8_t> msg, std::vector<uint8_t> key);
-std::string decryptStream(std::string streamstr, std::vector<uint8_t> key,
-                          int objNum, int objGen);
-
+bytes perm(std::string str);
+bytes md5(bytes input);
+bytes md5(std::string input);
+bytes rc4(bytes msg, bytes key);
+std::string decryptStream(std::string strm, bytes key, int objNum, int objGen);
 
 #endif

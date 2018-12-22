@@ -40,8 +40,9 @@ object_class::object_class(document& d, int objnum) : number(objnum)
   std::string &fs = d.filestring;
   std::vector<uint8_t> &fk = d.filekey;
   int startbyte = d.Xref.getStart(objnum);
-  int stopbyte = d.Xref.getEnd(objnum);
-  if(!(objnum > 0)) has_stream = false;
+  int stopbyte  = d.Xref.getEnd(objnum);
+  if(objnum == 0)
+    has_stream = false;
   else
   {
     if(!d.Xref.isInObject(objnum))
@@ -110,8 +111,10 @@ object_class::object_class(document& d, std::string str, int objnum)
       if(i % 2 == 1)
       {
         bytenums.push_back(numarray[i]);
-        if(i == numarray.size() - 1) bytelen.push_back(s.size() - numarray[i]);
-        else bytelen.push_back(numarray[i+2] - numarray[i]);
+        if(i == numarray.size() - 1)
+          bytelen.push_back(s.size() - numarray[i]);
+        else
+          bytelen.push_back(numarray[i + 2] - numarray[i]);
       }
     }
     for(size_t i = 0; i < objnums.size(); i++)
@@ -160,7 +163,9 @@ void object_class::findKids()
   std::vector <int> resvec;
   std::string rawkidsstring = carveout(header.get("/Kids"), "\\[", "\\]");
   std::vector<std::string> kidStrings = splitter(rawkidsstring, " \\d+ R( )*");
-  for(auto i : kidStrings) if(stoi(i) != 0) resvec.push_back(stoi(i));
+  for(auto i : kidStrings)
+    if(stoi(i) != 0)
+      resvec.push_back(stoi(i));
   Kids = resvec;
 }
 
@@ -177,9 +182,11 @@ void object_class::objectHasContents()
 void object_class::findContents()
 {
   std::vector <int> resvec;
-  std::string rawcontentsstring = carveout(header.get("/Contents"), "\\[", "\\]");
-  std::vector<std::string> conStrings = splitter(rawcontentsstring, " \\d+ R( )*");
-  for(auto i : conStrings) if(stoi(i) != 0) resvec.push_back(stoi(i));
+  std::string rawcontent = carveout(header.get("/Contents"), "\\[", "\\]");
+  std::vector<std::string> conStrings = splitter(rawcontent, " \\d+ R( )*");
+  for(auto i : conStrings)
+    if(stoi(i) != 0)
+      resvec.push_back(stoi(i));
   Contents = resvec;
 }
 

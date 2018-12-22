@@ -36,51 +36,28 @@ using namespace std;
 /*---------------------------------------------------------------------------*/
 
 vector<string> splitter(const string& s, const string& m);
-
 string carveout(const string& subject, const string& pre, const string& post);
-
 bool IsAscii(const string& tempint);
-
 vector<uint16_t> strtoint(string x);
-
 string intToString(uint16_t a);
-
 vector<float> getnums(const string& s);
-
 vector<int> getints(const string& s);
-
 int dec2oct(int x);
-
 int oct2dec(int x);
-
 vector<unsigned char> bytesFromArray(const string& s);
-
 vector<uint8_t> stringtobytes(const string& s);
-
 string bytestostring(const vector<uint8_t>& v);
-
 vector<float> matmul(vector<float> b, vector<float> a);
-
 vector<float> six2nine(vector<float> a);
-
 vector<float> stringvectomat(vector<string> b);
-
 vector<float> stringtofloat(vector<string> b);
-
 string intToHexstring(int i);
-
 vector<string> splitfours(string s);
-
 vector<string> splittwos(string s);
-
 string byteStringToString(const string& s);
-
 vector<int> getObjRefs(string ds);
-
 bool isDictString(const string& s);
-
 char symbol_type(const char c);
-
 void trimRight(string& s);
 
 #endif

@@ -222,7 +222,7 @@ std::vector<uint8_t> document::get_cryptkey()
       idbytes = bytesFromArray(trailer.get("/ID"));
     idbytes.resize(16);
 
-    std::vector<uint8_t> Fstring = upw();
+    std::vector<uint8_t> Fstring = UPW;
     concat(Fstring, obytes);
     concat(Fstring, pbytes);
     concat(Fstring, idbytes);
@@ -239,7 +239,7 @@ std::vector<uint8_t> document::get_cryptkey()
     std::vector<uint8_t> checkans;
     if(rnum == 2)
     {
-      checkans = rc4(upw(), filekey);
+      checkans = rc4(UPW, filekey);
       if(checkans.size() == 32)
       {
         int m = 0;
@@ -254,7 +254,7 @@ std::vector<uint8_t> document::get_cryptkey()
     }
     if(rnum > 2)
     {
-      std::vector<uint8_t> buf = upw();
+      std::vector<uint8_t> buf = UPW;
       buf.insert(buf.end(), idbytes.begin(), idbytes.end());
       checkans = md5(buf);
       checkans = rc4(checkans, filekey);
