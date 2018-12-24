@@ -564,4 +564,3 @@ Instructionset parser(vector<string>& token, vector<string>& ttype)
   }
   return res;
 }
-
