@@ -134,8 +134,8 @@ std::vector<std::pair<std::string, int>> font::mapString(const std::string& s)
 {
   GlyphMap &G = glyphmap;
   std::vector<std::pair<std::string, int>> res;
-  for(auto i : strtoint(s))
-    if(G.find(i) != G.end())
+  for(auto i : s)
+    if(G.find((uint16_t) i) != G.end())
       res.push_back(G[i]);
   return res;
 }

@@ -88,14 +88,6 @@ bool IsAscii(const string& tempint)
   return (mymin > 7) && (mymax < 126);
 }
 
-/*---------------------------------------------------------------------------*/
-//Casts a string to vector of unsigned ints
-vector<uint16_t> strtoint(string x)
-{
-  vector<uint16_t> res;
-  for(auto i : x) res.push_back(((uint16_t) i) % 255);
-  return res;
-}
 
 /*---------------------------------------------------------------------------*/
 // Casts a single unsigned int to a length 1 string
@@ -228,17 +220,6 @@ vector<float> matmul(vector<float> b, vector<float> a)
 }
 
 /*---------------------------------------------------------------------------*/
-// Converts a pdf style transformation sequence of 6 numbers to a 3x3 matrix
-// simply by adding the "missing" invariant final column
-vector<float> six2nine(vector<float> a)
-{
-  if(a.size() != 6)
-    throw std::runtime_error("six2nine: Vectors must be size 6.");
-  vector<float> newmat {a[0], a[1], 0, a[2], a[3], 0, a[4], a[5], 1};
-  return newmat;
-}
-
-/*---------------------------------------------------------------------------*/
 // Allows a length-6 vector of number strings to be converted to 3x3 matrix
 vector<float> stringvectomat(vector<string> b)
 {
@@ -246,7 +227,8 @@ vector<float> stringvectomat(vector<string> b)
     throw std::runtime_error("stringvectomat: Vectors must be size 6.");
   vector<float> a;
   for(auto i : b) a.push_back(stof(i));
-  return six2nine(a);
+  vector<float> newmat {a[0], a[1], 0, a[2], a[3], 0, a[4], a[5], 1};
+  return newmat;
 }
 
 /*---------------------------------------------------------------------------*/
