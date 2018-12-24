@@ -33,6 +33,7 @@
 #include "dictionary.h"
 #include "document.h"
 #include "page.h"
+#include "debugtools.h"
 
 /*---------------------------------------------------------------------------*/
 
