@@ -42,16 +42,15 @@ void xref::locateXrefs()
   Xreflocations.push_back(stoi(xrefstring));
   if(Xreflocations.empty())
     throw runtime_error("No xref entry found");
-  TrailerDictionary = dictionary(this->d->filestring, Xreflocations[0]);
+  TrailerDictionary = dictionary(d->filestring, Xreflocations[0]);
   dictionary tempdict = TrailerDictionary;
-  bool previous = true;
-  while (previous)
+  while (true)
     if(tempdict.hasInts("/Prev"))
     {
       Xreflocations.push_back(tempdict.getInts("/Prev")[0]);
-      tempdict = dictionary(this->d->filestring, Xreflocations.back());
+      tempdict = dictionary(d->filestring, Xreflocations.back());
     }
-    else previous = false;
+    else break;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -205,16 +204,13 @@ void xrefstream::modulotranspose()
 
 void xrefstream::expandbytes()
 {
-    std::vector<int> byteValues {16777216, 65536, 256, 1};
-    std::vector<int> columnMultiples;
-    for(auto i: arrayWidths)
-    {
-      columnMultiples.insert(columnMultiples.end(),
-                               byteValues.end() - i, byteValues.end());
-    }
-    for(size_t i = 0; i < finalArray.size(); i++)
-      for(auto &j : finalArray.at(i))
-        j *= columnMultiples.at(i);
+  std::vector<int> byteVals {16777216, 65536, 256, 1};
+  std::vector<int> columnConst;
+  for(auto i: arrayWidths)
+    columnConst.insert(columnConst.end(), byteVals.end() - i, byteVals.end());
+  for(size_t i = 0; i < finalArray.size(); i++)
+    for(auto &j : finalArray.at(i))
+      j *= columnMultiples.at(i);
 }
 
 /*---------------------------------------------------------------------------*/
