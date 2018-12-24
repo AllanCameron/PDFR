@@ -25,6 +25,9 @@
 //                                                                           //
 //---------------------------------------------------------------------------//
 
+#ifndef PDFR_DEBUG
+#define PDFR_DEBUG
+
 template<typename T>
 void printvec(std::vector<T> x)
 {
@@ -56,3 +59,5 @@ inline void timeSince(std::string message,
 }
 
 /*---------------------------------------------------------------------------*/
+
+#endif
