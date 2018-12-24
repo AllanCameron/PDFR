@@ -43,8 +43,6 @@
 
 Rcpp::List PDFpage(document mypdf, page pg)
 {
-  std::vector<EncMap> fontenc;
-  for(auto i : pg.fontnames) fontenc.push_back(pg.fontmap[i].EncodingMap);
   return Rcpp::List::create(
     Rcpp::Named("Box")        =  pg.minbox,
     Rcpp::Named("PageString") =  pg.contentstring,

@@ -129,7 +129,6 @@ void parseDifferences(const std::string& enc, EncMap& symbmap)
 
 /*---------------------------------------------------------------------------*/
 
-
 std::vector<std::pair<std::string, int>> font::mapString(const std::string& s)
 {
   GlyphMap &G = glyphmap;
@@ -187,7 +186,6 @@ void font::getWidthTable(dictionary& dict, document& d)
   {
     widthstrings = dict.get("/DescendantFonts");
     if(dict.has("/DescendantFonts"))
-    {
       if (dict.hasRefs("/DescendantFonts"))
       {
         std::vector<int> os = dict.getRefs("/DescendantFonts");
@@ -203,21 +201,18 @@ void font::getWidthTable(dictionary& dict, document& d)
             if (descdict.hasRefs("/W"))
             {
               std::vector<int> osss = descdict.getRefs("/W");
-              if (osss.size() > 0) widthstrings =
-                d.getobject(osss[0]).getStream();
+              if (!osss.empty())
+                widthstrings = d.getobject(osss[0]).getStream();
             }
             else widthstrings = descdict.get("/W");
             std::vector<std::string> tmp = Rex(widthstrings, numstring).get();
-            if(tmp.size() > 0)
-            {
+            if(!tmp.empty())
               parsewidtharray(tmp[0]);
-            }
           }
         }
       }
-    }
   }
-  if(Width.size() == 0)
+  if(Width.empty())
   {
     EncMap storeEnc = EncodingMap;
     getCoreFont("/Helvetica");

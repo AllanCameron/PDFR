@@ -136,22 +136,20 @@ void GraphicsState::ET(std::vector<std::string>& Operands)
   Tw = Tc = 0;
   Th = 100;
 }
+
 /*---------------------------------------------------------------------------*/
 
 void GraphicsState::Tf(std::vector<std::string>& Operands)
 {
-  currentfont = Operands.at(0);
-  if (p.fontmap.find(currentfont) != p.fontmap.end())
+  if(Operands.size() > 1)
   {
-    wfont = p.fontmap[currentfont];
+    currentfont = Operands[0];
+    if (p.fontmap.find(currentfont) != p.fontmap.end())
+      wfont = p.fontmap[currentfont];
+    else
+      throw std::runtime_error(std::string("Couldn't find font") + currentfont);
+    currfontsize = std::stof(Operands[1]);
   }
-  else
-  {
-    std::string stopmessage = "Could not find font ";
-    stopmessage += currentfont;
-    throw std::runtime_error(stopmessage);
-  }
-  currfontsize = std::stof(Operands[1]);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -213,7 +211,7 @@ void GraphicsState::TJ(std::vector<std::vector<std::string>>& i)
   std::string& Ins = i[0][0];
   std::vector<std::string> &OperandTypes = i[1];
   std::vector<std::string> &Operands = i[2];
-  if (Ins == "'") Tdstate[7] = Tdstate[7] - Tl;
+  if (Ins == "'") Tdstate[7] -= Tl;
   std::vector<float> textspace = matmul(Tmstate, gs.back());
   textspace = matmul(Tdstate, textspace);
   float txtspcinit = textspace[6];
@@ -233,19 +231,16 @@ void GraphicsState::TJ(std::vector<std::vector<std::string>>& i)
       float PRscaled = PRstate * scale / 1000;
       textspace[6] = PRscaled + txtspcinit;
       if (OperandTypes[z] == "hexstring")
-      {
         Operands[z] = byteStringToString(Operands[z]);
-      }
-      if (Operands[z] == "") continue;
+      if (Operands[z] == "")
+        continue;
       kvs = wfont.mapString(Operands[z]);
       for (auto j : kvs)
       {
         float stw;
         statehx.push_back(textspace);
         if (j.first == "/space" || j.first == "/nbspace")
-        {
           stw = j.second + (Tc + Tw) * 1000;
-        }
         else stw = j.second + Tc * 1000;
         PRstate += stw;
         std::string tmpchar;

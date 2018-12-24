@@ -37,33 +37,21 @@
 
 void xref::locateXrefs()
 {
-  std::vector<int> res;
   std::string partial = d->filestring.substr(d->filesize - 50, 50);
   std::string xrefstring =  carveout(partial, "startxref", "%%EOF");
-  res.push_back(stoi(xrefstring));
-  if(res.empty()) Xreflocations = res;
-  else
-  {
-    bool noprevious = false;
-    while ((res.back() != 0) && !noprevious)
+  Xreflocations.push_back(stoi(xrefstring));
+  if(Xreflocations.empty())
+    throw runtime_error("No xref entry found");
+  TrailerDictionary = dictionary(this->d->filestring, Xreflocations[0]);
+  dictionary tempdict = TrailerDictionary;
+  bool previous = true;
+  while (previous)
+    if(tempdict.hasInts("/Prev"))
     {
-      int XRS = res.back();
-      std::string x = d->filestring.substr(XRS, 2000);
-      std::vector<int> prevstart = Rex(x, "/Prev *").ends();
-      noprevious = prevstart.empty();
-      if(!noprevious)
-      {
-        x = x.substr(prevstart[0], 10);
-        Rex stst = Rex(x, "\\d+");
-        if(stst.pos().empty() || stst.ends().empty())
-          noprevious = true;
-        else
-          res.push_back(stoi(x.substr(stst.pos()[0], stst.ends()[0])));
-      }
+      Xreflocations.push_back(tempdict.getInts("/Prev")[0]);
+      tempdict = dictionary(this->d->filestring, Xreflocations.back());
     }
-    Xreflocations = res;
-    getTrailer();
-  }
+    else previous = false;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -99,15 +87,6 @@ void xref::xrefIsstream()
 {
   for(auto i : Xrefstrings)
     XrefsAreStreams.push_back(Rex(i.substr(0, 15), "<<").has());
-}
-
-/*---------------------------------------------------------------------------*/
-
-void xref::getTrailer()
-{
-  TrailerDictionary = dictionary(this->d->filestring, Xreflocations[0]);
-  if(!TrailerDictionary.has("/Root"))
-    throw std::runtime_error("Didn't find trailer");
 }
 
 /*---------------------------------------------------------------------------*/

@@ -45,7 +45,6 @@ private:
   void locateXrefs();
   void xrefstrings();
   void xrefIsstream();
-  void getTrailer();
   void xrefFromStream(int xrefloc);
   void xrefFromString(std::string& s);
   void buildXRtable();
