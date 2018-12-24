@@ -1,6 +1,6 @@
 //---------------------------------------------------------------------------//
 //                                                                           //
-//  PDFR GraphicsState header file                                           //
+//  PDFR tokenizer header file                                           //
 //                                                                           //
 //  Copyright (C) 2018 by Allan Cameron                                      //
 //                                                                           //
@@ -25,51 +25,15 @@
 //                                                                           //
 //---------------------------------------------------------------------------//
 
-
-#ifndef PDFR_GS
-#define PDFR_GS
+#ifndef PDFR_TOKEN
+#define PDFR_TOKEN
 
 #include "pdfr.h"
 
+using namespace std;
 
-class GraphicsState
-{
-public:
-  Rcpp::DataFrame db;
-  GraphicsState(page& pag);
-  page p;
-
-private:
-  font wfont;
-  std::vector<std::vector<float>> gs, statehx;
-  std::vector<float> xvals, yvals, fontsize, widths, Tmstate, Tdstate, R,
-  left, right, bottom, size, width, fontsizestack, initstate;
-  std::vector<std::string> fontname, stringres, text, fonts, fontstack;
-  std::vector<int> leftmatch, rightmatch;
-  int PRstate;
-  float Tl, Tw, Th, Tc, currfontsize;
-  std::string currentfont;
-  Instructionset Instructions;
-  void InstructionReader(Instructionset I, const std::string& subloop);
-  void Q(std::vector<std::string>& Operands);
-  void q(std::vector<std::string>& Operands);
-  void TH(std::vector<std::string>& Operands);
-  void TW(std::vector<std::string>& Operands);
-  void TC(std::vector<std::string>& Operands);
-  void TL(std::vector<std::string>& Operands);
-  void Tstar(std::vector<std::string>& Operands);
-  void Tm(std::vector<std::string>& Operands);
-  void cm(std::vector<std::string>& Operands);
-  void Td(std::vector<std::string>& Operands);
-  void TD(std::vector<std::string>& Operands);
-  void BT(std::vector<std::string>& Operands);
-  void ET(std::vector<std::string>& Operands);
-  void Tf(std::vector<std::string>& Operands);
-  void TJ(std::vector<std::vector<std::string>>& i);
-  void MakeGS();
-  void clump();
-  void Do(std::string& xo);
-
-};
+Instructionset tokenize(string s);
+void tokenize_array(vector<string> &ttype, vector<string> &token, string &s);
+Instructionset parser(vector<string>& token, vector<string>& ttype);
 
 #endif
