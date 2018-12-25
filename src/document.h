@@ -34,6 +34,9 @@
 class document
 {
 public:
+  document(const std::string& filename);
+  document(const std::vector<uint8_t>& rawfile);
+  document();
   std::ifstream *fileCon;
   size_t filesize;
   std::string file, filestring;
@@ -45,8 +48,12 @@ public:
   dictionary catalogue;
   object_class pagedir;
   xref Xref;
+  page getPage(int pagenum);
+  object_class getobject(int objnum);
+  std::vector<int> expandContents(std::vector<int> objnums);
 
   // member functions
+private:
   void get_file();
   std::string subfile(int startbyte, int len);
   void getCatalogue();
@@ -58,14 +65,8 @@ public:
   void checkKeyR2(dictionary& encdict);
   void checkKeyR3(dictionary& encdict);
   std::vector<page> getPages(std::vector<dictionary> pageheaders);
-  page getPage(int pagenum);
-  object_class getobject(int objnum);
   void get_cryptkey();
-  document(const std::string& filename);
-  document(const std::vector<uint8_t>& rawfile);
-  document();
   std::vector<int> expandKids(std::vector<int> objnums);
-  std::vector<int> expandContents(std::vector<int> objnums);
   void getPageHeaders();
 };
 
