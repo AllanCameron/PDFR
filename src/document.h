@@ -52,6 +52,7 @@ public:
   void getCatalogue();
   void getPageDir();
   void isLinearized();
+  void buildDoc();
   std::vector<page> getPages(std::vector<dictionary> pageheaders);
   page getPage(int pagenum);
   object_class getobject(int objnum);

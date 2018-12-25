@@ -42,13 +42,7 @@ using namespace std;
 document::document(const string& filename) : file(filename)
 {
   get_file();
-  Xref = xref(*this);
-  trailer = Xref.trailer();
-  filekey = get_cryptkey();
-  getCatalogue();
-  getPageDir();
-  isLinearized();
-  getPageHeaders();
+  buildDoc();
 }
 
 /*---------------------------------------------------------------------------*/
@@ -57,6 +51,13 @@ document::document(const vector<uint8_t>& bytevector)
 {
   filestring = bytestostring(bytevector);
   filesize = filestring.size();
+  buildDoc();
+}
+
+/*---------------------------------------------------------------------------*/
+
+void document::buildDoc()
+{
   Xref = xref(*this);
   trailer = Xref.trailer();
   filekey = get_cryptkey();
@@ -121,26 +122,19 @@ void document::isLinearized()
 
 vector <int> document::expandKids(vector<int> objnums)
 {
-  if(objnums.size() == 0)
+  if(objnums.empty())
     throw runtime_error("No pages found");
-  vector<bool> ispage(objnums.size(), true);
   size_t i = 0;
+  vector<int> res;
   while (i < objnums.size())
   {
     object_class o = getobject(objnums[i]);
     if (o.hasKids())
-    {
-      vector<int> tmpvec = o.getKids();
-      objnums.insert( objnums.end(), tmpvec.begin(), tmpvec.end() );
-      while(ispage.size() < objnums.size()) ispage.push_back(true);
-      ispage[i] = false;
-    }
+      concat(objnums, o.getKids() );
+    else
+      res.push_back(objnums[i]);
     i++;
   }
-  vector<int> res;
-  for(i = 0; i < objnums.size(); i++)
-    if(ispage[i])
-      res.push_back(objnums[i]);
   return res;
 }
 
@@ -148,20 +142,18 @@ vector <int> document::expandKids(vector<int> objnums)
 
 vector <int> document::expandContents(vector<int> objnums)
 {
-  if(objnums.size() == 0)
+  if(objnums.empty())
     return objnums;
   size_t i = 0;
+  vector<int> res;
   while (i < objnums.size())
   {
     object_class o = getobject(objnums[i]);
     if (o.hasContents())
-    {
-      vector<int> tmpvec = o.getContents();
-      objnums.erase(objnums.begin() + i);
-      objnums.insert(objnums.begin() + i, tmpvec.begin(), tmpvec.end());
-      i = 0;
-    }
-    else i++;
+      concat(objnums, o.getContents());
+    else
+      res.push_back(objnums[i]);
+    i++;
   }
   return objnums;
 }
@@ -171,11 +163,8 @@ vector <int> document::expandContents(vector<int> objnums)
 void document::getPageHeaders()
 {
   if (pagedir.hasKids())
-  {
-    vector<int> finalkids = expandKids(pagedir.getKids());
-    for (auto i : finalkids)
+    for (auto i :  expandKids(pagedir.getKids()))
       pageheaders.push_back(getobject(i).getDict());
-  }
 }
 
 /*---------------------------------------------------------------------------*/

@@ -210,7 +210,7 @@ void xrefstream::expandbytes()
     columnConst.insert(columnConst.end(), byteVals.end() - i, byteVals.end());
   for(size_t i = 0; i < finalArray.size(); i++)
     for(auto &j : finalArray.at(i))
-      j *= columnMultiples.at(i);
+      j *= columnConst.at(i);
 }
 
 /*---------------------------------------------------------------------------*/
