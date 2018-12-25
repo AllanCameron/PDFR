@@ -35,11 +35,9 @@
 
 using namespace std;
 
-
-
 /*---------------------------------------------------------------------------*/
 
-document::document(const string& filename) : file(filename)
+document::document(const string& filename) : file(filename), encrypted(false)
 {
   get_file();
   buildDoc();
@@ -47,7 +45,7 @@ document::document(const string& filename) : file(filename)
 
 /*---------------------------------------------------------------------------*/
 
-document::document(const vector<uint8_t>& bytevector)
+document::document(const vector<uint8_t>& bytevector) : encrypted(false)
 {
   filestring = bytestostring(bytevector);
   filesize = filestring.size();
@@ -60,7 +58,7 @@ void document::buildDoc()
 {
   Xref = xref(*this);
   trailer = Xref.trailer();
-  filekey = get_cryptkey();
+  get_cryptkey();
   getCatalogue();
   getPageDir();
   isLinearized();
@@ -183,91 +181,101 @@ string document::subfile(int startbyte, int len)
 
 /*---------------------------------------------------------------------------*/
 
-vector<uint8_t> document::get_cryptkey()
+vector<uint8_t> document::getPassword(const string& key, dictionary& encdict)
 {
-  vector<uint8_t> blank;
-  if(trailer.has("/Encrypt"))
-  {
-    this->encrypted = true;
-    int encnum = trailer.getRefs("/Encrypt").at(0);
-    dictionary encdict;
-    if(this->Xref.objectExists(encnum))
-      encdict = getobject(encnum).getDict();
-    vector<uint8_t> pbytes = perm(encdict.get("/P"));
-    int rnum = 2;
-    if(encdict.hasInts("/R"))
-      rnum = encdict.getInts("/R").at(0);
-    size_t cryptlen = 5;
-    if(encdict.hasInts("/Length"))
-      cryptlen = encdict.getInts("/Length").at(0) / 8;
-    string ostarts = encdict.get("/O");
-    string ustarts = encdict.get("/U");
-    vector<uint8_t> obytes;
-    if(ostarts.size() > 32)
-      for(auto j : ostarts.substr(1, 32))
-        obytes.push_back(j);
-    vector<uint8_t> ubytes;
-    if(ustarts.size() > 32)
-      for(auto j : ustarts.substr(1, 32))
-        ubytes.push_back(j);
-    vector<uint8_t> idbytes;
-    if(trailer.has("/ID"))
-      idbytes = bytesFromArray(trailer.get("/ID"));
-    idbytes.resize(16);
+  string ostarts = encdict.get(key);
+  vector<uint8_t> obytes;
+  if(ostarts.size() > 32)
+    for(auto j : ostarts.substr(1, 32))
+      obytes.push_back(j);
+  return obytes;
+}
 
-    vector<uint8_t> Fstring = UPW;
-    concat(Fstring, obytes);
-    concat(Fstring, pbytes);
-    concat(Fstring, idbytes);
-    vector<uint8_t> filekey = md5(Fstring);
-    filekey.resize(cryptlen);
-    if(rnum > 2)
+/*---------------------------------------------------------------------------*/
+
+void document::getFilekey(dictionary& encdict)
+{
+  vector<uint8_t> Fstring = UPW;
+  concat(Fstring, getPassword("/O", encdict));
+  concat(Fstring, perm(encdict.get("/P")));
+  vector<uint8_t> idbytes = bytesFromArray(trailer.get("/ID"));
+  idbytes.resize(16);
+  concat(Fstring, idbytes);
+  filekey = md5(Fstring);
+  size_t cryptlen = 5;
+  if(encdict.hasInts("/Length"))
+    cryptlen = encdict.getInts("/Length").at(0) / 8;
+  filekey.resize(cryptlen);
+}
+
+/*---------------------------------------------------------------------------*/
+
+void document::checkKeyR2(dictionary& encdict)
+{
+  vector<uint8_t> ubytes = getPassword("/U", encdict);
+  vector<uint8_t> checkans = rc4(UPW, filekey);
+  if(checkans.size() == 32)
+  {
+    int m = 0;
+    for(int l = 0; l < 32; l++)
     {
-      for(int i = 0; i < 50; i++)
-      {
-        filekey = md5(filekey);
-        filekey.resize(cryptlen);
-      }
+      if(checkans[l] != ubytes[l]) break;
+      m++;
     }
-    vector<uint8_t> checkans;
-    if(rnum == 2)
-    {
-      checkans = rc4(UPW, filekey);
-      if(checkans.size() == 32)
-      {
-        int m = 0;
-        for(int l = 0; l < 32; l++)
-        {
-          if(checkans[l] != ubytes[l]) break;
-          m++;
-        }
-        if(m == 32) return filekey;
-        else return blank;
-      }
-    }
-    if(rnum > 2)
-    {
-      vector<uint8_t> buf = UPW;
-      buf.insert(buf.end(), idbytes.begin(), idbytes.end());
-      checkans = md5(buf);
-      checkans = rc4(checkans, filekey);
-      for (int i = 19; i >= 0; i--)
-      {
-        vector<uint8_t> tmpkey;
-        for (auto j : filekey)
-          tmpkey.push_back(j ^ ((uint8_t) i));
-        checkans = rc4(checkans, tmpkey);
-      }
-        int m = 0;
-        for(int l = 0; l < 16; l++)
-        {
-          if(checkans[l] != ubytes[l]) break;
-          m++;
-        }
-      return filekey;
-    }
+    if(m == 32)
+      return;
   }
-  this->encrypted = false;
-  return blank;
+  throw runtime_error("Incorrect cryptkey");
+}
+
+/*---------------------------------------------------------------------------*/
+
+void document::checkKeyR3(dictionary& encdict)
+{
+  vector<uint8_t> ubytes = getPassword("/U", encdict);
+  vector<uint8_t> buf = UPW;
+  concat(buf, bytesFromArray(trailer.get("/ID")));
+  buf.resize(48);
+  vector<uint8_t> checkans = rc4(md5(buf), filekey);
+  for (int i = 19; i >= 0; i--)
+  {
+    vector<uint8_t> tmpkey;
+    for (auto j : filekey)
+      tmpkey.push_back(j ^ ((uint8_t) i));
+    checkans = rc4(checkans, tmpkey);
+  }
+  int m = 0;
+  for(int l = 0; l < 16; l++)
+  {
+    if(checkans[l] != ubytes[l]) break;
+    m++;
+  }
+  if(m != 16) std::cout << "cryptkey doesn't match";
+}
+
+/*---------------------------------------------------------------------------*/
+
+void document::get_cryptkey()
+{
+  if(!trailer.has("/Encrypt")) return;
+  int encnum = trailer.getRefs("/Encrypt").at(0);
+  if(!Xref.objectExists(encnum)) return;
+  encrypted = true;
+  dictionary encdict = getobject(encnum).getDict();
+  int rnum = 2;
+  if(encdict.hasInts("/R")) rnum = encdict.getInts("/R").at(0);
+  getFilekey(encdict);
+  if(rnum == 2)
+    checkKeyR2(encdict);
+  else
+  {
+    size_t cryptlen = filekey.size();
+    for(int i = 0; i < 50; i++)
+    {
+      filekey = md5(filekey);
+      filekey.resize(cryptlen);
+    }
+    checkKeyR3(encdict);
+  }
 }
 

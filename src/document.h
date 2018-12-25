@@ -35,9 +35,9 @@ class document
 {
 public:
   std::ifstream *fileCon;
-  bool linearized, encrypted;
   size_t filesize;
   std::string file, filestring;
+  bool linearized, encrypted;
   std::vector<dictionary> pageheaders;
   std::vector<uint8_t> filekey;
   std::map <int, object_class> objects;
@@ -53,10 +53,14 @@ public:
   void getPageDir();
   void isLinearized();
   void buildDoc();
+  std::vector<uint8_t> getPassword(const std::string& key, dictionary& encdict);
+  void getFilekey(dictionary& encdict);
+  void checkKeyR2(dictionary& encdict);
+  void checkKeyR3(dictionary& encdict);
   std::vector<page> getPages(std::vector<dictionary> pageheaders);
   page getPage(int pagenum);
   object_class getobject(int objnum);
-  std::vector<uint8_t> get_cryptkey();
+  void get_cryptkey();
   document(const std::string& filename);
   document(const std::vector<uint8_t>& rawfile);
   document();
