@@ -533,7 +533,8 @@ Instructionset parser(vector<string>& token, vector<string>& ttype)
   std::vector<std::vector<std::string>> tmpres;
   std::vector<std::string> tmptype, tmptoken, tmpident;
   Instructionset res;
-  for (size_t i = 0; i < ttype.size(); i++)
+  size_t tts = ttype.size();
+  for (size_t i = 0; i < tts; i++)
   {
     tmptype.push_back(ttype[i]);
     tmptoken.push_back(token[i]);

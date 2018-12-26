@@ -38,7 +38,8 @@ void dictionary_parser(std::vector<std::vector<std::string>>& s)
   std::vector<std::string> &ttype = s[1];
   std::vector<std::string> &token = s[0];
   std::vector<std::vector<std::string>> tmpres, res;
-  for(unsigned i = 0; i < ttype.size(); i++)
+  size_t tts = ttype.size();
+  for(unsigned i = 0; i < tts; i++)
   {
     if(ttype[i] == "keyname")
     {
@@ -301,11 +302,10 @@ tokenize_dict(const std::string& s, unsigned pos)
   res.push_back(ttype);
   dictionary_parser(res);
   std::map<std::string, std::string> resmap;
-  if(res[0].size() > 0)
-    for(unsigned i = 0; i < res[0].size(); i++)
-    {
+  size_t ressize = res[0].size();
+  if(ressize > 0)
+    for(unsigned i = 0; i < ressize; i++)
       resmap[res[0][i]] = res[1][i];
-    }
   return resmap;
 }
 

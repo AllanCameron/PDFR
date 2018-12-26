@@ -54,21 +54,20 @@ Rcpp::List PDFpage(document mypdf, page pg)
 
 Rcpp::DataFrame get_xref(const std::string& filename)
 {
-  document mydoc = document(filename);
-  std::vector<int> ob, startb, stopb, inob;
+  document&& mydoc = document(filename);
+  std::vector<int> ob, startb, inob;
   if(!mydoc.Xref.getObjects().empty())
   {
-    for(int j : mydoc.Xref.getObjects())
+    std::vector<int>&& allobs = mydoc.Xref.getObjects();
+    for(int j : allobs)
     {
       ob.push_back(j);
       startb.push_back(mydoc.Xref.getStart(j));
-      stopb.push_back(mydoc.Xref.getEnd(j));
       inob.push_back(mydoc.Xref.inObject(j));
     }
   }
   return Rcpp::DataFrame::create(Rcpp::Named("Object") = ob,
                                  Rcpp::Named("StartByte") = startb,
-                                 Rcpp::Named("StopByte") = stopb,
                                  Rcpp::Named("InObject") = inob);
 }
 
@@ -76,8 +75,8 @@ Rcpp::DataFrame get_xref(const std::string& filename)
 
 Rcpp::DataFrame get_xrefraw(const std::vector<uint8_t>& rawfile)
 {
-  document mydoc = document(rawfile);
-  std::vector<int> ob, startb, stopb, inob;
+  document&& mydoc = document(rawfile);
+  std::vector<int> ob, startb, inob;
 
   if(!mydoc.Xref.getObjects().empty())
   {
@@ -85,13 +84,11 @@ Rcpp::DataFrame get_xrefraw(const std::vector<uint8_t>& rawfile)
     {
       ob.push_back(j);
       startb.push_back(mydoc.Xref.getStart(j));
-      stopb.push_back(mydoc.Xref.getEnd(j));
       inob.push_back(mydoc.Xref.inObject(j));
     }
   }
   return Rcpp::DataFrame::create(Rcpp::Named("Object") = ob,
                                  Rcpp::Named("StartByte") = startb,
-                                 Rcpp::Named("StopByte") = stopb,
                                  Rcpp::Named("InObject") = inob);
 }
 
@@ -99,7 +96,7 @@ Rcpp::DataFrame get_xrefraw(const std::vector<uint8_t>& rawfile)
 
 Rcpp::List get_object(const std::string& filename, int o)
 {
-  document mydoc = document(filename);
+  document&& mydoc = document(filename);
   return Rcpp::List::create(
     Rcpp::Named("header") = mydoc.getobject(o).getDict().R_out(),
     Rcpp::Named("stream") = mydoc.getobject(o).getStream());
@@ -109,7 +106,7 @@ Rcpp::List get_object(const std::string& filename, int o)
 
 Rcpp::List get_objectraw(const std::vector<uint8_t>& rawfile, int o)
 {
-  document mydoc = document(rawfile);
+  document&& mydoc = document(rawfile);
   return Rcpp::List::create(
     Rcpp::Named("header") = mydoc.getobject(o).getDict().R_out(),
     Rcpp::Named("stream") = mydoc.getobject(o).getStream());
@@ -119,7 +116,7 @@ Rcpp::List get_objectraw(const std::vector<uint8_t>& rawfile, int o)
 
 Rcpp::List pdfdoc(const std::string & filepath)
 {
-  document myfile = document(filepath);
+  document&& myfile = document(filepath);
   Rcpp::CharacterVector filename = Rcpp::wrap(myfile.file);
   return Rcpp::List::create(Rcpp::Named("file") = filename);
 }
@@ -128,7 +125,7 @@ Rcpp::List pdfdoc(const std::string & filepath)
 
 Rcpp::List pdfdocraw(const std::vector<uint8_t> & rawfile)
 {
-  document myfile = document(rawfile);
+  document&& myfile = document(rawfile);
   Rcpp::CharacterVector filename = Rcpp::wrap({"From raw data"});
   return Rcpp::List::create(Rcpp::Named("file") = filename);
 }

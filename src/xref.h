@@ -48,7 +48,6 @@ private:
   void xrefFromStream(int xrefloc);
   void xrefFromString(std::string& s);
   void buildXRtable();
-  void findEnds();
   std::map<int, xrefrow> xreftab;
   std::vector<int> objenum;
   dictionary TrailerDictionary;

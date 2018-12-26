@@ -174,7 +174,8 @@ void font::getWidthTable(dictionary& dict, document& d)
       if (fcnums.size() > 0)
       {
         firstchar = fcnums[0];
-        for (unsigned i = 0; i < widtharray.size(); i++)
+        size_t warrsize = widtharray.size();
+        for (unsigned i = 0; i < warrsize; i++)
         {
           resmap[(uint16_t) firstchar + i] = (int) widtharray[i];
         }
@@ -470,11 +471,16 @@ void font::parsewidtharray(std::string s)
     }
   }
   std::map<uint16_t, int> resultmap;
-
   if((resultint.size() == resultvec.size()) && !resultint.empty() )
-    for(size_t i = 0; i < resultint.size(); i++)
+  {
+    size_t ressize = resultint.size();
+    for(size_t i = 0; i < ressize; i++)
+    {
+      size_t rvecsize = resultvec[i].size();
       if(!resultvec[i].empty())
-        for(size_t j = 0; j < resultvec[i].size(); j++)
+        for(size_t j = 0; j < rvecsize; j++)
           resultmap[(uint16_t) resultint[i] + j] = resultvec[i][j];
+    }
+  }
   Width = resultmap;
 }

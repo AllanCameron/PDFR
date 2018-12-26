@@ -102,22 +102,23 @@ object_class::object_class(document& d, std::string str, int objnum)
   std::string pre(str.begin(), str.begin() + startbyte - 1);
   std::vector<int> numarray = getints(pre);
   std::vector<int> objnums, bytenums, bytelen;
-
+  size_t numarrsize = numarray.size();
   if(!numarray.empty())
   {
-    for(size_t i = 0; i < numarray.size(); i++)
+    for(size_t i = 0; i < numarrsize; i++)
     {
       if(i % 2 == 0) objnums.push_back(numarray[i]);
       if(i % 2 == 1)
       {
         bytenums.push_back(numarray[i]);
-        if(i == numarray.size() - 1)
+        if(i == (numarrsize - 1))
           bytelen.push_back(s.size() - numarray[i]);
         else
           bytelen.push_back(numarray[i + 2] - numarray[i]);
       }
     }
-    for(size_t i = 0; i < objnums.size(); i++)
+    size_t onsize = objnums.size();
+    for(size_t i = 0; i < onsize; i++)
     {
       if(objnums[i] == objnum)
       {

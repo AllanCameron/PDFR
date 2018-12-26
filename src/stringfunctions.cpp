@@ -36,16 +36,16 @@ using namespace std;
 // Finds matches m in string s, returning a vector of (matches + 1) substrings
 vector<string> splitter(const string& s, const string& m)
 {
-  Rex sl = Rex(s, m);
+  Rex&& sl = Rex(s, m);
   vector<string> RC, res;
   if(!sl.has())
     return sl.get();
   size_t n = sl.n();
-  RC.push_back(s.substr(0, sl.pos().at(0)));
+  RC.emplace_back(s.substr(0, sl.pos().at(0)));
   if(n > 1)
     for(size_t i = 1; i < n; i++)
-      RC.push_back(s.substr(sl.ends()[i - 1], sl.pos()[i] - sl.ends()[i - 1]));
-  RC.push_back(s.substr(sl.ends().at(n - 1), s.size() - sl.ends().at(n - 1)));
+      RC.emplace_back(s.substr(sl.ends()[i-1], sl.pos()[i] - sl.ends()[i - 1]));
+  RC.emplace_back(s.substr(sl.ends()[n - 1], s.size() - sl.ends().at(n - 1)));
   for(auto i : RC)
     if(!i.empty())
       res.push_back(i);
@@ -58,8 +58,8 @@ string carveout(const string& s, const string& pre, const string& post)
 {
   int firstpos  = 0;
   int secondpos = s.length();
-  vector<int> FPV = Rex(s, pre).ends();
-  vector<int> SPV = Rex(s, post).pos();
+  vector<int>&& FPV = Rex(s, pre).ends();
+  vector<int>&& SPV = Rex(s, post).pos();
   int fpvs = FPV.size();
   int spvs = SPV.size();
   // Ensure the match lies between the first balanced matches
@@ -107,9 +107,9 @@ vector<float> getnums(const string& s)
 {
   vector<float> res;
   string numstring = "(-)?(\\.)?\\d+(\\.)?\\d*"; // float regex
-  vector<string> strs = Rex(s, numstring).get();
+  vector<string>&& strs = Rex(s, numstring).get();
   for(auto i : strs)
-    res.push_back(stof(i));
+    res.emplace_back(stof(i));
   return res;
 }
 
@@ -119,9 +119,9 @@ vector<int> getints(const string& s)
 {
   vector<int> res;
   string numstring = "(-)?\\d+"; // int regex
-  vector<string> strs = Rex(s, numstring).get();
+  vector<string>&& strs = Rex(s, numstring).get();
   for(auto i : strs)
-    res.push_back(stoi(i));
+    res.emplace_back(stoi(i));
   return res;
 }
 
@@ -213,7 +213,7 @@ vector<float> matmul(vector<float> b, vector<float> a)
     throw std::runtime_error("matmul: Vectors must be size 9.");
   vector<float> newmat;
   for(size_t i = 0; i < 9; i++) //clever use of indices to allow fill by loop
-    newmat.push_back(a[i % 3 + 0] * b[3 * (i / 3) + 0] +
+    newmat.emplace_back(a[i % 3 + 0] * b[3 * (i / 3) + 0] +
                      a[i % 3 + 3] * b[3 * (i / 3) + 1] +
                      a[i % 3 + 6] * b[3 * (i / 3) + 2] );
   return newmat;
@@ -274,7 +274,7 @@ vector<string> splitfours(string s)
   while(s.size() % 4 != 0)
     s += '0';
   for(unsigned i = 0; i < s.length()/4; i++)
-    res.push_back(s.substr(i * 4, 4));
+    res.emplace_back(s.substr(i * 4, 4));
   return res;
 }
 
@@ -296,11 +296,11 @@ vector<string> splittwos(string s)
 //Converts an ASCII encoded string to a (char-based) string
 string byteStringToString(const string& s)
 {
-  vector<string> sv = splitfours(s);
+  vector<string>&& sv = splitfours(s);
   vector<unsigned int> uv;
   string res;
   for(auto i : sv)
-    uv.push_back((unsigned) stoul("0x" + i, nullptr, 0));
+    uv.emplace_back((unsigned) stoul("0x" + i, nullptr, 0));
   for(auto i : uv)
   {
     if(i > 255)

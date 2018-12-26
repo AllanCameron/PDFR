@@ -35,15 +35,17 @@
 #include "debugtools.h"
 #include "tokenizer.h"
 
+using namespace std;
+
 GraphicsState::GraphicsState(page& pag) : p(pag),
   PRstate(0), Tl(1), Tw(0), Th(100), Tc(0), currfontsize(0), currentfont("")
 {
   Instructions  = tokenize(p.contentstring);
   initstate = {1,0,0,0,1,0,0,0,1};
-  fontstack.push_back(currentfont);
+  fontstack.emplace_back(currentfont);
   Tmstate = Tdstate = initstate;
   gs.push_back(initstate);
-  fontsizestack.push_back(currfontsize);
+  fontsizestack.emplace_back(currfontsize);
   InstructionReader(Instructions, "");
   MakeGS();
   db =  Rcpp::DataFrame::create(
@@ -60,16 +62,16 @@ GraphicsState::GraphicsState(page& pag) : p(pag),
 
 /*---------------------------------------------------------------------------*/
 
-void GraphicsState::q(std::vector<std::string>& Operands)
+void GraphicsState::q(vector<string>& Operands)
 {
-  gs.push_back(gs.back());
-  fontstack.push_back(currentfont);
-  fontsizestack.push_back(currfontsize);
+  gs.emplace_back(gs.back());
+  fontstack.emplace_back(currentfont);
+  fontsizestack.emplace_back(currfontsize);
 }
 
 /*---------------------------------------------------------------------------*/
 
-void GraphicsState::Do(std::string& a)
+void GraphicsState::Do(string& a)
 {
   if (p.XObjects.find(a) != p.XObjects.end())
   {
@@ -80,7 +82,7 @@ void GraphicsState::Do(std::string& a)
 
 /*---------------------------------------------------------------------------*/
 
-void GraphicsState::Q(std::vector<std::string>& Operands)
+void GraphicsState::Q(vector<string>& Operands)
 {
   if(gs.size() > 1) gs.pop_back();
   if (fontstack.size() > 1)
@@ -98,10 +100,10 @@ void GraphicsState::Q(std::vector<std::string>& Operands)
 
 /*---------------------------------------------------------------------------*/
 
-void GraphicsState::Td(std::vector<std::string>& Operands)
+void GraphicsState::Td(vector<string>& Operands)
 {
-  std::vector<float> Tds = initstate;
-  std::vector<float> tmpvec = stringtofloat(Operands);
+  vector<float> Tds = initstate;
+  vector<float> tmpvec = stringtofloat(Operands);
   Tds.at(6) = tmpvec[0]; Tds[7] = tmpvec[1];
   Tdstate = matmul(Tds, Tdstate);
   PRstate = 0;
@@ -109,10 +111,10 @@ void GraphicsState::Td(std::vector<std::string>& Operands)
 
 /*---------------------------------------------------------------------------*/
 
-void GraphicsState::TD(std::vector<std::string>& Operands)
+void GraphicsState::TD(vector<string>& Operands)
 {
-  std::vector<float> Tds = initstate;
-  std::vector<float> tmpvec = stringtofloat(Operands);
+  vector<float> Tds = initstate;
+  vector<float> tmpvec = stringtofloat(Operands);
   Tds.at(6) = tmpvec[0]; Tds[7] = tmpvec[1];
   Tl = -Tds[7];
   Tdstate = matmul(Tds, Tdstate);
@@ -121,7 +123,7 @@ void GraphicsState::TD(std::vector<std::string>& Operands)
 
 /*---------------------------------------------------------------------------*/
 
-void GraphicsState::BT(std::vector<std::string>& Operands)
+void GraphicsState::BT(vector<string>& Operands)
 {
   Tmstate = Tdstate = initstate;
   Tw = Tc = 0;
@@ -130,7 +132,7 @@ void GraphicsState::BT(std::vector<std::string>& Operands)
 
 /*---------------------------------------------------------------------------*/
 
-void GraphicsState::ET(std::vector<std::string>& Operands)
+void GraphicsState::ET(vector<string>& Operands)
 {
   Tmstate = Tdstate = initstate;
   Tw = Tc = 0;
@@ -139,7 +141,7 @@ void GraphicsState::ET(std::vector<std::string>& Operands)
 
 /*---------------------------------------------------------------------------*/
 
-void GraphicsState::Tf(std::vector<std::string>& Operands)
+void GraphicsState::Tf(vector<string>& Operands)
 {
   if(Operands.size() > 1)
   {
@@ -147,42 +149,42 @@ void GraphicsState::Tf(std::vector<std::string>& Operands)
     if (p.fontmap.find(currentfont) != p.fontmap.end())
       wfont = p.fontmap[currentfont];
     else
-      throw std::runtime_error(std::string("Couldn't find font") + currentfont);
-    currfontsize = std::stof(Operands[1]);
+      throw runtime_error(string("Couldn't find font") + currentfont);
+    currfontsize = stof(Operands[1]);
   }
 }
 
 /*---------------------------------------------------------------------------*/
 
-void GraphicsState::TH(std::vector<std::string>& Operands)
+void GraphicsState::TH(vector<string>& Operands)
 {
   Th = stof(Operands.at(0));
 }
 
 /*---------------------------------------------------------------------------*/
 
-void GraphicsState::TC(std::vector<std::string>& Operands)
+void GraphicsState::TC(vector<string>& Operands)
 {
   Tc = stof(Operands.at(0));
 }
 
 /*---------------------------------------------------------------------------*/
 
-void GraphicsState::TW(std::vector<std::string>& Operands)
+void GraphicsState::TW(vector<string>& Operands)
 {
   Tw = stof(Operands.at(0));
 }
 
 /*---------------------------------------------------------------------------*/
 
-void GraphicsState::TL(std::vector<std::string>& Operands)
+void GraphicsState::TL(vector<string>& Operands)
 {
   Tl = stof(Operands.at(0));
 }
 
 /*---------------------------------------------------------------------------*/
 
-void GraphicsState::Tstar(std::vector<std::string>& Operands)
+void GraphicsState::Tstar(vector<string>& Operands)
 {
   Tdstate.at(7) = Tdstate.at(7) - Tl;
   PRstate = 0;
@@ -190,7 +192,7 @@ void GraphicsState::Tstar(std::vector<std::string>& Operands)
 
 /*---------------------------------------------------------------------------*/
 
-void GraphicsState::Tm(std::vector<std::string>& Operands)
+void GraphicsState::Tm(vector<string>& Operands)
 {
   Tmstate = stringvectomat(Operands);
   Tdstate = initstate;
@@ -199,30 +201,28 @@ void GraphicsState::Tm(std::vector<std::string>& Operands)
 
 /*---------------------------------------------------------------------------*/
 
-void GraphicsState::cm(std::vector<std::string>& Operands)
+void GraphicsState::cm(vector<string>& Operands)
 {
   gs.back() = matmul(stringvectomat(Operands), gs.back());
 }
 
 /*---------------------------------------------------------------------------*/
 
-void GraphicsState::TJ(std::vector<std::vector<std::string>>& i)
+void GraphicsState::TJ(vector<vector<string>>& i)
 {
-  std::string& Ins = i[0][0];
-  std::vector<std::string> &OperandTypes = i[1];
-  std::vector<std::string> &Operands = i[2];
+  string& Ins = i[0][0];
+  vector<string> &OperandTypes = i[1];
+  vector<string> &Operands = i[2];
   if (Ins == "'") Tdstate[7] -= Tl;
-  std::vector<float> textspace = matmul(Tmstate, gs.back());
+  vector<float> textspace = matmul(Tmstate, gs.back());
   textspace = matmul(Tdstate, textspace);
   float txtspcinit = textspace[6];
   float scale = currfontsize * textspace[0];
-
-  for (size_t z = 0; z < OperandTypes.size(); z++)
-  {
-    std::vector<std::pair<std::string, int>> kvs;
+  size_t otsize = OperandTypes.size();
+  for (size_t z = 0; z < otsize; z++)
     if (OperandTypes[z] == "number")
     {
-      PRstate -= std::stof(Operands[z]);
+      PRstate -= stof(Operands[z]);
       float PRscaled = PRstate * scale / 1000;
       textspace[6] = PRscaled + txtspcinit;
     }
@@ -234,16 +234,16 @@ void GraphicsState::TJ(std::vector<std::vector<std::string>>& i)
         Operands[z] = byteStringToString(Operands[z]);
       if (Operands[z] == "")
         continue;
-      kvs = wfont.mapString(Operands[z]);
+      vector<pair<string, int>>&& kvs = wfont.mapString(Operands[z]);
       for (auto j : kvs)
       {
         float stw;
-        statehx.push_back(textspace);
+        statehx.emplace_back(textspace);
         if (j.first == "/space" || j.first == "/nbspace")
           stw = j.second + (Tc + Tw) * 1000;
         else stw = j.second + Tc * 1000;
         PRstate += stw;
-        std::string tmpchar;
+        string tmpchar;
         //Simplest way to deal with ligatures is to specify them here
         if(j.first == "/fi"
         || j.first == "/fl"
@@ -258,24 +258,22 @@ void GraphicsState::TJ(std::vector<std::vector<std::string>>& i)
         else tmpchar = namesToChar(j.first, "/WinAnsiEncoding");
         float PRscaled = PRstate * scale / 1000;
         textspace[6] = PRscaled + txtspcinit;
-        widths.push_back(scale * stw/1000 * Th/100);
-        stringres.push_back(tmpchar);
-        fontsize.push_back(scale);
-        fontname.push_back(wfont.FontName);
+        widths.emplace_back(scale * stw/1000 * Th/100);
+        stringres.emplace_back(tmpchar);
+        fontsize.emplace_back(scale);
+        fontname.emplace_back(wfont.FontName);
       }
     }
-  }
 }
 
 /*---------------------------------------------------------------------------*/
 
-void GraphicsState::InstructionReader(Instructionset I,
-                                      const std::string& insubloop)
+void GraphicsState::InstructionReader(Instructionset I, const string& insubloop)
 {
   for (auto &i : I)
   {
-    std::string& Ins = i[0][0];
-    std::vector<std::string> &Operands = i[2];
+    string& Ins = i[0][0];
+    vector<string> &Operands = i[2];
     if (Ins == "Q")  Q(Operands);
     else if (Ins == "q" ) q(Operands);
     else if (Ins == "Th") TH(Operands);
@@ -301,28 +299,29 @@ void GraphicsState::MakeGS()
 {
   for (auto i : statehx)
   {
-    xvals.push_back(i[6]);
-    yvals.push_back(i[7]);
+    xvals.emplace_back(i[6]);
+    yvals.emplace_back(i[7]);
   }
-  for (size_t i = 0; i < widths.size(); i++)
+  size_t wsize = widths.size();
+  for (size_t i = 0; i < wsize; i++)
   {
-    R.push_back(widths[i] + xvals[i]);
+    R.emplace_back(widths[i] + xvals[i]);
     leftmatch.push_back(-1);
   }
   rightmatch = leftmatch;
   clump();
-  for (size_t i = 0; i < widths.size(); i++)
+  for (size_t i = 0; i < wsize; i++)
   {
     if (leftmatch[i] == -1 && stringres[i] != " " && stringres[i] != "  ")
     {
       trimRight(stringres[i]);
-      text.push_back(stringres[i]);
-      left.push_back(xvals[i]);
-      bottom.push_back(yvals[i]);
-      right.push_back(R[i]);
-      fonts.push_back(fontname[i]);
-      size.push_back(fontsize[i]);
-      width.push_back(R[i] - xvals[i]);
+      text.emplace_back(stringres[i]);
+      left.emplace_back(xvals[i]);
+      bottom.emplace_back(yvals[i]);
+      right.emplace_back(R[i]);
+      fonts.emplace_back(fontname[i]);
+      size.emplace_back(fontsize[i]);
+      width.emplace_back(R[i] - xvals[i]);
     }
   }
 }
@@ -331,47 +330,40 @@ void GraphicsState::MakeGS()
 
 void GraphicsState::clump()
 {
-  std::map<size_t, size_t> Rjoins;
+  map<size_t, size_t> Rjoins;
   size_t s = widths.size();
-  if (s > 0)
-  {
-    for (size_t i = 0; i < s; i++)
+  if (s == 0) return;
+  for (size_t i = 0; i < s; i++)
+    for (size_t j = 0; j < s; j++)
     {
-      for (size_t j = 0; j < s; j++)
+      bool isNear = fabs(R[i] - xvals[j]) < (fontsize[i]);
+      bool isLeftOf = xvals[i] < xvals[j];
+      bool areDifferent = (i != j);
+      bool nothingCloser = true;
+      bool sameY = fabs(yvals[i] - yvals[j]) < 3;
+      if(Rjoins.find(i) != Rjoins.end())
+        nothingCloser = (xvals[Rjoins[i]] > xvals[j]);
+      if(areDifferent && isLeftOf && isNear && nothingCloser && sameY)
       {
-        bool isNear = fabs(R[i] - xvals[j]) < (fontsize[i]);
-        bool isLeftOf = xvals[i] < xvals[j];
-        bool areDifferent = (i != j);
-        bool nothingCloser = true;
-        bool sameY = fabs(yvals[i] - yvals[j]) < 3;
-        if(Rjoins.find(i) != Rjoins.end())
-          nothingCloser = (xvals[Rjoins[i]] > xvals[j]);
-        if(areDifferent && isLeftOf && isNear && nothingCloser && sameY)
-        {
-          Rjoins[i] = j;
-          leftmatch[j] = (int) i;
-        }
+        Rjoins[i] = j;
+        leftmatch[j] = (int) i;
       }
     }
-    for (size_t i = 0; i < s; i++)
-    {
-      if(leftmatch[i] == -1)
+  for (size_t i = 0; i < s; i++)
+    if(leftmatch[i] == -1)
+      while(true)
       {
-        while(true)
+        if(Rjoins.find(i) != Rjoins.end())
         {
-          if(Rjoins.find(i) != Rjoins.end())
-          {
-            if((xvals[Rjoins[i]] - R[i]) > (0.19 * fontsize[i]))
-              stringres[i] += " ";
-            stringres[i] += stringres[Rjoins[i]];
-            R[i] = R[Rjoins[i]];
-            widths[i] = R[i] - xvals[i];
-            if(Rjoins.find(Rjoins[i]) != Rjoins.end())
-              Rjoins[i] = Rjoins[Rjoins[i]]; else break;
-          }
+          if((xvals[Rjoins[i]] - R[i]) > (0.19 * fontsize[i]))
+            stringres[i] += " ";
+          stringres[i] += stringres[Rjoins[i]];
+          R[i] = R[Rjoins[i]];
+          widths[i] = R[i] - xvals[i];
+          if(Rjoins.find(Rjoins[i]) != Rjoins.end())
+            Rjoins[i] = Rjoins[Rjoins[i]];
           else break;
         }
+        else break;
       }
-    }
-  }
 }
