@@ -25,7 +25,6 @@
 //                                                                           //
 //---------------------------------------------------------------------------//
 
-
 #include "pdfr.h"
 #include "Rex.h"
 #include "stringfunctions.h"
@@ -37,7 +36,7 @@
 #include "adobetounicode.h"
 #include "unicodetochar.h"
 #include "chartounicode.h"
-
+#define DEFAULT_WIDTH 500
 using namespace std;
 
 /*---------------------------------------------------------------------------*/
@@ -52,7 +51,8 @@ FontID(fontid)
   getFontName();
   getEncoding(fontref, d);
   mapUnicode(fontref, d);
-  if(Width.size() == 0) getWidthTable(fontref, d);
+  if(Width.empty())
+    getWidthTable(fontref, d);
   makeGlyphTable();
 }
 
@@ -85,10 +85,10 @@ void parseDifferences(const string& enc, map<uint16_t, uint16_t>& symbmap)
       char n = symbol_type(i);
       switch(n)
       {
-      case 'D': buf = i ; state = "number"; break;
-      case '/': buf = "/"; state = "name"; break;
-      case ']': state = "stop"; break;
-      default : buf = ""; break;
+        case 'D': buf = i ; state = "number"; break;
+        case '/': buf = "/"; state = "name"; break;
+        case ']': state = "stop"; break;
+        default : buf = ""; break;
       }
       i++; continue;
     }
@@ -97,13 +97,13 @@ void parseDifferences(const string& enc, map<uint16_t, uint16_t>& symbmap)
       char n = symbol_type(i);
       switch(n)
       {
-      case 'D': buf += i ; break;
-      case '/': typestring.push_back(state);
-        symbstring.push_back(buf);
-        buf = "/"; state = "name"; break;
-      default:  typestring.push_back(state);
-      symbstring.push_back(buf);
-      buf = ""; state = "newsymbol"; break;
+        case 'D': buf += i ; break;
+        case '/': typestring.push_back(state);
+                  symbstring.push_back(buf);
+                  buf = "/"; state = "name"; break;
+        default:  typestring.push_back(state);
+                  symbstring.push_back(buf);
+                  buf = ""; state = "newsymbol"; break;
       }
       i++; continue;
     }
@@ -112,20 +112,20 @@ void parseDifferences(const string& enc, map<uint16_t, uint16_t>& symbmap)
       char n = symbol_type(i);
       switch(n)
       {
-      case 'L': buf += i;  break;
-      case '.': buf += i;  break;
-      case 'D': typestring.push_back(state);
-        symbstring.push_back(buf);
-        buf = i ; state = "number"; break;
-      case '/': typestring.push_back(state);
-        symbstring.push_back(buf);
-        buf = i ; break;
-      case ' ': typestring.push_back(state);
-        symbstring.push_back(buf);
-        buf = "" ; state = "newsymbol"; break;
-      default: typestring.push_back(state);
-      symbstring.push_back(buf);
-      state = "stop"; break;
+        case 'L': buf += i;  break;
+        case '.': buf += i;  break;
+        case 'D': typestring.push_back(state);
+                  symbstring.push_back(buf);
+                  buf = i ; state = "number"; break;
+        case '/': typestring.push_back(state);
+                  symbstring.push_back(buf);
+                  buf = i ; break;
+        case ' ': typestring.push_back(state);
+                  symbstring.push_back(buf);
+                  buf = "" ; state = "newsymbol"; break;
+        default:  typestring.push_back(state);
+                  symbstring.push_back(buf);
+                  state = "stop"; break;
       }
       i++; continue;
     }
@@ -136,10 +136,7 @@ void parseDifferences(const string& enc, map<uint16_t, uint16_t>& symbmap)
     if(typestring[i] == "number")
       k = stoi(symbstring[i]);
     else
-    {
-      symbmap[k] = AdobeToUnicode[symbstring[i]];
-      k++;
-    }
+      symbmap[k++] = AdobeToUnicode[symbstring[i]];
 }
 
 /*---------------------------------------------------------------------------*/
@@ -158,7 +155,6 @@ vector<pair<uint16_t, int>> font::mapString(const string& s)
 
 void font::getWidthTable(dictionary& dict, document& d)
 {
-  map<uint16_t, int> resmap;
   vector<int> chararray;
   vector<float> widtharray;
   int firstchar;
@@ -171,16 +167,10 @@ void font::getWidthTable(dictionary& dict, document& d)
     if (dict.hasRefs("/Widths"))
     {
       vector<int> os = dict.getRefs("/Widths");
-      if (os.size() > 0)
-      {
-        object_class o = d.getobject(os[0]);
-        string ostring = o.getStream();
-        vector<string> arrstrings = Rex(ostring, numstring).get();
-        if (arrstrings.size() > 0)
-        {
-          widtharray = getnums(arrstrings[0]);
-        }
-      }
+      object_class o = d.getobject(os[0]);
+      string ostring = o.getStream();
+      vector<string> arrstrings = Rex(ostring, numstring).get();
+      if (!arrstrings.empty()) widtharray = getnums(arrstrings[0]);
     }
     else widtharray = dict.getNums("/Widths");
     if (!widtharray.empty() && !fcstrings.empty())
@@ -191,10 +181,7 @@ void font::getWidthTable(dictionary& dict, document& d)
         firstchar = fcnums[0];
         size_t warrsize = widtharray.size();
         for (unsigned i = 0; i < warrsize; i++)
-        {
-          resmap[(uint16_t) firstchar + i] = (int) widtharray[i];
-        }
-        Width = resmap;
+          Width[(uint16_t) firstchar + i] = (int) widtharray[i];
       }
     }
   }
@@ -205,26 +192,23 @@ void font::getWidthTable(dictionary& dict, document& d)
       if (dict.hasRefs("/DescendantFonts"))
       {
         vector<int> os = dict.getRefs("/DescendantFonts");
-        if (!os.empty())
+        object_class desc = d.getobject(os[0]);
+        dictionary descdict = desc.getDict();
+        string descstream = desc.getStream();
+        if(!getObjRefs(descstream).empty())
+          descdict = d.getobject(getObjRefs(descstream)[0]).getDict();
+        if (descdict.has("/W"))
         {
-          object_class desc = d.getobject(os[0]);
-          dictionary descdict = desc.getDict();
-          string descstream = desc.getStream();
-          if(!getObjRefs(descstream).empty())
-            descdict = d.getobject(getObjRefs(descstream)[0]).getDict();
-          if (descdict.has("/W"))
+          if (descdict.hasRefs("/W"))
           {
-            if (descdict.hasRefs("/W"))
-            {
-              vector<int> osss = descdict.getRefs("/W");
-              if (!osss.empty())
-                widthstrings = d.getobject(osss[0]).getStream();
-            }
-            else widthstrings = descdict.get("/W");
-            vector<string> tmp = Rex(widthstrings, numstring).get();
-            if(!tmp.empty())
-              parsewidtharray(tmp[0]);
+            vector<int> osss = descdict.getRefs("/W");
+            if (!osss.empty())
+              widthstrings = d.getobject(osss[0]).getStream();
           }
+          else widthstrings = descdict.get("/W");
+          vector<string> tmp = Rex(widthstrings, numstring).get();
+          if(!tmp.empty())
+            parsewidtharray(tmp[0]);
         }
       }
   }
@@ -262,16 +246,9 @@ void font::processUnicodeChars(Rex& Char)
       vector<string> entries = Rex(i, "(\\d|a|b|c|d|e|f|A|B|C|D|E|F)+").get();
       if (entries.size() == 2)
       {
-        string myhex = entries[1];
-        if(myhex.length() < 4) while(myhex.length() < 4) myhex = "0" + myhex;
-        myhex = "0x" + myhex;
-        uint16_t uinthex = stoul(myhex, nullptr, 0);
-
-        string mykey = entries[0];
-        if(mykey.length() < 4) while(mykey.length() < 4) mykey = "0" + mykey;
-        mykey = "0x" + mykey;
-        uint16_t uintkey = stoul(mykey, nullptr, 0);
-        EncodingMap[uintkey] = uinthex;
+        uint16_t hex = stringToUint16(entries[1]);
+        uint16_t key = stringToUint16(entries[0]);
+        EncodingMap[key] = hex;
       }
     }
   }
@@ -291,14 +268,10 @@ void font::processUnicodeRange(Rex& Range)
       {
         vector<uint16_t> myui;
         for(auto k : entries)
-          myui.emplace_back(stoul(string("0x" + k), nullptr, 0));
+          myui.emplace_back(stringToUint16(k));
         myui.emplace_back((myui[1] - myui[0]) + 1);
         for (unsigned int j = 0; j < myui[3]; j++)
-        {
-          uint16_t unicodeIndex = myui[2] + j;
-          uint16_t mykey = myui[0] + j;
-          EncodingMap[mykey] = unicodeIndex;
-        }
+          EncodingMap[myui[0] + j] = myui[2] + j;
       }
     }
   }
@@ -370,14 +343,13 @@ void font::getCoreFont(string s)
 void font::makeGlyphTable()
 {
   vector<uint16_t> widthkeys = getKeys(Width);
-  int defwidth = 500;
   vector<uint16_t> inkeys = getKeys(EncodingMap);
-  for(size_t i = 0; i < inkeys.size(); i++)
+  for(auto i : inkeys)
   {
-    int thiswidth;
-    if(Width.find(inkeys[i]) == Width.end()) thiswidth = defwidth;
-    else thiswidth = Width[(int) inkeys[i]];
-    glyphmap[inkeys[i]] = make_pair(EncodingMap[inkeys[i]], thiswidth);
+    int thiswidth = DEFAULT_WIDTH;
+    if(Width.find(i) != Width.end())
+      thiswidth = Width[i];
+    glyphmap[i] = make_pair(EncodingMap[i], thiswidth);
   }
 }
 
@@ -412,23 +384,23 @@ void font::parsewidtharray(string s)
         {
         case 'D' : buf += s[i]; break;
         case '.' : buf += s[i]; break;
-        case '[': state = "insubarray";
-                  if(buf.size() > 0)
-                  {
-                    vecbuf.push_back(stoi(buf));
-                    if(vecbuf.size() == 1) resultint.push_back(vecbuf[0]);
-                    else resultvec.push_back(vecbuf);
-                  }
-                  buf = "";
-                  vecbuf.clear();
-                  break;
-        case ' ': if(buf.size() > 0)
-                  {
-                    vecbuf.push_back(stoi(buf));
-                  }
+        case '[' : state = "insubarray";
+                   if(!buf.empty())
+                   {
+                     vecbuf.push_back(stoi(buf));
+                     if(vecbuf.size() == 1)
+                       resultint.push_back(vecbuf[0]);
+                     else
+                       resultvec.push_back(vecbuf);
+                   }
+                   buf = "";
+                   vecbuf.clear();
+                   break;
+        case ' ' : if(!buf.empty())
+                     vecbuf.push_back(stoi(buf));
                   buf = ""; break;
         case ']': state = "end";
-                  if(buf.size() > 0)
+                  if(!buf.empty())
                   {
                     vecbuf.push_back(stoi(buf));
                     if(vecbuf.size() == 1) resultint.push_back(vecbuf[0]);
@@ -446,10 +418,10 @@ void font::parsewidtharray(string s)
       {
         switch(a)
         {
-        case ' ': if(buf.size() > 0) vecbuf.push_back(stoi(buf));
+        case ' ': if(!buf.empty()) vecbuf.push_back(stoi(buf));
                   buf = ""; break;
         case ']': state = "inarray";
-                  if(buf.size() > 0) vecbuf.push_back(stoi(buf));
+                  if(!buf.empty()) vecbuf.push_back(stoi(buf));
                   resultvec.push_back(vecbuf);
                   vecbuf.clear();
                   buf = ""; break;
@@ -464,17 +436,9 @@ void font::parsewidtharray(string s)
       }
     }
   }
-  map<uint16_t, int> resultmap;
   if((resultint.size() == resultvec.size()) && !resultint.empty() )
-  {
-    size_t ressize = resultint.size();
-    for(size_t i = 0; i < ressize; i++)
-    {
-      size_t rvecsize = resultvec[i].size();
+    for(size_t i = 0; i < resultint.size(); i++)
       if(!resultvec[i].empty())
-        for(size_t j = 0; j < rvecsize; j++)
-          resultmap[(uint16_t) resultint[i] + j] = resultvec[i][j];
-    }
-  }
-  Width = resultmap;
+        for(size_t j = 0; j < resultvec[i].size(); j++)
+          Width[(uint16_t) resultint[i] + j] = resultvec[i][j];
 }

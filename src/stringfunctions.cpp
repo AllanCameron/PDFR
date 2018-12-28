@@ -380,3 +380,12 @@ void upperCase(string& s)
 {
   transform(s.begin(), s.end(), s.begin(), ptr_fun<int, int>(toupper));
 }
+
+/*--------------------------------------------------------------------------*/
+
+uint16_t stringToUint16(string s)
+{
+  if(s.length() < 4) while(s.length() < 4) s = "0" + s;
+  s = "0x" + s;
+  return (uint16_t) stoul(s, nullptr, 0);
+}
