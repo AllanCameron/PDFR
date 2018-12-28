@@ -88,19 +88,6 @@ bool IsAscii(const string& tempint)
   return (mymin > 7) && (mymax < 126);
 }
 
-
-/*---------------------------------------------------------------------------*/
-// Casts a single unsigned int to a length 1 string
-string intToString(uint16_t a)
-{
-  string b;
-  if (a > 0x00ff)
-    return "*";
-  uint8_t d = (uint8_t) a;
-  b += (char) d;
-  return b;
-}
-
 /*---------------------------------------------------------------------------*/
 // Generalizes stof to allow multiple floats from a single string
 vector<float> getnums(const string& s)
@@ -126,19 +113,6 @@ vector<int> getints(const string& s)
 }
 
 /*---------------------------------------------------------------------------*/
-// converts an int to a pseudo - octal
-int dec2oct(int x)
-{
-  int a = (x / 64);
-  int b = (x - a * 64) / 8;
-  int c = (x - a * 64 - 8 * b);
-  string res = to_string(a);
-  res += to_string(b);
-  res += to_string(c);
-  return stoi(res);
-}
-
-/*---------------------------------------------------------------------------*/
 // converts an octal (as captured by stoi) to intended decimal value
 int oct2dec(int x)
 {
@@ -159,47 +133,33 @@ int oct2dec(int x)
 /*---------------------------------------------------------------------------*/
 //Takes a string of bytes represented in ASCII and converts to actual bytes
 
-vector<unsigned char> bytesFromArray(const string& s)
+vector<uint8_t> bytesFromArray(const string& s)
 {
   if(s.empty())
     throw std::runtime_error("Zero-length string passed to bytesFromArray");
   vector<int> tmpvec;
   for(auto a : s)
   {
-    if(a > 47 && a < 58)  tmpvec.push_back(a - 48); //Digits 0-9
-    if(a > 64 && a < 71)  tmpvec.push_back(a - 55); //Uppercase A-F
-    if(a > 96 && a < 103) tmpvec.push_back(a - 87); //Lowercase a-f
+    if(a > 47 && a < 58)  tmpvec.emplace_back(a - 48); //Digits 0-9
+    if(a > 64 && a < 71)  tmpvec.emplace_back(a - 55); //Uppercase A-F
+    if(a > 96 && a < 103) tmpvec.emplace_back(a - 87); //Lowercase a-f
   }
   size_t ts = tmpvec.size();
   if(ts == 0)
     throw std::runtime_error("arrayFromBytes not given a byte string");
   if(ts % 2 == 1)
     tmpvec.push_back(0);
-  vector<unsigned char> resvec;
+  vector<uint8_t> resvec;
   for(size_t i = 0; i < ts; i += 2)
-    resvec.push_back((unsigned char) (16 * tmpvec.at(i) + tmpvec.at(i + 1)));
+    resvec.emplace_back((uint8_t) (16 * tmpvec.at(i) + tmpvec.at(i + 1)));
   return resvec;
-}
-
-/*---------------------------------------------------------------------------*/
-// reinterprets string as vector of bytes
-vector<uint8_t> stringtobytes(const string& s)
-{
-  vector<uint8_t> res;
-  res.reserve(s.size());
-  for(auto i : s)
-    res.push_back(i);
-  return res;
 }
 
 /*---------------------------------------------------------------------------*/
 // reinterprets vector of bytes as a string
 string bytestostring(const vector<uint8_t>& v)
 {
-  string res;
-  res.reserve(v.size());
-  for(auto i : v)
-    res += i;
+  string res(v.begin(), v.end());
   return res;
 }
 
@@ -226,7 +186,7 @@ vector<float> stringvectomat(vector<string> b)
   if(b.size() != 6)
     throw std::runtime_error("stringvectomat: Vectors must be size 6.");
   vector<float> a;
-  for(auto i : b) a.push_back(stof(i));
+  for(auto i : b) a.emplace_back(stof(i));
   vector<float> newmat {a[0], a[1], 0, a[2], a[3], 0, a[4], a[5], 1};
   return newmat;
 }
@@ -279,20 +239,6 @@ vector<string> splitfours(string s)
 }
 
 /*--------------------------------------------------------------------------*/
-//Split a string into length-2 elements
-vector<string> splittwos(string s)
-{
-  vector<string> res;
-  if(s.empty())
-    return res;
-  while(s.size() % 2 != 0)
-    s += '0';
-  for(unsigned i = 0; i < s.length()/2; i++)
-    res.push_back(s.substr(i * 2, 2));
-  return res;
-}
-
-/*--------------------------------------------------------------------------*/
 //Converts an ASCII encoded string to a (char-based) string
 string byteStringToString(const string& s)
 {
@@ -316,7 +262,7 @@ vector<int> getObjRefs(string ds)
 {
   vector<int> res;
   for (auto i : Rex(ds, "\\d+ \\d+ R").get())
-    res.push_back(stoi(splitter(i, " ")[0]));
+    res.emplace_back(stoi(splitter(i, " ")[0]));
   return res;
 }
 

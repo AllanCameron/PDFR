@@ -37,6 +37,8 @@ private:
   int number, startpos;
   dictionary header;
   std::string stream;
+  std::vector<size_t> streampos;
+  document* d;
   std::vector<int> Kids, Contents;
   bool has_stream, has_kids, has_contents;
   void objectHasKids();
@@ -53,8 +55,8 @@ public:
   std::vector<int> getContents();
 
   dictionary getDict();
-  object_class(document& d, int objnum);
-  object_class(document& d, std::string str, int objnum);
+  object_class(document*, int objnum);
+  object_class(document*, std::string str, int objnum);
   object_class(){};
 };
 

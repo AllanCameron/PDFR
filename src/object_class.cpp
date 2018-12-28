@@ -35,46 +35,48 @@
 #include "object_class.h"
 #include "crypto.h"
 
-object_class::object_class(document& d, int objnum) : number(objnum)
+object_class::object_class(document* doc, int objnum) : number(objnum), d(doc)
 {
-  std::string &fs = d.filestring;
-  std::vector<uint8_t> &fk = d.filekey;
-  int startbyte = d.Xref.getStart(objnum);
-  int stopbyte  = d.Xref.getEnd(objnum);
+  std::string &fs = d->filestring;
+  std::vector<uint8_t> &fk = d->filekey;
+  streampos = {0,0};
+  int startbyte = d->Xref.getStart(objnum);
+  int stopbyte  = d->Xref.getEnd(objnum);
   if(objnum == 0)
     has_stream = false;
   else
   {
-    if(!d.Xref.isInObject(objnum))
+    if(!d->Xref.isInObject(objnum))
     {
       if(!Rex(fs.substr(startbyte, 20), "<<").has())
       {
         header = dictionary("<<>>");
-        stream = fs.substr(startbyte, stopbyte - startbyte);
-        stream = carveout(stream, " obj\\s+", "\\s+endobj");
+        //stream = fs.substr(startbyte, stopbyte - startbyte);
+        streampos.emplace_back(Rex(stream, " obj\\s+").ends().at(0));
+        streampos.emplace_back(stopbyte - 7);
+        //stream = carveout(stream, " obj\\s+", "\\s+endobj");
       }
       else
       {
         header = dictionary(fs, startbyte);
-        stream = getStreamContents(d, fs, startbyte);
-        if(d.encrypted) stream = decryptStream(stream, fk, number, 0);
-        if(isFlateDecode(fs, startbyte)) stream = FlateDecode(stream);
-        has_stream = stream.length() > 0 ? true : false;
+        //stream = getStreamContents(d, fs, startbyte);
+        streampos = getStreamLoc(d, fs, startbyte);
+        has_stream = streampos[1] > streampos[0];
       }
     }
     else
     {
-      int holdingobj = d.Xref.inObject(objnum);
-      if(!d.Xref.objectExists(holdingobj))
+      int holdingobj = d->Xref.inObject(objnum);
+      if(!d->Xref.objectExists(holdingobj))
       {
         stream = "";
         has_stream = false;
       }
       else
       {
-        startbyte = d.Xref.getStart(holdingobj);
+        startbyte = d->Xref.getStart(holdingobj);
         std::string str = getStreamContents(d, fs, startbyte);
-        if(d.encrypted) str = decryptStream(str, fk, holdingobj, 0);
+        if(d->encrypted) str = decryptStream(str, fk, holdingobj, 0);
         if(isFlateDecode(fs, startbyte)) str = FlateDecode(str);
         *this = object_class(d, str, objnum);
       }
@@ -88,10 +90,11 @@ object_class::object_class(document& d, int objnum) : number(objnum)
 
 /*---------------------------------------------------------------------------*/
 
-object_class::object_class(document& d, std::string str, int objnum)
-  : number(objnum)
+object_class::object_class(document* doc, std::string str, int objnum)
+  : number(objnum), d(doc)
 {
   int startbyte = 0;
+  streampos = {0,0};
   for(auto i : str)
   {
     char a = symbol_type(i);
@@ -197,7 +200,21 @@ void object_class::findContents()
 dictionary object_class::getDict() { return header;}
 std::vector<int> object_class::getKids() { return Kids;};
 std::vector<int> object_class::getContents() { return Contents;};
-std::string object_class::getStream(){ return stream;}
+
+std::string object_class::getStream()
+{
+  if(!hasStream())
+    return "";
+  else if(!stream.empty())
+    return stream;
+  else
+    stream = d->filestring.substr(streampos[0], streampos[1] - streampos[0]);
+  if(d->encrypted)
+    stream = decryptStream(stream, d->filekey, number, 0);
+  if(isFlateDecode(d->filestring, streampos[0]))
+    stream = FlateDecode(stream);
+  return stream;
+}
 
 bool object_class::hasKids() { return has_kids;}
 bool object_class::hasStream() { return has_stream;}

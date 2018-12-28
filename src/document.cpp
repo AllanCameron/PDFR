@@ -85,7 +85,7 @@ void document::get_file()
 object_class document::getobject(int n)
 {
   if(this->objects.find(n) == this->objects.end())
-    objects[n] = object_class(*this, n);
+    objects[n] = object_class(this, n);
   return objects[n];
 }
 
@@ -113,7 +113,7 @@ void document::getPageDir()
 
 void document::isLinearized()
 {
-  linearized = Rex(subfile(0, 100), "<</Linearized").has();
+  linearized = Rex(filestring.substr(0, 100), "<</Linearized").has();
 }
 
 /*---------------------------------------------------------------------------*/
@@ -174,13 +174,6 @@ void document::getPageHeaders()
 page document::getPage(int pagenum)
 {
   return page(*this, pagenum);
-}
-
-/*---------------------------------------------------------------------------*/
-
-string document::subfile(int startbyte, int len)
-{
-  return filestring.substr(startbyte, len);
 }
 
 /*---------------------------------------------------------------------------*/

@@ -259,7 +259,7 @@ std::vector<uint8_t> rc4(std::vector<uint8_t> msg, std::vector<uint8_t> key)
 std::string decryptStream(std::string streamstr, std::vector<uint8_t> key,
                              int objNum, int objGen)
   {
-    std::vector<uint8_t> streambytes = stringtobytes(streamstr);
+    std::vector<uint8_t> streambytes(streamstr.begin(), streamstr.end());
     std::vector<uint8_t> objkey = key;
     objkey.push_back(objNum & 0xff);
     objkey.push_back( (objNum >> 8) & 0xff);

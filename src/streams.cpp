@@ -33,6 +33,7 @@
 #include "../src/external/miniz.h"
 #include "../src/external/miniz.c"
 #include "debugtools.h"
+using namespace std;
 
 /*---------------------------------------------------------------------------*/
 
@@ -80,7 +81,7 @@ std::string FlateDecode(const std::string& s)
 /*---------------------------------------------------------------------------*/
 
 std::string
-getStreamContents(document& d, const std::string& filestring, int objstart)
+getStreamContents(document* d, const std::string& filestring, int objstart)
 {
   dictionary dict = dictionary(filestring, objstart);
   if(dict.has("stream"))
@@ -90,7 +91,7 @@ getStreamContents(document& d, const std::string& filestring, int objstart)
       if(dict.hasRefs("/Length"))
       {
         int lengthob = dict.getRefs("/Length")[0];
-        streamlen = std::stoi(d.getobject(lengthob).getStream());
+        streamlen = std::stoi(d->getobject(lengthob).getStream());
       }
       else
         streamlen = std::stoi(dict.get("/Length"));
@@ -98,6 +99,31 @@ getStreamContents(document& d, const std::string& filestring, int objstart)
       return filestring.substr(streamstart, streamlen);
     }
   return "";
+}
+
+/*---------------------------------------------------------------------------*/
+
+vector<size_t> getStreamLoc(document* d, const string& fs, int objstart)
+{
+  dictionary dict = dictionary(fs, objstart);
+  if(dict.has("stream"))
+    if(dict.has("/Length"))
+    {
+      int streamlen;
+      if(dict.hasRefs("/Length"))
+      {
+        int lengthob = dict.getRefs("/Length")[0];
+        streamlen = std::stoi(d->getobject(lengthob).getStream());
+      }
+      else
+        streamlen = dict.getInts("/Length")[0];
+      int streamstart = dict.getInts("stream")[0];
+      std::vector<size_t> res = {(size_t) streamstart,
+                                 (size_t) streamstart + streamlen};
+      return res;
+    }
+  std::vector<size_t> res = {0,0};
+  return res;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -118,27 +144,3 @@ bool isObject(const std::string& filestring, int objectstart)
 }
 
 /*---------------------------------------------------------------------------*/
-
-std::string objectPreStream(const std::string& filestring, int objectstart)
-{
-  std::vector<int> streamstart, nextobjstart, mn;
-  std::string dic;
-  int nchars = 0;
-  while(mn.size() == 0 && nchars < 3000)
-  {
-    nchars += 1500;
-    dic.assign(filestring.begin() + objectstart,
-               filestring.begin() + objectstart + nchars);
-    streamstart = Rex(dic, "stream").pos();
-    nextobjstart = Rex(dic, "endobj").pos();
-    if(!streamstart.empty()) mn.push_back(streamstart[0]);
-    if(!nextobjstart.empty()) mn.push_back(nextobjstart[0]);
-  }
-  if(mn.size()>0)
-    return dic.substr(0, *std::min_element(mn.begin(), mn.end()));
-
-  throw std::runtime_error("No object found");
-}
-
-/*---------------------------------------------------------------------------*/
-
