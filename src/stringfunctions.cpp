@@ -338,7 +338,6 @@ char symbol_type(const char c)
   return c;
 }
 
-
 /*--------------------------------------------------------------------------*/
 // Removes whitespace from right of a string
 void trimRight(string& s)
@@ -350,4 +349,34 @@ void trimRight(string& s)
       s.resize(i);
     else
       break;
+}
+
+/*--------------------------------------------------------------------------*/
+
+size_t firstmatch(std::string& s, std::string& m, int startpos)
+{
+  size_t ssize = s.size();
+  size_t msize = m.size();
+  if(startpos < 0 || startpos > (int) ssize || msize > ssize) return -1;
+  size_t state = 0;
+  size_t j = startpos;
+  while(j < ssize)
+  {
+    if(s[j] == m[state])
+      state++;
+    else
+      state = 0;
+    if (state == msize)
+      break;
+    if (ssize - j == 1) return -1;
+    j++;
+  }
+  return j + 1 - msize;
+}
+
+/*--------------------------------------------------------------------------*/
+
+void upperCase(string& s)
+{
+  transform(s.begin(), s.end(), s.begin(), ptr_fun<int, int>(toupper));
 }

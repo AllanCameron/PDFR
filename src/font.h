@@ -29,27 +29,31 @@
 #define PDFR_FONT
 
 #include "pdfr.h"
+#include "Rex.h"
+
+using namespace std;
 
 struct font
 {
-  std::string FontRef, FontName, FontID;
-  std::vector<int> FontBBox;
-  std::string BaseEncoding;
+  string FontRef, FontName, FontID;
+  vector<int> FontBBox;
+  string BaseEncoding;
   GlyphMap glyphmap;
-
-  std::map<std::string, std::string> UnicodeMap;
+  string BaseFont;
   bool hasUnicodeMap, hasMappings;
-  std::map<uint16_t, int> Width;
-  EncMap EncodingMap;
-  std::map<std::string, std::string> mappings;
-  void mapUnicode(dictionary& dict, document& d);
-  void getEncoding(dictionary& fontref, document& d);
-  void getWidthTable(dictionary& dict, document& d);
-  void getCoreFont(std::string s);
+  map<uint16_t, int> Width;
+  map<uint16_t, uint16_t> EncodingMap;
+  void mapUnicode(dictionary&, document&);
+  void getEncoding(dictionary&, document&);
+  void getWidthTable(dictionary&, document&);
+  void getCoreFont(string);
   void makeGlyphTable();
-  void parsewidtharray(std::string s);
-  std::vector<std::pair<std::string, int>> mapString(const std::string& s);
-  font(document& doc, const dictionary& fontref, const std::string& fontid);
+  void getFontName();
+  void parsewidtharray(string);
+  void processUnicodeChars(Rex&);
+  void processUnicodeRange(Rex&);
+  vector<pair<uint16_t, int>> mapString(const string&);
+  font(document&, const dictionary&, const string&);
   font(){};
 };
 

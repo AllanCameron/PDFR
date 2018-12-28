@@ -40,8 +40,7 @@ void xref::locateXrefs()
   std::string&& partial = d->filestring.substr(d->filesize - 50, 50);
   std::string&& xrefstring =  carveout(partial, "startxref", "%%EOF");
   Xreflocations.emplace_back(stoi(xrefstring));
-  if(Xreflocations.empty())
-    throw runtime_error("No xref entry found");
+  if(Xreflocations.empty()) throw runtime_error("No xref entry found");
   TrailerDictionary = dictionary(d->filestring, Xreflocations[0]);
   dictionary tempdict = TrailerDictionary;
   while (true)
@@ -60,20 +59,10 @@ void xref::xrefstrings()
   std::vector<std::string> res;
   for(auto i : Xreflocations)
   {
-    size_t nchars = 0;
-    std::vector<int> ts;
-    while (ts.empty() && ( (size_t)(i + nchars) < d->filesize))
-    {
-      nchars += 1000;
-      if(i + nchars > d->filesize) nchars = d->filesize - i;
-      std::string&& hunter = d->filestring.substr(i, nchars);
-      ts = Rex(hunter, "startxref").pos();
-    }
-    if (!ts.empty())
-    {
-      int minloc = *min_element(ts.begin(), ts.end());
-      res.emplace_back(d->filestring.substr(i + 5, minloc + 4));
-    }
+    std::string startxref = "startxref";
+    int minloc = firstmatch(d->filestring, startxref, i) - 9;
+    if (minloc > 0)
+      res.emplace_back(d->filestring.substr(i + 5, minloc - i));
     else
       throw std::runtime_error("No object found at location");
   }
@@ -95,7 +84,7 @@ void xref::xrefFromStream(int xrefloc)
   XRtab xreftable;
   try
   {
-    xreftable = xrefstream(*d, xrefloc).table();
+    xreftable = xrefstream(d, xrefloc).table();
   }
   catch(...)
   {
@@ -156,28 +145,18 @@ void xrefstream::getParms()
 void xrefstream::getRawMatrix()
 {
   std::string&& SS = getStreamContents(*d, d->filestring, objstart);
-  if(isFlateDecode(d->filestring, objstart))
-    SS = FlateDecode(SS);
+  if(isFlateDecode(d->filestring, objstart)) SS = FlateDecode(SS);
   std::vector<unsigned char> rawarray(SS.begin(), SS.end());
   std::vector<int> intstrm(rawarray.begin(), rawarray.end());
-
   std::vector<int>&& tmparraywidths = dict.getInts("/W");
-  for(auto i : tmparraywidths)
-  {
-    if(i > 0)
-      arrayWidths.push_back(i);
-  }
-  if(ncols == 0)
-    for(auto i : arrayWidths)
-      ncols += i;
+  for(auto i : tmparraywidths) if(i > 0) arrayWidths.push_back(i);
+  if(ncols == 0) for(auto i : arrayWidths) ncols += i;
   if(predictor > 9) ncols++;
-  if(ncols == 0)
-    throw std::runtime_error("divide by zero error");
+  if(ncols == 0) throw std::runtime_error("divide by zero error");
   int nrows = intstrm.size() / ncols;
   for(int i = 0; i < nrows; i++)
     rawMatrix.emplace_back(intstrm.begin() + ncols * i,
                            intstrm.begin() + ncols * (i + 1));
-
 }
 
 /*---------------------------------------------------------------------------*/
@@ -185,14 +164,11 @@ void xrefstream::getRawMatrix()
 void xrefstream::diffup()
 {
   size_t rms = rawMatrix.size();
-  for(size_t i = 0; i < rms; i++ )
+  for(size_t i = 1; i < rms; i++ )
   {
-    if(i > 0)
-    {
-      size_t rmis = rawMatrix.at(i).size();
-      for(size_t j = 0; j < rmis; j++)
-        rawMatrix.at(i).at(j) += rawMatrix.at(i - 1).at(j);
-    }
+    size_t rmis = rawMatrix.at(i).size();
+    for(size_t j = 0; j < rmis; j++)
+      rawMatrix.at(i).at(j) += rawMatrix.at(i - 1).at(j);
   }
 }
 
@@ -273,10 +249,10 @@ std::vector<std::vector<int>> xrefstream::table()
 
 /*---------------------------------------------------------------------------*/
 
-xrefstream::xrefstream(document& doc, int starts) : ncols(0), firstObject(0),
+xrefstream::xrefstream(document* doc, int starts) : ncols(0), firstObject(0),
 predictor(0), objstart(starts)
 {
-  d = &doc;
+  d = doc;
   dict = dictionary(d->filestring, objstart);
   subdict = dictionary(dict.get("/DecodeParms"));
   getIndex();

@@ -234,28 +234,17 @@ void GraphicsState::TJ(vector<vector<string>>& i)
         Operands[z] = byteStringToString(Operands[z]);
       if (Operands[z] == "")
         continue;
-      vector<pair<string, int>>&& kvs = wfont.mapString(Operands[z]);
+      vector<pair<uint16_t, int>>&& kvs = wfont.mapString(Operands[z]);
       for (auto j : kvs)
       {
         float stw;
         statehx.emplace_back(textspace);
-        if (j.first == "/space" || j.first == "/nbspace")
+        if (j.first == 0x0020 || j.first == 0x00A0)
           stw = j.second + (Tc + Tw) * 1000;
         else stw = j.second + Tc * 1000;
         PRstate += stw;
         string tmpchar;
-        //Simplest way to deal with ligatures is to specify them here
-        if(j.first == "/fi"
-        || j.first == "/fl"
-        || j.first == "/ffi"
-        || j.first == "/ff"
-        || j.first == "/ffl"){
-        if(j.first == "/fi") tmpchar = "fi";
-        if(j.first == "/fl") tmpchar = "fl";
-        if(j.first == "/ffi") tmpchar = "ffi";
-        if(j.first == "/ff") tmpchar = "ff";
-        if(j.first == "/ffl") tmpchar = "ffl";}
-        else tmpchar = namesToChar(j.first, "/WinAnsiEncoding");
+        tmpchar = namesToChar((uint16_t) j.first, "/WinAnsiEncoding");
         float PRscaled = PRstate * scale / 1000;
         textspace[6] = PRscaled + txtspcinit;
         widths.emplace_back(scale * stw/1000 * Th/100);

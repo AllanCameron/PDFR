@@ -36,19 +36,18 @@
 #include "font.h"
 #include "ucm.h"
 
+using namespace std;
+
 /*---------------------------------------------------------------------------*/
 
-font::font(document& d, const dictionary& Fontref, const std::string& fontid) :
+font::font(document& d, const dictionary& Fontref, const string& fontid) :
 FontID(fontid)
 {
   dictionary fontref = Fontref;
   FontRef = "In file";
-  std::string BaseFont = fontref.get("/BaseFont");
+  BaseFont = fontref.get("/BaseFont");
   getCoreFont(BaseFont);
-  size_t BaseFont_start = 1;
-  if(BaseFont.size() > 7)
-    if(BaseFont[7] == '+') BaseFont_start = 8;
-  FontName = BaseFont.substr(BaseFont_start, BaseFont.size() - BaseFont_start);
+  getFontName();
   getEncoding(fontref, d);
   mapUnicode(fontref, d);
   if(Width.size() == 0) getWidthTable(fontref, d);
@@ -57,13 +56,24 @@ FontID(fontid)
 
 /*---------------------------------------------------------------------------*/
 
-void parseDifferences(const std::string& enc, EncMap& symbmap)
+void font::getFontName()
 {
-  std::string state = "newsymbol";
-  std::string buf = "";
-  std::string minibuf = "";
-  std::vector<std::string> typestring;
-  std::vector<std::string> symbstring;
+  size_t BaseFont_start = 1;
+  if(BaseFont.size() > 7)
+    if(BaseFont[7] == '+')
+      BaseFont_start = 8;
+  FontName = BaseFont.substr(BaseFont_start, BaseFont.size() - BaseFont_start);
+}
+
+/*---------------------------------------------------------------------------*/
+
+void parseDifferences(const string& enc, map<uint16_t, uint16_t>& symbmap)
+{
+  string state = "newsymbol";
+  string buf = "";
+  string minibuf = "";
+  vector<string> typestring;
+  vector<string> symbstring;
 
   for(auto i : enc)
   {
@@ -122,19 +132,26 @@ void parseDifferences(const std::string& enc, EncMap& symbmap)
   size_t k = 0;
   for(size_t i = 0; i < symbstring.size(); i++)
   {
-    if(typestring[i] == "number") {k = std::stoi(symbstring[i]);}
-    else {symbmap[k] = symbstring[i]; k++;}
+    if(typestring[i] == "number")
+    {
+      k = stoi(symbstring[i]);
+    }
+    else
+    {
+      symbmap[k] = UCM[symbstring[i]];
+      k++;
+    }
   }
 }
 
 /*---------------------------------------------------------------------------*/
 
-std::vector<std::pair<std::string, int>> font::mapString(const std::string& s)
+vector<pair<uint16_t, int>> font::mapString(const string& s)
 {
   GlyphMap &G = glyphmap;
-  std::vector<std::pair<std::string, int>> res;
+  vector<pair<uint16_t, int>> res;
   for(auto i : s)
-    if(G.find((uint16_t) i) != G.end())
+    if(G.find((int) i) != G.end())
       res.push_back(G[i]);
   return res;
 }
@@ -143,24 +160,24 @@ std::vector<std::pair<std::string, int>> font::mapString(const std::string& s)
 
 void font::getWidthTable(dictionary& dict, document& d)
 {
-  std::map<uint16_t, int> resmap;
-  std::vector<int> chararray;
-  std::vector<float> widtharray;
+  map<uint16_t, int> resmap;
+  vector<int> chararray;
+  vector<float> widtharray;
   int firstchar;
-  std::string widthstrings, fcstrings;
-  std::string numstring = "\\[(\\[|]| |\\.|\\d+)+";
+  string widthstrings, fcstrings;
+  string numstring = "\\[(\\[|]| |\\.|\\d+)+";
   if (dict.has("/Widths"))
   {
     widthstrings = dict.get("/Widths");
     fcstrings = dict.get("/FirstChar");
     if (dict.hasRefs("/Widths"))
     {
-      std::vector<int> os = dict.getRefs("/Widths");
+      vector<int> os = dict.getRefs("/Widths");
       if (os.size() > 0)
       {
         object_class o = d.getobject(os[0]);
-        std::string ostring = o.getStream();
-        std::vector<std::string> arrstrings = Rex(ostring, numstring).get();
+        string ostring = o.getStream();
+        vector<string> arrstrings = Rex(ostring, numstring).get();
         if (arrstrings.size() > 0)
         {
           widtharray = getnums(arrstrings[0]);
@@ -168,10 +185,10 @@ void font::getWidthTable(dictionary& dict, document& d)
       }
     }
     else widtharray = dict.getNums("/Widths");
-    if (widtharray.size() > 0 && fcstrings.size() > 0)
+    if (!widtharray.empty() && !fcstrings.empty())
     {
-      std::vector<int> fcnums = getints(fcstrings);
-      if (fcnums.size() > 0)
+      vector<int> fcnums = getints(fcstrings);
+      if (!fcnums.empty())
       {
         firstchar = fcnums[0];
         size_t warrsize = widtharray.size();
@@ -189,24 +206,24 @@ void font::getWidthTable(dictionary& dict, document& d)
     if(dict.has("/DescendantFonts"))
       if (dict.hasRefs("/DescendantFonts"))
       {
-        std::vector<int> os = dict.getRefs("/DescendantFonts");
+        vector<int> os = dict.getRefs("/DescendantFonts");
         if (!os.empty())
         {
           object_class desc = d.getobject(os[0]);
           dictionary descdict = desc.getDict();
-          std::string descstream = desc.getStream();
+          string descstream = desc.getStream();
           if(!getObjRefs(descstream).empty())
             descdict = d.getobject(getObjRefs(descstream)[0]).getDict();
           if (descdict.has("/W"))
           {
             if (descdict.hasRefs("/W"))
             {
-              std::vector<int> osss = descdict.getRefs("/W");
+              vector<int> osss = descdict.getRefs("/W");
               if (!osss.empty())
                 widthstrings = d.getobject(osss[0]).getStream();
             }
             else widthstrings = descdict.get("/W");
-            std::vector<std::string> tmp = Rex(widthstrings, numstring).get();
+            vector<string> tmp = Rex(widthstrings, numstring).get();
             if(!tmp.empty())
               parsewidtharray(tmp[0]);
           }
@@ -215,7 +232,7 @@ void font::getWidthTable(dictionary& dict, document& d)
   }
   if(Width.empty())
   {
-    EncMap storeEnc = EncodingMap;
+    map<uint16_t, uint16_t> storeEnc = EncodingMap;
     getCoreFont("/Helvetica");
     EncodingMap = storeEnc;
   }
@@ -225,86 +242,68 @@ void font::getWidthTable(dictionary& dict, document& d)
 
 void font::mapUnicode(dictionary& fontref, document& d)
 {
-  if (fontref.hasRefs("/ToUnicode"))
+  if (!fontref.hasRefs("/ToUnicode")) return;
+  int unirefint = fontref.getRefs("/ToUnicode")[0];
+  string x = d.getobject(unirefint).getStream();
+  Rex Char =  Rex(x, "beginbfchar(.|\\s)*?endbfchar");
+  Rex Range = Rex(x, "beginbfrange(.|\\s)*?endbfrange");
+  if (Char.has())  processUnicodeChars(Char);
+  if (Range.has()) processUnicodeRange(Range);
+}
+
+/*---------------------------------------------------------------------------*/
+
+void font::processUnicodeChars(Rex& Char)
+{
+  for(auto j : Char.get())
   {
-    std::vector<int> unirefints = fontref.getRefs("/ToUnicode");
-    if (unirefints.size() > 0)
+    j = carveout(j, "beginbfchar", "endbfchar");
+    vector<string> charentries = splitter(j, "(\n|\r){1,2}");
+    for (auto i : charentries)
     {
-      int unirefint = unirefints[0];
-      std::string x = d.getobject(unirefint).getStream();
-      std::string hexfinder = "(\\d|a|b|c|d|e|f|A|B|C|D|E|F)+";
-      bool hasChar =  Rex(x, "beginbfchar").has() &&
-                      Rex(x, "endbfchar").has();
-      bool hasRange = Rex(x, "beginbfrange").has() &&
-                      Rex(x, "endbfrange").has();
-
-      if (hasChar)
+      vector<string> entries = Rex(i, "(\\d|a|b|c|d|e|f|A|B|C|D|E|F)+").get();
+      if (entries.size() == 2)
       {
-        std::vector<std::string> sv =
-          Rex(x, "beginbfchar(.|\\s)*?endbfchar").get();
-        for(auto j : sv)
-        {
-          j = carveout(j, "beginbfchar", "endbfchar");
-          std::vector<std::string> charentries = splitter(j, "(\n|\r){1,2}");
-          for (auto i : charentries)
-          {
-            std::vector<std::string> rowentries = Rex(i, hexfinder).get();
-            if (rowentries.size() == 2)
-            {
-              std::string myhex = rowentries[1];
-              if(myhex.length() < 4)
-                while(myhex.length() < 4) myhex = "0" + myhex;
-              std::transform( myhex.begin(), myhex.end(), myhex.begin(),
-                              std::ptr_fun<int, int>(std::toupper));
-              std::string mykey = rowentries[0];
-              std::transform( mykey.begin(), mykey.end(), mykey.begin(),
-                              std::ptr_fun<int, int>(std::toupper));
-              if(mykey.length() < 4)
-                while(mykey.length() < 4) mykey = "0" + mykey;
-              mykey = "0x" + mykey.substr(2, 2);
-              uint16_t uintkey = stoul(mykey, nullptr, 0);
-              if(EncodingMap.find(uintkey) != EncodingMap.end())
-                EncodingMap[uintkey] = UCM[myhex];
-              else EncodingMap[uintkey] = UCM[myhex];
-            }
-          }
-        }
+        string myhex = entries[1];
+        if(myhex.length() < 4) while(myhex.length() < 4) myhex = "0" + myhex;
+        upperCase(myhex);
+        string mykey = entries[0];
+        upperCase(mykey);
+        if(mykey.length() < 4) while(mykey.length() < 4) mykey = "0" + mykey;
+        mykey = "0x" + mykey.substr(2, 2);
+        uint16_t uintkey = stoul(mykey, nullptr, 0);
+        if(EncodingMap.find(uintkey) != EncodingMap.end())
+          EncodingMap[uintkey] = uintkey;
+        else
+          EncodingMap[uintkey] = uintkey;
       }
-      if (hasRange)
-      {
-        std::vector<std::string> sv =
-          Rex(x, "beginbfrange(.|\\s)*?endbfrange").get();
-        for(auto j : sv)
-        {
-          std::string bfrange = carveout(j, "beginbfrange", "endbfrange");
-          std::vector<std::string> Rangenums =
-            splitter(bfrange, "(\n|\r){1,2}");
+    }
+  }
+}
 
-          for (auto i : Rangenums)
-          {
-            std::vector<std::string> rowentries = Rex(i, hexfinder).get();
-            if (rowentries.size() == 3)
-            {
-              std::string myhex0 = "0x" + rowentries[0];
-              std::string myhex1 = "0x" + rowentries[1];
-              std::string myhex2 = "0x" + rowentries[2];
-              unsigned int myui0 = stoul(myhex0, nullptr, 0);
-              unsigned int myui1 = stoul(myhex1, nullptr, 0);
-              unsigned int myui2 = stoul(myhex2, nullptr, 0);
-              unsigned int nui = (myui1 - myui0) + 1;
-              for (unsigned int j = 0; j < nui; j++)
-              {
-                uint16_t myui = myui2 + j;
-                uint16_t mykey = myui0 + j;
-                std::string newHex = intToHexstring((int) myui);
-                if(EncodingMap.find(mykey) != EncodingMap.end())
-                {
-                  EncodingMap[mykey] = UCM[newHex];
-                }
-                else EncodingMap[mykey] = UCM[newHex];
-              }
-            }
-          }
+/*---------------------------------------------------------------------------*/
+
+void font::processUnicodeRange(Rex& Range)
+{
+  for(auto j : Range.get())
+  {
+    string bfrange = carveout(j, "beginbfrange", "endbfrange");
+    for (auto i :  splitter(bfrange, "(\n|\r){1,2}"))
+    {
+      vector<string> entries = Rex(i, "(\\d|a|b|c|d|e|f|A|B|C|D|E|F)+").get();
+      if (entries.size() == 3)
+      {
+        vector<uint16_t> myui;
+        for(auto k : entries)
+          myui.emplace_back(stoul(string("0x" + k), nullptr, 0));
+        myui.emplace_back((myui[1] - myui[0]) + 1);
+        for (unsigned int j = 0; j < myui[3]; j++)
+        {
+          uint16_t unicodeIndex = myui[2] + j;
+          uint16_t mykey = myui[0] + j;
+          if(EncodingMap.find(mykey) != EncodingMap.end())
+            EncodingMap[mykey] = unicodeIndex;
+          else EncodingMap[mykey] = mykey;
         }
       }
     }
@@ -316,13 +315,14 @@ void font::mapUnicode(dictionary& fontref, document& d)
 void font::getEncoding(dictionary& fontref, document& d)
 {
   dictionary &encref = fontref;
-  std::string encname = encref.get("/Encoding");
+  string encname = encref.get("/Encoding");
   if(fontref.hasRefs("/Encoding"))
   {
     int a = fontref.getRefs("/Encoding").at(0);
     object_class myobj = d.getobject(a);
     encref = myobj.getDict();
-    if(encref.has("/BaseEncoding")) encname = encref.get("/BaseEncoding");
+    if(encref.has("/BaseEncoding"))
+      encname = encref.get("/BaseEncoding");
   }
   if( encname == "/WinAnsiEncoding" ||
       encname == "/MacRomanEncoding" ||
@@ -334,7 +334,7 @@ void font::getEncoding(dictionary& fontref, document& d)
   }
   else
   {
-    std::vector<int> encrefs = getObjRefs(encname);
+    vector<int> encrefs = getObjRefs(encname);
     if(!encrefs.empty())
     {
       dictionary encdict = d.getobject(encrefs[0]).getDict();
@@ -352,7 +352,7 @@ void font::getEncoding(dictionary& fontref, document& d)
 
 /*---------------------------------------------------------------------------*/
 
-void font::getCoreFont(std::string s)
+void font::getCoreFont(string s)
 {
   font resfont;
   if(s == "/Courier") *this = getCourier();
@@ -375,26 +375,26 @@ void font::getCoreFont(std::string s)
 
 void font::makeGlyphTable()
 {
-  std::vector<uint16_t> widthkeys = getKeys(Width);
+  vector<uint16_t> widthkeys = getKeys(Width);
   int defwidth = 500;
-  std::vector<uint16_t> inkeys = getKeys(EncodingMap);
+  vector<uint16_t> inkeys = getKeys(EncodingMap);
   for(size_t i = 0; i < inkeys.size(); i++)
   {
     int thiswidth;
     if(Width.find(inkeys[i]) == Width.end()) thiswidth = defwidth;
     else thiswidth = Width[(int) inkeys[i]];
-    glyphmap[inkeys[i]] = std::make_pair(EncodingMap[inkeys[i]], thiswidth);
+    glyphmap[inkeys[i]] = make_pair(EncodingMap[inkeys[i]], thiswidth);
   }
 }
 
 /*---------------------------------------------------------------------------*/
 
-void font::parsewidtharray(std::string s)
+void font::parsewidtharray(string s)
 {
   s += " ";
-  std::string buf, state;
-  std::vector<int> vecbuf, resultint;
-  std::vector<std::vector<int>> resultvec;
+  string buf, state;
+  vector<int> vecbuf, resultint;
+  vector<vector<int>> resultvec;
   state = "newsymb";
   buf = "";
   size_t i = 0;
@@ -443,7 +443,7 @@ void font::parsewidtharray(std::string s)
                   buf = "";
                   vecbuf.clear();
                   break;
-        default: throw (std::string("Error parsing string ") + s);
+        default: throw (string("Error parsing string ") + s);
 
         }
         i++; continue;
@@ -460,7 +460,7 @@ void font::parsewidtharray(std::string s)
                   vecbuf.clear();
                   buf = ""; break;
         case 'D': buf += s[i]; break;
-        default: throw (std::string("Error parsing string ") + s);
+        default: throw (string("Error parsing string ") + s);
         }
         i++; continue;
       }
@@ -470,7 +470,7 @@ void font::parsewidtharray(std::string s)
       }
     }
   }
-  std::map<uint16_t, int> resultmap;
+  map<uint16_t, int> resultmap;
   if((resultint.size() == resultvec.size()) && !resultint.empty() )
   {
     size_t ressize = resultint.size();

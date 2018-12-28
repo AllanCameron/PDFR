@@ -42,10 +42,9 @@
 #include<ratio>
 #include<Rcpp.h>
 
-typedef std::map<uint16_t, std::string> EncMap;
 typedef std::vector<std::vector<int>> XRtab;
 typedef std::vector<std::vector<std::vector<std::string>>> Instructionset;
-typedef std::map<uint16_t, std::pair<std::string, int>> GlyphMap;
+typedef std::map<uint16_t, std::pair<int, int>> GlyphMap;
 
 class object_class;
 class page;

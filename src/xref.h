@@ -82,7 +82,7 @@ class xrefstream
   void numberRows();
 
 public:
-  xrefstream(document& d, int objstart);
+  xrefstream(document* d, int objstart);
   std::vector<std::vector<int>> table();
 };
 
