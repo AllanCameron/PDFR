@@ -30,14 +30,16 @@
 #include "stringfunctions.h"
 #include "dictionary.h"
 
+using namespace std;
+
 /*---------------------------------------------------------------------------*/
 
-void dictionary_parser(std::vector<std::vector<std::string>>& s)
+void dictionary_parser(vector<vector<string>>& s)
 {
-  std::vector<std::string> tmpident, tmptoken;
-  std::vector<std::string> &ttype = s[1];
-  std::vector<std::string> &token = s[0];
-  std::vector<std::vector<std::string>> tmpres, res;
+  vector<string> tmpident, tmptoken;
+  vector<string> &ttype = s[1];
+  vector<string> &token = s[0];
+  vector<vector<string>> tmpres, res;
   size_t tts = ttype.size();
   for(unsigned i = 0; i < tts; i++)
   {
@@ -72,16 +74,15 @@ void dictionary_parser(std::vector<std::vector<std::string>>& s)
 
 /*---------------------------------------------------------------------------*/
 
-std::map<std::string, std::string>
-tokenize_dict(const std::string& s, unsigned pos)
+map<string, string> tokenize_dict(const string& s, unsigned pos)
 {
-  std::vector<std::string> token, ttype;
+  vector<string> token, ttype;
 
   if(s.length() > 0)
   {
     unsigned i = pos;
-    std::string state = "preentry";
-    std::string buf;
+    string state = "preentry";
+    string buf;
     int minibuf = 0;
     while(i < s.length() && i < (pos + 100000))
     {
@@ -259,7 +260,7 @@ tokenize_dict(const std::string& s, unsigned pos)
                       ttype.push_back("stream");
                       int ex = 7;
                       while(symbol_type(s[i + ex]) == ' ') ex++;
-                      token.push_back(std::to_string(i + ex));
+                      token.push_back(to_string(i + ex));
                     }
                   }
                   state = "finished"; break;
@@ -297,11 +298,11 @@ tokenize_dict(const std::string& s, unsigned pos)
       }
     }
   }
-  std::vector<std::vector<std::string> > res;
+  vector<vector<string> > res;
   res.push_back(token);
   res.push_back(ttype);
   dictionary_parser(res);
-  std::map<std::string, std::string> resmap;
+  map<string, string> resmap;
   size_t ressize = res[0].size();
   if(ressize > 0)
     for(unsigned i = 0; i < ressize; i++)
@@ -311,14 +312,14 @@ tokenize_dict(const std::string& s, unsigned pos)
 
 /*---------------------------------------------------------------------------*/
 
-dictionary::dictionary(const std::string& s)
+dictionary::dictionary(const string& s)
 {
   DictionaryMap = tokenize_dict(s, 0);
 }
 
 /*---------------------------------------------------------------------------*/
 
-dictionary::dictionary(const std::string& s, const int& i)
+dictionary::dictionary(const string& s, const int& i)
 {
   DictionaryMap = tokenize_dict(s, (unsigned) i);
 }
@@ -327,80 +328,80 @@ dictionary::dictionary(const std::string& s, const int& i)
 
 dictionary::dictionary()
 {
-  std::map<std::string, std::string> Empty;
+  map<string, string> Empty;
   DictionaryMap = Empty;
 }
 
 /*---------------------------------------------------------------------------*/
 
-std::string dictionary::get(const std::string& Key)
+string dictionary::get(const string& Key)
 {
   return DictionaryMap[Key];
 }
 
 /*---------------------------------------------------------------------------*/
 
-bool dictionary::has(const std::string& Key)
+bool dictionary::has(const string& Key)
 {
   return DictionaryMap.find(Key) != DictionaryMap.end();
 }
 
 /*---------------------------------------------------------------------------*/
 
-bool dictionary::hasRefs(const std::string& Key)
+bool dictionary::hasRefs(const string& Key)
 {
   if(this->has(Key)) return this->getRefs(Key).size() > 0; return false;
 }
 
 /*---------------------------------------------------------------------------*/
 
-bool dictionary::hasInts(const std::string& Key)
+bool dictionary::hasInts(const string& Key)
 {
   if(this->has(Key)) return this->getInts(Key).size() > 0; return false;
 }
 
 /*---------------------------------------------------------------------------*/
 
-std::vector<int> dictionary::getRefs(const std::string& Key)
+vector<int> dictionary::getRefs(const string& Key)
 {
-  std::vector<int> References;
+  vector<int> References;
   if(this->has(Key))
   {
-    std::string keyval = this->get(Key);
-    std::string refmatch = "\\d+ \\d+ R";
+    string keyval = this->get(Key);
+    string refmatch = "\\d+ \\d+ R";
     Rex refrex = Rex(keyval, refmatch);
-    std::vector<std::string> refs = refrex.get();
+    vector<string> refs = refrex.get();
     for (auto i : refs)
-      References.push_back(std::stoi(splitter(i, " ").at(0)));
+      References.push_back(stoi(splitter(i, " ").at(0)));
   }
   return References;
 }
 
 /*---------------------------------------------------------------------------*/
 
-std::vector<int> dictionary::getInts(const std::string& Key)
+vector<int> dictionary::getInts(const string& Key)
 {
-  std::vector<int> blank;
+  vector<int> blank;
   if(this->has(Key)) return getints(this->get(Key));
   return blank;
 }
 
 /*---------------------------------------------------------------------------*/
 
-std::vector<float> dictionary::getNums(const std::string& Key)
+vector<float> dictionary::getNums(const string& Key)
 {
-  std::vector<float> blank;
+  vector<float> blank;
   if(this->has(Key)) return getnums(this->get(Key));
   return blank;
 }
 
 /*---------------------------------------------------------------------------*/
 
-dictionary dictionary::getDictionary(const std::string& Key)
+dictionary dictionary::getDictionary(const string& Key)
 {
   if(this->has(Key))
   {
-    std::string dict = this->get(Key);
+    string dict = this->get(Key);
     if(isDictString(dict)) return dictionary(dict);
   }
   return dictionary();
@@ -408,7 +409,7 @@ dictionary dictionary::getDictionary(const std::string& Key)
 
 /*---------------------------------------------------------------------------*/
 
-bool dictionary::hasDictionary(const std::string& Key)
+bool dictionary::hasDictionary(const string& Key)
 {
   if(this->has(Key)) return isDictString(this->get(Key));
 
@@ -417,7 +418,7 @@ bool dictionary::hasDictionary(const std::string& Key)
 
 /*---------------------------------------------------------------------------*/
 
-std::vector<std::string> dictionary::getDictKeys()
+vector<string> dictionary::getDictKeys()
 {
   return getKeys(this->DictionaryMap);
 }
