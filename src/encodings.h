@@ -55,10 +55,10 @@
 #include "streams.h"
 #include "encodings.h"
 
-std::map<uint16_t, uint16_t> getBaseEncode(const std::string& encoding);
-std::string parseUnicode(std::string s, std::map<std::string, std::string>& UM);
+std::map<uint16_t, uint16_t> getBaseToUnicode(const std::string&);
+std::string parseUnicode(std::string s, std::map<uint16_t, uint16_t>&);
 std::string defaultUnicode(document& d, std::string s);
 std::vector<std::string> baseEncoding(const std::string& enc);
-char namesToChar(uint16_t s, const std::string& encoding);
+char UnicodeToChar(uint16_t s, const std::string& encoding);
 
 #endif

@@ -34,7 +34,9 @@
 #include "encodings.h"
 #include "corefonts.h"
 #include "font.h"
-#include "ucm.h"
+#include "adobetounicode.h"
+#include "unicodetochar.h"
+#include "chartounicode.h"
 
 using namespace std;
 
@@ -131,17 +133,13 @@ void parseDifferences(const string& enc, map<uint16_t, uint16_t>& symbmap)
 
   size_t k = 0;
   for(size_t i = 0; i < symbstring.size(); i++)
-  {
     if(typestring[i] == "number")
-    {
       k = stoi(symbstring[i]);
-    }
     else
     {
-      symbmap[k] = UCM[symbstring[i]];
+      symbmap[k] = AdobeToUnicode[symbstring[i]];
       k++;
     }
-  }
 }
 
 /*---------------------------------------------------------------------------*/
@@ -266,16 +264,14 @@ void font::processUnicodeChars(Rex& Char)
       {
         string myhex = entries[1];
         if(myhex.length() < 4) while(myhex.length() < 4) myhex = "0" + myhex;
-        upperCase(myhex);
+        myhex = "0x" + myhex;
+        uint16_t uinthex = stoul(myhex, nullptr, 0);
+
         string mykey = entries[0];
-        upperCase(mykey);
         if(mykey.length() < 4) while(mykey.length() < 4) mykey = "0" + mykey;
-        mykey = "0x" + mykey.substr(2, 2);
+        mykey = "0x" + mykey;
         uint16_t uintkey = stoul(mykey, nullptr, 0);
-        if(EncodingMap.find(uintkey) != EncodingMap.end())
-          EncodingMap[uintkey] = uintkey;
-        else
-          EncodingMap[uintkey] = uintkey;
+        EncodingMap[uintkey] = uinthex;
       }
     }
   }
@@ -301,9 +297,7 @@ void font::processUnicodeRange(Rex& Range)
         {
           uint16_t unicodeIndex = myui[2] + j;
           uint16_t mykey = myui[0] + j;
-          if(EncodingMap.find(mykey) != EncodingMap.end())
-            EncodingMap[mykey] = unicodeIndex;
-          else EncodingMap[mykey] = mykey;
+          EncodingMap[mykey] = unicodeIndex;
         }
       }
     }
@@ -324,14 +318,14 @@ void font::getEncoding(dictionary& fontref, document& d)
     if(encref.has("/BaseEncoding"))
       encname = encref.get("/BaseEncoding");
   }
-  if( encname == "/WinAnsiEncoding" ||
-      encname == "/MacRomanEncoding" ||
-      encname == "/PDFDocEncoding" ||
-      encname == "/StandardEncoding")
-  {
-    BaseEncoding = encname;
-    EncodingMap = getBaseEncode(encname);
-  }
+  if( encname == "/WinAnsiEncoding")
+    EncodingMap = winAnsiEncodingToUnicode;
+  else if(encname == "/MacRomanEncoding")
+    EncodingMap = macRomanEncodingToUnicode;
+  else if(encname == "/PDFDocEncoding")
+    EncodingMap = pdfDocEncodingToUnicode;
+  else if(encname == "/StandardEncoding")
+    EncodingMap = standardEncodingToUnicode;
   else
   {
     vector<int> encrefs = getObjRefs(encname);
@@ -339,13 +333,13 @@ void font::getEncoding(dictionary& fontref, document& d)
     {
       dictionary encdict = d.getobject(encrefs[0]).getDict();
       BaseEncoding = encdict.get("/Differences");
-      EncodingMap = getBaseEncode("/StandardEncoding");
+      EncodingMap = standardEncodingToUnicode;
       parseDifferences(BaseEncoding, EncodingMap);
     }
     else
     {
       BaseEncoding = "/StandardEncoding";
-      EncodingMap = getBaseEncode(BaseEncoding);
+      EncodingMap = standardEncodingToUnicode;
     }
   }
 }

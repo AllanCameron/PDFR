@@ -33,7 +33,7 @@
 #include "debugtools.h"
 #include "tokenizer.h"
 #include "debugtools.h"
-#include "tokenizer.h"
+#include "chartounicode.h"
 
 using namespace std;
 
@@ -244,7 +244,7 @@ void GraphicsState::TJ(vector<vector<string>>& i)
         else stw = j.second + Tc * 1000;
         PRstate += stw;
         string tmpchar;
-        tmpchar = namesToChar((uint16_t) j.first, "/WinAnsiEncoding");
+        tmpchar = UnicodeToChar((uint16_t) j.first, "/WinAnsiEncoding");
         float PRscaled = PRstate * scale / 1000;
         textspace[6] = PRscaled + txtspcinit;
         widths.emplace_back(scale * stw/1000 * Th/100);
