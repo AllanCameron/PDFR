@@ -33,7 +33,6 @@ using namespace std;
 
 bool isFlateDecode(const string& filestring, int startpos);
 string FlateDecode(const string& s);
-string getStreamContents(document* d, const string& filestring, int objstart);
 vector<size_t> getStreamLoc(document* d, const string& fs, int objstart);
 bool objHasStream(const string& filestring, int objectstart);
 bool isObject(const string& filestring, int objectstart);

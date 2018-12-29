@@ -144,7 +144,8 @@ void xrefstream::getParms()
 
 void xrefstream::getRawMatrix()
 {
-  std::string&& SS = getStreamContents(d, d->filestring, objstart);
+  std::vector<size_t> sl = getStreamLoc(d, d->filestring, objstart);
+  std::string SS = d->filestring.substr(sl[0], sl[1] - sl[0]);
   if(isFlateDecode(d->filestring, objstart)) SS = FlateDecode(SS);
   std::vector<unsigned char> rawarray(SS.begin(), SS.end());
   std::vector<int> intstrm(rawarray.begin(), rawarray.end());

@@ -80,29 +80,6 @@ std::string FlateDecode(const std::string& s)
 
 /*---------------------------------------------------------------------------*/
 
-std::string
-getStreamContents(document* d, const std::string& filestring, int objstart)
-{
-  dictionary dict = dictionary(filestring, objstart);
-  if(dict.has("stream"))
-    if(dict.has("/Length"))
-    {
-      int streamlen;
-      if(dict.hasRefs("/Length"))
-      {
-        int lengthob = dict.getRefs("/Length")[0];
-        streamlen = std::stoi(d->getobject(lengthob).getStream());
-      }
-      else
-        streamlen = std::stoi(dict.get("/Length"));
-      int streamstart = std::stoi(dict.get("stream"));
-      return filestring.substr(streamstart, streamlen);
-    }
-  return "";
-}
-
-/*---------------------------------------------------------------------------*/
-
 vector<size_t> getStreamLoc(document* d, const string& fs, int objstart)
 {
   dictionary dict = dictionary(fs, objstart);
