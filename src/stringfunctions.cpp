@@ -299,7 +299,7 @@ void trimRight(string& s)
 
 /*--------------------------------------------------------------------------*/
 
-size_t firstmatch(std::string& s, std::string& m, int startpos)
+size_t firstmatch(std::string& s, std::string m, int startpos)
 {
   size_t ssize = s.size();
   size_t msize = m.size();
