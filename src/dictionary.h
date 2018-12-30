@@ -38,6 +38,7 @@ enum Types {Boolean, Name, String, Number, Reference, Array, Dictionary};
 class dictionary
 {
   std::map<std::string, std::string> DictionaryMap;
+  void tokenize_dict(const string& s, unsigned pos);
 
 public:
   dictionary(const std::string& s);
