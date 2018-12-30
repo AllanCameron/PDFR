@@ -34,12 +34,9 @@ using namespace std;
 
 /*---------------------------------------------------------------------------*/
 
-void dictionary_parser(vector<vector<string>>& s)
+void dictionary_parser(vector<string>& token, vector<string>& ttype)
 {
   vector<string> tmpident, tmptoken;
-  vector<string> &ttype = s[1];
-  vector<string> &token = s[0];
-  vector<vector<string>> tmpres, res;
   size_t tts = ttype.size();
   for(unsigned i = 0; i < tts; i++)
   {
@@ -54,11 +51,8 @@ void dictionary_parser(vector<vector<string>>& s)
       tmptoken.push_back("stream");
     }
     if(ttype[i] == "value" || ttype[i] == "subdictionary")
-    {
-      tmpident.pop_back();
-      tmpident.push_back(token[i]);
-    }
-    if(i > 0 && i < ttype.size() && tmpident.size() > 0)
+      tmpident.back() = token[i];
+    if(i > 0 && i < tts && tmpident.size() > 0)
       if (ttype[i] == "keyname" && ttype[i - 1] == "keyname" &&
           tmpident[tmpident.size() - 2] == "true")
       {
@@ -67,9 +61,8 @@ void dictionary_parser(vector<vector<string>>& s)
         tmpident.back() = token[i];
       }
   }
-  res.push_back(tmptoken);
-  res.push_back(tmpident);
-  s = res;
+  token = tmptoken;
+  ttype = tmpident;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -278,15 +271,12 @@ map<string, string> tokenize_dict(const string& s, unsigned pos)
       if (state == "finished") break;
     }
   }
-  vector<vector<string> > res;
-  res.push_back(token);
-  res.push_back(ttype);
-  dictionary_parser(res);
+  dictionary_parser(token, ttype);
   map<string, string> resmap;
-  size_t ressize = res[0].size();
+  size_t ressize = token.size();
   if(ressize > 0)
     for(unsigned i = 0; i < ressize; i++)
-      resmap[res[0][i]] = res[1][i];
+      resmap[token[i]] = ttype[i];
   return resmap;
 }
 
