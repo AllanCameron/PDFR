@@ -87,7 +87,6 @@ map<string, string> tokenize_dict(const string& s, unsigned pos)
     while(i < s.length() && i < (pos + 100000))
     {
       char n = symbol_type(s[i]);
-
       if(state == "preentry")
       {
         switch(n)
@@ -95,22 +94,20 @@ map<string, string> tokenize_dict(const string& s, unsigned pos)
         case '<': state = "maybe"; break;
         default: buf =""; break;
         }
-        i++;
-        continue;
+        i++; continue;
       }
 
-      if(state == "maybe")
+      if (state == "maybe")
       {
         switch(n)
         {
         case '<': state = "start"; break;
         default: buf =""; state = "preentry"; break;
         }
-        i++;
-        continue;
+        i++; continue;
       }
 
-      if(state == "start")
+      if (state == "start")
       {
         switch(n)
         {
@@ -118,11 +115,10 @@ map<string, string> tokenize_dict(const string& s, unsigned pos)
         case '>': state = "queryclose"; break;
         default : break;
         }
-        i++;
-        continue;
+        i++; continue;
       }
 
-      if(state == "key")
+      if (state == "key")
       {
         switch(n)
         {
@@ -154,11 +150,10 @@ map<string, string> tokenize_dict(const string& s, unsigned pos)
                   buf = "";
                   ttype.push_back("keyname"); break;
         }
-        i++;
-        continue;
+        i++; continue;
       }
 
-      if(state == "prevalue")
+      if (state == "prevalue")
       {
         switch(n)
         {
@@ -169,10 +164,10 @@ map<string, string> tokenize_dict(const string& s, unsigned pos)
           case '[': buf = '['; state = "arrayval"; break;
           default : buf = s[i]; state = "value"; break;
         }
-        i++;
-        continue;
+        i++; continue;
       }
-      if(state == "value")
+
+      if (state == "value")
       {
         switch(n)
         {
@@ -190,11 +185,10 @@ map<string, string> tokenize_dict(const string& s, unsigned pos)
                     ttype.push_back("value"); break;
           default : buf += s[i]; break;
         }
-        i++;
-        continue;
+        i++; continue;
       }
 
-      if(state == "arrayval")
+      if (state == "arrayval")
       {
         switch(n)
         {
@@ -205,11 +199,10 @@ map<string, string> tokenize_dict(const string& s, unsigned pos)
                     state = "start"; break;
           default:  buf += s[i]; break;
         }
-        i++;
-        continue;
+        i++; continue;
       }
 
-      if(state == "string")
+      if (state == "string")
       {
         switch(n)
         {
@@ -220,33 +213,30 @@ map<string, string> tokenize_dict(const string& s, unsigned pos)
                     state = "start"; break;
           default:  buf += s[i]; break;
         }
-        i++;
-        continue;
+        i++; continue;
       }
 
-      if(state == "querydict")
-      {;
+      if (state == "querydict")
+      {
         switch(n)
         {
           case '<': buf = "<<"; state = "subdict"; minibuf = 2; break;
           default: buf = ""; state = "start"; break;
         }
-        i++;
-        continue;
+        i++; continue;
       }
 
-      if(state == "queryclose")
+      if (state == "queryclose")
       {
         switch(n)
         {
           case '>': state = "close"; break;
           default: state = "start"; break;
         }
-        i++;
-        continue;
+        i++; continue;
       }
 
-      if(state == "close")
+      if (state == "close")
       {
         switch(n)
         {
@@ -266,15 +256,10 @@ map<string, string> tokenize_dict(const string& s, unsigned pos)
                   state = "finished"; break;
         default: state = "finished"; break;
         }
-        i++;
-        continue;
-      }
-      if(state == "finished")
-      {
-        break;
+        i++; continue;
       }
 
-      if(state == "subdict")
+      if (state == "subdict")
       {
         switch(n)
         {
@@ -288,14 +273,9 @@ map<string, string> tokenize_dict(const string& s, unsigned pos)
           ttype.push_back("subdictionary");
           state = "start";
         }
-        i++;
-        continue;
+        i++; continue;
       }
-      else
-      {
-        i++;
-        continue;
-      }
+      if (state == "finished") break;
     }
   }
   vector<vector<string> > res;
