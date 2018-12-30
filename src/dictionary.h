@@ -30,7 +30,6 @@
 
 #include<string>
 #include<map>
-#include<unordered_map>
 #include<vector>
 
 
@@ -38,26 +37,26 @@ enum Types {Boolean, Name, String, Number, Reference, Array, Dictionary};
 
 class dictionary
 {
-  unordered_map<string, string> DictionaryMap;
-  void tokenize_dict(const string&, unsigned);
+  std::map<std::string, std::string> DictionaryMap;
+  void tokenize_dict(const string& s, unsigned pos);
 
 public:
-  dictionary(const string&);
-  dictionary(const string&, const int&);
-  dictionary(unordered_map<string, string> d) : DictionaryMap(d) {};
+  dictionary(const std::string& s);
+  dictionary(const std::string& s, const int& i);
+  dictionary(std::map<std::string, std::string> d) : DictionaryMap(d) {};
   dictionary();
 
-  string get(const string& Key);
-  bool has(const string& Key);
-  bool hasRefs(const string& Key);
-  bool hasInts(const string& Key);
-  bool hasDictionary(const string& Key);
-  vector<int> getRefs(const string& Key);
-  vector<int> getInts(const string& Key);
-  vector<float> getNums(const string& Key);
-  vector<string> getDictKeys();
-  dictionary getDictionary(const string& Key);
-  unordered_map<string, string> R_out() {return this->DictionaryMap;}
+  std::string get(const std::string& Key);
+  bool has(const std::string& Key);
+  bool hasRefs(const std::string& Key);
+  bool hasInts(const std::string& Key);
+  bool hasDictionary(const std::string& Key);
+  std::vector<int> getRefs(const std::string& Key);
+  std::vector<int> getInts(const std::string& Key);
+  std::vector<float> getNums(const std::string& Key);
+  std::vector<std::string> getDictKeys();
+  dictionary getDictionary(const std::string& Key);
+  std::map<std::string, std::string> R_out() {return this->DictionaryMap;}
 };
 
 

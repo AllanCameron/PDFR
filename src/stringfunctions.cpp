@@ -56,16 +56,26 @@ vector<string> splitter(const string& s, const string& m)
 // Return the first substring of s that lies between two regexes
 string carveout(const string& s, const string& pre, const string& post)
 {
-  size_t foundpre = s.find(pre);
-  size_t foundpost = s.find(post);
-  if (foundpre == string::npos)
-    foundpre = 0;
-  else
-    foundpre += pre.length();
-  if (foundpost == string::npos)
-    foundpost = s.length();
-  if(foundpre > foundpost) return "";
-  string res(s.begin() + foundpre, s.begin() + foundpost);
+  int firstpos  = 0;
+  int secondpos = s.length();
+  vector<int>&& FPV = Rex(s, pre).ends();
+  vector<int>&& SPV = Rex(s, post).pos();
+  int fpvs = FPV.size();
+  int spvs = SPV.size();
+  // Ensure the match lies between the first balanced matches
+  if((fpvs == 0) && (spvs > 0)) secondpos = SPV.at(spvs - 1);
+  if((fpvs > 0) && (spvs == 0)) firstpos = FPV.at(0);
+  if((fpvs > 0) && (spvs > 0))
+  {
+    firstpos = FPV.at(0);
+    for(auto i : SPV)
+      if(i > firstpos)
+      {
+        secondpos = i;
+        break;
+      }
+  }
+  string res(s.begin() + firstpos, s.begin() + secondpos);
   return res;
 }
 
@@ -289,7 +299,7 @@ void trimRight(string& s)
 
 /*--------------------------------------------------------------------------*/
 
-size_t firstmatch(string& s, string m, int startpos)
+size_t firstmatch(std::string& s, std::string m, int startpos)
 {
   size_t ssize = s.size();
   size_t msize = m.size();

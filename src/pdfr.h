@@ -31,7 +31,6 @@
 
 #include<string>
 #include<map>
-#include<unordered_map>
 #include<vector>
 #include<algorithm>
 #include<regex>
@@ -76,20 +75,6 @@ std::vector<Mt> getKeys(std::map<Mt, T> Map)
   return keyvec;
 }
 
-//---------------------------------------------------------------------------//
-
-template< typename Mt, typename T >
-std::vector<Mt> getKeys(std::unordered_map<Mt, T> Map)
-{
-  std::vector<Mt> keyvec;
-  keyvec.reserve(Map.size());
-  for(typename std::unordered_map<Mt, T>::iterator i = Map.begin();
-      i != Map.end(); i++)
-  {
-    keyvec.push_back(i->first);
-  }
-  return keyvec;
-}
 //---------------------------------------------------------------------------//
 
 template <typename T>
