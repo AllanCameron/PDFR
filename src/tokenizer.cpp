@@ -37,55 +37,55 @@ Instructionset tokenize(std::string s)
   s.push_back(' ');
   std::vector<std::string> token, ttype;
   size_t i = 0;
-  std::string buf, minibuf, state;
-  state = "newsymb";
+  std::string buf, minibuf;
+  State state = NEWSYMBOL;
   while(i < s.length())
   {
     char m = s[i];
     char n = symbol_type(s[i]);
 
-    if (state == "newsymb")
+    if (state == NEWSYMBOL)
     {
       switch(n)
       {
         case 'L': buf += m;
-                  state = "identifier";
+                  state = IDENTIFIER;
                   break;
         case 'D': buf += m;
-                  state = "number";
+                  state = NUMBER;
                   break;
         case '-': buf += m;
-                  state = "number";
+                  state = NUMBER;
                   break;
         case '.': buf += "0.";
-                  state = "number";
+                  state = NUMBER;
                   break;
         case '_': buf += '_';
-                  state = "identifier";
+                  state = IDENTIFIER;
                   break;
         case '*': buf += '*';
-                  state = "identifier";
+                  state = IDENTIFIER;
                   break;
         case '\'': buf += '\'';
-                  state = "identifier";
+                  state = IDENTIFIER;
                   break;
         case '/': buf += '/';
-                  state = "resource";
+                  state = RESOURCE;
                   break;
-        case '[': state = "array";
+        case '[': state = ARRAY;
                   break;
-        case '(': state = "string";
+        case '(': state = STRING;
                   break;
-        case '<': state = "hexstring";
+        case '<': state = HEXSTRING;
                   break;
-        default:  state = "newsymb";
+        default:  state = NEWSYMBOL;
                   buf ="";
                   break;
       }
       i++; continue;
     }
 
-    if (state == "resource")
+    if (state == RESOURCE)
     {
       switch(n)
       {
@@ -101,27 +101,27 @@ Instructionset tokenize(std::string s)
                   break;
         case '*': buf += '*';
                   break;
-        case '/': state = "resource";
+        case '/': state = RESOURCE;
                   token.push_back(buf);
                   buf = "";
                   ttype.push_back("resource");
                   break;
-        case ' ': state = "newsymb";
+        case ' ': state = NEWSYMBOL;
                   token.push_back(buf);
                   buf = "";
                   ttype.push_back("resource");
                   break;
-        case '[': state = "array";
+        case '[': state = ARRAY;
                   token.push_back(buf);
                   buf = "";
                   ttype.push_back("resource");
                   break;
-        case '(': state = "string";
+        case '(': state = STRING;
                   token.push_back(buf);
                   buf = "";
                   ttype.push_back("resource");
                   break;
-        case '<': state = "hexstring";
+        case '<': state = HEXSTRING;
                   token.push_back(buf);
                   buf = "";
                   ttype.push_back("resource");
@@ -131,7 +131,7 @@ Instructionset tokenize(std::string s)
       continue;
     }
 
-    if (state == "identifier")
+    if (state == IDENTIFIER)
     {
       switch(n)
       {
@@ -145,7 +145,7 @@ Instructionset tokenize(std::string s)
                   break;
         case '*': buf += '*';
                   break;
-        case '/': state = "resource";
+        case '/': state = RESOURCE;
                   token.push_back(buf);
                   buf = "/";
                   ttype.push_back("identifier");
@@ -153,27 +153,27 @@ Instructionset tokenize(std::string s)
         case ' ': if (buf == "BI")
                   {
                     buf = "";
-                    state = "wait";
+                    state = WAIT;
                   }
                   else
                   {
-                    state = "newsymb";
+                    state = NEWSYMBOL;
                     token.push_back(buf);
                     buf = "";
                     ttype.push_back("identifier");
                   }
                   break;
-        case '[': state = "array";
+        case '[': state = ARRAY;
                   token.push_back(buf);
                   buf = "";
                   ttype.push_back("identifier");
                   break;
-        case '(': state = "string";
+        case '(': state = STRING;
                   token.push_back(buf);
                   buf = "";
                   ttype.push_back("identifier");
                   break;
-        case '<': state = "hexstring";
+        case '<': state = HEXSTRING;
                   token.push_back(buf);
                   buf = "";
                   ttype.push_back("identifier");
@@ -183,7 +183,7 @@ Instructionset tokenize(std::string s)
       continue;
     }
 
-    if (state == "number")
+    if (state == NUMBER)
     {
       switch(n)
       {
@@ -213,22 +213,22 @@ Instructionset tokenize(std::string s)
                   ttype.push_back("number");
                   ttype.push_back("operator");
                   break;
-        case ' ': state = "newsymb";
+        case ' ': state = NEWSYMBOL;
                   token.push_back(buf);
                   buf = "";
                   ttype.push_back("number");
                   break;
-        case '[': state = "array";
+        case '[': state = ARRAY;
                   token.push_back(buf);
                   buf = "";
                   ttype.push_back("number");
                   break;
-        case '(': state = "string";
+        case '(': state = STRING;
                   token.push_back(buf);
                   buf = "";
                   ttype.push_back("number");
                   break;
-        case '<': state = "hexstring";
+        case '<': state = HEXSTRING;
                   token.push_back(buf);
                   buf = "";
                   ttype.push_back("identifier");
@@ -238,7 +238,7 @@ Instructionset tokenize(std::string s)
       continue;
     }
 
-    if (state == "array")
+    if (state == ARRAY)
     {
       char n = symbol_type(m);
       switch(n)
@@ -248,7 +248,7 @@ Instructionset tokenize(std::string s)
                    buf += s[i];
                    break;
         case ']':  tokenize_array(ttype, token, buf);
-                   state = "newsymb";
+                   state = NEWSYMBOL;
                    buf = "";
                    break;
         default:   buf += m;
@@ -258,7 +258,7 @@ Instructionset tokenize(std::string s)
       continue;
     }
 
-    if (state == "string")
+    if (state == STRING)
     {
       minibuf.clear();
       switch(s[i])
@@ -266,7 +266,7 @@ Instructionset tokenize(std::string s)
         case ')':  token.push_back(buf);
                    buf = "";
                    ttype.push_back("string");
-                   state = "newsymb";
+                   state = NEWSYMBOL;
                    break;
         case '\\': i++;
                    n = symbol_type(s[i]);
@@ -297,12 +297,12 @@ Instructionset tokenize(std::string s)
       continue;
     }
 
-    if (state == "hexstring")
+    if (state == HEXSTRING)
     {
       switch(n)
       {
         case '<':  buf = "";
-                   state = "dict";
+                   state = DICT;
                    break;
         case '\\': buf += m + s[i+1];
                    i++;
@@ -313,7 +313,7 @@ Instructionset tokenize(std::string s)
                      ttype.push_back("hexstring");
                    }
                    buf = "";
-                   state = "newsymb";
+                   state = NEWSYMBOL;
                    break;
         default:   buf += m;
                    break;
@@ -322,7 +322,7 @@ Instructionset tokenize(std::string s)
       continue;
     }
 
-    if (state == "dict")
+    if (state == DICT)
     {
       switch(n)
       {
@@ -332,7 +332,7 @@ Instructionset tokenize(std::string s)
         case '>':  token.push_back(buf);
                    buf = "";
                    ttype.push_back("dict");
-                   state = "hexstring";
+                   state = HEXSTRING;
                    break;
         default:   buf += m;
                    break;
@@ -341,28 +341,28 @@ Instructionset tokenize(std::string s)
       continue;
     }
 
-    if (state == "wait")
+    if (state == WAIT)
     {
       if (m == 'E')
-        state = "waitE";
+        state = WAITE;
       i++;
       continue;
     }
-    if (state == "waitE")
+    if (state == WAITE)
     {
       if (m == 'I')
-        state = "waitEI";
+        state = WAITEI;
       else
-        state = "wait";
+        state = WAIT;
       i++;
       continue;
     }
-    if (state == "waitEI")
+    if (state == WAITEI)
     {
       if (n == ' ')
-        state = "newsymb";
+        state = NEWSYMBOL;
       else
-        state = "wait";
+        state = WAIT;
       i++;
       continue;
     }
@@ -384,32 +384,32 @@ void tokenize_array(std::vector<std::string> &ttype,
 {
   std::string buf, minibuf;
   s.push_back(' ');
-  std::string state = "newsymb";
+  State state = NEWSYMBOL;
   size_t i = 0;
 
   while(i < s.length())
   {
     char m = s[i];
     char n = symbol_type(m);
-    if (state == "newsymb")
+    if (state == NEWSYMBOL)
     {
       switch(n)
       {
         case 'D': buf += m;
-                  state = "number";
+                  state = NUMBER;
                   break;
         case '.': buf += '0';
                   buf += '.';
-                  state = "number";
+                  state = NUMBER;
                   break;
         case '-': buf += m;
-                  state = "number";
+                  state = NUMBER;
                   break;
-        case '(': state = "string";
+        case '(': state = STRING;
                   break;
-        case '<': state = "hexstring";
+        case '<': state = HEXSTRING;
                   break;
-        default:  state = "newsymb";
+        default:  state = NEWSYMBOL;
                   buf ="";
                   break;
       }
@@ -417,7 +417,7 @@ void tokenize_array(std::vector<std::string> &ttype,
       continue;
     }
 
-    if (state == "number")
+    if (state == NUMBER)
     {
       switch(n)
       {
@@ -447,17 +447,17 @@ void tokenize_array(std::vector<std::string> &ttype,
                   ttype.push_back("number");
                   ttype.push_back("operator");
                   break;
-        case ' ': state = "newsymb";
+        case ' ': state = NEWSYMBOL;
                   token.push_back(buf);
                   buf = "";
                   ttype.push_back("number");
                   break;
-        case '(': state = "string";
+        case '(': state = STRING;
                   token.push_back(buf);
                   buf = "";
                   ttype.push_back("number");
                   break;
-        case '<': state = "hexstring";
+        case '<': state = HEXSTRING;
                   token.push_back(buf);
                   buf = "";
                   ttype.push_back("number");
@@ -467,7 +467,7 @@ void tokenize_array(std::vector<std::string> &ttype,
       continue;
     }
 
-    if (state == "string")
+    if (state == STRING)
     {
       switch(n)
       {
@@ -495,7 +495,7 @@ void tokenize_array(std::vector<std::string> &ttype,
         case ')':   token.push_back(buf);
                     buf = "";
                     ttype.push_back("string");
-                    state = "newsymb";
+                    state = NEWSYMBOL;
                     break;
         default :   buf += m;
                     break;
@@ -504,7 +504,7 @@ void tokenize_array(std::vector<std::string> &ttype,
       continue;
     }
 
-    if (state == "hexstring")
+    if (state == HEXSTRING)
     {
       switch(n)
       {
@@ -514,7 +514,7 @@ void tokenize_array(std::vector<std::string> &ttype,
         case '>':   token.push_back(buf);
                     buf = "";
                     ttype.push_back("hexstring");
-                    state = "newsymb";
+                    state = NEWSYMBOL;
                     break;
         default:    buf += m;
                     break;

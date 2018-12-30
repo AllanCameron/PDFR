@@ -244,7 +244,7 @@ void GraphicsState::TJ(vector<vector<string>>& i)
         else stw = j.second + Tc * 1000;
         PRstate += stw;
         string tmpchar;
-        tmpchar = UnicodeToChar((uint16_t) j.first, "/WinAnsiEncoding");
+        tmpchar = UnicodeToChar((uint16_t) j.first, WINANSI);
         float PRscaled = PRstate * scale / 1000;
         textspace[6] = PRscaled + txtspcinit;
         widths.emplace_back(scale * stw/1000 * Th/100);

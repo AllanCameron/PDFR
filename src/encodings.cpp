@@ -57,13 +57,12 @@ using namespace std;
 
 /*--------------------------------------------------------------------------*/
 
-string
-parseUnicode(string s, map<uint16_t, uint16_t>& UM)
+string parseUnicode(string s, map<uint16_t, uint16_t>& UM)
 {
   string res;
   for(auto &i : s)
     if(UM.find(i) != UM.end())
-       res += UnicodeToChar(UM[i], "/WinAnsiEncoding");
+       res += UnicodeToChar(UM[i], WINANSI);
   return res;
 }
 
@@ -73,20 +72,21 @@ string defaultUnicode(document& d, string s)
 {
   std::string res;
   for(auto i : s)
-    res += UnicodeToChar((uint16_t) i, "/WinAnsiEncoding");
+    res += UnicodeToChar((uint16_t) i, WINANSI);
   return res;
 }
 
 /*---------------------------------------------------------------------------*/
 
-char UnicodeToChar(uint16_t s, const string& encoding)
+char UnicodeToChar(uint16_t s, ENCODING E)
 {
-  if(encoding == "/StandardEncoding")
-    return UnicodeToStandardEncoding[s];
-  if(encoding == "/WinAnsiEncoding")
-    return UnicodeToWinAnsiEncoding[s];
-  if(encoding == "/MacRomanEncoding")
-    return UnicodeToMacRomanEncoding[s];
-  else
-    return UnicodeToPDFDocEncoding[s];
+  switch(E)
+  {
+    case WINANSI  : return UnicodeToWinAnsiEncoding[s];
+    case PDFDOC   : return UnicodeToPDFDocEncoding[s];
+    case MACROMAN : return UnicodeToMacRomanEncoding[s];
+    case STANDARD : return UnicodeToStandardEncoding[s];
+    case DEFAULT  : return UnicodeToStandardEncoding[s];
+    default       : return UnicodeToStandardEncoding[s];
+  }
 }

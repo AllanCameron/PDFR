@@ -32,6 +32,21 @@
 
 using namespace std;
 
+enum State
+{
+  NEWSYMBOL = 0,
+  IDENTIFIER,
+  NUMBER,
+  RESOURCE,
+  STRING,
+  HEXSTRING,
+  ARRAY,
+  DICT,
+  WAIT,
+  WAITE,
+  WAITEI
+};
+
 Instructionset tokenize(string s);
 void tokenize_array(vector<string> &ttype, vector<string> &token, string &s);
 Instructionset parser(vector<string>& token, vector<string>& ttype);

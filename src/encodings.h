@@ -55,10 +55,17 @@
 #include "streams.h"
 #include "encodings.h"
 
-std::map<uint16_t, uint16_t> getBaseToUnicode(const std::string&);
+enum ENCODING
+{
+  DEFAULT = 0,
+  WINANSI,
+  MACROMAN,
+  PDFDOC,
+  STANDARD
+};
+
 std::string parseUnicode(std::string s, std::map<uint16_t, uint16_t>&);
 std::string defaultUnicode(document& d, std::string s);
-std::vector<std::string> baseEncoding(const std::string& enc);
-char UnicodeToChar(uint16_t s, const std::string& encoding);
+char UnicodeToChar(uint16_t, ENCODING);
 
 #endif
