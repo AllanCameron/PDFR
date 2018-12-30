@@ -286,7 +286,7 @@ dictionary::dictionary(const string& s, const int& i)
 
 dictionary::dictionary()
 {
-  map<string, string> Empty;
+  unordered_map<string, string> Empty;
   DictionaryMap = Empty;
 }
 
