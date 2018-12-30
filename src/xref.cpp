@@ -146,7 +146,8 @@ void xrefstream::getRawMatrix()
 {
   std::vector<size_t> sl = getStreamLoc(d, d->filestring, objstart);
   std::string SS = d->filestring.substr(sl[0], sl[1] - sl[0]);
-  if(isFlateDecode(d->filestring, objstart)) SS = FlateDecode(SS);
+  dictionary dict = dictionary(d->filestring, objstart);
+  if(Rex(dict.get("/Filter"), "/FlateDecode").has()) SS = FlateDecode(SS);
   std::vector<unsigned char> rawarray(SS.begin(), SS.end());
   std::vector<int> intstrm(rawarray.begin(), rawarray.end());
   std::vector<int>&& tmparraywidths = dict.getInts("/W");

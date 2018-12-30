@@ -209,7 +209,7 @@ std::string object_class::getStream()
     stream = d->filestring.substr(streampos[0], streampos[1] - streampos[0]);
   if(d->encrypted)
     stream = decryptStream(stream, d->filekey, number, 0);
-  if(isFlateDecode(d->filestring, streampos[0]))
+  if(Rex(header.get("/Filter"), "/FlateDecode").has())
     stream = FlateDecode(stream);
   return stream;
 }

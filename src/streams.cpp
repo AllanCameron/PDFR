@@ -37,42 +37,32 @@ using namespace std;
 
 /*---------------------------------------------------------------------------*/
 
-bool isFlateDecode(const std::string& filestring, int startpos)
-{
-  dictionary dict = dictionary(filestring, startpos);
-  return Rex(dict.get("/Filter"), "/FlateDecode").has();
-}
-
-/*---------------------------------------------------------------------------*/
-
-std::string FlateDecode(const std::string& s)
+string FlateDecode(const string& s)
 {
   z_stream stream ;
   int factor = 20;
-
+  size_t len = s.length();
   while(true)
   {
-    char * out = new char[s.length()*factor];
-    stream.zalloc = Z_NULL;
-    stream.zfree = Z_NULL;
-    stream.opaque = Z_NULL;
-    stream.avail_in = s.length();
-    stream.next_in = (Bytef*)s.c_str();
-    stream.avail_out = s.length()*factor;
-    stream.next_out = (Bytef*)out;
+    char * out = new char[len * factor];
+    stream.zalloc = 0;
+    stream.zfree = 0;
+    stream.opaque = 0;
+    stream.avail_in = len;
+    stream.next_in = (Bytef*) s.c_str();
+    stream.avail_out = len * factor;
+    stream.next_out = (Bytef*) out;
     inflateInit(&stream);
-    inflate(&stream, Z_FINISH);
-    inflateEnd(&stream)       ;
-
-    if(stream.total_out >= factor*s.length())
+    inflate(&stream, 4);
+    inflateEnd(&stream);
+    if(stream.total_out >= len * factor)
     {
       delete[] out;
       factor *= 2;
       continue;
     }
-
-    std::string result;
-    for(unsigned long i = 0; i < stream.total_out; i++) result += out[i];
+    string result;
+    for(size_t i = 0; i < stream.total_out; i++) result += out[i];
     delete[] out;
     return result;
   }
@@ -95,29 +85,11 @@ vector<size_t> getStreamLoc(document* d, const string& fs, int objstart)
       else
         streamlen = dict.getInts("/Length")[0];
       int streamstart = dict.getInts("stream")[0];
-      std::vector<size_t> res = {(size_t) streamstart,
+      vector<size_t> res = {(size_t) streamstart,
                                  (size_t) streamstart + streamlen};
       return res;
     }
-  std::vector<size_t> res = {0,0};
+  vector<size_t> res = {0,0};
   return res;
 }
 
-/*---------------------------------------------------------------------------*/
-
-bool objHasStream(const std::string& filestring, int objectstart)
-{
-  dictionary dict = dictionary(filestring, objectstart);
-  return dict.has("stream");
-}
-
-/*---------------------------------------------------------------------------*/
-
-bool isObject(const std::string& filestring, int objectstart)
-{
-  std::string ts(filestring.begin() + objectstart,
-                 filestring.begin() + objectstart + 20);
-  return  Rex(ts, "\\d+ \\d+ obj").has();
-}
-
-/*---------------------------------------------------------------------------*/
