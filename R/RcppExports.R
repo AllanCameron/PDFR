@@ -54,3 +54,7 @@ md5 <- function(input) {
     .Call('_PDFR_pdfpageraw', PACKAGE = 'PDFR', rawfile, pagenum)
 }
 
+carveout <- function(subject, pre, post) {
+    .Call('_PDFR_carveout', PACKAGE = 'PDFR', subject, pre, post)
+}
+

@@ -32,7 +32,7 @@
 
 using namespace std;
 
-Instructionset tokenize(string& s)
+vector<vector<string>> tokenize(string& s)
 {
   s.push_back(' ');
   vector<string> token, ttype;
@@ -362,7 +362,7 @@ Instructionset tokenize(string& s)
     ++i;
   }
 
-  return parser(token, ttype);
+  return {token, ttype};
 }
 
 /*---------------------------------------------------------------------------*/
@@ -515,41 +515,3 @@ void tokenize_array(vector<string> &ttype, vector<string> &token, string &s)
 }
 
 /*---------------------------------------------------------------------------*/
-
-Instructionset parser(vector<string>& token, vector<string>& ttype)
-{
-  vector<vector<string>> tmpres;
-  vector<string> tmptype, tmptoken, tmpident;
-  Instructionset res;
-  size_t tts = ttype.size();
-  for (size_t i = 0; i < tts; i++)
-  {
-    tmptype.push_back(ttype[i]);
-    tmptoken.push_back(token[i]);
-    if (ttype[i] == "identifier")
-    {
-      if (token[i] == "Q"  || token[i] == "q"  ||  token[i] == "BT" ||
-          token[i] == "ET" || token[i] == "TJ" ||  token[i] == "Tj" ||
-          token[i] == "TD" || token[i] == "Td" ||  token[i] == "T*" ||
-          token[i] == "Tc" || token[i] == "Tw" ||  token[i] == "Tm" ||
-          token[i] == "Tf" || token[i] == "TL" ||  token[i] == "Tr" ||
-          token[i] == "\"" || token[i] == "'"  ||  token[i] == "cm" ||
-          token[i] == "Tz" || token[i] == "Th" ||  token[i] == "Do"
-      )
-      {
-        tmptype.pop_back();
-        tmptoken.pop_back();
-        tmpident.push_back(token[i]);
-        tmpres.push_back(tmpident);
-        tmpres.push_back(tmptype);
-        tmpres.push_back(tmptoken);
-        res.push_back(tmpres);
-      }
-      tmptype.clear();
-      tmptoken.clear();
-      tmpident.clear();
-      tmpres.clear();
-    }
-  }
-  return res;
-}

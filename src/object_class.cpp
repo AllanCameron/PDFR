@@ -121,7 +121,7 @@ object_class::object_class(document* doc, std::string str, int objnum)
           header = dictionary();
           stream = H;
           has_stream = true;
-          if(stream.size() < 15 && Rex(stream, "\\d+ R").get().size() == 1)
+          if(stream.size() < 15 && stream.find(" R", 0) < 15)
           {
             *this = object_class(d, getObjRefs(stream)[0]);
           }
@@ -209,7 +209,7 @@ std::string object_class::getStream()
     stream = d->filestring.substr(streampos[0], streampos[1] - streampos[0]);
   if(d->encrypted)
     stream = decryptStream(stream, d->filekey, number, 0);
-  if(Rex(header.get("/Filter"), "/FlateDecode").has())
+  if(header.get("/Filter").find("/FlateDecode", 0) != string::npos)
     stream = FlateDecode(stream);
   return stream;
 }

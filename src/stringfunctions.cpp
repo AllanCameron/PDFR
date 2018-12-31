@@ -105,7 +105,7 @@ vector<float> getnums(const string& s)
 vector<int> getints(const string& s)
 {
   vector<int> res;
-  string numstring = "(-)?\\d+"; // int regex
+  string numstring = "(-)?(0|1|2|3|4|5|6|7|8|9)+"; // int regex
   vector<string>&& strs = Rex(s, numstring).get();
   for(auto i : strs)
     res.emplace_back(stoi(i));
@@ -219,8 +219,7 @@ string intToHexstring(int i)
   res += hex[i];
   while(res.length() < 4)
     res = "0" + res;
-  transform(res.begin(), res.end(), res.begin(),
-                 ptr_fun<int, int>(toupper));
+  transform(res.begin(), res.end(), res.begin(), ptr_fun<int, int>(toupper));
   return res;
 }
 
@@ -261,8 +260,8 @@ string byteStringToString(const string& s)
 vector<int> getObjRefs(string ds)
 {
   vector<int> res;
-  for (auto i : Rex(ds, "\\d+ \\d+ R").get())
-    res.emplace_back(stoi(splitter(i, " ")[0]));
+  for (auto i : Rex(ds, "(0|1|2|3|4|5|6|7|8|9)+ (0|1|2|3|4|5|6|7|8|9) R").get())
+    res.emplace_back(stoi(i));
   return res;
 }
 
@@ -270,7 +269,7 @@ vector<int> getObjRefs(string ds)
 //test of whether string s contains a dictionary
 bool isDictString(const string& s)
 {
-  return Rex(s, "<<").has();
+  return s.find("<<", 0) < s.length();
 }
 
 /*---------------------------------------------------------------------------*/

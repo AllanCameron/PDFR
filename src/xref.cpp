@@ -74,7 +74,7 @@ void xref::xrefstrings()
 void xref::xrefIsstream()
 {
   for(auto i : Xrefstrings)
-    XrefsAreStreams.emplace_back(Rex(i.substr(0, 15), "<<").has());
+    XrefsAreStreams.emplace_back(i.substr(0, 15).find("<<", 0) != string::npos);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -147,7 +147,8 @@ void xrefstream::getRawMatrix()
   std::vector<size_t> sl = getStreamLoc(d, d->filestring, objstart);
   std::string SS = d->filestring.substr(sl[0], sl[1] - sl[0]);
   dictionary dict = dictionary(d->filestring, objstart);
-  if(Rex(dict.get("/Filter"), "/FlateDecode").has()) SS = FlateDecode(SS);
+  if(dict.get("/Filter").find("/FlateDecode", 0) != string::npos)
+    SS = FlateDecode(SS);
   std::vector<unsigned char> rawarray(SS.begin(), SS.end());
   std::vector<int> intstrm(rawarray.begin(), rawarray.end());
   std::vector<int>&& tmparraywidths = dict.getInts("/W");
@@ -273,11 +274,13 @@ predictor(0), objstart(starts)
 void xref::xrefFromString(std::string& xstr)
 {
   std::vector<int> inuse, byteloc, objnumber;
-  if(!Rex(xstr, "\\d+").has())
+  if(!Rex(xstr, "(0|1|2|3|4|5|6|7|8|9)+").has())
     return;
   int startingobj = std::stoi(Rex(xstr, "\\d+").get().at(0));
-  std::vector<std::string>&& bytestrings  = Rex(xstr, "\\d{10}").get();
-  std::vector<std::string>&& inusestrings = Rex(xstr, "( )\\d{5} ").get();
+  std::vector<std::string>&& bytestrings  =
+    Rex(xstr, "(0|1|2|3|4|5|6|7|8|9){10}").get();
+  std::vector<std::string>&& inusestrings =
+    Rex(xstr, "( )(0|1|2|3|4|5|6|7|8|9){5} ").get();
   if(!bytestrings.empty() && !inusestrings.empty())
   {
     for(unsigned int i = 0; i < bytestrings.size(); i++)

@@ -46,7 +46,7 @@ GraphicsState::GraphicsState(page& pag) : p(pag),
   Tmstate = Tdstate = initstate;
   gs.push_back(initstate);
   fontsizestack.emplace_back(currfontsize);
-  InstructionReader(Instructions, "");
+  parser(Instructions, "");
   MakeGS();
   db =  Rcpp::DataFrame::create(
               Rcpp::Named("text") = text,
@@ -76,7 +76,10 @@ void GraphicsState::Do(string& a)
   if (p.XObjects.find(a) != p.XObjects.end())
   {
     if(IsAscii(p.XObjects[a]))
-      InstructionReader(tokenize(p.XObjects[a]), a);
+    {
+      auto ins = tokenize(p.XObjects[a]);
+      parser(ins, a);
+    }
   }
 }
 
@@ -84,7 +87,8 @@ void GraphicsState::Do(string& a)
 
 void GraphicsState::Q(vector<string>& Operands)
 {
-  if(gs.size() > 1) gs.pop_back();
+  if (gs.size() > 1)
+    gs.pop_back();
   if (fontstack.size() > 1)
   {
     fontstack.pop_back();
@@ -93,9 +97,7 @@ void GraphicsState::Q(vector<string>& Operands)
     currfontsize = fontsizestack.back();
   }
   if (p.fontmap.find(currentfont) != p.fontmap.end())
-  {
     wfont = p.fontmap[currentfont];
-  }
 }
 
 /*---------------------------------------------------------------------------*/
@@ -208,11 +210,9 @@ void GraphicsState::cm(vector<string>& Operands)
 
 /*---------------------------------------------------------------------------*/
 
-void GraphicsState::TJ(vector<vector<string>>& i)
+void GraphicsState::TJ(string Ins, vector<string>& Operands,
+                       vector<string>& OperandTypes)
 {
-  string& Ins = i[0][0];
-  vector<string> &OperandTypes = i[1];
-  vector<string> &Operands = i[2];
   if (Ins == "'") Tdstate[7] -= Tl;
   vector<float> textspace = matmul(Tmstate, gs.back());
   textspace = matmul(Tdstate, textspace);
@@ -255,30 +255,43 @@ void GraphicsState::TJ(vector<vector<string>>& i)
     }
 }
 
-/*---------------------------------------------------------------------------*/
 
-void GraphicsState::InstructionReader(Instructionset I, const string& insubloop)
+void GraphicsState::parser(vector<vector<string>>& tokens, string inloop)
 {
-  for (auto &i : I)
+  vector<string>& token = tokens[0];
+  vector<string>& ttype = tokens[1];
+  vector<string> typevec, Operands;
+  size_t tts = ttype.size();
+  for (size_t i = 0; i < tts; i++)
   {
-    string& Ins = i[0][0];
-    vector<string> &Operands = i[2];
-    if (Ins == "Q")  Q(Operands);
-    else if (Ins == "q" ) q(Operands);
-    else if (Ins == "Th") TH(Operands);
-    else if (Ins == "Tw") TW(Operands);
-    else if (Ins == "Tc") TC(Operands);
-    else if (Ins == "TL") TL(Operands);
-    else if (Ins == "T*") Tstar(Operands);
-    else if (Ins == "Tm") Tm(Operands);
-    else if (Ins == "cm") cm(Operands);
-    else if (Ins == "Td") Td(Operands);
-    else if (Ins == "TD") TD(Operands);
-    else if (Ins == "BT") BT(Operands);
-    else if (Ins == "ET") ET(Operands);
-    else if (Ins == "Tf") Tf(Operands);
-    else if (Ins == "Do" && insubloop != Operands.at(0)) Do(Operands.at(0));
-    else if (Ins == "Tj" || Ins == "'" || Ins == "TJ") TJ(i);
+    if (ttype[i] == "identifier")
+    {
+      if (token[i] == "Q")  Q(Operands);
+      else if (token[i] == "q" ) q(Operands);
+      else if (token[i] == "Th") TH(Operands);
+      else if (token[i] == "Tw") TW(Operands);
+      else if (token[i] == "Tc") TC(Operands);
+      else if (token[i] == "TL") TL(Operands);
+      else if (token[i] == "T*") Tstar(Operands);
+      else if (token[i] == "Tm") Tm(Operands);
+      else if (token[i] == "cm") cm(Operands);
+      else if (token[i] == "Td") Td(Operands);
+      else if (token[i] == "TD") TD(Operands);
+      else if (token[i] == "BT") BT(Operands);
+      else if (token[i] == "ET") ET(Operands);
+      else if (token[i] == "Tf") Tf(Operands);
+      else if (token[i] == "Do" && inloop != Operands.at(0)) Do(Operands.at(0));
+      else if (token[i] == "Tj" || token[i] == "'" || token[i] == "TJ")
+        TJ(token[i], Operands, typevec);
+      typevec.clear();
+      Operands.clear();
+    }
+    else
+    {
+      // push operands and their types on stack, awaiting instruction
+      typevec.push_back(ttype[i]);
+      Operands.push_back(token[i]);
+    }
   }
 }
 

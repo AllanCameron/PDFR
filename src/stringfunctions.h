@@ -36,7 +36,9 @@ using namespace std;
 /*---------------------------------------------------------------------------*/
 
 vector<string> splitter(const string& s, const string& m);
-string carveout(const string& subject, const string& pre, const string& post);
+// [[Rcpp::export]]
+std::string carveout(const std::string& subject, const std::string& pre,
+                     const std::string& post);
 bool IsAscii(const string& tempint);
 vector<float> getnums(const string& s);
 vector<int> getints(const string& s);

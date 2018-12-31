@@ -43,9 +43,9 @@ void dictionary::tokenize_dict(const string& s, unsigned pos)
     string buf, pendingKey;
     bool keyPending = false;
     int minibuf = 0;
+    char n = symbol_type(s[i]);
     while(i < s.length() && i < (pos + 100000))
     {
-      char n = symbol_type(s[i]);
       if(state == "preentry")
       {
         switch(n)
@@ -53,7 +53,7 @@ void dictionary::tokenize_dict(const string& s, unsigned pos)
         case '<': state = "maybe"; break;
         default: buf =""; break;
         }
-        i++; continue;
+        i++; n = symbol_type(s[i]); continue;
       }
 
       if (state == "maybe")
@@ -63,7 +63,7 @@ void dictionary::tokenize_dict(const string& s, unsigned pos)
         case '<': state = "start"; break;
         default: buf =""; state = "preentry"; break;
         }
-        i++; continue;
+        i++; n = symbol_type(s[i]); continue;
       }
 
       if (state == "start")
@@ -74,7 +74,7 @@ void dictionary::tokenize_dict(const string& s, unsigned pos)
         case '>': state = "queryclose"; break;
         default : break;
         }
-        i++; continue;
+        i++; n = symbol_type(s[i]); continue;
       }
 
       if (state == "key")
@@ -146,7 +146,7 @@ void dictionary::tokenize_dict(const string& s, unsigned pos)
                   state = "queryclose";
                   buf = ""; break;
         }
-        i++; continue;
+        i++; n = symbol_type(s[i]); continue;
       }
 
       if (state == "prevalue")
@@ -160,7 +160,7 @@ void dictionary::tokenize_dict(const string& s, unsigned pos)
           case '[': buf = '['; state = "arrayval"; break;
           default : buf = s[i]; state = "value"; break;
         }
-        i++; continue;
+        i++; n = symbol_type(s[i]); continue;
       }
 
       if (state == "value")
@@ -178,7 +178,7 @@ void dictionary::tokenize_dict(const string& s, unsigned pos)
                     buf = ""; break;
           default : buf += s[i]; break;
         }
-        i++; continue;
+        i++; n = symbol_type(s[i]); continue;
       }
 
       if (state == "arrayval")
@@ -191,7 +191,7 @@ void dictionary::tokenize_dict(const string& s, unsigned pos)
                     state = "start"; break;
           default:  buf += s[i]; break;
         }
-        i++; continue;
+        i++; n = symbol_type(s[i]); continue;
       }
 
       if (state == "string")
@@ -204,7 +204,7 @@ void dictionary::tokenize_dict(const string& s, unsigned pos)
                     state = "start"; break;
           default:  buf += s[i]; break;
         }
-        i++; continue;
+        i++; n = symbol_type(s[i]); continue;
       }
 
       if (state == "querydict")
@@ -214,7 +214,7 @@ void dictionary::tokenize_dict(const string& s, unsigned pos)
           case '<': buf = "<<"; state = "subdict"; minibuf = 2; break;
           default: buf = ""; state = "start"; break;
         }
-        i++; continue;
+        i++; n = symbol_type(s[i]); continue;
       }
 
       if (state == "queryclose")
@@ -224,7 +224,7 @@ void dictionary::tokenize_dict(const string& s, unsigned pos)
           case '>': state = "close"; break;
           default: state = "start"; break;
         }
-        i++; continue;
+        i++; n = symbol_type(s[i]); continue;
       }
 
       if (state == "close")
@@ -246,7 +246,7 @@ void dictionary::tokenize_dict(const string& s, unsigned pos)
                   return;
         default: return;
         }
-        i++; continue;
+        i++; n = symbol_type(s[i]); continue;
       }
 
       if (state == "subdict")
@@ -262,7 +262,7 @@ void dictionary::tokenize_dict(const string& s, unsigned pos)
           DictionaryMap[pendingKey] = buf; keyPending = false; buf = "";
           state = "start";
         }
-        i++; continue;
+        i++; n = symbol_type(s[i]); continue;
       }
     }
   }
@@ -326,11 +326,11 @@ vector<int> dictionary::getRefs(const string& Key)
   if(this->has(Key))
   {
     string keyval = this->get(Key);
-    string refmatch = "\\d+ \\d+ R";
+    string refmatch = "(0|1|2|3|4|5|6|7|8|9)+ (0|1|2|3|4|5|6|7|8|9) R";
     Rex refrex = Rex(keyval, refmatch);
     vector<string> refs = refrex.get();
     for (auto i : refs)
-      References.push_back(stoi(splitter(i, " ").at(0)));
+      References.push_back(stoi(i));
   }
   return References;
 }

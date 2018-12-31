@@ -120,6 +120,19 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// carveout
+std::string carveout(const std::string& subject, const std::string& pre, const std::string& post);
+RcppExport SEXP _PDFR_carveout(SEXP subjectSEXP, SEXP preSEXP, SEXP postSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const std::string& >::type subject(subjectSEXP);
+    Rcpp::traits::input_parameter< const std::string& >::type pre(preSEXP);
+    Rcpp::traits::input_parameter< const std::string& >::type post(postSEXP);
+    rcpp_result_gen = Rcpp::wrap(carveout(subject, pre, post));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_PDFR_rc4", (DL_FUNC) &_PDFR_rc4, 2},
@@ -132,6 +145,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_PDFR_pdfdocraw", (DL_FUNC) &_PDFR_pdfdocraw, 1},
     {"_PDFR_pdfpage", (DL_FUNC) &_PDFR_pdfpage, 2},
     {"_PDFR_pdfpageraw", (DL_FUNC) &_PDFR_pdfpageraw, 2},
+    {"_PDFR_carveout", (DL_FUNC) &_PDFR_carveout, 3},
     {NULL, NULL, 0}
 };
 

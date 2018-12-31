@@ -30,7 +30,7 @@
 #define PDFR_GS
 
 #include "pdfr.h"
-
+using namespace std;
 
 class GraphicsState
 {
@@ -41,34 +41,34 @@ public:
 
 private:
   font wfont;
-  std::vector<std::vector<float>> gs, statehx;
-  std::vector<float> xvals, yvals, fontsize, widths, Tmstate, Tdstate, R,
+  vector<vector<float>> gs, statehx;
+  vector<float> xvals, yvals, fontsize, widths, Tmstate, Tdstate, R,
   left, right, bottom, size, width, fontsizestack, initstate;
-  std::vector<std::string> fontname, stringres, text, fonts, fontstack;
-  std::vector<int> leftmatch, rightmatch;
+  vector<string> fontname, stringres, text, fonts, fontstack;
+  vector<int> leftmatch, rightmatch;
   int PRstate;
   float Tl, Tw, Th, Tc, currfontsize;
-  std::string currentfont;
-  Instructionset Instructions;
-  void InstructionReader(Instructionset I, const std::string& subloop);
-  void Q(std::vector<std::string>& Operands);
-  void q(std::vector<std::string>& Operands);
-  void TH(std::vector<std::string>& Operands);
-  void TW(std::vector<std::string>& Operands);
-  void TC(std::vector<std::string>& Operands);
-  void TL(std::vector<std::string>& Operands);
-  void Tstar(std::vector<std::string>& Operands);
-  void Tm(std::vector<std::string>& Operands);
-  void cm(std::vector<std::string>& Operands);
-  void Td(std::vector<std::string>& Operands);
-  void TD(std::vector<std::string>& Operands);
-  void BT(std::vector<std::string>& Operands);
-  void ET(std::vector<std::string>& Operands);
-  void Tf(std::vector<std::string>& Operands);
-  void TJ(std::vector<std::vector<std::string>>& i);
+  string currentfont;
+  vector<vector<string>> Instructions;
+  void parser(vector<vector<string>>&, string);
+  void Q(vector<string>& Operands);
+  void q(vector<string>& Operands);
+  void TH(vector<string>& Operands);
+  void TW(vector<string>& Operands);
+  void TC(vector<string>& Operands);
+  void TL(vector<string>& Operands);
+  void Tstar(vector<string>& Operands);
+  void Tm(vector<string>& Operands);
+  void cm(vector<string>& Operands);
+  void Td(vector<string>& Operands);
+  void TD(vector<string>& Operands);
+  void BT(vector<string>& Operands);
+  void ET(vector<string>& Operands);
+  void Tf(vector<string>& Operands);
+  void TJ(string Ins, vector<string>& Operands, vector<string>& OperandTypes);
   void MakeGS();
   void clump();
-  void Do(std::string& xo);
+  void Do(string& xo);
 
 };
 
