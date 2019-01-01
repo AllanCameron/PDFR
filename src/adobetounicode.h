@@ -33,7 +33,7 @@
 
 static std::map<std::string, uint16_t> AdobeToUnicode =
 {
-  {"/controlSOT", 0x0002},  {"/controlETX", 0x0003},
+  {"/.notdef", 0x2022}, {"/controlSOT", 0x0002},  {"/controlETX", 0x0003},
   {"/controlEOT", 0x0004},  {"/controlENQ", 0x0005},
   {"/controlACK", 0x0006},  {"/controlBEL", 0x0007}, {"/controlBS", 0x0008},
   {"/controlHT", 0x0009},   {"/controlLF", 0x000A},  {"/controlVT", 0x000B},

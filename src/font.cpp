@@ -41,7 +41,7 @@ using namespace std;
 
 /*---------------------------------------------------------------------------*/
 
-font::font(document& d, const dictionary& Fontref, const string& fontid) :
+font::font(document& d, dictionary Fontref, const string& fontid) :
 FontID(fontid)
 {
   dictionary fontref = Fontref;
@@ -322,20 +322,20 @@ void font::getEncoding(dictionary& fontref, document& d)
 void font::getCoreFont(string s)
 {
   font resfont;
-  if(s == "/Courier") *this = getCourier();
-  if(s == "/Courier-Bold") *this = getCourierBold();
-  if(s == "/Courier-BoldOblique") *this = getCourierBO();
-  if(s == "/Courier-Oblique") *this = getCourierOblique();
-  if(s == "/Helvetica") *this = getHelvetica();
-  if(s == "/Helvetica-Bold") *this = getHelveticaBold();
-  if(s == "/Helvetica-Boldoblique") *this = getHelveticaBO();
-  if(s == "/Helvetica-Oblique") *this = getHelveticaOblique();
-  if(s == "/Symbol") *this = getSymbol();
-  if(s == "/Times-Bold") *this = getTimesBold();
-  if(s == "/Times-BoldItalic") *this = getTimesBI();
-  if(s == "/Times-Italic") *this = getTimesItalic();
-  if(s == "/Times-Roman") *this = getTimesRoman();
-  if(s == "/ZapfDingbats") *this = getDingbats();
+  if(s == "/Courier") this->Width = courierwidths;
+  if(s == "/Courier-Bold") this->Width = courierboldwidths;
+  if(s == "/Courier-BoldOblique")this->Width = courierboldobliquewidths;
+  if(s == "/Courier-Oblique") this->Width = courierobliquewidths;
+  if(s == "/Helvetica") this->Width = helveticawidths;
+  if(s == "/Helvetica-Bold") this->Width = helveticaboldwidths;
+  if(s == "/Helvetica-Boldoblique") this->Width = helveticaboldobliquewidths;
+  if(s == "/Helvetica-Oblique") this->Width = helveticaobliquewidths;
+  if(s == "/Symbol") this->Width = symbolwidths;
+  if(s == "/Times-Bold") this->Width = timesboldwidths;
+  if(s == "/Times-BoldItalic") this->Width = timesbolditalicwidths;
+  if(s == "/Times-Italic") this->Width =timesitalicwidths;
+  if(s == "/Times-Roman") this->Width = timesromanwidths;
+  if(s == "/ZapfDingbats") this->Width = dingbatswidths;
 }
 
 /*---------------------------------------------------------------------------*/

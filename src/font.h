@@ -53,7 +53,7 @@ struct font
   void processUnicodeChars(Rex&);
   void processUnicodeRange(Rex&);
   vector<pair<uint16_t, int>> mapString(const string&);
-  font(document&, const dictionary&, const string&);
+  font(document&, dictionary, const string&);
   font(){};
 };
 
