@@ -310,9 +310,10 @@ void upperCase(string& s)
 
 /*--------------------------------------------------------------------------*/
 
-uint16_t stringToUint16(string s)
+Unicode HexstringToUnicode(string s)
 {
   if(s.length() < 4) while(s.length() < 4) s = "0" + s;
+  if(s.length() > 4) s.resize(4);
   s = "0x" + s;
-  return (uint16_t) stoul(s, nullptr, 0);
+  return (Unicode) stoul(s, nullptr, 0);
 }

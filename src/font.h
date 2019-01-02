@@ -42,7 +42,7 @@ struct font
   string BaseFont;
   bool hasUnicodeMap, hasMappings;
   map<char, int> Width;
-  map<char, uint16_t> EncodingMap;
+  map<char, Unicode> EncodingMap;
   void mapUnicode(dictionary&, document&);
   void getEncoding(dictionary&, document&);
   void getWidthTable(dictionary&, document&);

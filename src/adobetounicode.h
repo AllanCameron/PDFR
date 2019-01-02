@@ -30,8 +30,9 @@
 
 #include<string>
 #include<map>
+#include "pdfr.h"
 
-static std::map<std::string, uint16_t> AdobeToUnicode =
+static std::map<std::string, Unicode> AdobeToUnicode =
 {
   {"/.notdef", 0x2022},
   {"/controlSOT", 0x0002},

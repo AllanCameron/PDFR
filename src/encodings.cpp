@@ -57,7 +57,7 @@ using namespace std;
 
 /*---------------------------------------------------------------------------*/
 
-char UnicodeToChar(uint16_t s, ENCODING E)
+char UnicodeToChar(Unicode s, ENCODING E)
 {
   switch(E)
   {

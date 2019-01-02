@@ -45,7 +45,6 @@ public:
   std::vector<std::string> fontnames;
   std::vector<bool> hasUnicodeMap;
   std::vector<dictionary> UnicodeMaps, fontrefs;
-  std::map<std::string, std::map<uint16_t,int>> WidthTables;
   std::map<std::string, font> fontmap;
 
 private:

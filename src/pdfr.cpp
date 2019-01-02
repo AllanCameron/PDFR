@@ -46,7 +46,7 @@ std::string testencoding(std::string s)
 {
   if(s.length() == 0) return s;
   uint8_t a = s.at(0);
-  uint16_t b = winAnsiEncodingToUnicode[a];
+  Unicode b = winAnsiEncodingToUnicode[a];
   std::cout << "Character code " << a << " translates to uint " << b;
   char c = UnicodeToWinAnsiEncoding[b];
   std::cout << " which translates back to " << (uint8_t) c << std::endl;

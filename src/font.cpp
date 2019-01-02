@@ -69,7 +69,7 @@ void font::getFontName()
 
 /*---------------------------------------------------------------------------*/
 
-void parseDifferences(const string& enc, map<char, uint16_t>& symbmap)
+void parseDifferences(const string& enc, map<char, Unicode>& symbmap)
 {
   string state = "newsymbol";
   string buf = "";
@@ -181,7 +181,7 @@ void font::getWidthTable(dictionary& dict, document& d)
         firstchar = fcnums[0];
         size_t warrsize = widtharray.size();
         for (unsigned i = 0; i < warrsize; i++)
-          Width[(uint16_t) firstchar + i] = (int) widtharray[i];
+          Width[firstchar + i] = (int) widtharray[i];
       }
     }
   }
@@ -214,7 +214,7 @@ void font::getWidthTable(dictionary& dict, document& d)
   }
   if(Width.empty())
   {
-    map<char, uint16_t> storeEnc = EncodingMap;
+    map<char, Unicode> storeEnc = EncodingMap;
     getCoreFont("/Helvetica");
     EncodingMap = storeEnc;
   }
@@ -246,8 +246,8 @@ void font::processUnicodeChars(Rex& Char)
       vector<string> entries = Rex(i, "(\\d|a|b|c|d|e|f|A|B|C|D|E|F)+").get();
       if (entries.size() == 2)
       {
-        uint16_t hex = stringToUint16(entries[1]);
-        char key = stringToUint16(entries[0]);
+        Unicode hex = HexstringToUnicode(entries[1]);
+        char key = HexstringToUnicode(entries[0]);
         EncodingMap[key] = hex;
       }
     }
@@ -266,9 +266,9 @@ void font::processUnicodeRange(Rex& Range)
       vector<string> entries = Rex(i, "(\\d|a|b|c|d|e|f|A|B|C|D|E|F)+").get();
       if (entries.size() == 3)
       {
-        vector<uint16_t> myui;
+        vector<Unicode> myui;
         for(auto k : entries)
-          myui.emplace_back(stringToUint16(k));
+          myui.emplace_back(HexstringToUnicode(k));
         myui.emplace_back((myui[1] - myui[0]) + 1);
         for (unsigned int j = 0; j < myui[3]; j++)
           EncodingMap[myui[0] + j] = myui[2] + j;
@@ -429,5 +429,5 @@ void font::parsewidtharray(string s)
     for(size_t i = 0; i < resultint.size(); i++)
       if(!resultvec[i].empty())
         for(size_t j = 0; j < resultvec[i].size(); j++)
-          Width[(uint16_t) resultint[i] + j] = resultvec[i][j];
+          Width[resultint[i] + j] = resultvec[i][j];
 }

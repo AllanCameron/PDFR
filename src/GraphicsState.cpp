@@ -65,10 +65,10 @@ GraphicsState::GraphicsState(page& pag) : p(pag),
 string byteStringToString(const string& s)
 {
   vector<string>&& sv = splitfours(s);
-  vector<uint16_t> uv;
+  vector<Unicode> uv;
   string res = "";
   for(auto i : sv)
-    uv.emplace_back((uint16_t) stoul("0x" + i, nullptr, 0));
+    uv.emplace_back((Unicode) stoul("0x" + i, nullptr, 0));
   for(auto i : uv)
      res += UnicodeToChar(i, WINANSI);
   return res;
@@ -261,7 +261,7 @@ void GraphicsState::TJ(string Ins, vector<string>& Operands,
       if(ligatures.find(j.first) != ligatures.end())
         tmpchar = ligatures[j.first];
       else
-        tmpchar = UnicodeToChar((uint16_t) j.first, WINANSI);
+        tmpchar = UnicodeToChar((Unicode) j.first, WINANSI);
       float PRscaled = PRstate * scale / 1000;
       textspace[6] = PRscaled + txtspcinit;
       widths.emplace_back(scale * stw/1000 * Th/100);

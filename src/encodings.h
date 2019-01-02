@@ -64,7 +64,7 @@ enum ENCODING
   STANDARD
 };
 
-static std::map<uint16_t, std::string> ligatures =
+static std::map<Unicode, std::string> ligatures =
 {
   {0xFB00, "ff"},
   {0xFB01, "fi"},
@@ -74,6 +74,6 @@ static std::map<uint16_t, std::string> ligatures =
   {0xFB06, "st"}
 };
 
-char UnicodeToChar(uint16_t, ENCODING);
+char UnicodeToChar(Unicode, ENCODING);
 
 #endif
