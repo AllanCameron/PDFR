@@ -55,27 +55,6 @@ using namespace std;
 #include "encodings.h"
 #include "unicodetochar.h"
 
-/*--------------------------------------------------------------------------*/
-
-string parseUnicode(string s, map<uint16_t, uint16_t>& UM)
-{
-  string res;
-  for(auto &i : s)
-    if(UM.find(i) != UM.end())
-       res += UnicodeToChar(UM[i], WINANSI);
-  return res;
-}
-
-/*--------------------------------------------------------------------------*/
-
-string defaultUnicode(document& d, string s)
-{
-  std::string res;
-  for(auto i : s)
-    res += UnicodeToChar((uint16_t) i, WINANSI);
-  return res;
-}
-
 /*---------------------------------------------------------------------------*/
 
 char UnicodeToChar(uint16_t s, ENCODING E)

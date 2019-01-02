@@ -44,7 +44,7 @@
 
 typedef std::vector<std::vector<int>> XRtab;
 typedef std::vector<std::vector<std::vector<std::string>>> Instructionset;
-typedef std::map<uint16_t, std::pair<int, int>> GlyphMap;
+typedef std::map<char, std::pair<uint16_t, int>> GlyphMap;
 
 class object_class;
 class page;
@@ -151,4 +151,6 @@ Rcpp::List pdfpage(const std::string& filename, int pagenum);
 // [[Rcpp::export(.pdfpageraw)]]
 Rcpp::List pdfpageraw(const std::vector<uint8_t>& rawfile, int pagenum);
 
+// [[Rcpp::export]]
+std::string testencoding(std::string s);
 #endif

@@ -29,6 +29,8 @@
 #include "GraphicsState.h"
 #include "stringfunctions.h"
 #include "tokenizer.h"
+#include "chartounicode.h"
+#include "unicodetochar.h"
 
 using namespace std;
 
@@ -275,11 +277,12 @@ vector<vector<string>> tokenize(string& s)
                         while(n == 'D' && octcount < 3)
                         {
                           minibuf += s[i];
-                          i++; octcount ++;
+                          i++; octcount++;
                           n = symbol_type(s[i]);
                         }
                         int newint = oct2dec(stoi(minibuf));
-                        token.push_back(intToHexstring(newint));
+                        string tmpstr = intToHexstring(newint);
+                        token.push_back(tmpstr);
                         ttype.push_back("hexstring");
                         minibuf = "";
                         i--;
@@ -469,7 +472,8 @@ void tokenize_array(vector<string> &ttype, vector<string> &token, string &s)
                           minibuf += s[i]; i++; octcount++;
                         }
                         int newint = oct2dec(stoi(minibuf));
-                        token.push_back(intToHexstring(newint));
+                        string tmpstr = intToHexstring(newint);
+                        token.push_back(tmpstr);
                         ttype.push_back("hexstring");
                         minibuf = "";
                         i--;

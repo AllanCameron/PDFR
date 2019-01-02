@@ -69,7 +69,7 @@ void font::getFontName()
 
 /*---------------------------------------------------------------------------*/
 
-void parseDifferences(const string& enc, map<uint16_t, uint16_t>& symbmap)
+void parseDifferences(const string& enc, map<char, uint16_t>& symbmap)
 {
   string state = "newsymbol";
   string buf = "";
@@ -114,9 +114,7 @@ void parseDifferences(const string& enc, map<uint16_t, uint16_t>& symbmap)
       {
         case 'L': buf += i;  break;
         case '.': buf += i;  break;
-        case 'D': typestring.push_back(state);
-                  symbstring.push_back(buf);
-                  buf = i ; state = "number"; break;
+        case 'D': buf += i;  break;
         case '/': typestring.push_back(state);
                   symbstring.push_back(buf);
                   buf = i ; break;
@@ -141,13 +139,15 @@ void parseDifferences(const string& enc, map<uint16_t, uint16_t>& symbmap)
 
 /*---------------------------------------------------------------------------*/
 
-vector<pair<uint16_t, int>> font::mapString(const string& s)
+vector<pair<char, int>> font::mapString(const string& s)
 {
   GlyphMap &G = glyphmap;
-  vector<pair<uint16_t, int>> res;
+  vector<pair<char, int>> res;
   for(auto i : s)
-    if(G.find((int) i) != G.end())
+  {
+    if(G.find(i) != G.end())
       res.push_back(G[i]);
+  }
   return res;
 }
 
@@ -214,7 +214,7 @@ void font::getWidthTable(dictionary& dict, document& d)
   }
   if(Width.empty())
   {
-    map<uint16_t, uint16_t> storeEnc = EncodingMap;
+    map<char, uint16_t> storeEnc = EncodingMap;
     getCoreFont("/Helvetica");
     EncodingMap = storeEnc;
   }
@@ -247,7 +247,7 @@ void font::processUnicodeChars(Rex& Char)
       if (entries.size() == 2)
       {
         uint16_t hex = stringToUint16(entries[1]);
-        uint16_t key = stringToUint16(entries[0]);
+        char key = stringToUint16(entries[0]);
         EncodingMap[key] = hex;
       }
     }
@@ -297,23 +297,12 @@ void font::getEncoding(dictionary& fontref, document& d)
     EncodingMap = macRomanEncodingToUnicode;
   else if(encname == "/PDFDocEncoding")
     EncodingMap = pdfDocEncodingToUnicode;
-  else if(encname == "/StandardEncoding")
-    EncodingMap = standardEncodingToUnicode;
   else
+    EncodingMap = standardEncodingToUnicode;
+  if(encref.has("/Differences"))
   {
-    vector<int> encrefs = getObjRefs(encname);
-    if(!encrefs.empty())
-    {
-      dictionary encdict = d.getobject(encrefs[0]).getDict();
-      BaseEncoding = encdict.get("/Differences");
-      EncodingMap = standardEncodingToUnicode;
-      parseDifferences(BaseEncoding, EncodingMap);
-    }
-    else
-    {
-      BaseEncoding = "/StandardEncoding";
-      EncodingMap = standardEncodingToUnicode;
-    }
+    BaseEncoding = encref.get("/Differences");
+    parseDifferences(BaseEncoding, EncodingMap);
   }
 }
 
@@ -342,8 +331,8 @@ void font::getCoreFont(string s)
 
 void font::makeGlyphTable()
 {
-  vector<uint16_t> widthkeys = getKeys(Width);
-  vector<uint16_t> inkeys = getKeys(EncodingMap);
+  vector<char> widthkeys = getKeys(Width);
+  vector<char> inkeys = getKeys(EncodingMap);
   for(auto i : inkeys)
   {
     int thiswidth = DEFAULT_WIDTH;

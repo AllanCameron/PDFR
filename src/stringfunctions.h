@@ -50,7 +50,6 @@ vector<float> stringvectomat(vector<string> b);
 vector<float> stringtofloat(vector<string> b);
 string intToHexstring(int i);
 vector<string> splitfours(string s);
-string byteStringToString(const string& s);
 vector<int> getObjRefs(string ds);
 bool isDictString(const string& s);
 char symbol_type(const char c);

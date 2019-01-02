@@ -60,6 +60,20 @@ GraphicsState::GraphicsState(page& pag) : p(pag),
               );
 }
 
+/*--------------------------------------------------------------------------*/
+//Converts an ASCII encoded string to a (char-based) string
+string byteStringToString(const string& s)
+{
+  vector<string>&& sv = splitfours(s);
+  vector<uint16_t> uv;
+  string res = "";
+  for(auto i : sv)
+    uv.emplace_back((uint16_t) stoul("0x" + i, nullptr, 0));
+  for(auto i : uv)
+     res += UnicodeToChar(i, WINANSI);
+  return res;
+}
+
 /*---------------------------------------------------------------------------*/
 
 void GraphicsState::q(vector<string>& Operands)
@@ -220,39 +234,42 @@ void GraphicsState::TJ(string Ins, vector<string>& Operands,
   float scale = currfontsize * textspace[0];
   size_t otsize = OperandTypes.size();
   for (size_t z = 0; z < otsize; z++)
+  {
     if (OperandTypes[z] == "number")
     {
       PRstate -= stof(Operands[z]);
       float PRscaled = PRstate * scale / 1000;
       textspace[6] = PRscaled + txtspcinit;
+      continue;
     }
-    else
+    float PRscaled = PRstate * scale / 1000;
+    textspace[6] = PRscaled + txtspcinit;
+    if (OperandTypes[z] == "hexstring")
+      Operands[z] = byteStringToString(Operands[z]);
+    if (Operands[z] == "")
+      continue;
+    vector<pair<char, int>>&& kvs = wfont.mapString(Operands[z]);
+    for (auto& j : kvs)
     {
+      float stw;
+      statehx.emplace_back(textspace);
+      if (j.first == 0x20 || j.first == 0xA0)
+        stw = j.second + (Tc + Tw) * 1000;
+      else stw = j.second + Tc * 1000;
+      PRstate += stw;
+      string tmpchar;
+      if(ligatures.find(j.first) != ligatures.end())
+        tmpchar = ligatures[j.first];
+      else
+        tmpchar = UnicodeToChar((uint16_t) j.first, WINANSI);
       float PRscaled = PRstate * scale / 1000;
       textspace[6] = PRscaled + txtspcinit;
-      if (OperandTypes[z] == "hexstring")
-        Operands[z] = byteStringToString(Operands[z]);
-      if (Operands[z] == "")
-        continue;
-      vector<pair<uint16_t, int>>&& kvs = wfont.mapString(Operands[z]);
-      for (auto j : kvs)
-      {
-        float stw;
-        statehx.emplace_back(textspace);
-        if (j.first == 0x0020 || j.first == 0x00A0)
-          stw = j.second + (Tc + Tw) * 1000;
-        else stw = j.second + Tc * 1000;
-        PRstate += stw;
-        string tmpchar;
-        tmpchar = UnicodeToChar((uint16_t) j.first, WINANSI);
-        float PRscaled = PRstate * scale / 1000;
-        textspace[6] = PRscaled + txtspcinit;
-        widths.emplace_back(scale * stw/1000 * Th/100);
-        stringres.emplace_back(tmpchar);
-        fontsize.emplace_back(scale);
-        fontname.emplace_back(wfont.FontName);
-      }
+      widths.emplace_back(scale * stw/1000 * Th/100);
+      stringres.emplace_back(tmpchar);
+      fontsize.emplace_back(scale);
+      fontname.emplace_back(wfont.FontName);
     }
+  }
 }
 
 
@@ -311,7 +328,7 @@ void GraphicsState::MakeGS()
     leftmatch.push_back(-1);
   }
   rightmatch = leftmatch;
-  clump();
+  //clump();
   for (size_t i = 0; i < wsize; i++)
   {
     if (leftmatch[i] == -1 && stringres[i] != " " && stringres[i] != "  ")

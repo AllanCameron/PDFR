@@ -41,8 +41,8 @@ struct font
   GlyphMap glyphmap;
   string BaseFont;
   bool hasUnicodeMap, hasMappings;
-  map<uint16_t, int> Width;
-  map<uint16_t, uint16_t> EncodingMap;
+  map<char, int> Width;
+  map<char, uint16_t> EncodingMap;
   void mapUnicode(dictionary&, document&);
   void getEncoding(dictionary&, document&);
   void getWidthTable(dictionary&, document&);
@@ -52,7 +52,7 @@ struct font
   void parsewidtharray(string);
   void processUnicodeChars(Rex&);
   void processUnicodeRange(Rex&);
-  vector<pair<uint16_t, int>> mapString(const string&);
+  vector<pair<char, int>> mapString(const string&);
   font(document&, dictionary, const string&);
   font(){};
 };

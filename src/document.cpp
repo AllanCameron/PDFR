@@ -228,7 +228,7 @@ void document::checkKeyR2(dictionary& encdict)
 /*---------------------------------------------------------------------------*/
 
 void document::checkKeyR3(dictionary& encdict)
-{
+{/*
   vector<uint8_t> ubytes = getPassword("/U", encdict);
   vector<uint8_t> buf = UPW;
   concat(buf, bytesFromArray(trailer.get("/ID")));
@@ -248,7 +248,7 @@ void document::checkKeyR3(dictionary& encdict)
     m++;
   }
   if(m != 16) std::cout << "cryptkey doesn't match";
-}
+*/}
 
 /*---------------------------------------------------------------------------*/
 

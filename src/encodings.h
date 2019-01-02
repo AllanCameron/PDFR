@@ -64,8 +64,16 @@ enum ENCODING
   STANDARD
 };
 
-std::string parseUnicode(std::string s, std::map<uint16_t, uint16_t>&);
-std::string defaultUnicode(document& d, std::string s);
+static std::map<uint16_t, std::string> ligatures =
+{
+  {0xFB00, "ff"},
+  {0xFB01, "fi"},
+  {0xFB02, "fl"},
+  {0xFB03, "ffi"},
+  {0xFB04, "ffl"},
+  {0xFB06, "st"}
+};
+
 char UnicodeToChar(uint16_t, ENCODING);
 
 #endif

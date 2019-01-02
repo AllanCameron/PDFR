@@ -5,6 +5,17 @@
 
 using namespace Rcpp;
 
+// byteStringToString
+std::string byteStringToString(const std::string& s);
+RcppExport SEXP _PDFR_byteStringToString(SEXP sSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const std::string& >::type s(sSEXP);
+    rcpp_result_gen = Rcpp::wrap(byteStringToString(s));
+    return rcpp_result_gen;
+END_RCPP
+}
 // rc4
 std::vector<uint8_t> rc4(std::vector<uint8_t> msg, std::vector<uint8_t> key);
 RcppExport SEXP _PDFR_rc4(SEXP msgSEXP, SEXP keySEXP) {
@@ -120,6 +131,17 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// testencoding
+std::string testencoding(std::string s);
+RcppExport SEXP _PDFR_testencoding(SEXP sSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< std::string >::type s(sSEXP);
+    rcpp_result_gen = Rcpp::wrap(testencoding(s));
+    return rcpp_result_gen;
+END_RCPP
+}
 // carveout
 std::string carveout(const std::string& subject, const std::string& pre, const std::string& post);
 RcppExport SEXP _PDFR_carveout(SEXP subjectSEXP, SEXP preSEXP, SEXP postSEXP) {
@@ -135,6 +157,7 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
+    {"_PDFR_byteStringToString", (DL_FUNC) &_PDFR_byteStringToString, 1},
     {"_PDFR_rc4", (DL_FUNC) &_PDFR_rc4, 2},
     {"_PDFR_md5", (DL_FUNC) &_PDFR_md5, 1},
     {"_PDFR_get_xref", (DL_FUNC) &_PDFR_get_xref, 1},
@@ -145,6 +168,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_PDFR_pdfdocraw", (DL_FUNC) &_PDFR_pdfdocraw, 1},
     {"_PDFR_pdfpage", (DL_FUNC) &_PDFR_pdfpage, 2},
     {"_PDFR_pdfpageraw", (DL_FUNC) &_PDFR_pdfpageraw, 2},
+    {"_PDFR_testencoding", (DL_FUNC) &_PDFR_testencoding, 1},
     {"_PDFR_carveout", (DL_FUNC) &_PDFR_carveout, 3},
     {NULL, NULL, 0}
 };

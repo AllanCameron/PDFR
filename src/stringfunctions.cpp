@@ -238,24 +238,6 @@ vector<string> splitfours(string s)
 }
 
 /*--------------------------------------------------------------------------*/
-//Converts an ASCII encoded string to a (char-based) string
-string byteStringToString(const string& s)
-{
-  vector<string>&& sv = splitfours(s);
-  vector<unsigned int> uv;
-  string res;
-  for(auto i : sv)
-    uv.emplace_back((unsigned) stoul("0x" + i, nullptr, 0));
-  for(auto i : uv)
-  {
-    if(i > 255)
-      i = 255;
-    res += (char) i;
-  }
-  return res;
-}
-
-/*--------------------------------------------------------------------------*/
 // Extracts pdf object references from string
 vector<int> getObjRefs(string ds)
 {

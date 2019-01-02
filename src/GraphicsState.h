@@ -72,4 +72,7 @@ private:
 
 };
 
+// [[Rcpp::export]]
+std::string byteStringToString(const std::string& s);
+
 #endif
