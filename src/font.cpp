@@ -154,7 +154,7 @@ void font::getWidthTable(dictionary& dict, document& d)
 {
   vector<int> chararray;
   vector<float> widtharray;
-  Unicode firstchar;
+  RawChar firstchar;
   string widthstrings, fcstrings;
   string numstring = "\\[(\\[|]| |\\.|\\d+)+";
   if (dict.has("/Widths"))
@@ -175,7 +175,7 @@ void font::getWidthTable(dictionary& dict, document& d)
       vector<int> fcnums = getints(fcstrings);
       if (!fcnums.empty())
       {
-        firstchar = (Unicode) fcnums[0];
+        firstchar = (RawChar) fcnums[0];
         size_t warrsize = widtharray.size();
         for (unsigned i = 0; i < warrsize; i++)
           Width[firstchar + i] = (int) widtharray[i];
@@ -328,13 +328,12 @@ void font::getCoreFont(string s)
 
 void font::makeGlyphTable()
 {
-  vector<Unicode> widthkeys = getKeys(Width);
   vector<RawChar> inkeys = getKeys(EncodingMap);
   for(auto i : inkeys)
   {
     int thiswidth = DEFAULT_WIDTH;
-    if(Width.find(EncodingMap[i]) != Width.end())
-      thiswidth = Width[EncodingMap[i]];
+    if(Width.find(i) != Width.end())
+      thiswidth = Width[i];
     glyphmap[i] = make_pair(EncodingMap[i], thiswidth);
   }
 }
@@ -426,5 +425,5 @@ void font::parsewidtharray(string s)
     for(size_t i = 0; i < resultint.size(); i++)
       if(!resultvec[i].empty())
         for(size_t j = 0; j < resultvec[i].size(); j++)
-          Width[(Unicode) resultint[i] + j] = (int) resultvec[i][j];
+          Width[(RawChar) resultint[i] + j] = (int) resultvec[i][j];
 }

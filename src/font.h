@@ -41,7 +41,7 @@ struct font
   GlyphMap glyphmap;
   string BaseFont;
   bool hasUnicodeMap, hasMappings;
-  map<Unicode, int> Width;
+  map<RawChar, int> Width;
   map<RawChar, Unicode> EncodingMap;
   void mapUnicode(dictionary&, document&);
   void getEncoding(dictionary&, document&);
