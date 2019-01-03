@@ -69,7 +69,7 @@ void font::getFontName()
 
 /*---------------------------------------------------------------------------*/
 
-void parseDifferences(const string& enc, map<char, Unicode>& symbmap)
+void parseDifferences(const string& enc, map<RawChar, Unicode>& symbmap)
 {
   string state = "newsymbol";
   string buf = "";
@@ -129,25 +129,22 @@ void parseDifferences(const string& enc, map<char, Unicode>& symbmap)
     }
   }
 
-  size_t k = 0;
+  RawChar k = 0;
   for(size_t i = 0; i < symbstring.size(); i++)
     if(typestring[i] == "number")
-      k = stoi(symbstring[i]);
+      k = (RawChar) stoi(symbstring[i]);
     else
       symbmap[k++] = AdobeToUnicode[symbstring[i]];
 }
 
 /*---------------------------------------------------------------------------*/
 
-vector<pair<char, int>> font::mapString(const string& s)
+vector<pair<Unicode, int>> font::mapRawChar(vector<RawChar> raw)
 {
-  GlyphMap &G = glyphmap;
-  vector<pair<char, int>> res;
-  for(auto i : s)
-  {
-    if(G.find(i) != G.end())
-      res.push_back(G[i]);
-  }
+  vector<pair<Unicode, int>> res;
+  for(auto i : raw)
+    if(glyphmap.find(i) != glyphmap.end())
+      res.push_back(glyphmap[i]);
   return res;
 }
 
@@ -157,7 +154,7 @@ void font::getWidthTable(dictionary& dict, document& d)
 {
   vector<int> chararray;
   vector<float> widtharray;
-  int firstchar;
+  Unicode firstchar;
   string widthstrings, fcstrings;
   string numstring = "\\[(\\[|]| |\\.|\\d+)+";
   if (dict.has("/Widths"))
@@ -178,7 +175,7 @@ void font::getWidthTable(dictionary& dict, document& d)
       vector<int> fcnums = getints(fcstrings);
       if (!fcnums.empty())
       {
-        firstchar = fcnums[0];
+        firstchar = (Unicode) fcnums[0];
         size_t warrsize = widtharray.size();
         for (unsigned i = 0; i < warrsize; i++)
           Width[firstchar + i] = (int) widtharray[i];
@@ -214,7 +211,7 @@ void font::getWidthTable(dictionary& dict, document& d)
   }
   if(Width.empty())
   {
-    map<char, Unicode> storeEnc = EncodingMap;
+    map<RawChar, Unicode> storeEnc = EncodingMap;
     getCoreFont("/Helvetica");
     EncodingMap = storeEnc;
   }
@@ -246,8 +243,8 @@ void font::processUnicodeChars(Rex& Char)
       vector<string> entries = Rex(i, "(\\d|a|b|c|d|e|f|A|B|C|D|E|F)+").get();
       if (entries.size() == 2)
       {
-        Unicode hex = HexstringToUnicode(entries[1]);
-        char key = HexstringToUnicode(entries[0]);
+        Unicode hex = HexstringToRawChar(entries[1]).at(0);
+        RawChar key = HexstringToRawChar(entries[0]).at(0);
         EncodingMap[key] = hex;
       }
     }
@@ -266,12 +263,12 @@ void font::processUnicodeRange(Rex& Range)
       vector<string> entries = Rex(i, "(\\d|a|b|c|d|e|f|A|B|C|D|E|F)+").get();
       if (entries.size() == 3)
       {
-        vector<Unicode> myui;
+        vector<RawChar> myui;
         for(auto k : entries)
-          myui.emplace_back(HexstringToUnicode(k));
+          myui.emplace_back(HexstringToRawChar(k).at(0));
         myui.emplace_back((myui[1] - myui[0]) + 1);
-        for (unsigned int j = 0; j < myui[3]; j++)
-          EncodingMap[myui[0] + j] = myui[2] + j;
+        for (size_t j = 0; j < myui[3]; j++)
+          EncodingMap[(RawChar) (myui[0] + j)] = (Unicode) (myui[2] + j);
       }
     }
   }
@@ -297,7 +294,7 @@ void font::getEncoding(dictionary& fontref, document& d)
     EncodingMap = macRomanEncodingToUnicode;
   else if(encname == "/PDFDocEncoding")
     EncodingMap = pdfDocEncodingToUnicode;
-  else
+  else if(encname == "/StandardEncoding")
     EncodingMap = standardEncodingToUnicode;
   if(encref.has("/Differences"))
   {
@@ -331,13 +328,13 @@ void font::getCoreFont(string s)
 
 void font::makeGlyphTable()
 {
-  vector<char> widthkeys = getKeys(Width);
-  vector<char> inkeys = getKeys(EncodingMap);
+  vector<Unicode> widthkeys = getKeys(Width);
+  vector<RawChar> inkeys = getKeys(EncodingMap);
   for(auto i : inkeys)
   {
     int thiswidth = DEFAULT_WIDTH;
-    if(Width.find(i) != Width.end())
-      thiswidth = Width[i];
+    if(Width.find(EncodingMap[i]) != Width.end())
+      thiswidth = Width[EncodingMap[i]];
     glyphmap[i] = make_pair(EncodingMap[i], thiswidth);
   }
 }
@@ -429,5 +426,5 @@ void font::parsewidtharray(string s)
     for(size_t i = 0; i < resultint.size(); i++)
       if(!resultvec[i].empty())
         for(size_t j = 0; j < resultvec[i].size(); j++)
-          Width[resultint[i] + j] = resultvec[i][j];
+          Width[(Unicode) resultint[i] + j] = (int) resultvec[i][j];
 }

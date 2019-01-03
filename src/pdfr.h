@@ -45,7 +45,8 @@
 typedef std::vector<std::vector<int>> XRtab;
 typedef std::vector<std::vector<std::vector<std::string>>> Instructionset;
 typedef uint16_t Unicode;
-typedef std::map<char, std::pair<uint16_t, int>> GlyphMap;
+typedef uint16_t RawChar;
+typedef std::map<RawChar, std::pair<Unicode, int>> GlyphMap;
 
 class object_class;
 class page;

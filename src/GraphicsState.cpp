@@ -60,19 +60,6 @@ GraphicsState::GraphicsState(page& pag) : p(pag),
               );
 }
 
-/*--------------------------------------------------------------------------*/
-//Converts an ASCII encoded string to a (char-based) string
-string byteStringToString(const string& s)
-{
-  vector<string>&& sv = splitfours(s);
-  vector<Unicode> uv;
-  string res = "";
-  for(auto i : sv)
-    uv.emplace_back((Unicode) stoul("0x" + i, nullptr, 0));
-  for(auto i : uv)
-     res += UnicodeToChar(i, WINANSI);
-  return res;
-}
 
 /*---------------------------------------------------------------------------*/
 
@@ -244,16 +231,19 @@ void GraphicsState::TJ(string Ins, vector<string>& Operands,
     }
     float PRscaled = PRstate * scale / 1000;
     textspace[6] = PRscaled + txtspcinit;
-    if (OperandTypes[z] == "hexstring")
-      Operands[z] = byteStringToString(Operands[z]);
     if (Operands[z] == "")
       continue;
-    vector<pair<char, int>>&& kvs = wfont.mapString(Operands[z]);
+    vector<RawChar> raw;
+    if (OperandTypes[z] == "hexstring")
+      raw = HexstringToRawChar(Operands[z]);
+    if (OperandTypes[z] == "string")
+      raw = StringToRawChar(Operands[z]);
+    vector<pair<Unicode, int>>&& kvs = wfont.mapRawChar(raw);
     for (auto& j : kvs)
     {
       float stw;
       statehx.emplace_back(textspace);
-      if (j.first == 0x20 || j.first == 0xA0)
+      if (j.first == 0x0020 || j.first == 0x00A0)
         stw = j.second + (Tc + Tw) * 1000;
       else stw = j.second + Tc * 1000;
       PRstate += stw;
@@ -261,7 +251,7 @@ void GraphicsState::TJ(string Ins, vector<string>& Operands,
       if(ligatures.find(j.first) != ligatures.end())
         tmpchar = ligatures[j.first];
       else
-        tmpchar = UnicodeToChar((Unicode) j.first, WINANSI);
+        tmpchar = UnicodeToChar(j.first, WINANSI);
       float PRscaled = PRstate * scale / 1000;
       textspace[6] = PRscaled + txtspcinit;
       widths.emplace_back(scale * stw/1000 * Th/100);

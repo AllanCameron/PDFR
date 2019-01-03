@@ -56,5 +56,7 @@ char symbol_type(const char c);
 void trimRight(string& s);
 size_t firstmatch(string& s, string m, int startpos);
 void upperCase(string& s);
-Unicode HexstringToUnicode(string s);
+vector<RawChar> HexstringToRawChar(string s);
+vector<RawChar> StringToRawChar(string s);
+
 #endif

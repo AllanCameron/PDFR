@@ -310,10 +310,29 @@ void upperCase(string& s)
 
 /*--------------------------------------------------------------------------*/
 
-Unicode HexstringToUnicode(string s)
+vector<RawChar> HexstringToRawChar(string s)
 {
-  if(s.length() < 4) while(s.length() < 4) s = "0" + s;
-  if(s.length() > 4) s.resize(4);
-  s = "0x" + s;
-  return (Unicode) stoul(s, nullptr, 0);
+  vector<string>&& sv = splitfours(s);
+  vector<RawChar> uv;
+  for(auto& i : sv)
+  {
+    if(i.length() < 4) while(i.length() < 4) i = "0" + i;
+    i = "0x" + i;
+    uv.push_back((RawChar) stoul(i, nullptr, 0));
+  }
+  return uv;
 }
+
+vector<RawChar> StringToRawChar(string s)
+{
+  vector<RawChar> res;
+  if(s.size() == 0) return res;
+  for(size_t i = 0; i < s.size(); i++)
+  {
+    uint8_t a = (uint8_t) s[i];
+    res.push_back((uint16_t) a);
+  }
+  return res;
+}
+
+

@@ -5,17 +5,6 @@
 
 using namespace Rcpp;
 
-// byteStringToString
-std::string byteStringToString(const std::string& s);
-RcppExport SEXP _PDFR_byteStringToString(SEXP sSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const std::string& >::type s(sSEXP);
-    rcpp_result_gen = Rcpp::wrap(byteStringToString(s));
-    return rcpp_result_gen;
-END_RCPP
-}
 // rc4
 std::vector<uint8_t> rc4(std::vector<uint8_t> msg, std::vector<uint8_t> key);
 RcppExport SEXP _PDFR_rc4(SEXP msgSEXP, SEXP keySEXP) {
@@ -157,7 +146,6 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_PDFR_byteStringToString", (DL_FUNC) &_PDFR_byteStringToString, 1},
     {"_PDFR_rc4", (DL_FUNC) &_PDFR_rc4, 2},
     {"_PDFR_md5", (DL_FUNC) &_PDFR_md5, 1},
     {"_PDFR_get_xref", (DL_FUNC) &_PDFR_get_xref, 1},

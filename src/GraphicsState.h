@@ -37,9 +37,9 @@ class GraphicsState
 public:
   Rcpp::DataFrame db;
   GraphicsState(page& pag);
-  page p;
 
 private:
+  page p;
   font wfont;
   vector<vector<float>> gs, statehx;
   vector<float> xvals, yvals, fontsize, widths, Tmstate, Tdstate, R,
@@ -69,10 +69,6 @@ private:
   void MakeGS();
   void clump();
   void Do(string& xo);
-
 };
-
-// [[Rcpp::export]]
-std::string byteStringToString(const std::string& s);
 
 #endif
