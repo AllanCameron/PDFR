@@ -6,7 +6,7 @@ This package was created with the aim of aiding data scientists who
 use R and who need the ability to extract data from files in pdf format. To
 install in its current format, type 
 ```R
-library(devtools)
+library(devtools)  # if devtools is not already installed
 devtools::install_github("AllanCameron/PDFR") 
 ``` 
 in the R console.
