@@ -28,10 +28,10 @@
 #include "pdfr.h"
 #include "stringfunctions.h"
 #include "document.h"
-#include "GraphicsState.h"
 #include "debugtools.h"
 #include "tokenizer.h"
 #include "debugtools.h"
+#include "GraphicsState.h"
 
 using namespace std;
 
@@ -58,7 +58,6 @@ GraphicsState::GraphicsState(page& pag) : p(pag),
               );
 }
 
-
 /*---------------------------------------------------------------------------*/
 
 void GraphicsState::q(vector<string>& Operands)
@@ -73,13 +72,11 @@ void GraphicsState::q(vector<string>& Operands)
 void GraphicsState::Do(string& a)
 {
   if (p.XObjects.find(a) != p.XObjects.end())
-  {
     if(IsAscii(p.XObjects[a]))
     {
       auto ins = tokenize(p.XObjects[a]);
       parser(ins, a);
     }
-  }
 }
 
 /*---------------------------------------------------------------------------*/
@@ -212,7 +209,8 @@ void GraphicsState::cm(vector<string>& Operands)
 void GraphicsState::TJ(string Ins, vector<string>& Operands,
                        vector<string>& OperandTypes)
 {
-  if (Ins == "'") Tdstate[7] -= Tl;
+  if (Ins == "'")
+    Tdstate[7] -= Tl;
   vector<float> textspace = matmul(Tmstate, gs.back());
   textspace = matmul(Tdstate, textspace);
   float txtspcinit = textspace[6];
@@ -236,25 +234,33 @@ void GraphicsState::TJ(string Ins, vector<string>& Operands,
       raw = HexstringToRawChar(Operands[z]);
     if (OperandTypes[z] == "string")
       raw = StringToRawChar(Operands[z]);
-    vector<pair<Unicode, int>>&& kvs = wfont.mapRawChar(raw);
-    for (auto& j : kvs)
-    {
-      float stw;
-      statehx.emplace_back(textspace);
-      if (j.first == 0x0020 || j.first == 0x00A0)
-        stw = j.second + (Tc + Tw) * 1000;
-      else stw = j.second + Tc * 1000;
-      PRstate += stw;
-      PRscaled = PRstate * scale / 1000;
-      textspace[6] = PRscaled + txtspcinit;
-      widths.emplace_back(scale * stw/1000 * Th/100);
-      stringres.emplace_back(j.first);
-      fontsize.emplace_back(scale);
-      fontname.emplace_back(wfont.FontName);
-    }
+    processRawChar(raw, scale, textspace, txtspcinit);
   }
 }
 
+/*---------------------------------------------------------------------------*/
+
+void GraphicsState::processRawChar(vector<RawChar>& raw, float& scale,
+                                   vector<float>& textspace, float& txtspcinit)
+{
+  vector<pair<Unicode, int>>&& kvs = wfont.mapRawChar(raw);
+  for (auto& j : kvs)
+  {
+    float stw;
+    statehx.emplace_back(textspace);
+    if (j.first == 0x0020 || j.first == 0x00A0)
+      stw = j.second + (Tc + Tw) * 1000;
+    else stw = j.second + Tc * 1000;
+    PRstate += stw;
+    textspace[6] =  PRstate * scale / 1000 + txtspcinit;
+    widths.emplace_back(scale * stw/1000 * Th/100);
+    stringres.emplace_back(j.first);
+    fontsize.emplace_back(scale);
+    fontname.emplace_back(wfont.FontName);
+  }
+}
+
+/*---------------------------------------------------------------------------*/
 
 void GraphicsState::parser(vector<vector<string>>& tokens, string inloop)
 {
@@ -311,9 +317,7 @@ void GraphicsState::MakeGS()
     leftmatch.push_back(-1);
   }
   rightmatch = leftmatch;
-  //clump();
   for (size_t i = 0; i < wsize; i++)
-  {
     if (leftmatch[i] == -1 && stringres[i] != 0x0020)
     {
       text.emplace_back(stringres[i]);
@@ -324,8 +328,6 @@ void GraphicsState::MakeGS()
       size.emplace_back(fontsize[i]);
       width.emplace_back(R[i] - xvals[i]);
     }
-  }
 }
 
 /*---------------------------------------------------------------------------*/
-

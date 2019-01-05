@@ -40,6 +40,7 @@
 #include "crypto.h"
 #include "streams.h"
 
+//---------------------------------------------------------------------------//
 
 Rcpp::DataFrame getglyphmap(const std::string& s, int pagenum)
 {
@@ -65,6 +66,8 @@ Rcpp::DataFrame getglyphmap(const std::string& s, int pagenum)
                           Rcpp::Named("Width") = width);
 }
 
+//---------------------------------------------------------------------------//
+
 std::string testencoding(std::string s)
 {
   if(s.length() == 0) return s;
@@ -73,7 +76,6 @@ std::string testencoding(std::string s)
   std::cout << "Character code " << a << " translates to uint " << b;
   return s;
 }
-
 
 //---------------------------------------------------------------------------//
 

@@ -25,7 +25,6 @@
 //                                                                           //
 //---------------------------------------------------------------------------//
 
-
 #ifndef PDFR_H
 #define PDFR_H
 
@@ -71,9 +70,7 @@ std::vector<Mt> getKeys(std::map<Mt, T> Map)
   std::vector<Mt> keyvec;
   keyvec.reserve(Map.size());
   for(typename std::map<Mt, T>::iterator i = Map.begin(); i != Map.end(); i++)
-  {
     keyvec.push_back(i->first);
-  }
   return keyvec;
 }
 
@@ -127,7 +124,6 @@ std::vector<uint8_t> rc4(std::vector<uint8_t> msg, std::vector<uint8_t> key);
 //' @export
 // [[Rcpp::export]]
 std::vector<uint8_t> md5(std::vector<uint8_t> input);
-
 
 // [[Rcpp::export(.get_xref)]]
 Rcpp::DataFrame get_xref(const std::string& filename);
