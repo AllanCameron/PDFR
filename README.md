@@ -5,7 +5,8 @@
 This package was created with the aim of aiding data scientists who
 use R and who need the ability to extract data from files in pdf format. To
 install in its current format, type 
-```
+```R
+library(devtools)
 devtools::install_github("AllanCameron/PDFR") 
 ``` 
 in the R console.
@@ -49,9 +50,11 @@ the format is so difficult to convert into machine-readable data is explained by
 the fact that humans use the structure of the page layout to provide the 
 semantic context to the data. When the structure is lost (as it often is with
 copy and pasting from PDF), it becomes very difficult for a human reader to 
-interpret. 
+interpret. The computer does not know how to interpret the characters' 
+positions, so it cannot classify the characters by semantics as a human reader
+(usually) can.
 
-The idea behind PDFR is to try to extract raw text, but to also use the 
+The idea behind PDFR is to try to extract raw text then use the 
 positioning and formatting data from the extracted text to reconstruct some of 
 the semantic content that would otherwise be lost. For example, identifying and 
 grouping letters into words, words into paragraphs or into tables. 
@@ -68,7 +71,7 @@ such as [xpdf](https://www.xpdfreader.com/) or
 the specific goal of making text extraction easier for R users. Most of the
 design is new, an attempt to implement the text extraction elements 
 of the pdf standard [ISO 32000](https://www.iso.org/standard/51502.html), though 
-I also learned a lot from excellent existing open-source libraries such as
+it borrows liberally from existing open-source libraries such as Poppler and
 [pdfjs](https://mozilla.github.io/pdf.js/). 
 
 The only external C++ library used is 
@@ -82,4 +85,17 @@ for development.
 Clearly, the package would not exist without the excellent 
 [Rcpp](http://www.rcpp.org/) package. Much of the pdf parsing would take too 
 long to do in R, but having the facility to write C++ extensions makes pdf 
-parsing feasible, and even pretty quick in some cases. 
+parsing feasible, and even pretty quick in some cases.
+
+## Use
+
+The main function used to extract all data from a pdf page to an R data frame
+is `pdfpage`. This accepts either the path to a pdf or a raw data vector
+representing a pdf. For example, if you wanted all text from page 3 in a pdf
+located at `C:/Documents/mypdf.pdf` you would type
+
+```R
+pdfpage("C:/Documents/mypdf.pdf", 3)
+```
+
+into the R console.
