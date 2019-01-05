@@ -58,6 +58,10 @@ testencoding <- function(s) {
     .Call('_PDFR_testencoding', PACKAGE = 'PDFR', s)
 }
 
+getglyphmap <- function(s, pagenum) {
+    .Call('_PDFR_getglyphmap', PACKAGE = 'PDFR', s, pagenum)
+}
+
 carveout <- function(subject, pre, post) {
     .Call('_PDFR_carveout', PACKAGE = 'PDFR', subject, pre, post)
 }

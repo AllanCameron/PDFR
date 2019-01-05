@@ -40,7 +40,7 @@ struct font
   string BaseEncoding;
   GlyphMap glyphmap;
   string BaseFont;
-  bool hasUnicodeMap, hasMappings;
+  bool hasUnicodeMap, hasMappings, widthFromCharCodes;
   map<RawChar, int> Width;
   map<RawChar, Unicode> EncodingMap;
   void mapUnicode(dictionary&, document&);

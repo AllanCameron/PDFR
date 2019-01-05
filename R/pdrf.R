@@ -154,17 +154,17 @@ get_object <- function(pdf, number){
 #'
 #' @examples pdfplot(testfiles$leeds, 1)
 pdfplot <- function(pdf, page = 1, textsize = 1)
-  {
+{
   pdfpage(pdf, page) -> x;
-    x$Elements -> y;
-    ggplot2::ggplot(data = y,
-           ggplot2::aes(x = y$left, y = y$bottom, size = I(textsize*170*y$size/(x$Box[4] - x$Box[2]))),
-           lims = x$Box ) -> G;
+  x$Elements -> y;
+  ggplot2::ggplot(data = y, ggplot2::aes(x = y$left, y = y$bottom,
+                  size = I(textsize*170 * y$size / (x$Box[4] - x$Box[2]))),
+                  lims = x$Box ) -> G;
     G + ggplot2::geom_rect(ggplot2::aes(xmin = x$Box[1], ymin = x$Box[2],
                       xmax = x$Box[3], ymax = x$Box[4]),
                   fill = "white", colour="black", size=0.2
-      ) + ggplot2::geom_text(ggplot2::aes(label = y$text), hjust = 0, vjust = 0,
-      ) + ggplot2::coord_equal(
-      ) + ggplot2::scale_size_identity();
-  }
+    ) + ggplot2::geom_text(ggplot2::aes(label = y$text), hjust = 0, vjust = 0
+    ) + ggplot2::coord_equal(
+    ) + ggplot2::scale_size_identity();
+}
 

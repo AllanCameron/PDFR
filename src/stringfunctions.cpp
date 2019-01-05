@@ -231,7 +231,7 @@ vector<string> splitfours(string s)
   if(s.empty())
     return res;
   while(s.size() % 4 != 0)
-    s += '0';
+    s = '0' + s;
   for(unsigned i = 0; i < s.length()/4; i++)
     res.emplace_back(s.substr(i * 4, 4));
   return res;

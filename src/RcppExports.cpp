@@ -131,6 +131,18 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// getglyphmap
+Rcpp::DataFrame getglyphmap(const std::string& s, int pagenum);
+RcppExport SEXP _PDFR_getglyphmap(SEXP sSEXP, SEXP pagenumSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const std::string& >::type s(sSEXP);
+    Rcpp::traits::input_parameter< int >::type pagenum(pagenumSEXP);
+    rcpp_result_gen = Rcpp::wrap(getglyphmap(s, pagenum));
+    return rcpp_result_gen;
+END_RCPP
+}
 // carveout
 std::string carveout(const std::string& subject, const std::string& pre, const std::string& post);
 RcppExport SEXP _PDFR_carveout(SEXP subjectSEXP, SEXP preSEXP, SEXP postSEXP) {
@@ -157,6 +169,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_PDFR_pdfpage", (DL_FUNC) &_PDFR_pdfpage, 2},
     {"_PDFR_pdfpageraw", (DL_FUNC) &_PDFR_pdfpageraw, 2},
     {"_PDFR_testencoding", (DL_FUNC) &_PDFR_testencoding, 1},
+    {"_PDFR_getglyphmap", (DL_FUNC) &_PDFR_getglyphmap, 2},
     {"_PDFR_carveout", (DL_FUNC) &_PDFR_carveout, 3},
     {NULL, NULL, 0}
 };

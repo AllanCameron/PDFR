@@ -42,6 +42,30 @@
 #include "streams.h"
 
 
+Rcpp::DataFrame getglyphmap(const std::string& s, int pagenum)
+{
+  document d = document(s);
+  page p = d.getPage(pagenum);
+  std::vector<std::string> FontName;
+  std::vector<uint16_t> codepoint, unicode, width;
+  for(auto i : p.fontnames)
+  {
+    font& f = p.fontmap[i];
+    auto a = getKeys(f.glyphmap);
+    for(auto b : a)
+    {
+      FontName.push_back(i);
+      codepoint.push_back(b);
+      unicode.push_back(f.glyphmap[b].first);
+      width.push_back(f.glyphmap[b].second);
+    }
+  }
+  return Rcpp::DataFrame::create(Rcpp::Named("Font") = FontName,
+                          Rcpp::Named("Codepoint") = codepoint,
+                          Rcpp::Named("Unicode") = unicode,
+                          Rcpp::Named("Width") = width);
+}
+
 std::string testencoding(std::string s)
 {
   if(s.length() == 0) return s;

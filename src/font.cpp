@@ -42,7 +42,7 @@ using namespace std;
 /*---------------------------------------------------------------------------*/
 
 font::font(document& d, dictionary Fontref, const string& fontid) :
-FontID(fontid)
+FontID(fontid), widthFromCharCodes(false)
 {
   dictionary fontref = Fontref;
   FontRef = "In file";
@@ -152,68 +152,51 @@ vector<pair<Unicode, int>> font::mapRawChar(vector<RawChar> raw)
 
 void font::getWidthTable(dictionary& dict, document& d)
 {
-  vector<int> chararray;
   vector<float> widtharray;
-  RawChar firstchar;
-  string widthstrings, fcstrings;
+  RawChar firstchar = 0x0000;
   string numstring = "\\[(\\[|]| |\\.|\\d+)+";
   if (dict.has("/Widths"))
   {
-    widthstrings = dict.get("/Widths");
-    fcstrings = dict.get("/FirstChar");
+    if(dict.hasInts("/FirstChar"))
+      firstchar = dict.getInts("/FirstChar")[0];
     if (dict.hasRefs("/Widths"))
     {
-      vector<int> os = dict.getRefs("/Widths");
-      object_class o = d.getobject(os[0]);
+      object_class o = d.getobject(dict.getRefs("/Widths").at(0));
       string ostring = o.getStream();
       vector<string> arrstrings = Rex(ostring, numstring).get();
-      if (!arrstrings.empty()) widtharray = getnums(arrstrings[0]);
+      if (!arrstrings.empty())
+        widtharray = getnums(arrstrings[0]);
     }
     else widtharray = dict.getNums("/Widths");
-    if (!widtharray.empty() && !fcstrings.empty())
+    if (!widtharray.empty())
     {
-      vector<int> fcnums = getints(fcstrings);
-      if (!fcnums.empty())
-      {
-        firstchar = (RawChar) fcnums[0];
-        size_t warrsize = widtharray.size();
-        for (unsigned i = 0; i < warrsize; i++)
-          Width[firstchar + i] = (int) widtharray[i];
-      }
+      widthFromCharCodes = true;
+      for (size_t i = 0; i < widtharray.size(); i++)
+        Width[firstchar + i] = (int) widtharray[i];
     }
   }
-  else
+  else if(dict.hasRefs("/DescendantFonts"))
   {
-    widthstrings = dict.get("/DescendantFonts");
-    if(dict.has("/DescendantFonts"))
-      if (dict.hasRefs("/DescendantFonts"))
+    vector<int> os = dict.getRefs("/DescendantFonts");
+    object_class desc = d.getobject(os[0]);
+    dictionary descdict = desc.getDict();
+    string descstream = desc.getStream();
+    if(!getObjRefs(descstream).empty())
+      descdict = d.getobject(getObjRefs(descstream)[0]).getDict();
+    if (descdict.has("/W"))
+    {
+      string widthstring;
+      if (descdict.hasRefs("/W"))
+        widthstring = d.getobject(descdict.getRefs("/W").at(0)).getStream();
+      else
+        widthstring = descdict.get("/W");
+      vector<string> tmp = Rex(widthstring, numstring).get();
+      if(!tmp.empty())
       {
-        vector<int> os = dict.getRefs("/DescendantFonts");
-        object_class desc = d.getobject(os[0]);
-        dictionary descdict = desc.getDict();
-        string descstream = desc.getStream();
-        if(!getObjRefs(descstream).empty())
-          descdict = d.getobject(getObjRefs(descstream)[0]).getDict();
-        if (descdict.has("/W"))
-        {
-          if (descdict.hasRefs("/W"))
-          {
-            vector<int> osss = descdict.getRefs("/W");
-            if (!osss.empty())
-              widthstrings = d.getobject(osss[0]).getStream();
-          }
-          else widthstrings = descdict.get("/W");
-          vector<string> tmp = Rex(widthstrings, numstring).get();
-          if(!tmp.empty())
-            parsewidtharray(tmp[0]);
-        }
+        parsewidtharray(tmp[0]);
+        widthFromCharCodes = true;
       }
-  }
-  if(Width.empty())
-  {
-    map<RawChar, Unicode> storeEnc = EncodingMap;
-    getCoreFont("/Helvetica");
-    EncodingMap = storeEnc;
+    }
   }
 }
 
@@ -294,7 +277,7 @@ void font::getEncoding(dictionary& fontref, document& d)
     EncodingMap = macRomanEncodingToUnicode;
   else if(encname == "/PDFDocEncoding")
     EncodingMap = pdfDocEncodingToUnicode;
-  else if(encname == "/StandardEncoding")
+  else
     EncodingMap = standardEncodingToUnicode;
   if(encref.has("/Differences"))
   {
@@ -309,19 +292,20 @@ void font::getCoreFont(string s)
 {
   font resfont;
   if(s == "/Courier") this->Width = courierwidths;
-  if(s == "/Courier-Bold") this->Width = courierboldwidths;
-  if(s == "/Courier-BoldOblique")this->Width = courierboldobliquewidths;
-  if(s == "/Courier-Oblique") this->Width = courierobliquewidths;
-  if(s == "/Helvetica") this->Width = helveticawidths;
-  if(s == "/Helvetica-Bold") this->Width = helveticaboldwidths;
-  if(s == "/Helvetica-Boldoblique") this->Width = helveticaboldobliquewidths;
-  if(s == "/Helvetica-Oblique") this->Width = helveticaobliquewidths;
-  if(s == "/Symbol") this->Width = symbolwidths;
-  if(s == "/Times-Bold") this->Width = timesboldwidths;
-  if(s == "/Times-BoldItalic") this->Width = timesbolditalicwidths;
-  if(s == "/Times-Italic") this->Width =timesitalicwidths;
-  if(s == "/Times-Roman") this->Width = timesromanwidths;
-  if(s == "/ZapfDingbats") this->Width = dingbatswidths;
+  else if(s == "/Courier-Bold") this->Width = courierboldwidths;
+  else if(s == "/Courier-BoldOblique")this->Width = courierboldobliquewidths;
+  else if(s == "/Courier-Oblique") this->Width = courierobliquewidths;
+  else if(s == "/Helvetica") this->Width = helveticawidths;
+  else if(s == "/Helvetica-Bold") this->Width = helveticaboldwidths;
+  else if(s == "/Helvetica-Boldoblique") this->Width = helveticaboldobliquewidths;
+  else if(s == "/Helvetica-Oblique") this->Width = helveticaobliquewidths;
+  else if(s == "/Symbol") this->Width = symbolwidths;
+  else if(s == "/Times-Bold") this->Width = timesboldwidths;
+  else if(s == "/Times-BoldItalic") this->Width = timesbolditalicwidths;
+  else if(s == "/Times-Italic") this->Width =timesitalicwidths;
+  else if(s == "/Times-Roman") this->Width = timesromanwidths;
+  else if(s == "/ZapfDingbats") this->Width = dingbatswidths;
+  else widthFromCharCodes = true;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -329,13 +313,23 @@ void font::getCoreFont(string s)
 void font::makeGlyphTable()
 {
   vector<RawChar> inkeys = getKeys(EncodingMap);
-  for(auto i : inkeys)
-  {
-    int thiswidth = DEFAULT_WIDTH;
-    if(Width.find(i) != Width.end())
-      thiswidth = Width[i];
-    glyphmap[i] = make_pair(EncodingMap[i], thiswidth);
-  }
+  if(widthFromCharCodes)
+    for(auto i : inkeys)
+    {
+      int thiswidth = DEFAULT_WIDTH;
+      if(Width.find(i) != Width.end())
+        thiswidth = Width[i];
+      glyphmap[i] = make_pair(EncodingMap[i], thiswidth);
+    }
+  else
+    for(auto i : inkeys)
+    {
+      int thiswidth = DEFAULT_WIDTH;
+      if(Width.find(EncodingMap[i]) != Width.end())
+        thiswidth = Width[EncodingMap[i]];
+      glyphmap[i] = make_pair(EncodingMap[i], thiswidth);
+    }
+
 }
 
 /*---------------------------------------------------------------------------*/
