@@ -34,7 +34,6 @@
 #include "pdfr.h"
 #include "debugtools.h"
 #include "chartounicode.h"
-#include "unicodetochar.h"
 #include "dictionary.h"
 #include "stringfunctions.h"
 #include "document.h"
@@ -72,12 +71,6 @@ std::string testencoding(std::string s)
   uint8_t a = s.at(0);
   Unicode b = winAnsiEncodingToUnicode[a];
   std::cout << "Character code " << a << " translates to uint " << b;
-  char c = UnicodeToWinAnsiEncoding[b];
-  std::cout << " which translates back to " << (uint8_t) c << std::endl;
-  s[0] = c;
-  s.resize(1);
-  std::cout << "Now returning char version of character code " << (uint8_t) c
-            << std::endl;
   return s;
 }
 

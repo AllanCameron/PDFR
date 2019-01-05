@@ -30,11 +30,9 @@
 #include "stringfunctions.h"
 #include "debugtools.h"
 #include "document.h"
-#include "encodings.h"
 #include "corefonts.h"
 #include "font.h"
 #include "adobetounicode.h"
-#include "unicodetochar.h"
 #include "chartounicode.h"
 #define DEFAULT_WIDTH 500
 using namespace std;

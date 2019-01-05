@@ -29,11 +29,9 @@
 #include "stringfunctions.h"
 #include "document.h"
 #include "GraphicsState.h"
-#include "encodings.h"
 #include "debugtools.h"
 #include "tokenizer.h"
 #include "debugtools.h"
-#include "chartounicode.h"
 
 using namespace std;
 
@@ -247,15 +245,10 @@ void GraphicsState::TJ(string Ins, vector<string>& Operands,
         stw = j.second + (Tc + Tw) * 1000;
       else stw = j.second + Tc * 1000;
       PRstate += stw;
-      string tmpchar;
-      if(ligatures.find(j.first) != ligatures.end())
-        tmpchar = ligatures[j.first];
-      else
-        tmpchar = UnicodeToChar(j.first, WINANSI);
-      float PRscaled = PRstate * scale / 1000;
+      PRscaled = PRstate * scale / 1000;
       textspace[6] = PRscaled + txtspcinit;
       widths.emplace_back(scale * stw/1000 * Th/100);
-      stringres.emplace_back(tmpchar);
+      stringres.emplace_back(j.first);
       fontsize.emplace_back(scale);
       fontname.emplace_back(wfont.FontName);
     }
@@ -321,9 +314,8 @@ void GraphicsState::MakeGS()
   //clump();
   for (size_t i = 0; i < wsize; i++)
   {
-    if (leftmatch[i] == -1 && stringres[i] != " " && stringres[i] != "  ")
+    if (leftmatch[i] == -1 && stringres[i] != 0x0020)
     {
-      trimRight(stringres[i]);
       text.emplace_back(stringres[i]);
       left.emplace_back(xvals[i]);
       bottom.emplace_back(yvals[i]);
@@ -337,42 +329,3 @@ void GraphicsState::MakeGS()
 
 /*---------------------------------------------------------------------------*/
 
-void GraphicsState::clump()
-{
-  map<size_t, size_t> Rjoins;
-  size_t s = widths.size();
-  if (s == 0) return;
-  for (size_t i = 0; i < s; i++)
-    for (size_t j = 0; j < s; j++)
-    {
-      bool isNear = fabs(R[i] - xvals[j]) < (fontsize[i]);
-      bool isLeftOf = xvals[i] < xvals[j];
-      bool areDifferent = (i != j);
-      bool nothingCloser = true;
-      bool sameY = fabs(yvals[i] - yvals[j]) < 3;
-      if(Rjoins.find(i) != Rjoins.end())
-        nothingCloser = (xvals[Rjoins[i]] > xvals[j]);
-      if(areDifferent && isLeftOf && isNear && nothingCloser && sameY)
-      {
-        Rjoins[i] = j;
-        leftmatch[j] = (int) i;
-      }
-    }
-  for (size_t i = 0; i < s; i++)
-    if(leftmatch[i] == -1)
-      while(true)
-      {
-        if(Rjoins.find(i) != Rjoins.end())
-        {
-          if((xvals[Rjoins[i]] - R[i]) > (0.19 * fontsize[i]))
-            stringres[i] += " ";
-          stringres[i] += stringres[Rjoins[i]];
-          R[i] = R[Rjoins[i]];
-          widths[i] = R[i] - xvals[i];
-          if(Rjoins.find(Rjoins[i]) != Rjoins.end())
-            Rjoins[i] = Rjoins[Rjoins[i]];
-          else break;
-        }
-        else break;
-      }
-}

@@ -44,7 +44,8 @@ private:
   vector<vector<float>> gs, statehx;
   vector<float> xvals, yvals, fontsize, widths, Tmstate, Tdstate, R,
   left, right, bottom, size, width, fontsizestack, initstate;
-  vector<string> fontname, stringres, text, fonts, fontstack;
+  vector<string> fontname, fonts, fontstack;
+  vector<Unicode> stringres, text;
   vector<int> leftmatch, rightmatch;
   int PRstate;
   float Tl, Tw, Th, Tc, currfontsize;

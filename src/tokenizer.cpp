@@ -30,7 +30,6 @@
 #include "stringfunctions.h"
 #include "tokenizer.h"
 #include "chartounicode.h"
-#include "unicodetochar.h"
 
 using namespace std;
 

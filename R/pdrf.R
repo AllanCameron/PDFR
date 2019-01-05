@@ -97,10 +97,12 @@ else cat("file saved to ", path.expand("~/"), filename, "\n", collapse = "")
 #' @examples pdfpage(testfiles$leeds, 1)
 pdfpage <- function(pdf, page){
   if(class(pdf) == "raw") {
-    return(.pdfpageraw(pdf, page));
+    a <- .pdfpageraw(pdf, page);
     } else {
-    return(.pdfpage(pdf, page));
+    a <- .pdfpage(pdf, page);
     }
+  intToUtf8(a$Elements$text, multiple = TRUE) -> a$Elements$text
+  return(a)
 }
 
 
