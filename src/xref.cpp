@@ -323,9 +323,6 @@ void xref::buildXRtable()
 
 /*---------------------------------------------------------------------------*/
 
-
-/*---------------------------------------------------------------------------*/
-
 xref::xref(document& d) : d(&d)
 {
   locateXrefs();
@@ -357,60 +354,13 @@ size_t xref::getEnd(int objnum)
 {
   if(!objectExists(objnum))
     throw std::runtime_error("Object does not exist");
-  size_t i = xreftab[objenum[objnum]].startbyte;
+  size_t i = xreftab[objnum].startbyte;
   if((i > 0))
-    {
-      size_t filesize = d->filesize;
-      std::string state = "reading";
-      size_t j = i;
-      while(j < filesize)
-      {
-        if(state == "reading")
-        {
-          if(d->filestring[j] == 'e')
-            state = "e";
-        }
-        else if(state == "e")
-        {
-          if(d->filestring[j] == 'n')
-            state = "en";
-          else
-            state = "reading";
-        }
-        else if(state == "en")
-        {
-          if(d->filestring[j] == 'd')
-            state = "end";
-          else
-            state = "reading";
-        }
-        else if(state == "end")
-        {
-          if(d->filestring[j] == 'o')
-            state = "endo";
-          else
-            state = "reading";
-        }
-        else if(state == "endo")
-        {
-          if(d->filestring[j] == 'b')
-            state = "endob";
-          else
-            state = "reading";
-        }
-        else if(state == "endob")
-        {
-          if(d->filestring[j] == 'j')
-            break;
-          else
-            state = "reading";
-        }
-        j++;
-      }
-      return j + 1;
-    }
-    else
-      return 0;
+  {
+    return (int) firstmatch(d->filestring, "endobj", i);
+  }
+  else
+    return 0;
 }
 
 /*---------------------------------------------------------------------------*/

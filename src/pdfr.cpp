@@ -49,32 +49,17 @@ Rcpp::DataFrame getglyphmap(const std::string& s, int pagenum)
   std::vector<std::string> FontName;
   std::vector<uint16_t> codepoint, unicode, width;
   for(auto i : p.fontnames)
-  {
-    font& f = p.fontmap[i];
-    auto a = getKeys(f.glyphmap);
-    for(auto b : a)
+    for(auto b : getKeys(p.fontmap[i].glyphmap))
     {
       FontName.push_back(i);
       codepoint.push_back(b);
-      unicode.push_back(f.glyphmap[b].first);
-      width.push_back(f.glyphmap[b].second);
+      unicode.push_back(p.fontmap[i].glyphmap[b].first);
+      width.push_back(p.fontmap[i].glyphmap[b].second);
     }
-  }
   return Rcpp::DataFrame::create(Rcpp::Named("Font") = FontName,
                           Rcpp::Named("Codepoint") = codepoint,
                           Rcpp::Named("Unicode") = unicode,
                           Rcpp::Named("Width") = width);
-}
-
-//---------------------------------------------------------------------------//
-
-std::string testencoding(std::string s)
-{
-  if(s.length() == 0) return s;
-  uint8_t a = s.at(0);
-  Unicode b = winAnsiEncodingToUnicode[a];
-  std::cout << "Character code " << a << " translates to uint " << b;
-  return s;
 }
 
 //---------------------------------------------------------------------------//
@@ -115,16 +100,13 @@ Rcpp::DataFrame get_xrefraw(const std::vector<uint8_t>& rawfile)
 {
   document&& mydoc = document(rawfile);
   std::vector<int> ob, startb, inob;
-
   if(!mydoc.Xref.getObjects().empty())
-  {
     for(int j : mydoc.Xref.getObjects())
     {
       ob.push_back(j);
       startb.push_back(mydoc.Xref.getStart(j));
       inob.push_back(mydoc.Xref.inObject(j));
     }
-  }
   return Rcpp::DataFrame::create(Rcpp::Named("Object") = ob,
                                  Rcpp::Named("StartByte") = startb,
                                  Rcpp::Named("InObject") = inob);
@@ -132,22 +114,22 @@ Rcpp::DataFrame get_xrefraw(const std::vector<uint8_t>& rawfile)
 
 //---------------------------------------------------------------------------//
 
-Rcpp::List get_object(const std::string& filename, int o)
+Rcpp::List get_object(const std::string& filename, int object)
 {
-  document&& mydoc = document(filename);
+  document&& doc = document(filename);
   return Rcpp::List::create(
-    Rcpp::Named("header") = mydoc.getobject(o).getDict().R_out(),
-    Rcpp::Named("stream") = mydoc.getobject(o).getStream());
+    Rcpp::Named("header") = doc.getobject(object).getDict().R_out(),
+    Rcpp::Named("stream") = doc.getobject(object).getStream());
 }
 
 //---------------------------------------------------------------------------//
 
-Rcpp::List get_objectraw(const std::vector<uint8_t>& rawfile, int o)
+Rcpp::List get_objectraw(const std::vector<uint8_t>& rawfile, int object)
 {
   document&& mydoc = document(rawfile);
   return Rcpp::List::create(
-    Rcpp::Named("header") = mydoc.getobject(o).getDict().R_out(),
-    Rcpp::Named("stream") = mydoc.getobject(o).getStream());
+    Rcpp::Named("header") = mydoc.getobject(object).getDict().R_out(),
+    Rcpp::Named("stream") = mydoc.getobject(object).getStream());
 }
 
 //---------------------------------------------------------------------------//
@@ -180,6 +162,6 @@ Rcpp::List pdfpage(const std::string& filename, int pagenum)
 
 Rcpp::List pdfpageraw(const std::vector<uint8_t>& rawfile, int pagenum)
 {
-  document myfile = document(rawfile);
-  return PDFpage(myfile, myfile.getPage(pagenum - 1));
+  document&& doc = document(rawfile);
+  return PDFpage(doc, doc.getPage(pagenum - 1));
 }

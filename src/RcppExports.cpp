@@ -120,17 +120,6 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// testencoding
-std::string testencoding(std::string s);
-RcppExport SEXP _PDFR_testencoding(SEXP sSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< std::string >::type s(sSEXP);
-    rcpp_result_gen = Rcpp::wrap(testencoding(s));
-    return rcpp_result_gen;
-END_RCPP
-}
 // getglyphmap
 Rcpp::DataFrame getglyphmap(const std::string& s, int pagenum);
 RcppExport SEXP _PDFR_getglyphmap(SEXP sSEXP, SEXP pagenumSEXP) {
@@ -168,7 +157,6 @@ static const R_CallMethodDef CallEntries[] = {
     {"_PDFR_pdfdocraw", (DL_FUNC) &_PDFR_pdfdocraw, 1},
     {"_PDFR_pdfpage", (DL_FUNC) &_PDFR_pdfpage, 2},
     {"_PDFR_pdfpageraw", (DL_FUNC) &_PDFR_pdfpageraw, 2},
-    {"_PDFR_testencoding", (DL_FUNC) &_PDFR_testencoding, 1},
     {"_PDFR_getglyphmap", (DL_FUNC) &_PDFR_getglyphmap, 2},
     {"_PDFR_carveout", (DL_FUNC) &_PDFR_carveout, 3},
     {NULL, NULL, 0}

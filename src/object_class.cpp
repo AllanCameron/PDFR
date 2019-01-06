@@ -50,7 +50,8 @@ has_stream(false)
       {
         header = dictionary("<<>>");
         streampos[0] = firstmatch(fs, " obj", startbyte) + 4;
-        streampos[1] = stopbyte - 7;
+        streampos[1] = stopbyte - 1;
+        has_stream = streampos[1] > streampos[0];
       }
       else
       {
