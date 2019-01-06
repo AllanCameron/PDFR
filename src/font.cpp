@@ -37,6 +37,14 @@
 #define DEFAULT_WIDTH 500
 using namespace std;
 
+enum DiffState
+{
+  NEWSYMBOL = 0,
+  NUMBER,
+  NAME,
+  STOP
+};
+
 /*---------------------------------------------------------------------------*/
 
 font::font(document& d, dictionary Fontref, const string& fontid) :
@@ -69,70 +77,55 @@ void font::getFontName()
 
 void parseDifferences(const string& enc, map<RawChar, Unicode>& symbmap)
 {
-  string state = "newsymbol";
-  string buf = "";
-  string minibuf = "";
-  vector<string> typestring;
-  vector<string> symbstring;
+  DiffState state = NEWSYMBOL;
+  string buffer = "";
+  vector<pair<DiffState, string>> entries;
 
   for(auto i : enc)
   {
-    if(state == "stop") break;
-    if(state == "newsymbol")
+    char n = symbol_type(i);
+    switch(state)
     {
-      char n = symbol_type(i);
-      switch(n)
-      {
-        case 'D': buf = i ; state = "number"; break;
-        case '/': buf = "/"; state = "name"; break;
-        case ']': state = "stop"; break;
-        default : buf = ""; break;
-      }
-      i++; continue;
+      case NEWSYMBOL: switch(n)
+                      {
+                        case 'D': buffer = i ; state = NUMBER; break;
+                        case '/': buffer = i; state = NAME; break;
+                        case ']': state = STOP; break;
+                        default : buffer = ""; break;
+                      };
+                      break;
+      case NUMBER:    switch(n)
+                      {
+                        case 'D': buffer += i ; break;
+                        case '/': entries.push_back(make_pair(state, buffer));
+                                  buffer = i; state = NAME; break;
+                        default:  entries.push_back(make_pair(state, buffer));
+                                  buffer = ""; state = NEWSYMBOL; break;
+                      }
+                      break;
+      case NAME:      switch(n)
+                      {
+                        case 'L': buffer += i;  break;
+                        case '.': buffer += i;  break;
+                        case 'D': buffer += i;  break;
+                        case '/': entries.push_back(make_pair(state, buffer));;
+                                  buffer = i ; break;
+                        case ' ': entries.push_back(make_pair(state, buffer));
+                                  buffer = "" ; state = NEWSYMBOL; break;
+                        default:  entries.push_back(make_pair(state, buffer));
+                                  state = STOP; break;
+                      }
+                      break;
+      default:        break;
     }
-    if(state == "number")
-    {
-      char n = symbol_type(i);
-      switch(n)
-      {
-        case 'D': buf += i ; break;
-        case '/': typestring.push_back(state);
-                  symbstring.push_back(buf);
-                  buf = "/"; state = "name"; break;
-        default:  typestring.push_back(state);
-                  symbstring.push_back(buf);
-                  buf = ""; state = "newsymbol"; break;
-      }
-      i++; continue;
-    }
-    if(state == "name")
-    {
-      char n = symbol_type(i);
-      switch(n)
-      {
-        case 'L': buf += i;  break;
-        case '.': buf += i;  break;
-        case 'D': buf += i;  break;
-        case '/': typestring.push_back(state);
-                  symbstring.push_back(buf);
-                  buf = i ; break;
-        case ' ': typestring.push_back(state);
-                  symbstring.push_back(buf);
-                  buf = "" ; state = "newsymbol"; break;
-        default:  typestring.push_back(state);
-                  symbstring.push_back(buf);
-                  state = "stop"; break;
-      }
-      i++; continue;
-    }
+    if(state == STOP) break;
   }
-
   RawChar k = 0;
-  for(size_t i = 0; i < symbstring.size(); i++)
-    if(typestring[i] == "number")
-      k = (RawChar) stoi(symbstring[i]);
+  for(size_t i = 0; i < entries.size(); i++)
+    if(entries[i].first == NUMBER)
+      k = (RawChar) stoi(entries[i].second);
     else
-      symbmap[k++] = AdobeToUnicode[symbstring[i]];
+      symbmap[k++] = AdobeToUnicode[entries[i].second];
 }
 
 /*---------------------------------------------------------------------------*/
