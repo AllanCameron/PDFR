@@ -43,7 +43,6 @@ public:
   std::vector<float> bleedbox, cropbox, mediabox, trimbox, artbox, minbox;
   double rotate;
   std::vector<std::string> fontnames;
-  std::vector<bool> hasUnicodeMap;
   std::vector<dictionary> UnicodeMaps, fontrefs;
   std::map<std::string, font> fontmap;
 

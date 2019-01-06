@@ -45,7 +45,7 @@ public:
   dictionary(const std::string& s, const int& i);
   dictionary(std::map<std::string, std::string> d) : DictionaryMap(d) {};
   dictionary();
-
+  void printdict();
   std::string get(const std::string& Key);
   bool has(const std::string& Key);
   bool hasRefs(const std::string& Key);

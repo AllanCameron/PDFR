@@ -150,50 +150,59 @@ vector<pair<Unicode, int>> font::mapRawChar(vector<RawChar> raw)
 
 void font::getWidthTable(dictionary& dict, document& d)
 {
+  if (dict.has("/Widths")) parseWidths(dict, d);
+  else if(dict.hasRefs("/DescendantFonts")) parseDescendants(dict, d);
+}
+
+/*---------------------------------------------------------------------------*/
+
+void font::parseWidths(dictionary& dict, document& d)
+{
   vector<float> widtharray;
   RawChar firstchar = 0x0000;
   string numstring = "\\[(\\[|]| |\\.|\\d+)+";
-  if (dict.has("/Widths"))
+  if(dict.hasInts("/FirstChar"))
+    firstchar = dict.getInts("/FirstChar")[0];
+  if (dict.hasRefs("/Widths"))
   {
-    if(dict.hasInts("/FirstChar"))
-      firstchar = dict.getInts("/FirstChar")[0];
-    if (dict.hasRefs("/Widths"))
-    {
-      object_class o = d.getobject(dict.getRefs("/Widths").at(0));
-      string ostring = o.getStream();
-      vector<string> arrstrings = Rex(ostring, numstring).get();
-      if (!arrstrings.empty())
-        widtharray = getnums(arrstrings[0]);
-    }
-    else widtharray = dict.getNums("/Widths");
-    if (!widtharray.empty())
-    {
-      widthFromCharCodes = true;
-      for (size_t i = 0; i < widtharray.size(); i++)
-        Width[firstchar + i] = (int) widtharray[i];
-    }
+    object_class o = d.getobject(dict.getRefs("/Widths").at(0));
+    string ostring = o.getStream();
+    vector<string> arrstrings = Rex(ostring, numstring).get();
+    if (!arrstrings.empty())
+      widtharray = getnums(arrstrings[0]);
   }
-  else if(dict.hasRefs("/DescendantFonts"))
+  else widtharray = dict.getNums("/Widths");
+  if (!widtharray.empty())
   {
-    vector<int> os = dict.getRefs("/DescendantFonts");
-    object_class desc = d.getobject(os[0]);
-    dictionary descdict = desc.getDict();
-    string descstream = desc.getStream();
-    if(!getObjRefs(descstream).empty())
-      descdict = d.getobject(getObjRefs(descstream)[0]).getDict();
-    if (descdict.has("/W"))
+    this->widthFromCharCodes = true;
+    for (size_t i = 0; i < widtharray.size(); i++)
+      Width[firstchar + i] = (int) widtharray[i];
+  }
+}
+
+/*---------------------------------------------------------------------------*/
+
+void font::parseDescendants(dictionary& dict, document& d)
+{
+  string numstring = "\\[(\\[|]| |\\.|\\d+)+";
+  vector<int> os = dict.getRefs("/DescendantFonts");
+  object_class desc = d.getobject(os[0]);
+  dictionary descdict = desc.getDict();
+  string descstream = desc.getStream();
+  if(!getObjRefs(descstream).empty())
+    descdict = d.getobject(getObjRefs(descstream)[0]).getDict();
+  if (descdict.has("/W"))
+  {
+    string widthstring;
+    if (descdict.hasRefs("/W"))
+      widthstring = d.getobject(descdict.getRefs("/W").at(0)).getStream();
+    else
+      widthstring = descdict.get("/W");
+    vector<string> tmp = Rex(widthstring, numstring).get();
+    if(!tmp.empty())
     {
-      string widthstring;
-      if (descdict.hasRefs("/W"))
-        widthstring = d.getobject(descdict.getRefs("/W").at(0)).getStream();
-      else
-        widthstring = descdict.get("/W");
-      vector<string> tmp = Rex(widthstring, numstring).get();
-      if(!tmp.empty())
-      {
-        parsewidtharray(tmp[0]);
-        widthFromCharCodes = true;
-      }
+      parsewidtharray(tmp[0]);
+      this->widthFromCharCodes = true;
     }
   }
 }
@@ -257,9 +266,9 @@ void font::processUnicodeRange(Rex& Range)
 
 /*---------------------------------------------------------------------------*/
 
-void font::getEncoding(dictionary& fontref, document& d)
+void font::getEncoding(dictionary fontref, document& d)
 {
-  dictionary &encref = fontref;
+  dictionary encref = fontref;
   string encname = encref.get("/Encoding");
   if(fontref.hasRefs("/Encoding"))
   {

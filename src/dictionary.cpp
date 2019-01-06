@@ -34,6 +34,15 @@ using namespace std;
 
 /*---------------------------------------------------------------------------*/
 
+void dictionary::printdict()
+{
+  vector<string> dickeys = this->getDictKeys();
+  for(auto i : dickeys)
+    cout << i << ": " << DictionaryMap[i] << std::endl;
+}
+
+/*---------------------------------------------------------------------------*/
+
 void dictionary::tokenize_dict(const string& s, unsigned pos)
 {
   if(s.length() > 0)

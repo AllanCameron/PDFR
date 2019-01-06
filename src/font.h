@@ -33,18 +33,11 @@
 
 using namespace std;
 
-struct font
+class font
 {
-  string FontRef, FontName, FontID;
-  vector<int> FontBBox;
-  string BaseEncoding;
-  GlyphMap glyphmap;
-  string BaseFont;
-  bool hasUnicodeMap, hasMappings, widthFromCharCodes;
-  map<RawChar, int> Width;
-  map<RawChar, Unicode> EncodingMap;
+private:
   void mapUnicode(dictionary&, document&);
-  void getEncoding(dictionary&, document&);
+  void getEncoding(dictionary, document&);
   void getWidthTable(dictionary&, document&);
   void getCoreFont(string);
   void makeGlyphTable();
@@ -52,6 +45,18 @@ struct font
   void parsewidtharray(string);
   void processUnicodeChars(Rex&);
   void processUnicodeRange(Rex&);
+  void parseWidths(dictionary&, document&);
+  void parseDescendants(dictionary&, document&);
+
+public:
+  string FontRef, FontName, FontID;
+  vector<int> FontBBox;
+  string BaseEncoding;
+  GlyphMap glyphmap;
+  string BaseFont;
+  bool widthFromCharCodes;
+  map<RawChar, int> Width;
+  map<RawChar, Unicode> EncodingMap;
   vector<pair<Unicode, int>> mapRawChar(vector<RawChar>);
   font(document&, dictionary, const string&);
   font(){};
