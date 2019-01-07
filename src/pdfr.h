@@ -51,6 +51,7 @@ class object_class;
 class page;
 class xref;
 class document;
+class Encoding;
 
 #include "stringfunctions.h"
 #include "streams.h"
@@ -65,7 +66,7 @@ class document;
 //---------------------------------------------------------------------------//
 
 template< typename Mt, typename T >
-std::vector<Mt> getKeys(std::map<Mt, T> Map)
+std::vector<Mt> getKeys(std::map<Mt, T>& Map)
 {
   std::vector<Mt> keyvec;
   keyvec.reserve(Map.size());

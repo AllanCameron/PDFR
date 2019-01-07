@@ -31,34 +31,25 @@
 #include "debugtools.h"
 #include "document.h"
 #include "corefonts.h"
+#include "encoding.h"
 #include "font.h"
-#include "adobetounicode.h"
-#include "chartounicode.h"
+
 #define DEFAULT_WIDTH 500
 using namespace std;
 
-enum DiffState
-{
-  NEWSYMBOL = 0,
-  NUMBER,
-  NAME,
-  STOP
-};
-
 /*---------------------------------------------------------------------------*/
 
-font::font(document& d, dictionary Fontref, const string& fontid) :
-FontID(fontid), widthFromCharCodes(false)
+font::font(document* doc, dictionary Fontref, const string& fontid) :
+d(doc), fontref(Fontref), FontID(fontid), widthFromCharCodes(false)
 {
-  dictionary fontref = Fontref;
   FontRef = "In file";
   BaseFont = fontref.get("/BaseFont");
   getCoreFont(BaseFont);
   getFontName();
-  getEncoding(fontref, d);
-  mapUnicode(fontref, d);
   if(Width.empty())
     getWidthTable(fontref, d);
+  Encoding Encode = Encoding(this);
+  EncodingMap = &Encode;
   makeGlyphTable();
 }
 
@@ -75,61 +66,6 @@ void font::getFontName()
 
 /*---------------------------------------------------------------------------*/
 
-void parseDifferences(const string& enc, map<RawChar, Unicode>& symbmap)
-{
-  DiffState state = NEWSYMBOL;
-  string buffer = "";
-  vector<pair<DiffState, string>> entries;
-
-  for(auto i : enc)
-  {
-    char n = symbol_type(i);
-    switch(state)
-    {
-      case NEWSYMBOL: switch(n)
-                      {
-                        case 'D': buffer = i ; state = NUMBER; break;
-                        case '/': buffer = i; state = NAME; break;
-                        case ']': state = STOP; break;
-                        default : buffer = ""; break;
-                      };
-                      break;
-      case NUMBER:    switch(n)
-                      {
-                        case 'D': buffer += i ; break;
-                        case '/': entries.push_back(make_pair(state, buffer));
-                                  buffer = i; state = NAME; break;
-                        default:  entries.push_back(make_pair(state, buffer));
-                                  buffer = ""; state = NEWSYMBOL; break;
-                      }
-                      break;
-      case NAME:      switch(n)
-                      {
-                        case 'L': buffer += i;  break;
-                        case '.': buffer += i;  break;
-                        case 'D': buffer += i;  break;
-                        case '/': entries.push_back(make_pair(state, buffer));;
-                                  buffer = i ; break;
-                        case ' ': entries.push_back(make_pair(state, buffer));
-                                  buffer = "" ; state = NEWSYMBOL; break;
-                        default:  entries.push_back(make_pair(state, buffer));
-                                  state = STOP; break;
-                      }
-                      break;
-      default:        break;
-    }
-    if(state == STOP) break;
-  }
-  RawChar k = 0;
-  for(size_t i = 0; i < entries.size(); i++)
-    if(entries[i].first == NUMBER)
-      k = (RawChar) stoi(entries[i].second);
-    else
-      symbmap[k++] = AdobeToUnicode[entries[i].second];
-}
-
-/*---------------------------------------------------------------------------*/
-
 vector<pair<Unicode, int>> font::mapRawChar(vector<RawChar> raw)
 {
   vector<pair<Unicode, int>> res;
@@ -141,7 +77,7 @@ vector<pair<Unicode, int>> font::mapRawChar(vector<RawChar> raw)
 
 /*---------------------------------------------------------------------------*/
 
-void font::getWidthTable(dictionary& dict, document& d)
+void font::getWidthTable(dictionary& dict, document* d)
 {
   if (dict.has("/Widths")) parseWidths(dict, d);
   else if(dict.hasRefs("/DescendantFonts")) parseDescendants(dict, d);
@@ -149,7 +85,7 @@ void font::getWidthTable(dictionary& dict, document& d)
 
 /*---------------------------------------------------------------------------*/
 
-void font::parseWidths(dictionary& dict, document& d)
+void font::parseWidths(dictionary& dict, document* d)
 {
   vector<float> widtharray;
   RawChar firstchar = 0x0000;
@@ -158,7 +94,7 @@ void font::parseWidths(dictionary& dict, document& d)
     firstchar = dict.getInts("/FirstChar")[0];
   if (dict.hasRefs("/Widths"))
   {
-    object_class o = d.getobject(dict.getRefs("/Widths").at(0));
+    object_class o = d->getobject(dict.getRefs("/Widths").at(0));
     string ostring = o.getStream();
     vector<string> arrstrings = Rex(ostring, numstring).get();
     if (!arrstrings.empty())
@@ -175,20 +111,20 @@ void font::parseWidths(dictionary& dict, document& d)
 
 /*---------------------------------------------------------------------------*/
 
-void font::parseDescendants(dictionary& dict, document& d)
+void font::parseDescendants(dictionary& dict, document* d)
 {
   string numstring = "\\[(\\[|]| |\\.|\\d+)+";
   vector<int> os = dict.getRefs("/DescendantFonts");
-  object_class desc = d.getobject(os[0]);
+  object_class desc = d->getobject(os[0]);
   dictionary descdict = desc.getDict();
   string descstream = desc.getStream();
   if(!getObjRefs(descstream).empty())
-    descdict = d.getobject(getObjRefs(descstream)[0]).getDict();
+    descdict = d->getobject(getObjRefs(descstream)[0]).getDict();
   if (descdict.has("/W"))
   {
     string widthstring;
     if (descdict.hasRefs("/W"))
-      widthstring = d.getobject(descdict.getRefs("/W").at(0)).getStream();
+      widthstring = d->getobject(descdict.getRefs("/W").at(0)).getStream();
     else
       widthstring = descdict.get("/W");
     vector<string> tmp = Rex(widthstring, numstring).get();
@@ -197,92 +133,6 @@ void font::parseDescendants(dictionary& dict, document& d)
       parsewidtharray(tmp[0]);
       this->widthFromCharCodes = true;
     }
-  }
-}
-
-/*---------------------------------------------------------------------------*/
-
-void font::mapUnicode(dictionary& fontref, document& d)
-{
-  if (!fontref.hasRefs("/ToUnicode")) return;
-  int unirefint = fontref.getRefs("/ToUnicode")[0];
-  string x = d.getobject(unirefint).getStream();
-  Rex Char =  Rex(x, "beginbfchar(.|\\s)*?endbfchar");
-  Rex Range = Rex(x, "beginbfrange(.|\\s)*?endbfrange");
-  if (Char.has())  processUnicodeChars(Char);
-  if (Range.has()) processUnicodeRange(Range);
-}
-
-/*---------------------------------------------------------------------------*/
-
-void font::processUnicodeChars(Rex& Char)
-{
-  for(auto j : Char.get())
-  {
-    j = carveout(j, "beginbfchar", "endbfchar");
-    vector<string> charentries = splitter(j, "(\n|\r){1,2}");
-    for (auto i : charentries)
-    {
-      vector<string> entries = Rex(i, "(\\d|a|b|c|d|e|f|A|B|C|D|E|F)+").get();
-      if (entries.size() == 2)
-      {
-        Unicode hex = HexstringToRawChar(entries[1]).at(0);
-        RawChar key = HexstringToRawChar(entries[0]).at(0);
-        EncodingMap[key] = hex;
-      }
-    }
-  }
-}
-
-/*---------------------------------------------------------------------------*/
-
-void font::processUnicodeRange(Rex& Range)
-{
-  for(auto j : Range.get())
-  {
-    string bfrange = carveout(j, "beginbfrange", "endbfrange");
-    for (auto i :  splitter(bfrange, "(\n|\r){1,2}"))
-    {
-      vector<string> entries = Rex(i, "(\\d|a|b|c|d|e|f|A|B|C|D|E|F)+").get();
-      if (entries.size() == 3)
-      {
-        vector<RawChar> myui;
-        for(auto k : entries)
-          myui.emplace_back(HexstringToRawChar(k).at(0));
-        myui.emplace_back((myui[1] - myui[0]) + 1);
-        for (size_t j = 0; j < myui[3]; j++)
-          EncodingMap[(RawChar) (myui[0] + j)] = (Unicode) (myui[2] + j);
-      }
-    }
-  }
-}
-
-/*---------------------------------------------------------------------------*/
-
-void font::getEncoding(dictionary fontref, document& d)
-{
-  dictionary encref = fontref;
-  string encname = encref.get("/Encoding");
-  if(fontref.hasRefs("/Encoding"))
-  {
-    int a = fontref.getRefs("/Encoding").at(0);
-    object_class myobj = d.getobject(a);
-    encref = myobj.getDict();
-    if(encref.has("/BaseEncoding"))
-      encname = encref.get("/BaseEncoding");
-  }
-  if( encname == "/WinAnsiEncoding")
-    EncodingMap = winAnsiEncodingToUnicode;
-  else if(encname == "/MacRomanEncoding")
-    EncodingMap = macRomanEncodingToUnicode;
-  else if(encname == "/PDFDocEncoding")
-    EncodingMap = pdfDocEncodingToUnicode;
-  else
-    EncodingMap = standardEncodingToUnicode;
-  if(encref.has("/Differences"))
-  {
-    BaseEncoding = encref.get("/Differences");
-    parseDifferences(BaseEncoding, EncodingMap);
   }
 }
 
@@ -312,24 +162,23 @@ void font::getCoreFont(string s)
 
 void font::makeGlyphTable()
 {
-  vector<RawChar> inkeys = getKeys(EncodingMap);
+  vector<RawChar> inkeys = EncodingMap->encKeys();
   if(widthFromCharCodes)
     for(auto i : inkeys)
     {
       int thiswidth = DEFAULT_WIDTH;
       if(Width.find(i) != Width.end())
         thiswidth = Width[i];
-      glyphmap[i] = make_pair(EncodingMap[i], thiswidth);
+      glyphmap[i] = make_pair(EncodingMap->Interpret(i), thiswidth);
     }
   else
     for(auto i : inkeys)
     {
       int thiswidth = DEFAULT_WIDTH;
-      if(Width.find(EncodingMap[i]) != Width.end())
-        thiswidth = Width[EncodingMap[i]];
-      glyphmap[i] = make_pair(EncodingMap[i], thiswidth);
+      if(Width.find(EncodingMap->Interpret(i)) != Width.end())
+        thiswidth = Width[EncodingMap->Interpret(i)];
+      glyphmap[i] = make_pair(EncodingMap->Interpret(i), thiswidth);
     }
-
 }
 
 /*---------------------------------------------------------------------------*/

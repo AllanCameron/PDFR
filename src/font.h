@@ -36,29 +36,26 @@ using namespace std;
 class font
 {
 private:
-  void mapUnicode(dictionary&, document&);
-  void getEncoding(dictionary, document&);
-  void getWidthTable(dictionary&, document&);
+  void getWidthTable(dictionary&, document*);
   void getCoreFont(string);
   void makeGlyphTable();
   void getFontName();
   void parsewidtharray(string);
-  void processUnicodeChars(Rex&);
-  void processUnicodeRange(Rex&);
-  void parseWidths(dictionary&, document&);
-  void parseDescendants(dictionary&, document&);
+  void parseWidths(dictionary&, document*);
+  void parseDescendants(dictionary&, document*);
 
 public:
+  document* d;
+  dictionary fontref;
+  Encoding* EncodingMap;
   string FontRef, FontName, FontID;
   vector<int> FontBBox;
-  string BaseEncoding;
   GlyphMap glyphmap;
   string BaseFont;
   bool widthFromCharCodes;
   map<RawChar, int> Width;
-  map<RawChar, Unicode> EncodingMap;
   vector<pair<Unicode, int>> mapRawChar(vector<RawChar>);
-  font(document&, dictionary, const string&);
+  font(document*, dictionary, const string&);
   font(){};
 };
 

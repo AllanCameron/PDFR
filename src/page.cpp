@@ -96,7 +96,7 @@ void page::getFonts(document& d)
   fontnames = fonts.getDictKeys();
   for(auto h : fontnames)
     for(auto hh : fonts.getRefs(h))
-      fontmap[h] = font(d, d.getobject(hh).getDict(), h);
+      fontmap[h] = font(&d, d.getobject(hh).getDict(), h);
 }
 
 /*--------------------------------------------------------------------------*/
