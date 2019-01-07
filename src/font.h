@@ -37,23 +37,16 @@ class font
 {
 private:
   void getWidthTable(dictionary&, document*);
-  void getCoreFont(string);
-  void makeGlyphTable();
+  void makeGlyphTable(Encoding, glyphwidths);
   void getFontName();
-  void parsewidtharray(string);
-  void parseWidths(dictionary&, document*);
-  void parseDescendants(dictionary&, document*);
 
 public:
   document* d;
   dictionary fontref;
-  Encoding* EncodingMap;
   string FontRef, FontName, FontID;
   vector<int> FontBBox;
   GlyphMap glyphmap;
   string BaseFont;
-  bool widthFromCharCodes;
-  map<RawChar, int> Width;
   vector<pair<Unicode, int>> mapRawChar(vector<RawChar>);
   font(document*, dictionary, const string&);
   font(){};

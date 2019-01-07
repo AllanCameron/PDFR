@@ -51,11 +51,16 @@ class object_class;
 class page;
 class xref;
 class document;
+class font;
 class Encoding;
+class glyphwidths;
 
+#include "Rex.h"
 #include "stringfunctions.h"
 #include "streams.h"
 #include "dictionary.h"
+#include "encoding.h"
+#include "glyphwidths.h"
 #include "font.h"
 #include "object_class.h"
 #include "xref.h"
