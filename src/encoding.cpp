@@ -38,8 +38,8 @@
 
 enum DiffState
 {
-  NEWSYMBOL = 0,
-  NUMBER,
+  NEWSYMB = 0,
+  NUM,
   NAME,
   STOP
 };
@@ -48,7 +48,7 @@ enum DiffState
 
 void parseDifferences(const string& enc, map<RawChar, Unicode>& symbmap)
 {
-  DiffState state = NEWSYMBOL;
+  DiffState state = NEWSYMB;
   string buffer = "";
   vector<pair<DiffState, string>> entries;
 
@@ -57,21 +57,21 @@ void parseDifferences(const string& enc, map<RawChar, Unicode>& symbmap)
     char n = symbol_type(i);
     switch(state)
     {
-      case NEWSYMBOL: switch(n)
+      case NEWSYMB:   switch(n)
                       {
-                        case 'D': buffer = i ; state = NUMBER; break;
+                        case 'D': buffer = i ; state = NUM; break;
                         case '/': buffer = i; state = NAME; break;
                         case ']': state = STOP; break;
                         default : buffer = ""; break;
                       };
                       break;
-      case NUMBER:    switch(n)
+      case NUM:       switch(n)
                       {
                         case 'D': buffer += i ; break;
                         case '/': entries.push_back(make_pair(state, buffer));
                                   buffer = i; state = NAME; break;
                         default:  entries.push_back(make_pair(state, buffer));
-                                  buffer = ""; state = NEWSYMBOL; break;
+                                  buffer = ""; state = NEWSYMB; break;
                       }
                       break;
       case NAME:      switch(n)
@@ -82,7 +82,7 @@ void parseDifferences(const string& enc, map<RawChar, Unicode>& symbmap)
                         case '/': entries.push_back(make_pair(state, buffer));;
                                   buffer = i ; break;
                         case ' ': entries.push_back(make_pair(state, buffer));
-                                  buffer = "" ; state = NEWSYMBOL; break;
+                                  buffer = "" ; state = NEWSYMB; break;
                         default:  entries.push_back(make_pair(state, buffer));
                                   state = STOP; break;
                       }
@@ -93,7 +93,7 @@ void parseDifferences(const string& enc, map<RawChar, Unicode>& symbmap)
   }
   RawChar k = 0;
   for(size_t i = 0; i < entries.size(); i++)
-    if(entries[i].first == NUMBER)
+    if(entries[i].first == NUM)
       k = (RawChar) stoi(entries[i].second);
     else
       symbmap[k++] = AdobeToUnicode[entries[i].second];

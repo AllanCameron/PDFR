@@ -45,6 +45,7 @@ namespace Token
     ARRAY,
     DICT,
     WAIT,
+    OPERATOR
   };
 };
 
@@ -53,13 +54,12 @@ using namespace Token;
 class tokenizer
 {
   size_t i;
-  string s, buf, minibuf;
+  string s, buf;
   TState state;
-  vector<string> ttype, token;
-  vector<vector<string>> output;
+  vector<pair<string, TState>> output;
   void tokenize();
   void subtokenizer(string&);
-  void pushbuf(string, TState);
+  void pushbuf(TState, TState);
   void newsymbolState();
   void resourceState();
   void identifierState();
@@ -73,7 +73,7 @@ class tokenizer
 
 public:
   tokenizer(string& s);
-  vector<vector<string>> result();
+  vector<pair<string, TState>> result();
 };
 
 #endif

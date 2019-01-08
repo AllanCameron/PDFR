@@ -60,27 +60,25 @@ void tokenizer::tokenize()
       case HEXSTRING:   hexstringState();   break;
       case DICT:        dictState();        break;
       case WAIT:        waitState();        break;
+      case OPERATOR:                        break;
     }
     ++i;
   }
-  output.emplace_back(token);
-  output.emplace_back(ttype);
 }
 
 /*---------------------------------------------------------------------------*/
 
-vector<vector<string>> tokenizer::result()
+vector<pair<string, TState>> tokenizer::result()
 {
   return output;
 }
 
 /*---------------------------------------------------------------------------*/
 
-void tokenizer::pushbuf(string type, TState statename)
+void tokenizer::pushbuf(TState type, TState statename)
 {
   state = statename;
-  ttype.push_back(type);
-  token.push_back(buf);
+  output.push_back(make_pair(buf, type));
   buf.clear();
 }
 
@@ -98,11 +96,11 @@ void tokenizer::resourceState()
     case '+':   buf += '+'; break;
     case '_':   buf += '_'; break;
     case '*':   buf += '*'; break;
-    case '/':   pushbuf("resource", RESOURCE);  break;
-    case ' ':   pushbuf("resource", NEWSYMBOL); break;
-    case '[':   pushbuf("resource", ARRAY);     break;
-    case '(':   pushbuf("resource", STRING);    break;
-    case '<':   pushbuf("resource", HEXSTRING); break;
+    case '/':   pushbuf(RESOURCE, RESOURCE);  break;
+    case ' ':   pushbuf(RESOURCE, NEWSYMBOL); break;
+    case '[':   pushbuf(RESOURCE, ARRAY);     break;
+    case '(':   pushbuf(RESOURCE, STRING);    break;
+    case '<':   pushbuf(RESOURCE, HEXSTRING); break;
   }
 }
 
@@ -138,11 +136,11 @@ void tokenizer::identifierState()
   switch(n)
   {
     case ' ':   if (buf == "BI") state = WAIT; else
-                pushbuf("identifier", NEWSYMBOL);           break;
-    case '/':   pushbuf("identifier", RESOURCE); buf = "/"; break;
-    case '[':   pushbuf("identifier", ARRAY);               break;
-    case '(':   pushbuf("identifier", STRING);              break;
-    case '<':   pushbuf("identifier", HEXSTRING);           break;
+                pushbuf(IDENTIFIER, NEWSYMBOL);           break;
+    case '/':   pushbuf(IDENTIFIER, RESOURCE); buf = "/"; break;
+    case '[':   pushbuf(IDENTIFIER, ARRAY);               break;
+    case '(':   pushbuf(IDENTIFIER, STRING);              break;
+    case '<':   pushbuf(IDENTIFIER, HEXSTRING);           break;
     case 'L':   buf += m;   break;
     case 'D':   buf += m;   break;
     case '-':   buf += m;   break;
@@ -164,16 +162,16 @@ void tokenizer::numberState()
     case 'D':   buf += m; break;
     case '_':   buf += m; break;
     case '.':   buf += m; break;
-    case '-':   pushbuf("number",     NUMBER);    buf = "-";
-                pushbuf("operator",   NUMBER);    break;
-    case '*':   pushbuf("number",     NUMBER);    buf = "*";
-                pushbuf("operator",   NUMBER);    break;
-    case '/':   pushbuf("number",     NUMBER);    buf = "/";
-                pushbuf("operator",   NUMBER);    break;
-    case ' ':   pushbuf("number",     NEWSYMBOL); break;
-    case '[':   pushbuf("number",     ARRAY);     break;
-    case '(':   pushbuf("number",     STRING);    break;
-    case '<':   pushbuf("identifier", HEXSTRING); break;
+    case '-':   pushbuf(NUMBER,     NUMBER);    buf = "-";
+                pushbuf(OPERATOR,   NUMBER);    break;
+    case '*':   pushbuf(NUMBER,     NUMBER);    buf = "*";
+                pushbuf(OPERATOR,   NUMBER);    break;
+    case '/':   pushbuf(NUMBER,     NUMBER);    buf = "/";
+                pushbuf(OPERATOR,   NUMBER);    break;
+    case ' ':   pushbuf(NUMBER,     NEWSYMBOL); break;
+    case '[':   pushbuf(NUMBER,     ARRAY);     break;
+    case '(':   pushbuf(NUMBER,     STRING);    break;
+    case '<':   pushbuf(IDENTIFIER, HEXSTRING); break;
   }
 }
 
@@ -185,7 +183,7 @@ void tokenizer::stringState()
   char n = symbol_type(m);
   switch(n)
   {
-    case ')':   pushbuf("string", NEWSYMBOL); break;
+    case ')':   pushbuf(STRING, NEWSYMBOL); break;
     case '\\':  escapeState(); break;
     default:    buf += s[i];   break;
   }
@@ -199,7 +197,7 @@ void tokenizer::escapeState()
   if (n == 'D')
   {
     int octcount = 0;
-    pushbuf("string", STRING);
+    pushbuf(STRING, STRING);
     while(n == 'D' && octcount < 3)
     {
       buf += s[i++];
@@ -208,7 +206,7 @@ void tokenizer::escapeState()
     }
     int newint = oct2dec(stoi(buf));
     buf = intToHexstring(newint);
-    pushbuf("hexstring", STRING);
+    pushbuf(HEXSTRING, STRING);
     i--;
   }
   else
@@ -237,7 +235,7 @@ void tokenizer::hexstringState()
   char n = symbol_type(m);
   switch(n)
   {
-    case '>':   if (!buf.empty()) pushbuf("hexstring", NEWSYMBOL);
+    case '>':   if (!buf.empty()) pushbuf(HEXSTRING, NEWSYMBOL);
                 state = NEWSYMBOL;      break;
     case '<':   buf = ""; state = DICT; break;
     case '\\':  buf += m + s[++i];      break;
@@ -254,7 +252,7 @@ void tokenizer::dictState()
   switch(n)
   {
     case '\\':  buf += m + s[++i];          break;
-    case '>':   pushbuf("dict", HEXSTRING); break;
+    case '>':   pushbuf(DICT, HEXSTRING);   break;
     default:    buf += m;                   break;
   }
 }
@@ -276,7 +274,5 @@ void tokenizer::waitState()
 
 void tokenizer::subtokenizer(string &str)
 {
-  vector<vector<string>> subvec = tokenizer(str).result();
-  concat(token, subvec[0]);
-  concat(ttype, subvec[1]);
+  concat(output, tokenizer(str).result());
 }

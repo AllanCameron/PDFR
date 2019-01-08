@@ -30,7 +30,10 @@
 #define PDFR_GS
 
 #include "pdfr.h"
+#include "tokenizer.h"
+
 using namespace std;
+using namespace Token;
 
 class GraphicsState
 {
@@ -50,8 +53,8 @@ private:
   int PRstate;
   float Tl, Tw, Th, Tc, currfontsize;
   string currentfont;
-  vector<vector<string>> Instructions;
-  void parser(vector<vector<string>>&, string);
+  vector<pair<string, TState>> Instructions;
+  void parser(vector<pair<string, TState>>&, string);
   void Do(string&);
   void Q(vector<string>& );
   void q(vector<string>& );
@@ -67,7 +70,7 @@ private:
   void BT(vector<string>& );
   void ET(vector<string>& );
   void Tf(vector<string>& );
-  void TJ(string, vector<string>&, vector<string>&);
+  void TJ(string, vector<string>&, vector<TState>&);
   void processRawChar(vector<RawChar>&, float&, vector<float>&, float&);
   void MakeGS();
 };

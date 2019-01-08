@@ -34,6 +34,7 @@
 #include "GraphicsState.h"
 
 using namespace std;
+using namespace Token;
 
 GraphicsState::GraphicsState(page& pag) : p(pag),
   PRstate(0), Tl(1), Tw(0), Th(100), Tc(0), currfontsize(0), currentfont("")
@@ -207,7 +208,7 @@ void GraphicsState::cm(vector<string>& Operands)
 /*---------------------------------------------------------------------------*/
 
 void GraphicsState::TJ(string Ins, vector<string>& Operands,
-                       vector<string>& OperandTypes)
+                       vector<TState>& OperandTypes)
 {
   if (Ins == "'")
     Tdstate[7] -= Tl;
@@ -218,7 +219,7 @@ void GraphicsState::TJ(string Ins, vector<string>& Operands,
   size_t otsize = OperandTypes.size();
   for (size_t z = 0; z < otsize; z++)
   {
-    if (OperandTypes[z] == "number")
+    if (OperandTypes[z] == NUMBER)
     {
       PRstate -= stof(Operands[z]);
       float PRscaled = PRstate * scale / 1000;
@@ -230,9 +231,9 @@ void GraphicsState::TJ(string Ins, vector<string>& Operands,
     if (Operands[z] == "")
       continue;
     vector<RawChar> raw;
-    if (OperandTypes[z] == "hexstring")
+    if (OperandTypes[z] == HEXSTRING)
       raw = HexstringToRawChar(Operands[z]);
-    if (OperandTypes[z] == "string")
+    if (OperandTypes[z] == STRING)
       raw = StringToRawChar(Operands[z]);
     processRawChar(raw, scale, textspace, txtspcinit);
   }
@@ -262,41 +263,39 @@ void GraphicsState::processRawChar(vector<RawChar>& raw, float& scale,
 
 /*---------------------------------------------------------------------------*/
 
-void GraphicsState::parser(vector<vector<string>>& tokens, string inloop)
+void GraphicsState::parser(vector<pair<string, TState>>& tokens, string inloop)
 {
-  vector<string>& token = tokens[0];
-  vector<string>& ttype = tokens[1];
-  vector<string> typevec, Operands;
-  size_t tts = ttype.size();
-  for (size_t i = 0; i < tts; i++)
+  vector<string> Operands;
+  vector<TState> OperandTypes;
+  for (auto i : tokens)
   {
-    if (ttype[i] == "identifier")
+    if (i.second == IDENTIFIER)
     {
-      if (token[i] == "Q")  Q(Operands);
-      else if (token[i] == "q" ) q(Operands);
-      else if (token[i] == "Th") TH(Operands);
-      else if (token[i] == "Tw") TW(Operands);
-      else if (token[i] == "Tc") TC(Operands);
-      else if (token[i] == "TL") TL(Operands);
-      else if (token[i] == "T*") Tstar(Operands);
-      else if (token[i] == "Tm") Tm(Operands);
-      else if (token[i] == "cm") cm(Operands);
-      else if (token[i] == "Td") Td(Operands);
-      else if (token[i] == "TD") TD(Operands);
-      else if (token[i] == "BT") BT(Operands);
-      else if (token[i] == "ET") ET(Operands);
-      else if (token[i] == "Tf") Tf(Operands);
-      else if (token[i] == "Do" && inloop != Operands.at(0)) Do(Operands.at(0));
-      else if (token[i] == "Tj" || token[i] == "'" || token[i] == "TJ")
-        TJ(token[i], Operands, typevec);
-      typevec.clear();
+      if (i.first == "Q")  Q(Operands);
+      else if (i.first == "q" ) q(Operands);
+      else if (i.first == "BT") BT(Operands);
+      else if (i.first == "ET") ET(Operands);
+      else if (i.first == "cm") cm(Operands);
+      else if (i.first == "Tm") Tm(Operands);
+      else if (i.first == "Th") TH(Operands);
+      else if (i.first == "Tw") TW(Operands);
+      else if (i.first == "Tc") TC(Operands);
+      else if (i.first == "TL") TL(Operands);
+      else if (i.first == "T*") Tstar(Operands);
+      else if (i.first == "Td") Td(Operands);
+      else if (i.first == "TD") TD(Operands);
+      else if (i.first == "Tf") Tf(Operands);
+      else if (i.first == "Do" && inloop != Operands.at(0)) Do(Operands.at(0));
+      else if (i.first == "Tj" || i.first == "'" || i.first == "TJ")
+        TJ(i.first, Operands, OperandTypes);
+      OperandTypes.clear();
       Operands.clear();
     }
     else
     {
       // push operands and their types on stack, awaiting instruction
-      typevec.push_back(ttype[i]);
-      Operands.push_back(token[i]);
+      OperandTypes.push_back(i.second);
+      Operands.push_back(i.first);
     }
   }
 }

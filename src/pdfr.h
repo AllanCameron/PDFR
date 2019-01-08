@@ -54,6 +54,7 @@ class document;
 class font;
 class Encoding;
 class glyphwidths;
+class tokenizer;
 
 #include "Rex.h"
 #include "stringfunctions.h"
@@ -67,6 +68,7 @@ class glyphwidths;
 #include "document.h"
 #include "page.h"
 #include "GraphicsState.h"
+#include "tokenizer.h"
 
 //---------------------------------------------------------------------------//
 
