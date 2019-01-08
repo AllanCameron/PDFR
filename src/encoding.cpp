@@ -177,7 +177,8 @@ void Encoding::getEncoding(dictionary fontref, document* d)
   else if(encname == "/PDFDocEncoding")
     EncodingMap = pdfDocEncodingToUnicode;
   else
-    EncodingMap = standardEncodingToUnicode;
+    for(RawChar i = 0; i < 256; i++)
+      EncodingMap[i] = (Unicode) i;
   if(encref.has("/Differences"))
   {
     BaseEncoding = encref.get("/Differences");

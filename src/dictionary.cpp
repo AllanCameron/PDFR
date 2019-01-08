@@ -43,14 +43,24 @@ void dictionary::printdict()
 
 /*---------------------------------------------------------------------------*/
 
+void dictionary::sortkey(string b, string s)
+{
+  if(!keyPending)
+    pendingKey = buf;
+  else
+    DictionaryMap[pendingKey] = buf;
+  keyPending = !keyPending;
+  buf = b;
+  state = s;
+}
+
+/*---------------------------------------------------------------------------*/
+
 void dictionary::tokenize_dict(const string& s, unsigned pos)
 {
   if(s.length() > 0)
   {
     unsigned i = pos;
-    string state = "preentry";
-    string buf, pendingKey;
-    bool keyPending = false;
     int minibuf = 0;
     char n = symbol_type(s[i]);
     while(i < s.length() && i < (pos + 100000))
@@ -62,7 +72,8 @@ void dictionary::tokenize_dict(const string& s, unsigned pos)
         case '<': state = "maybe"; break;
         default: buf =""; break;
         }
-        i++; n = symbol_type(s[i]); continue;
+        if(++i == s.size()) break;
+        n = symbol_type(s[i]);
       }
 
       if (state == "maybe")
@@ -72,7 +83,8 @@ void dictionary::tokenize_dict(const string& s, unsigned pos)
         case '<': state = "start"; break;
         default: buf =""; state = "preentry"; break;
         }
-        i++; n = symbol_type(s[i]); continue;
+        if(++i == s.size()) break;
+        n = symbol_type(s[i]);
       }
 
       if (state == "start")
@@ -83,79 +95,28 @@ void dictionary::tokenize_dict(const string& s, unsigned pos)
         case '>': state = "queryclose"; break;
         default : break;
         }
-        i++; n = symbol_type(s[i]); continue;
+        if(++i == s.size()) break;
+        n = symbol_type(s[i]);
       }
 
       if (state == "key")
       {
         switch(n)
         {
-        case 'L': buf += s[i]; break;
-        case 'D': buf += s[i]; break;
-        case '+': buf += s[i]; break;
-        case '-': buf += s[i]; break;
-        case '_': buf += s[i]; break;
-        case '/': if(!keyPending)
-                  {
-                    pendingKey = buf;  keyPending = true;
-                  }
-                  else
-                  {
-                    DictionaryMap[pendingKey] = buf; keyPending = false;
-                  }
-                  buf = '/'; state = "key"; break;
-        case ' ': if(!keyPending)
-                  {
-                    pendingKey = buf;  keyPending = true;
-                  }
-                  else
-                  {
-                    DictionaryMap[pendingKey] = buf; keyPending = false;
-                  }
-                  state = "prevalue";
-                  buf = ""; break;
-        case '(': if(!keyPending)
-                  {
-                    pendingKey = buf;  keyPending = true;
-                  }
-                  else
-                  {
-                    DictionaryMap[pendingKey] = buf; keyPending = false;
-                  }
-                  state = "string";
-                  buf = "("; break;
-        case '[': if(!keyPending)
-                  {
-                    pendingKey = buf;  keyPending = true;
-                  }
-                  else
-                  {
-                    DictionaryMap[pendingKey] = buf; keyPending = false;
-                  }
-                  state = "arrayval";
-                  buf = "["; break;
-        case '<': if(!keyPending)
-                  {
-                    pendingKey = buf;  keyPending = true;
-                  }
-                  else
-                  {
-                    DictionaryMap[pendingKey] = buf; keyPending = false;
-                  }
-                  state = "querydict";
-                  buf = ""; break;
-        case '>': if(!keyPending)
-                  {
-                    pendingKey = buf;  keyPending = true;
-                  }
-                  else
-                  {
-                    DictionaryMap[pendingKey] = buf; keyPending = false;
-                  }
-                  state = "queryclose";
-                  buf = ""; break;
+        case 'L': buf += s[i];                break;
+        case 'D': buf += s[i];                break;
+        case '+': buf += s[i];                break;
+        case '-': buf += s[i];                break;
+        case '_': buf += s[i];                break;
+        case '/': sortkey("/", "key");        break;
+        case ' ': sortkey("", "prevalue");    break;
+        case '(': sortkey("(", "string");     break;
+        case '[': sortkey("[", "arrayval");   break;
+        case '<': sortkey("", "querydict");   break;
+        case '>': sortkey("", "queryclose");  break;
         }
-        i++; n = symbol_type(s[i]); continue;
+        if(++i == s.size()) break;
+        n = symbol_type(s[i]);
       }
 
       if (state == "prevalue")
@@ -169,25 +130,25 @@ void dictionary::tokenize_dict(const string& s, unsigned pos)
           case '[': buf = '['; state = "arrayval"; break;
           default : buf = s[i]; state = "value"; break;
         }
-        i++; n = symbol_type(s[i]); continue;
+        if(++i == s.size()) break;
+        n = symbol_type(s[i]);
       }
 
       if (state == "value")
       {
         switch(n)
         {
-          case '/': DictionaryMap[pendingKey] = buf; keyPending = false; buf = "/";
-                    state = "key"; break;
+          case '/': DictionaryMap[pendingKey] = buf; keyPending = false;
+                    buf = "/"; state = "key"; break;
           case ' ': buf += ' '; break;
           case '<': DictionaryMap[pendingKey] = buf; keyPending = false;
-                    state = "querydict";
-                    buf = ""; break;
+                    state = "querydict"; buf = ""; break;
           case '>': DictionaryMap[pendingKey] = buf; keyPending = false;
-                    state = "queryclose";
-                    buf = ""; break;
+                    state = "queryclose"; buf = ""; break;
           default : buf += s[i]; break;
         }
-        i++; n = symbol_type(s[i]); continue;
+        if(++i == s.size()) break;
+        n = symbol_type(s[i]);
       }
 
       if (state == "arrayval")
@@ -200,7 +161,8 @@ void dictionary::tokenize_dict(const string& s, unsigned pos)
                     state = "start"; break;
           default:  buf += s[i]; break;
         }
-        i++; n = symbol_type(s[i]); continue;
+        if(++i == s.size()) break;
+        n = symbol_type(s[i]);
       }
 
       if (state == "string")
@@ -213,7 +175,8 @@ void dictionary::tokenize_dict(const string& s, unsigned pos)
                     state = "start"; break;
           default:  buf += s[i]; break;
         }
-        i++; n = symbol_type(s[i]); continue;
+        if(++i == s.size()) break;
+        n = symbol_type(s[i]);
       }
 
       if (state == "querydict")
@@ -223,7 +186,8 @@ void dictionary::tokenize_dict(const string& s, unsigned pos)
           case '<': buf = "<<"; state = "subdict"; minibuf = 2; break;
           default: buf = ""; state = "start"; break;
         }
-        i++; n = symbol_type(s[i]); continue;
+        if(++i == s.size()) break;
+        n = symbol_type(s[i]);
       }
 
       if (state == "queryclose")
@@ -233,7 +197,8 @@ void dictionary::tokenize_dict(const string& s, unsigned pos)
           case '>': state = "close"; break;
           default: state = "start"; break;
         }
-        i++; n = symbol_type(s[i]); continue;
+        if(++i == s.size()) break;
+        n = symbol_type(s[i]);
       }
 
       if (state == "close")
@@ -255,7 +220,8 @@ void dictionary::tokenize_dict(const string& s, unsigned pos)
                   return;
         default: return;
         }
-        i++; n = symbol_type(s[i]); continue;
+        if(++i == s.size()) break;
+        n = symbol_type(s[i]);
       }
 
       if (state == "subdict")
@@ -271,7 +237,8 @@ void dictionary::tokenize_dict(const string& s, unsigned pos)
           DictionaryMap[pendingKey] = buf; keyPending = false; buf = "";
           state = "start";
         }
-        i++; n = symbol_type(s[i]); continue;
+        if(++i == s.size()) break;
+        n = symbol_type(s[i]);
       }
     }
   }
@@ -279,14 +246,15 @@ void dictionary::tokenize_dict(const string& s, unsigned pos)
 
 /*---------------------------------------------------------------------------*/
 
-dictionary::dictionary(const string& s)
+dictionary::dictionary(const string& s) : keyPending(false), state("preentry")
 {
   tokenize_dict(s, 0);
 }
 
 /*---------------------------------------------------------------------------*/
 
-dictionary::dictionary(const string& s, const int& i)
+dictionary::dictionary(const string& s, const int& i) : keyPending(false),
+                                                        state("preentry")
 {
   tokenize_dict(s, (unsigned) i);
 }
@@ -336,10 +304,8 @@ vector<int> dictionary::getRefs(const string& Key)
   {
     string keyval = this->get(Key);
     string refmatch = "(0|1|2|3|4|5|6|7|8|9)+ (0|1|2|3|4|5|6|7|8|9) R";
-    Rex refrex = Rex(keyval, refmatch);
-    vector<string> refs = refrex.get();
-    for (auto i : refs)
-      References.push_back(stoi(i));
+    vector<string> refs = Rex(keyval, refmatch).get();
+    for (auto i : refs) References.push_back(stoi(i));
   }
   return References;
 }

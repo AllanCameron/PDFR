@@ -37,8 +37,11 @@ enum Types {Boolean, Name, String, Number, Reference, Array, Dictionary};
 
 class dictionary
 {
+  bool keyPending;
+  string buf, pendingKey, state;
   std::map<std::string, std::string> DictionaryMap;
   void tokenize_dict(const string& s, unsigned pos);
+  void sortkey(string, string);
 
 public:
   dictionary(const std::string& s);
