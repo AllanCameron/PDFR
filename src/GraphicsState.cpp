@@ -38,7 +38,7 @@ using namespace std;
 GraphicsState::GraphicsState(page& pag) : p(pag),
   PRstate(0), Tl(1), Tw(0), Th(100), Tc(0), currfontsize(0), currentfont("")
 {
-  Instructions  = tokenize(p.contentstring);
+  Instructions  = tokenizer(p.contentstring).result();
   initstate = {1,0,0,0,1,0,0,0,1};
   fontstack.emplace_back(currentfont);
   Tmstate = Tdstate = initstate;
@@ -74,7 +74,7 @@ void GraphicsState::Do(string& a)
   if (p.XObjects.find(a) != p.XObjects.end())
     if(IsAscii(p.XObjects[a]))
     {
-      auto ins = tokenize(p.XObjects[a]);
+      auto ins = tokenizer(p.XObjects[a]).result();
       parser(ins, a);
     }
 }

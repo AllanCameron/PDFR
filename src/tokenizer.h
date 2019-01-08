@@ -32,24 +32,49 @@
 
 using namespace std;
 
-enum State
+namespace Token
 {
-  NEWSYMBOL = 0,
-  IDENTIFIER,
-  NUMBER,
-  RESOURCE,
-  STRING,
-  HEXSTRING,
-  ARRAY,
-  DICT,
-  WAIT,
-  WAITE,
-  WAITEI
+  enum TState
+  {
+    NEWSYMBOL,
+    IDENTIFIER,
+    NUMBER,
+    RESOURCE,
+    STRING,
+    HEXSTRING,
+    ARRAY,
+    DICT,
+    WAIT,
+  };
 };
 
-vector<vector<string>> tokenize(string& s);
-void tokenize_array(vector<string> &ttype, vector<string> &token, string &s);
+using namespace Token;
 
+class tokenizer
+{
+  size_t i;
+  string s, buf, minibuf;
+  TState state;
+  vector<string> ttype, token;
+  vector<vector<string>> output;
+  void tokenize();
+  void tokenize_array(string&);
+  void pushbuf(string, TState);
+  void newsymbolState();
+  void resourceState();
+  void identifierState();
+  void numberState();
+  void stringState();
+  void arrayState();
+  void escapeState();
+  void hexstringState();
+  void dictState();
+  void waitState();
+
+public:
+  tokenizer(string& s);
+  vector<vector<string>> result();
+};
 
 #endif
 
