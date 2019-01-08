@@ -58,7 +58,7 @@ class tokenizer
   vector<string> ttype, token;
   vector<vector<string>> output;
   void tokenize();
-  void tokenize_array(string&);
+  void subtokenizer(string&);
   void pushbuf(string, TState);
   void newsymbolState();
   void resourceState();

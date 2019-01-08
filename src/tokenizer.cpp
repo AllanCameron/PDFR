@@ -224,7 +224,7 @@ void tokenizer::arrayState()
   switch(n)
   {
     case '\\':  buf += s[i++]; buf += s[i];  break;
-    case ']':   tokenize_array(buf); state = NEWSYMBOL; buf = ""; break;
+    case ']':   subtokenizer(buf); state = NEWSYMBOL; buf = ""; break;
     default:    buf += m; break;
   }
 }
@@ -274,152 +274,9 @@ void tokenizer::waitState()
 
 /*---------------------------------------------------------------------------*/
 
-void tokenizer::tokenize_array(string &str)
+void tokenizer::subtokenizer(string &str)
 {
-  string buffer, minibuffer;
-  str.push_back(' ');
-  TState Arrstate = NEWSYMBOL;
-  size_t i = 0;
-
-  while(i < str.length())
-  {
-    char m = str[i];
-    char n = symbol_type(m);
-    switch(Arrstate)
-    {
-      case NEWSYMBOL:
-      {
-        switch(n)
-        {
-          case 'D': buffer += m;
-                    Arrstate = NUMBER;
-                    break;
-          case '.': buffer += '0';
-                    buffer += '.';
-                    Arrstate = NUMBER;
-                    break;
-          case '-': buffer += m;
-                    Arrstate = NUMBER;
-                    break;
-          case '(': Arrstate = STRING;
-                    break;
-          case '<': Arrstate = HEXSTRING;
-                    break;
-          default:  Arrstate = NEWSYMBOL;
-                    buffer ="";
-                    break;
-        }
-        break;
-      }
-
-      case NUMBER:
-      {
-        switch(n)
-        {
-          case 'L': buffer += m;
-                    break;
-          case 'D': buffer += m;
-                    break;
-          case '.': buffer += '.';
-                    break;
-          case '-': token.push_back(buffer);
-                    buffer = "";
-                    token.push_back("-");
-                    ttype.push_back("number");
-                    ttype.push_back("operator");
-                    break;
-          case '_': buffer += '_';
-                    break;
-          case '*': token.push_back(buffer);
-                    buffer = "";
-                    token.push_back("*");
-                    ttype.push_back("number");
-                    ttype.push_back("operator");
-                    break;
-          case '/': token.push_back(buffer);
-                    buffer = "";
-                    token.push_back("/");
-                    ttype.push_back("number");
-                    ttype.push_back("operator");
-                    break;
-          case ' ': Arrstate = NEWSYMBOL;
-                    token.push_back(buffer);
-                    buffer = "";
-                    ttype.push_back("number");
-                    break;
-          case '(': Arrstate = STRING;
-                    token.push_back(buffer);
-                    buffer = "";
-                    ttype.push_back("number");
-                    break;
-          case '<': Arrstate = HEXSTRING;
-                    token.push_back(buffer);
-                    buffer = "";
-                    ttype.push_back("number");
-                    break;
-        }
-        break;
-      }
-
-      case STRING:
-      {
-        switch(n)
-        {
-          case '\\':  i++;
-                      if (symbol_type(str[i]) == 'D')
-                      {
-                        token.push_back(buffer); buffer = "";
-                        ttype.push_back("string");
-                        int octcount = 0;
-                        while(symbol_type(str[i]) == 'D' && octcount < 3)
-                        {
-                          minibuffer += str[i]; i++; octcount++;
-                        }
-                        int newint = oct2dec(stoi(minibuffer));
-                        string tmpstr = intToHexstring(newint);
-                        token.push_back(tmpstr);
-                        ttype.push_back("hexstring");
-                        minibuffer = "";
-                        i--;
-                      }
-                      else
-                      {
-                        buffer += str[i];
-                      }
-                      break;
-          case ')':   token.push_back(buffer);
-                      buffer = "";
-                      ttype.push_back("string");
-                      Arrstate = NEWSYMBOL;
-                      break;
-          default :   buffer += m;
-                      break;
-        }
-        break;
-      }
-
-      case HEXSTRING:
-      {
-        switch(n)
-        {
-          case '\\':  buffer += m + str[i+1];
-                      i++;
-                      break;
-          case '>':   token.push_back(buffer);
-                      buffer = "";
-                      ttype.push_back("hexstring");
-                      Arrstate = NEWSYMBOL;
-                      break;
-          default:    buffer += m;
-                      break;
-        }
-        break;
-      }
-    default: break;
-    }
-  ++i;
-  }
-  str = "";
+  vector<vector<string>> subvec = tokenizer(str).result();
+  concat(token, subvec[0]);
+  concat(ttype, subvec[1]);
 }
-
-/*---------------------------------------------------------------------------*/
