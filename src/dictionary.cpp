@@ -98,17 +98,17 @@ void dictionary::handleKey(char n)
 {
   switch(n)
   {
-    case 'L': buf += (*s)[i];                 break;
-    case 'D': buf += (*s)[i];                 break;
-    case '+': buf += (*s)[i];                 break;
-    case '-': buf += (*s)[i];                 break;
-    case '_': buf += (*s)[i];                 break;
-    case '/': sortkey("/",       KEY);      break;
-    case ' ': sortkey("",   PREVALUE);      break;
-    case '(': sortkey("(",   DSTRING);      break;
-    case '[': sortkey("[",  ARRAYVAL);      break;
-    case '<': sortkey("",  QUERYDICT);      break;
-    case '>': sortkey("", QUERYCLOSE);      break;
+    case 'L': buf += (*s)[i];                   break;
+    case 'D': buf += (*s)[i];                   break;
+    case '+': buf += (*s)[i];                   break;
+    case '-': buf += (*s)[i];                   break;
+    case '_': buf += (*s)[i];                   break;
+    case '/': sortkey("/",       KEY);          break;
+    case ' ': sortkey("",   PREVALUE);          break;
+    case '(': sortkey("(",   DSTRING);          break;
+    case '[': sortkey("[",  ARRAYVAL);          break;
+    case '<': sortkey("",  QUERYDICT);          break;
+    case '>': sortkey("", QUERYCLOSE);          break;
   }
 }
 
@@ -118,8 +118,8 @@ void dictionary::handleMaybe(char n)
 {
   switch(n)
   {
-    case '<': state = START;                 break;
-    default:  buf =""; state = PREENTRY;     break;
+    case '<': state = START;                    break;
+    default:  buf =""; state = PREENTRY;        break;
   }
 }
 
@@ -129,9 +129,9 @@ void dictionary::handleStart(char n)
 {
   switch(n)
   {
-    case '/': buf += '/'; state = KEY;      break;
-    case '>': state = QUERYCLOSE;           break;
-    default :                               break;
+    case '/': buf += '/'; state = KEY;          break;
+    case '>': state = QUERYCLOSE;               break;
+    default :                                   break;
   }
 }
 
@@ -141,12 +141,12 @@ void dictionary::handlePrevalue(char n)
 {
   switch(n)
   {
-    case ' ': state = PREVALUE;             break;
-    case '<': state = QUERYDICT;            break;
-    case '>': state = QUERYCLOSE;           break;
-    case '/': state = KEY;      buf = '/';  break;
-    case '[': state = ARRAYVAL; buf = '[';  break;
-    default : state = VALUE;    buf = (*s)[i]; break;
+    case ' ': state = PREVALUE;                 break;
+    case '<': state = QUERYDICT;                break;
+    case '>': state = QUERYCLOSE;               break;
+    case '/': state = KEY;      buf = '/';      break;
+    case '[': state = ARRAYVAL; buf = '[';      break;
+    default : state = VALUE;    buf = (*s)[i];  break;
   }
 }
 
@@ -156,11 +156,11 @@ void dictionary::handleValue(char n)
 {
   switch(n)
   {
-    case '/': assignValue("/", KEY);        break;
-    case '<': assignValue("", QUERYDICT);   break;
-    case '>': assignValue("", QUERYCLOSE);  break;
-    case ' ': buf += ' ';                   break;
-    default : buf += (*s)[i];                  break;
+    case '/': assignValue("/", KEY);            break;
+    case '<': assignValue("", QUERYDICT);       break;
+    case '>': assignValue("", QUERYCLOSE);      break;
+    case ' ': buf += ' ';                       break;
+    default : buf += (*s)[i];                   break;
   }
 }
 
@@ -207,7 +207,7 @@ void dictionary::handleSubdict(char n)
   {
     case '<': buf += (*s)[i]; minibuf ++; break;
     case '>': buf += (*s)[i]; minibuf --; break;
-    default: buf += (*s)[i]; break;
+    default:  buf += (*s)[i];             break;
   }
   if (minibuf == 0)
     assignValue("", START);
