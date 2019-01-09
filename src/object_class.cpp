@@ -48,14 +48,14 @@ has_stream(false)
     {
       if(!Rex(fs.substr(startbyte, 20), "<<").has())
       {
-        header = dictionary("<<>>");
+        header = dictionary();
         streampos[0] = firstmatch(fs, " obj", startbyte) + 4;
         streampos[1] = stopbyte - 1;
         has_stream = streampos[1] > streampos[0];
       }
       else
       {
-        header = dictionary(fs, startbyte);
+        header = dictionary(&fs, startbyte);
         streampos = getStreamLoc(d, fs, startbyte);
         has_stream = streampos[1] > streampos[0];
       }
@@ -113,7 +113,7 @@ object_class::object_class(document* doc, std::string str, int objnum)
         std::string H = s.substr(bytenums[i], bytelen[i]);
         if(H[0] == '<')
         {
-          header = dictionary(H);
+          header = dictionary(&H);
           stream = "";
           has_stream = false;
         }

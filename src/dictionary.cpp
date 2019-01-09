@@ -43,7 +43,35 @@ void dictionary::printdict()
 
 /*---------------------------------------------------------------------------*/
 
-void dictionary::sortkey(string b, string s)
+void dictionary::tokenize_dict()
+{
+  size_t maxlen = i + 100000;
+  while(i < (*s).length() && i < maxlen)
+  {
+    char n = symbol_type((*s)[i]);
+    switch(state)
+    {
+      case PREENTRY:    if(n == '<')  state = MAYBE;                    break;
+      case MAYBE:       handleMaybe(n);                                 break;
+      case START:       handleStart(n);                                 break;
+      case KEY:         handleKey(n);                                   break;
+      case PREVALUE:    handlePrevalue(n);                              break;
+      case VALUE:       handleValue(n);                                 break;
+      case ARRAYVAL:    handleArrayval(n);                              break;
+      case DSTRING:     handleDstring(n);                               break;
+      case QUERYDICT:   handleQuerydict(n);                             break;
+      case SUBDICT:     handleSubdict(n);                               break;
+      case QUERYCLOSE:  if(n == '>') state = CLOSE; else state = START; break;
+      case CLOSE:       handleClose(n);                                 break;
+      case THE_END:     return;
+    }
+    ++i;
+  }
+}
+
+/*---------------------------------------------------------------------------*/
+
+void dictionary::sortkey(string b, DState st)
 {
   if(!keyPending)
     pendingKey = buf;
@@ -51,212 +79,179 @@ void dictionary::sortkey(string b, string s)
     DictionaryMap[pendingKey] = buf;
   keyPending = !keyPending;
   buf = b;
-  state = s;
+  state = st;
 }
 
 /*---------------------------------------------------------------------------*/
 
-void dictionary::tokenize_dict(const string& s, unsigned pos)
+void dictionary::assignValue(string b, DState st)
 {
-  if(s.length() > 0)
+  DictionaryMap[pendingKey] = buf;
+  keyPending = false;
+  buf = b;
+  state = st;
+}
+
+/*---------------------------------------------------------------------------*/
+
+void dictionary::handleKey(char n)
+{
+  switch(n)
   {
-    unsigned i = pos;
-    int minibuf = 0;
-    char n = symbol_type(s[i]);
-    while(i < s.length() && i < (pos + 100000))
-    {
-      if(state == "preentry")
-      {
-        switch(n)
-        {
-        case '<': state = "maybe"; break;
-        default: buf =""; break;
-        }
-        if(++i == s.size()) break;
-        n = symbol_type(s[i]);
-      }
-
-      if (state == "maybe")
-      {
-        switch(n)
-        {
-        case '<': state = "start"; break;
-        default: buf =""; state = "preentry"; break;
-        }
-        if(++i == s.size()) break;
-        n = symbol_type(s[i]);
-      }
-
-      if (state == "start")
-      {
-        switch(n)
-        {
-        case '/': buf += '/'; state = "key"; break;
-        case '>': state = "queryclose"; break;
-        default : break;
-        }
-        if(++i == s.size()) break;
-        n = symbol_type(s[i]);
-      }
-
-      if (state == "key")
-      {
-        switch(n)
-        {
-        case 'L': buf += s[i];                break;
-        case 'D': buf += s[i];                break;
-        case '+': buf += s[i];                break;
-        case '-': buf += s[i];                break;
-        case '_': buf += s[i];                break;
-        case '/': sortkey("/", "key");        break;
-        case ' ': sortkey("", "prevalue");    break;
-        case '(': sortkey("(", "string");     break;
-        case '[': sortkey("[", "arrayval");   break;
-        case '<': sortkey("", "querydict");   break;
-        case '>': sortkey("", "queryclose");  break;
-        }
-        if(++i == s.size()) break;
-        n = symbol_type(s[i]);
-      }
-
-      if (state == "prevalue")
-      {
-        switch(n)
-        {
-          case ' ': state = "prevalue"; break;
-          case '<': state = "querydict"; break;
-          case '>': state = "queryclose"; break;
-          case '/': buf = '/'; state = "key"; break;
-          case '[': buf = '['; state = "arrayval"; break;
-          default : buf = s[i]; state = "value"; break;
-        }
-        if(++i == s.size()) break;
-        n = symbol_type(s[i]);
-      }
-
-      if (state == "value")
-      {
-        switch(n)
-        {
-          case '/': DictionaryMap[pendingKey] = buf; keyPending = false;
-                    buf = "/"; state = "key"; break;
-          case ' ': buf += ' '; break;
-          case '<': DictionaryMap[pendingKey] = buf; keyPending = false;
-                    state = "querydict"; buf = ""; break;
-          case '>': DictionaryMap[pendingKey] = buf; keyPending = false;
-                    state = "queryclose"; buf = ""; break;
-          default : buf += s[i]; break;
-        }
-        if(++i == s.size()) break;
-        n = symbol_type(s[i]);
-      }
-
-      if (state == "arrayval")
-      {
-        switch(n)
-        {
-          case ']': buf += "]";
-                    DictionaryMap[pendingKey] = buf; keyPending = false;
-                    buf = "";
-                    state = "start"; break;
-          default:  buf += s[i]; break;
-        }
-        if(++i == s.size()) break;
-        n = symbol_type(s[i]);
-      }
-
-      if (state == "string")
-      {
-        switch(n)
-        {
-          case ')': buf += ")";
-                    DictionaryMap[pendingKey] = buf; keyPending = false;
-                    buf = "";
-                    state = "start"; break;
-          default:  buf += s[i]; break;
-        }
-        if(++i == s.size()) break;
-        n = symbol_type(s[i]);
-      }
-
-      if (state == "querydict")
-      {
-        switch(n)
-        {
-          case '<': buf = "<<"; state = "subdict"; minibuf = 2; break;
-          default: buf = ""; state = "start"; break;
-        }
-        if(++i == s.size()) break;
-        n = symbol_type(s[i]);
-      }
-
-      if (state == "queryclose")
-      {
-        switch(n)
-        {
-          case '>': state = "close"; break;
-          default: state = "start"; break;
-        }
-        if(++i == s.size()) break;
-        n = symbol_type(s[i]);
-      }
-
-      if (state == "close")
-      {
-        switch(n)
-        {
-        case ' ': state = "close"; break;
-        case 'L': if(i < s.length() - 7)
-                  {
-                    if(s[i] == 's' && s[i + 1] == 't' &&
-                       s[i + 2] == 'r' && s[i + 3] == 'e' &&
-                       s[i + 4] == 'a' && s[i + 5] == 'm')
-                    {
-                      int ex = 7;
-                      while(symbol_type(s[i + ex]) == ' ') ex++;
-                      DictionaryMap["stream"] = to_string(i + ex);
-                    }
-                  }
-                  return;
-        default: return;
-        }
-        if(++i == s.size()) break;
-        n = symbol_type(s[i]);
-      }
-
-      if (state == "subdict")
-      {
-        switch(n)
-        {
-          case '<': buf += s[i]; minibuf ++; break;
-          case '>': buf += s[i]; minibuf --; break;
-          default: buf += s[i]; break;
-        }
-        if (minibuf == 0)
-        {
-          DictionaryMap[pendingKey] = buf; keyPending = false; buf = "";
-          state = "start";
-        }
-        if(++i == s.size()) break;
-        n = symbol_type(s[i]);
-      }
-    }
+    case 'L': buf += (*s)[i];                 break;
+    case 'D': buf += (*s)[i];                 break;
+    case '+': buf += (*s)[i];                 break;
+    case '-': buf += (*s)[i];                 break;
+    case '_': buf += (*s)[i];                 break;
+    case '/': sortkey("/",       KEY);      break;
+    case ' ': sortkey("",   PREVALUE);      break;
+    case '(': sortkey("(",   DSTRING);      break;
+    case '[': sortkey("[",  ARRAYVAL);      break;
+    case '<': sortkey("",  QUERYDICT);      break;
+    case '>': sortkey("", QUERYCLOSE);      break;
   }
 }
 
 /*---------------------------------------------------------------------------*/
 
-dictionary::dictionary(const string& s) : keyPending(false), state("preentry")
+void dictionary::handleMaybe(char n)
 {
-  tokenize_dict(s, 0);
+  switch(n)
+  {
+    case '<': state = START;                 break;
+    default:  buf =""; state = PREENTRY;     break;
+  }
 }
 
 /*---------------------------------------------------------------------------*/
 
-dictionary::dictionary(const string& s, const int& i) : keyPending(false),
-                                                        state("preentry")
+void dictionary::handleStart(char n)
 {
-  tokenize_dict(s, (unsigned) i);
+  switch(n)
+  {
+    case '/': buf += '/'; state = KEY;      break;
+    case '>': state = QUERYCLOSE;           break;
+    default :                               break;
+  }
+}
+
+/*---------------------------------------------------------------------------*/
+
+void dictionary::handlePrevalue(char n)
+{
+  switch(n)
+  {
+    case ' ': state = PREVALUE;             break;
+    case '<': state = QUERYDICT;            break;
+    case '>': state = QUERYCLOSE;           break;
+    case '/': state = KEY;      buf = '/';  break;
+    case '[': state = ARRAYVAL; buf = '[';  break;
+    default : state = VALUE;    buf = (*s)[i]; break;
+  }
+}
+
+/*---------------------------------------------------------------------------*/
+
+void dictionary::handleValue(char n)
+{
+  switch(n)
+  {
+    case '/': assignValue("/", KEY);        break;
+    case '<': assignValue("", QUERYDICT);   break;
+    case '>': assignValue("", QUERYCLOSE);  break;
+    case ' ': buf += ' ';                   break;
+    default : buf += (*s)[i];                  break;
+  }
+}
+
+/*---------------------------------------------------------------------------*/
+
+void dictionary::handleArrayval(char n)
+{
+  buf += (*s)[i];
+  if(n == ']')
+    assignValue("", START);
+}
+
+/*---------------------------------------------------------------------------*/
+
+void dictionary::handleDstring(char n)
+{
+  buf += (*s)[i];
+  if(n == ')')
+    assignValue("", START);
+}
+
+/*---------------------------------------------------------------------------*/
+
+void dictionary::handleQuerydict(char n)
+{
+  if(n == '<')
+  {
+    buf = "<<";
+    state = SUBDICT;
+    minibuf = 2;
+  }
+  else
+  {
+    buf = "";
+    state = START;
+  }
+}
+
+/*---------------------------------------------------------------------------*/
+
+void dictionary::handleSubdict(char n)
+{
+  switch(n)
+  {
+    case '<': buf += (*s)[i]; minibuf ++; break;
+    case '>': buf += (*s)[i]; minibuf --; break;
+    default: buf += (*s)[i]; break;
+  }
+  if (minibuf == 0)
+    assignValue("", START);
+}
+
+/*---------------------------------------------------------------------------*/
+
+void dictionary::handleClose(char n)
+{
+  switch(n)
+  {
+    case ' ': state = CLOSE; break;
+    case 'L': if(i < (*s).length() - 7)
+              {
+                if((*s).substr(i, 6) == "stream")
+                {
+                int ex = 7;
+                while(symbol_type((*s)[i + ex]) == ' ')
+                  ex++;
+                DictionaryMap["stream"] =
+                  to_string(i + ex);
+                }
+              }
+              state = THE_END;
+    default:  state = THE_END;
+  }
+}
+
+/*---------------------------------------------------------------------------*/
+
+dictionary::dictionary(string* str) :
+  s(str), i(0), minibuf(0), keyPending(false), state(PREENTRY)
+{
+  if(((*s).length() == 0)) *this = dictionary();
+  tokenize_dict();
+}
+
+/*---------------------------------------------------------------------------*/
+
+dictionary::dictionary(string* str, size_t pos) :
+  s(str), i(pos), minibuf(0), keyPending(false), state(PREENTRY)
+{
+  if(((*s).length() == 0) || (i >= (*s).length())) *this = dictionary();
+  else tokenize_dict();
 }
 
 /*---------------------------------------------------------------------------*/
@@ -335,7 +330,7 @@ dictionary dictionary::getDictionary(const string& Key)
   if(this->has(Key))
   {
     string dict = this->get(Key);
-    if(isDictString(dict)) return dictionary(dict);
+    if(isDictString(dict)) return dictionary(&dict);
   }
   return dictionary();
 }

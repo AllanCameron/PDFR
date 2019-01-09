@@ -37,18 +37,32 @@
 
 /*---------------------------------------------------------------------------*/
 
-void page::boxes()
+void page::boxes(document& d)
 {
-  bleedbox = header.getNums("/BleedBox");
-  cropbox  = header.getNums("/CropBox");
-  mediabox = header.getNums("/MediaBox");
-  artbox   = header.getNums("/ArtBox");
-  trimbox  = header.getNums("/TrimBox");
-  if (!bleedbox.empty()) minbox = bleedbox;
-  if (!mediabox.empty()) minbox = mediabox;
-  if (!cropbox.empty())  minbox = cropbox;
-  if (!trimbox.empty())  minbox = trimbox;
-  if (!artbox.empty())   minbox = artbox;
+  dictionary boxheader = header;
+  bool hasparent = true;
+  do
+  {
+    bleedbox = boxheader.getNums("/BleedBox");
+    cropbox  = boxheader.getNums("/CropBox");
+    mediabox = boxheader.getNums("/MediaBox");
+    artbox   = boxheader.getNums("/ArtBox");
+    trimbox  = boxheader.getNums("/TrimBox");
+    if (!bleedbox.empty()) minbox = bleedbox;
+    if (!mediabox.empty()) minbox = mediabox;
+    if (!cropbox.empty())  minbox = cropbox;
+    if (!trimbox.empty())  minbox = trimbox;
+    if (!artbox.empty())   minbox = artbox;
+    if(minbox.empty())
+    {
+      if(boxheader.hasRefs("/Parent"))
+      {
+        int parent = boxheader.getRefs("/Parent").at(0);
+        boxheader = d.getobject(parent).getDict();
+      }
+      else hasparent = false;
+    }
+  } while (minbox.empty() && hasparent);
   if (header.has("/Rotate")) rotate = header.getNums("/Rotate").at(0);
 }
 
@@ -78,7 +92,11 @@ void page::getResources(document& d)
     for (auto q : resourceobjs)
       resources = d.getobject(q).getDict();
   }
-  else resources = dictionary(header.get("/Resources"));
+  else
+  {
+    string resdict = header.get("/Resources");
+    resources = dictionary(&resdict);
+  }
 }
 
 /*--------------------------------------------------------------------------*/
@@ -92,7 +110,10 @@ void page::getFonts(document& d)
       fonts = d.getobject(fontobjs.at(0)).getDict();
   }
   else
-    fonts = dictionary(resources.get("/Font"));
+  {
+    string fontdict = resources.get("/Font");
+    fonts = dictionary(&fontdict);
+  }
   fontnames = fonts.getDictKeys();
   for(auto h : fontnames)
     for(auto hh : fonts.getRefs(h))
@@ -122,7 +143,7 @@ void page::parseXObjStream(document& d)
   {
     if(isDictString(xobjstring))
     {
-      dictionary objdict = dictionary(xobjstring);
+      dictionary objdict = dictionary(&xobjstring);
       std::vector<std::string> dictkeys = objdict.getDictKeys();
       for(auto i : dictkeys)
       {
@@ -144,5 +165,5 @@ page::page(document& d, int pagenum) : pagenumber(pagenum), rotate(0)
   parseXObjStream(d);
   getFonts(d);
   getContents(d);
-  boxes();
+  boxes(d);
 }

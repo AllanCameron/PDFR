@@ -28,19 +28,46 @@
 #ifndef PDFR_DICT
 #define PDFR_DICT
 
-enum Types {Boolean, Name, String, Number, Reference, Array, Dictionary};
+enum DState     {PREENTRY,
+                 QUERYCLOSE,
+                 VALUE,
+                 MAYBE,
+                 START,
+                 KEY,
+                 PREVALUE,
+                 DSTRING,
+                 ARRAYVAL,
+                 QUERYDICT,
+                 SUBDICT,
+                 CLOSE,
+                 THE_END};
 
 class dictionary
 {
+  string* s;
+  size_t i;
+  int minibuf;
   bool keyPending;
-  string buf, pendingKey, state;
+  string buf, pendingKey;
+  DState state;
   std::map<std::string, std::string> DictionaryMap;
-  void tokenize_dict(const string& s, unsigned pos);
-  void sortkey(string, string);
+  void tokenize_dict();
+  void sortkey(string, DState);
+  void assignValue(string, DState);
+  void handleMaybe(char);
+  void handleStart(char);
+  void handleKey(char);
+  void handlePrevalue(char);
+  void handleValue(char);
+  void handleArrayval(char);
+  void handleDstring(char);
+  void handleQuerydict(char);
+  void handleSubdict(char);
+  void handleClose(char);
 
 public:
-  dictionary(const std::string& s);
-  dictionary(const std::string& s, const int& i);
+  dictionary(std::string* s);
+  dictionary(std::string* s, size_t);
   dictionary(std::map<std::string, std::string> d) : DictionaryMap(d) {};
   dictionary();
   void printdict();
@@ -56,6 +83,5 @@ public:
   dictionary getDictionary(const std::string& Key);
   std::map<std::string, std::string> R_out() {return this->DictionaryMap;}
 };
-
 
 #endif

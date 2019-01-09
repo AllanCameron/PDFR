@@ -70,9 +70,9 @@ string FlateDecode(const string& s)
 
 /*---------------------------------------------------------------------------*/
 
-vector<size_t> getStreamLoc(document* d, const string& fs, int objstart)
+vector<size_t> getStreamLoc(document* d, string& fs, int objstart)
 {
-  dictionary dict = dictionary(fs, objstart);
+  dictionary dict = dictionary(&fs, objstart);
   if(dict.has("stream"))
     if(dict.has("/Length"))
     {

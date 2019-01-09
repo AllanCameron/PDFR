@@ -46,7 +46,7 @@ public:
 
 private:
   void parseXObjStream(document& d);
-  void boxes();
+  void boxes(document& d);
   void getHeader(document& d);
   void getResources(document& d);
   void getFonts(document& d);

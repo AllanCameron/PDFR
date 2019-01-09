@@ -31,7 +31,7 @@
 using namespace std;
 
 string FlateDecode(const string& s);
-vector<size_t> getStreamLoc(document* d, const string& fs, int objstart);
+vector<size_t> getStreamLoc(document* d, string& fs, int objstart);
 
 #endif
 

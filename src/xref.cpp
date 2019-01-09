@@ -41,13 +41,13 @@ void xref::locateXrefs()
   std::string&& xrefstring =  carveout(partial, "startxref", "%%EOF");
   Xreflocations.emplace_back(stoi(xrefstring));
   if(Xreflocations.empty()) throw runtime_error("No xref entry found");
-  TrailerDictionary = dictionary(d->filestring, Xreflocations[0]);
+  TrailerDictionary = dictionary(&(d->filestring), Xreflocations[0]);
   dictionary tempdict = TrailerDictionary;
   while (true)
     if(tempdict.hasInts("/Prev"))
     {
       Xreflocations.emplace_back(tempdict.getInts("/Prev")[0]);
-      tempdict = dictionary(d->filestring, Xreflocations.back());
+      tempdict = dictionary(&(d->filestring), Xreflocations.back());
     }
     else break;
 }
@@ -146,7 +146,7 @@ void xrefstream::getRawMatrix()
 {
   std::vector<size_t> sl = getStreamLoc(d, d->filestring, objstart);
   std::string SS = d->filestring.substr(sl[0], sl[1] - sl[0]);
-  dictionary dict = dictionary(d->filestring, objstart);
+  dictionary dict = dictionary(&(d->filestring), objstart);
   if(dict.get("/Filter").find("/FlateDecode", 0) != string::npos)
     SS = FlateDecode(SS);
   std::vector<unsigned char> rawarray(SS.begin(), SS.end());
@@ -256,8 +256,9 @@ xrefstream::xrefstream(document* doc, int starts) : ncols(0), firstObject(0),
 predictor(0), objstart(starts)
 {
   d = doc;
-  dict = dictionary(d->filestring, objstart);
-  subdict = dictionary(dict.get("/DecodeParms"));
+  dict = dictionary(&(d->filestring), objstart);
+  string decodestring = dict.get("/DecodeParms");
+  subdict = dictionary(&decodestring);
   getIndex();
   getParms();
   if(!dict.hasInts("/W")) throw std::runtime_error("Malformed xref stream");
