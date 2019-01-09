@@ -29,8 +29,6 @@
 #ifndef PDFR_XREF
 #define PDFR_XREF
 
-#include "pdfr.h"
-
 struct xrefrow { int object, startbyte, stopbyte, in_object; };
 
 /*---------------------------------------------------------------------------*/

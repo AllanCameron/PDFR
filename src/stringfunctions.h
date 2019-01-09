@@ -30,8 +30,6 @@
 #define PDFR_STRINGFUNCTIONS
 
 using namespace std;
-#include <Rcpp.h>
-#include "pdfr.h"
 
 /*---------------------------------------------------------------------------*/
 

@@ -28,7 +28,6 @@
 #ifndef PDFR_STREAMS
 #define PDFR
 
-#include "pdfr.h"
 using namespace std;
 
 string FlateDecode(const string& s);

@@ -29,8 +29,6 @@
 #ifndef PDFR_PAGE
 #define PDFR_PAGE
 
-#include "pdfr.h"
-
 class page
 {
 public:

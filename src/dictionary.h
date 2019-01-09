@@ -28,11 +28,6 @@
 #ifndef PDFR_DICT
 #define PDFR_DICT
 
-#include<string>
-#include<map>
-#include<vector>
-
-
 enum Types {Boolean, Name, String, Number, Reference, Array, Dictionary};
 
 class dictionary

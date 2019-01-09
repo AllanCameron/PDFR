@@ -28,9 +28,6 @@
 #ifndef PDFR_FONT
 #define PDFR_FONT
 
-#include "pdfr.h"
-#include "Rex.h"
-
 using namespace std;
 
 class font

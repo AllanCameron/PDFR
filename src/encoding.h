@@ -29,10 +29,6 @@
 #ifndef PDFR_ENCODING
 #define PDFR_ENCODING
 
-#include "pdfr.h"
-#include "adobetounicode.h"
-#include "chartounicode.h"
-
 class Encoding
 {
 private:

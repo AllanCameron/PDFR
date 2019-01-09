@@ -29,11 +29,6 @@
 #ifndef PDFR_WIDTH
 #define PDFR_WIDTH
 
-#include "pdfr.h"
-#include "corefonts.h"
-#include "adobetounicode.h"
-#include "chartounicode.h"
-
 class glyphwidths
 {
 private:

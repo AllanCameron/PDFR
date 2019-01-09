@@ -29,8 +29,6 @@
 #ifndef PDFR_OC
 #define PDFR_OC
 
-#include "pdfr.h"
-
 class object_class
 {
 private:

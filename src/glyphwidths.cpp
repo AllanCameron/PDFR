@@ -28,6 +28,7 @@
 #include "pdfr.h"
 #include "adobetounicode.h"
 #include "chartounicode.h"
+#include "corefonts.h"
 #include "encoding.h"
 #include "font.h"
 #include "document.h"
@@ -41,8 +42,10 @@
 
 void glyphwidths::getWidthTable(dictionary& dict, document* d)
 {
-  if (dict.has("/Widths")) parseWidths(dict, d);
-  else if(dict.hasRefs("/DescendantFonts")) parseDescendants(dict, d);
+  if (dict.has("/Widths"))
+    parseWidths(dict, d);
+  else if(dict.hasRefs("/DescendantFonts"))
+    parseDescendants(dict, d);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -51,7 +54,7 @@ void glyphwidths::parseWidths(dictionary& dict, document* d)
 {
   vector<float> widtharray;
   RawChar firstchar = 0x0000;
-  string numstring = "\\[(\\[|]| |\\.|\\d+)+";
+  string numstring = "\\[(\\[|]| |\\.|\\d+)+"; // numeric array regex
   if(dict.hasInts("/FirstChar"))
     firstchar = dict.getInts("/FirstChar")[0];
   if (dict.hasRefs("/Widths"))
@@ -75,7 +78,7 @@ void glyphwidths::parseWidths(dictionary& dict, document* d)
 
 void glyphwidths::parseDescendants(dictionary& dict, document* d)
 {
-  string numstring = "\\[(\\[|]| |\\.|\\d+)+";
+  string numstring = "\\[(\\[|]| |\\.|\\d+)+"; // numeric array regex
   vector<int> os = dict.getRefs("/DescendantFonts");
   object_class desc = d->getobject(os[0]);
   dictionary descdict = desc.getDict();
@@ -102,20 +105,20 @@ void glyphwidths::parseDescendants(dictionary& dict, document* d)
 
 void glyphwidths::getCoreFont(string s)
 {
-  if(s == "/Courier") this->Width = courierwidths;
-  else if(s == "/Courier-Bold") this->Width = courierboldwidths;
-  else if(s == "/Courier-BoldOblique")this->Width = courierboldobliquewidths;
-  else if(s == "/Courier-Oblique") this->Width = courierobliquewidths;
-  else if(s == "/Helvetica") this->Width = helveticawidths;
-  else if(s == "/Helvetica-Bold") this->Width = helveticaboldwidths;
-  else if(s == "/Helvetica-Boldoblique") this->Width = helveticaboldobliquewidths;
-  else if(s == "/Helvetica-Oblique") this->Width = helveticaobliquewidths;
-  else if(s == "/Symbol") this->Width = symbolwidths;
-  else if(s == "/Times-Bold") this->Width = timesboldwidths;
-  else if(s == "/Times-BoldItalic") this->Width = timesbolditalicwidths;
-  else if(s == "/Times-Italic") this->Width =timesitalicwidths;
-  else if(s == "/Times-Roman") this->Width = timesromanwidths;
-  else if(s == "/ZapfDingbats") this->Width = dingbatswidths;
+       if(s == "/Courier") Width = courierwidths;
+  else if(s == "/Courier-Bold") Width = courierboldwidths;
+  else if(s == "/Courier-BoldOblique") Width = courierboldobliquewidths;
+  else if(s == "/Courier-Oblique") Width = courierobliquewidths;
+  else if(s == "/Helvetica") Width = helveticawidths;
+  else if(s == "/Helvetica-Bold") Width = helveticaboldwidths;
+  else if(s == "/Helvetica-Boldoblique") Width = helveticaboldobliquewidths;
+  else if(s == "/Helvetica-Oblique") Width = helveticaobliquewidths;
+  else if(s == "/Symbol") Width = symbolwidths;
+  else if(s == "/Times-Bold") Width = timesboldwidths;
+  else if(s == "/Times-BoldItalic") Width = timesbolditalicwidths;
+  else if(s == "/Times-Italic") Width =timesitalicwidths;
+  else if(s == "/Times-Roman") Width = timesromanwidths;
+  else if(s == "/ZapfDingbats") Width = dingbatswidths;
   else widthFromCharCodes = true;
 }
 

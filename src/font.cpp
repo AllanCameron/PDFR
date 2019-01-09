@@ -30,7 +30,6 @@
 #include "stringfunctions.h"
 #include "debugtools.h"
 #include "document.h"
-#include "corefonts.h"
 #include "encoding.h"
 #include "font.h"
 

@@ -28,9 +28,6 @@
 #ifndef PDFR_DOCUMENT
 #define PDFR_DOCUMENT
 
-#include "pdfr.h"
-#include "dictionary.h"
-
 class document
 {
 public:

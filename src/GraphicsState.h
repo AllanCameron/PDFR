@@ -25,15 +25,28 @@
 //                                                                           //
 //---------------------------------------------------------------------------//
 
-
 #ifndef PDFR_GS
 #define PDFR_GS
 
-#include "pdfr.h"
-#include "tokenizer.h"
+namespace Token
+{
+  enum TState
+  {
+    NEWSYMBOL,
+    IDENTIFIER,
+    NUMBER,
+    RESOURCE,
+    STRING,
+    HEXSTRING,
+    ARRAY,
+    DICT,
+    WAIT,
+    OPERATOR
+  };
+};
 
-using namespace std;
 using namespace Token;
+using namespace std;
 
 class GraphicsState
 {
@@ -43,7 +56,7 @@ public:
 
 private:
   page p;
-  font wfont;
+  font* wfont;
   vector<vector<float>> gs, statehx;
   vector<float> xvals, yvals, fontsize, widths, Tmstate, Tdstate, R,
   left, right, bottom, size, width, fontsizestack, initstate;

@@ -28,27 +28,7 @@
 #ifndef PDFR_TOKEN
 #define PDFR_TOKEN
 
-#include "pdfr.h"
-
 using namespace std;
-
-namespace Token
-{
-  enum TState
-  {
-    NEWSYMBOL,
-    IDENTIFIER,
-    NUMBER,
-    RESOURCE,
-    STRING,
-    HEXSTRING,
-    ARRAY,
-    DICT,
-    WAIT,
-    OPERATOR
-  };
-};
-
 using namespace Token;
 
 class tokenizer

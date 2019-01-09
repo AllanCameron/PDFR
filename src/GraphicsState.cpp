@@ -94,7 +94,7 @@ void GraphicsState::Q(vector<string>& Operands)
     currfontsize = fontsizestack.back();
   }
   if (p.fontmap.find(currentfont) != p.fontmap.end())
-    wfont = p.fontmap[currentfont];
+    wfont = &(p.fontmap[currentfont]);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -146,7 +146,7 @@ void GraphicsState::Tf(vector<string>& Operands)
   {
     currentfont = Operands[0];
     if (p.fontmap.find(currentfont) != p.fontmap.end())
-      wfont = p.fontmap[currentfont];
+      wfont = &(p.fontmap[currentfont]);
     else
       throw runtime_error(string("Couldn't find font") + currentfont);
     currfontsize = stof(Operands[1]);
@@ -244,7 +244,7 @@ void GraphicsState::TJ(string Ins, vector<string>& Operands,
 void GraphicsState::processRawChar(vector<RawChar>& raw, float& scale,
                                    vector<float>& textspace, float& txtspcinit)
 {
-  vector<pair<Unicode, int>>&& kvs = wfont.mapRawChar(raw);
+  vector<pair<Unicode, int>>&& kvs = wfont->mapRawChar(raw);
   for (auto& j : kvs)
   {
     float stw;
@@ -257,7 +257,7 @@ void GraphicsState::processRawChar(vector<RawChar>& raw, float& scale,
     widths.emplace_back(scale * stw/1000 * Th/100);
     stringres.emplace_back(j.first);
     fontsize.emplace_back(scale);
-    fontname.emplace_back(wfont.FontName);
+    fontname.emplace_back(wfont->FontName);
   }
 }
 
