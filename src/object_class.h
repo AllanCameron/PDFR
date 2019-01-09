@@ -38,7 +38,7 @@ private:
   std::vector<size_t> streampos;
   document* d;
   std::vector<int> Kids, Contents;
-  bool has_stream, has_kids, has_contents;
+  bool has_stream;
   void objectHasKids();
   void objectHasContents();
   void findKids();
@@ -47,11 +47,6 @@ private:
 public:
   bool hasStream();
   std::string getStream();
-  bool hasKids();
-  std::vector<int> getKids();
-  bool hasContents();
-  std::vector<int> getContents();
-
   dictionary getDict();
   object_class(document*, int objnum);
   object_class(document*, std::string str, int objnum);

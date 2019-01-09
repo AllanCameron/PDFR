@@ -127,8 +127,8 @@ vector <int> document::expandKids(vector<int> objnums)
   while (i < objnums.size())
   {
     object_class&& o = getobject(objnums[i]);
-    if (o.hasKids())
-      concat(objnums, o.getKids() );
+    if (o.getDict().hasRefs("/Kids"))
+      concat(objnums, o.getDict().getRefs("/Kids"));
     else
       res.push_back(objnums[i]);
     i++;
@@ -147,8 +147,8 @@ vector <int> document::expandContents(vector<int> objnums)
   while (i < objnums.size())
   {
     object_class o = getobject(objnums[i]);
-    if (o.hasContents())
-      concat(objnums, o.getContents());
+    if (o.getDict().hasRefs("/Contents"))
+      concat(objnums, o.getDict().getRefs("/Contents"));
     else
       res.push_back(objnums[i]);
     i++;
@@ -160,9 +160,9 @@ vector <int> document::expandContents(vector<int> objnums)
 
 void document::getPageHeaders()
 {
-  if (pagedir.hasKids())
+  if (pagedir.getDict().hasRefs("/Kids"))
   {
-    std::vector<int> kids = expandKids(pagedir.getKids());
+    std::vector<int> kids = expandKids(pagedir.getDict().getRefs("/Kids"));
     pageheaders.reserve(kids.size());
     for (auto i : kids)
       pageheaders.emplace_back(objects.at(i).getDict());

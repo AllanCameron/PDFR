@@ -239,10 +239,10 @@ vector<string> splitfours(string s)
 
 /*--------------------------------------------------------------------------*/
 // Extracts pdf object references from string
-vector<int> getObjRefs(string ds)
+vector<int> getObjRefs(string& ds)
 {
   vector<int> res;
-  for (auto i : Rex(ds, "(0|1|2|3|4|5|6|7|8|9)+ (0|1|2|3|4|5|6|7|8|9) R").get())
+  for (auto i : Rex(ds, "(0|1|2|3|4|5|6|7|8|9)+ (0|1|2) R").get())
     res.emplace_back(stoi(i));
   return res;
 }
@@ -310,7 +310,7 @@ void upperCase(string& s)
 
 /*--------------------------------------------------------------------------*/
 
-vector<RawChar> HexstringToRawChar(string s)
+vector<RawChar> HexstringToRawChar(string& s)
 {
   vector<string>&& sv = splitfours(s);
   vector<RawChar> uv;
@@ -323,7 +323,9 @@ vector<RawChar> HexstringToRawChar(string s)
   return uv;
 }
 
-vector<RawChar> StringToRawChar(string s)
+/*--------------------------------------------------------------------------*/
+
+vector<RawChar> StringToRawChar(string& s)
 {
   vector<RawChar> res;
   if(s.size() == 0) return res;
@@ -335,4 +337,5 @@ vector<RawChar> StringToRawChar(string s)
   return res;
 }
 
+/*--------------------------------------------------------------------------*/
 

@@ -67,10 +67,10 @@ has_stream(false)
         *this = object_class(d, d->getobject(holdingobj).getStream(), objnum);
     }
   }
-  objectHasKids();
-  objectHasContents();
-  if(has_kids) findKids();
-  if(has_contents) findContents();
+  if(header.has("/Kids"))
+    Kids = header.getRefs("/Kids");
+  if(header.has("/Contents"))
+    Contents = header.getRefs("/Contents");
 }
 
 /*---------------------------------------------------------------------------*/
@@ -127,10 +127,6 @@ object_class::object_class(document* doc, std::string str, int objnum)
             *this = object_class(d, getObjRefs(stream)[0]);
           }
         }
-        objectHasKids();
-        objectHasContents();
-        if(has_kids) findKids();
-        if(has_contents) findContents();
         break;
       }
     }
@@ -139,64 +135,10 @@ object_class::object_class(document* doc, std::string str, int objnum)
 
 /*---------------------------------------------------------------------------*/
 
-void object_class::objectHasKids()
-{
-  has_kids = header.has("/Kids");
-}
-
-/*---------------------------------------------------------------------------*/
-
-void object_class::findKids()
-{
-  std::vector <int> resvec;
-  std::string rawkidsstring = carveout(header.get("/Kids"), "\\[", "\\]");
-  std::vector<std::string> kidStrings = splitter(rawkidsstring, " \\d+ R( )*");
-  for(auto i : kidStrings)
-    if(stoi(i) != 0)
-      resvec.push_back(stoi(i));
-  Kids = resvec;
-}
-
-/*---------------------------------------------------------------------------*/
-
-void object_class::objectHasContents()
-{
-  has_contents = header.has("/Contents");
-}
-
-/*---------------------------------------------------------------------------*/
-
-void object_class::findContents()
-{
-  std::vector <int> resvec;
-  std::string rawcontent = carveout(header.get("/Contents"), "\\[", "\\]");
-  std::vector<std::string> conStrings = splitter(rawcontent, " \\d+ R( )*");
-  for(auto i : conStrings)
-    if(stoi(i) != 0)
-      resvec.push_back(stoi(i));
-  Contents = resvec;
-}
-
-/*---------------------------------------------------------------------------*/
-
 dictionary object_class::getDict()
 {
   return header;
 }
-
-/*---------------------------------------------------------------------------*/
-
-std::vector<int> object_class::getKids()
-{
-  return Kids;
-};
-
-/*---------------------------------------------------------------------------*/
-
-std::vector<int> object_class::getContents()
-{
-  return Contents;
-};
 
 /*---------------------------------------------------------------------------*/
 
@@ -217,22 +159,9 @@ std::string object_class::getStream()
 
 /*---------------------------------------------------------------------------*/
 
-bool object_class::hasKids()
-{
-  return has_kids;
-}
-
-/*---------------------------------------------------------------------------*/
-
 bool object_class::hasStream()
 {
   return has_stream;
 }
 
-/*---------------------------------------------------------------------------*/
-
-bool object_class::hasContents()
-{
-  return has_contents;
-}
 
