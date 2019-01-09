@@ -69,7 +69,7 @@ Rcpp::List PDFpage(document mypdf, page pg)
   return Rcpp::List::create(
     Rcpp::Named("Box")        =  pg.minbox,
     Rcpp::Named("PageString") =  pg.contentstring,
-    Rcpp::Named("Elements")   =  GraphicsState(pg).db
+    Rcpp::Named("Elements")   =  GraphicsState(&pg).db
   );
 }
 

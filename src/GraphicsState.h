@@ -52,10 +52,10 @@ class GraphicsState
 {
 public:
   Rcpp::DataFrame db;
-  GraphicsState(page& pag);
+  GraphicsState(page* pag);
 
 private:
-  page p;
+  page* p;
   font* wfont;
   vector<vector<float>> gs, statehx;
   vector<float> xvals, yvals, fontsize, widths, Tmstate, Tdstate, R,

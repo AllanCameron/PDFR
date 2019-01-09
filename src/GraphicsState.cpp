@@ -36,10 +36,10 @@
 using namespace std;
 using namespace Token;
 
-GraphicsState::GraphicsState(page& pag) : p(pag),
+GraphicsState::GraphicsState(page* pag) : p(pag),
   PRstate(0), Tl(1), Tw(0), Th(100), Tc(0), currfontsize(0), currentfont("")
 {
-  Instructions  = tokenizer(p.contentstring).result();
+  Instructions  = tokenizer(p->contentstring).result();
   initstate = {1,0,0,0,1,0,0,0,1};
   fontstack.emplace_back(currentfont);
   Tmstate = Tdstate = initstate;
@@ -72,10 +72,10 @@ void GraphicsState::q(vector<string>& Operands)
 
 void GraphicsState::Do(string& a)
 {
-  if (p.XObjects.find(a) != p.XObjects.end())
-    if(IsAscii(p.XObjects[a]))
+  if (p->XObjects.find(a) != p->XObjects.end())
+    if(IsAscii(p->XObjects[a]))
     {
-      auto ins = tokenizer(p.XObjects[a]).result();
+      auto ins = tokenizer(p->XObjects[a]).result();
       parser(ins, a);
     }
 }
@@ -93,8 +93,8 @@ void GraphicsState::Q(vector<string>& Operands)
     currentfont = fontstack.back();
     currfontsize = fontsizestack.back();
   }
-  if (p.fontmap.find(currentfont) != p.fontmap.end())
-    wfont = &(p.fontmap[currentfont]);
+  if (p->fontmap.find(currentfont) != p->fontmap.end())
+    wfont = &(p->fontmap[currentfont]);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -145,8 +145,8 @@ void GraphicsState::Tf(vector<string>& Operands)
   if(Operands.size() > 1)
   {
     currentfont = Operands[0];
-    if (p.fontmap.find(currentfont) != p.fontmap.end())
-      wfont = &(p.fontmap[currentfont]);
+    if (p->fontmap.find(currentfont) != p->fontmap.end())
+      wfont = &(p->fontmap[currentfont]);
     else
       throw runtime_error(string("Couldn't find font") + currentfont);
     currfontsize = stof(Operands[1]);
