@@ -62,3 +62,7 @@ carveout <- function(subject, pre, post) {
     .Call('_PDFR_carveout', PACKAGE = 'PDFR', subject, pre, post)
 }
 
+refFinder <- function(s) {
+    .Call('_PDFR_refFinder', PACKAGE = 'PDFR', s)
+}
+

@@ -241,10 +241,7 @@ vector<string> splitfours(string s)
 // Extracts pdf object references from string
 vector<int> getObjRefs(string& ds)
 {
-  vector<int> res;
-  for (auto i : Rex(ds, "(0|1|2|3|4|5|6|7|8|9)+ (0|1|2) R").get())
-    res.emplace_back(stoi(i));
-  return res;
+  return refFinder(ds);
 }
 
 /*--------------------------------------------------------------------------*/
@@ -339,3 +336,61 @@ vector<RawChar> StringToRawChar(string& s)
 
 /*--------------------------------------------------------------------------*/
 
+std::vector<int> refFinder(const std::string& s)
+{
+  std::vector<int> res;
+  std::string buf;
+  std::string state = "waiting";
+  for(auto i : s)
+  {
+    char m = symbol_type(i);
+    if(state == "waiting")
+    {
+      if(m == 'D')
+      {
+        buf += i; state = "infirstint";
+      }
+      continue;
+    }
+    if(state == "infirstint")
+    {
+      switch(m)
+      {
+      case 'D' : buf += i; break;
+      case ' ' : state = "wait2"; break;
+      default:   buf.clear(); state = "waiting";
+      }
+      continue;
+    }
+    if(state == "wait2")
+    {
+      switch(m)
+      {
+      case 'D' : state = "insecondint"; break;
+      default:   state = "waiting"; break;
+      }
+      continue;
+    }
+    if(state == "insecondint")
+    {
+      switch(m)
+      {
+      case 'D' : break;
+      case ' ' : state = "wait3"; break;
+      default:   buf.clear(); state = "waiting"; break;
+      }
+      continue;
+    }
+    if(state == "wait3")
+    {
+      switch(m)
+      {
+      case 'L' : if(i == 'R') res.push_back(stoi(buf));
+                 buf.clear(); state = "waiting"; break;
+      default:   buf.clear(); state = "waiting";
+      }
+      continue;
+    }
+  }
+  return res;
+}

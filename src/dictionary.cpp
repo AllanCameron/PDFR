@@ -294,15 +294,7 @@ bool dictionary::hasInts(const string& Key)
 
 vector<int> dictionary::getRefs(const string& Key)
 {
-  vector<int> References;
-  if(this->has(Key))
-  {
-    string keyval = this->get(Key);
-    string refmatch = "(0|1|2|3|4|5|6|7|8|9)+ (0|1|2|3|4|5|6|7|8|9) R";
-    vector<string> refs = Rex(keyval, refmatch).get();
-    for (auto i : refs) References.push_back(stoi(i));
-  }
-  return References;
+  return refFinder(this->get(Key));
 }
 
 /*---------------------------------------------------------------------------*/
