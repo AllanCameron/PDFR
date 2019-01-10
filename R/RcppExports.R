@@ -70,3 +70,7 @@ getints <- function(s) {
     .Call('_PDFR_getints', PACKAGE = 'PDFR', s)
 }
 
+multicarve <- function(s, a, b) {
+    .Call('_PDFR_multicarve', PACKAGE = 'PDFR', s, a, b)
+}
+

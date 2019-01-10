@@ -26,7 +26,6 @@
 //---------------------------------------------------------------------------//
 
 #include "pdfr.h"
-#include "Rex.h"
 #include "stringfunctions.h"
 #include "dictionary.h"
 

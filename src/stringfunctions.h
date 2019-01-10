@@ -59,5 +59,7 @@ void upperCase(string& s);
 vector<RawChar> HexstringToRawChar(string& s);
 vector<RawChar> StringToRawChar(string& s);
 std::vector<int> refFinder(const std::string& s);
-
+// [[Rcpp::export]]
+std::vector<std::string>
+  multicarve(const std::string& s, const std::string& a, const std::string& b);
 #endif

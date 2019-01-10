@@ -28,7 +28,6 @@
 #include "pdfr.h"
 #include "streams.h"
 #include "document.h"
-#include "Rex.h"
 #include "stringfunctions.h"
 #include "../src/external/miniz.h"
 #include "../src/external/miniz.c"

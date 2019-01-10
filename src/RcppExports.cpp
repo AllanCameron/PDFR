@@ -167,6 +167,19 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// multicarve
+std::vector<std::string> multicarve(const std::string& s, const std::string& a, const std::string& b);
+RcppExport SEXP _PDFR_multicarve(SEXP sSEXP, SEXP aSEXP, SEXP bSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const std::string& >::type s(sSEXP);
+    Rcpp::traits::input_parameter< const std::string& >::type a(aSEXP);
+    Rcpp::traits::input_parameter< const std::string& >::type b(bSEXP);
+    rcpp_result_gen = Rcpp::wrap(multicarve(s, a, b));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_PDFR_rc4", (DL_FUNC) &_PDFR_rc4, 2},
@@ -183,6 +196,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_PDFR_carveout", (DL_FUNC) &_PDFR_carveout, 3},
     {"_PDFR_getnums", (DL_FUNC) &_PDFR_getnums, 1},
     {"_PDFR_getints", (DL_FUNC) &_PDFR_getints, 1},
+    {"_PDFR_multicarve", (DL_FUNC) &_PDFR_multicarve, 3},
     {NULL, NULL, 0}
 };
 

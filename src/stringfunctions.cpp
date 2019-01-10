@@ -66,6 +66,27 @@ string carveout(const string& s, const string& pre, const string& post)
 }
 
 /*---------------------------------------------------------------------------*/
+// finds all closest pairs of strings a, b and returns the substring between
+std::vector<std::string>
+  multicarve(const std::string& s, const std::string& a, const std::string& b)
+{
+  std::vector<std::string> res;
+  if(a.size() == 0 || b.size() == 0 || s.size() == 0) return res;
+  std::string str = s;
+  while(true)
+  {
+    int start = str.find(a);
+    if(start == -1) break;
+    str = str.substr(start + a.size(), str.size() - (start + a.size()));
+    int stop = str.find(b);
+    if(stop == -1) break;
+    res.push_back(str.substr(0, stop));
+    str = str.substr(stop + b.size(), str.size() - (stop + b.size()));
+  }
+  return res;
+}
+
+/*---------------------------------------------------------------------------*/
 // Decent approximation of whether a string contains binary data or not
 bool IsAscii(const string& tempint)
 {

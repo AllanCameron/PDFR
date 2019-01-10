@@ -56,7 +56,7 @@ class Encoding;
 class glyphwidths;
 class tokenizer;
 
-#include "Rex.h"
+
 #include "stringfunctions.h"
 #include "streams.h"
 #include "dictionary.h"

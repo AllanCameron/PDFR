@@ -28,7 +28,6 @@
 #include "pdfr.h"
 #include "document.h"
 #include "streams.h"
-#include "Rex.h"
 #include "stringfunctions.h"
 #include "crypto.h"
 #include "debugtools.h"

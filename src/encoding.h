@@ -38,8 +38,8 @@ private:
   string BaseEncoding;
   dictionary fontref;
   void getEncoding(dictionary, document*);
-  void processUnicodeRange(Rex&);
-  void processUnicodeChars(Rex&);
+  void processUnicodeRange(vector<string>&);
+  void processUnicodeChars(vector<string>&);
   void mapUnicode(dictionary&, document*);
 
 public:

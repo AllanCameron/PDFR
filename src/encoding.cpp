@@ -34,6 +34,7 @@
 #include "object_class.h"
 #include "Rex.h"
 #include "dictionary.h"
+#include "debugtools.h"
 
 
 enum DiffState
@@ -106,50 +107,51 @@ void Encoding::mapUnicode(dictionary& fontref, document* d)
   if (!fontref.hasRefs("/ToUnicode")) return;
   int unirefint = fontref.getRefs("/ToUnicode")[0];
   string x = d->getobject(unirefint).getStream();
-  Rex Char =  Rex(x, "beginbfchar(.|\\s)*?endbfchar");
-  Rex Range = Rex(x, "beginbfrange(.|\\s)*?endbfrange");
-  if (Char.has())  processUnicodeChars(Char);
-  if (Range.has()) processUnicodeRange(Range);
+  vector<string> Char =  multicarve(x, "beginbfchar", "endbfchar");
+  vector<string> Range = multicarve(x, "beginbfrange", "endbfrange");
+  if (Char.size() > 0)  processUnicodeChars(Char);
+  if (Range.size() > 0) processUnicodeRange(Range);
 }
 
 /*---------------------------------------------------------------------------*/
 
-void Encoding::processUnicodeChars(Rex& Char)
+void Encoding::processUnicodeChars(vector<string>& Char)
 {
-  for(auto j : Char.get())
+  for(auto j : Char)
   {
-    j = carveout(j, "beginbfchar", "endbfchar");
-    for (auto i : splitter(j, "(\n|\r){1,2}"))
+    vector<string> allentries = multicarve(j, "<", ">");
+    RawChar key;
+    for(size_t i = 0; i < allentries.size(); i++)
     {
-      vector<string> entries = Rex(i, "(\\d|a|b|c|d|e|f|A|B|C|D|E|F)+").get();
-      if (entries.size() == 2)
-      {
-        Unicode hex = HexstringToRawChar(entries[1]).at(0);
-        RawChar key = HexstringToRawChar(entries[0]).at(0);
-        EncodingMap[key] = hex;
-      }
+      if(i % 2 == 0)
+        key = HexstringToRawChar(allentries[i]).at(0);
+      else
+        EncodingMap[key] = (Unicode) HexstringToRawChar(allentries[i]).at(0);
     }
   }
 }
 
 /*---------------------------------------------------------------------------*/
 
-void Encoding::processUnicodeRange(Rex& Range)
+void Encoding::processUnicodeRange(vector<string>& Range)
 {
-  for(auto j : Range.get())
+  for(auto i : Range)
   {
-    string bfrange = carveout(j, "beginbfrange", "endbfrange");
-    for (auto i :  splitter(bfrange, "(\n|\r){1,2}"))
+    vector<string> allentries = multicarve(i, "<", ">");
+    if(allentries.size() < 3) throw runtime_error("No entries in range");
+
+    RawChar first, last, start;
+    first = last = start = 0;
+    for(size_t j = 0; j < allentries.size(); j++)
     {
-      vector<string> entries = Rex(i, "(\\d|a|b|c|d|e|f|A|B|C|D|E|F)+").get();
-      if (entries.size() == 3)
+      if(j % 3 == 0) first = HexstringToRawChar(allentries[j]).at(0);
+      if(j % 3 == 1) last = HexstringToRawChar(allentries[j]).at(0);
+      if(j % 3 == 2)
       {
-        vector<RawChar> myui;
-        for(auto k : entries)
-          myui.emplace_back(HexstringToRawChar(k).at(0));
-        myui.emplace_back((myui[1] - myui[0]) + 1);
-        for (size_t j = 0; j < myui[3]; j++)
-          EncodingMap[(RawChar) (myui[0] + j)] = (Unicode) (myui[2] + j);
+        start = HexstringToRawChar(allentries[j]).at(0);
+        int nchar = (last - first) + 1;
+        for(int k = 0; k < nchar; k++)
+          EncodingMap[first + k] = start + k;
       }
     }
   }

@@ -27,7 +27,6 @@
 
 
 #include "pdfr.h"
-#include "Rex.h"
 #include "stringfunctions.h"
 #include "streams.h"
 #include "xref.h"
@@ -59,10 +58,14 @@ void xref::xrefstrings()
   std::vector<std::string> res;
   for(auto i : Xreflocations)
   {
-    std::string startxref = "trailer";
-    int minloc = firstmatch(d->filestring, startxref, i);
+    std::string startxref = "startxref";
+    int minloc = firstmatch(d->filestring, startxref, i) - 9;
     if (minloc > 0)
-      res.emplace_back(d->filestring.substr(i + 5, minloc - i));
+    {
+      string firstpass = d->filestring.substr(i + 5, minloc - i);
+      firstpass = carveout(firstpass, "xref", "trailer");
+      res.push_back(firstpass);
+    }
     else
       throw std::runtime_error("No object found at location");
   }
