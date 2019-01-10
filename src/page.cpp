@@ -28,7 +28,6 @@
 
 #include "pdfr.h"
 #include "stringfunctions.h"
-#include "Rex.h"
 #include "streams.h"
 #include "dictionary.h"
 #include "document.h"

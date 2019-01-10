@@ -27,7 +27,6 @@
 
 
 #include "pdfr.h"
-#include "Rex.h"
 #include "stringfunctions.h"
 #include "streams.h"
 #include "dictionary.h"
@@ -46,7 +45,7 @@ has_stream(false)
   {
     if(!d->Xref.isInObject(objnum))
     {
-      if(!Rex(fs.substr(startbyte, 20), "<<").has())
+      if(fs.substr(startbyte, 20).find("<<") == string::npos)
       {
         header = dictionary();
         streampos[0] = firstmatch(fs, " obj", startbyte) + 4;

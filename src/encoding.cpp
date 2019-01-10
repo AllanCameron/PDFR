@@ -119,8 +119,7 @@ void Encoding::processUnicodeChars(Rex& Char)
   for(auto j : Char.get())
   {
     j = carveout(j, "beginbfchar", "endbfchar");
-    vector<string> charentries = splitter(j, "(\n|\r){1,2}");
-    for (auto i : charentries)
+    for (auto i : splitter(j, "(\n|\r){1,2}"))
     {
       vector<string> entries = Rex(i, "(\\d|a|b|c|d|e|f|A|B|C|D|E|F)+").get();
       if (entries.size() == 2)

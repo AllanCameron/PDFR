@@ -59,8 +59,8 @@ void xref::xrefstrings()
   std::vector<std::string> res;
   for(auto i : Xreflocations)
   {
-    std::string startxref = "startxref";
-    int minloc = firstmatch(d->filestring, startxref, i) - 9;
+    std::string startxref = "trailer";
+    int minloc = firstmatch(d->filestring, startxref, i);
     if (minloc > 0)
       res.emplace_back(d->filestring.substr(i + 5, minloc - i));
     else
@@ -274,35 +274,31 @@ predictor(0), objstart(starts)
 
 void xref::xrefFromString(std::string& xstr)
 {
-  std::vector<int> inuse, byteloc, objnumber;
-  if(!Rex(xstr, "(0|1|2|3|4|5|6|7|8|9)+").has())
-    return;
-  int startingobj = std::stoi(Rex(xstr, "\\d+").get().at(0));
-  std::vector<std::string>&& bytestrings  =
-    Rex(xstr, "(0|1|2|3|4|5|6|7|8|9){10}").get();
-  std::vector<std::string>&& inusestrings =
-    Rex(xstr, "( )(0|1|2|3|4|5|6|7|8|9){5} ").get();
-  if(!bytestrings.empty() && !inusestrings.empty())
+  std::vector<int> inuse, byteloc, objnumber, allints;
+  allints = getints(xstr);
+  if(allints.size() < 3) return;
+  int startingobj = allints[0];
+  if(allints.size() % 2) throw runtime_error("Malformed xref");
+  for(size_t i = 2; i < allints.size(); i++)
   {
-    for(unsigned int i = 0; i < bytestrings.size(); i++)
+    if(i % 2 == 0) byteloc.emplace_back(allints[i]);
+    else
     {
-      inuse.emplace_back(stoi(inusestrings[i]));
-      objnumber.emplace_back(i + startingobj);
-      byteloc.emplace_back(stoi(bytestrings[i]));
+      inuse.emplace_back(allints[i]);
+      objnumber.emplace_back(startingobj + (i / 2) - 1);
     }
-    XRtab xreftable = {inuse, objnumber, byteloc};
-
-    for (unsigned int j = 0; j < xreftable[0].size(); j++)
+  }
+  XRtab xreftable = {inuse, objnumber, byteloc};
+  for (unsigned int j = 0; j < xreftable[0].size(); j++)
+  {
+    if (xreftable[0][j] < 65535)
     {
-      if (xreftable[0][j] < 65535)
-      {
-        xrefrow txr;
-        txr.object = xreftable[1][j];
-        txr.startbyte = xreftable[2][j];
-        txr.in_object = 0;
-        xreftab[txr.object] = txr;
-        objenum.push_back(txr.object);
-      }
+      xrefrow txr;
+      txr.object = xreftable[1][j];
+      txr.startbyte = xreftable[2][j];
+      txr.in_object = 0;
+      xreftab[txr.object] = txr;
+      objenum.push_back(txr.object);
     }
   }
 }

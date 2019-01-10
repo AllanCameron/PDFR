@@ -38,8 +38,10 @@ vector<string> splitter(const string& s, const string& m);
 std::string carveout(const std::string& subject, const std::string& pre,
                      const std::string& post);
 bool IsAscii(const string& tempint);
-vector<float> getnums(const string& s);
-vector<int> getints(const string& s);
+// [[Rcpp::export]]
+std::vector<float> getnums(const std::string& s);
+// [[Rcpp::export]]
+std::vector<int> getints(const std::string& s);
 int oct2dec(int x);
 vector<unsigned char> bytesFromArray(const string& s);
 string bytestostring(const vector<uint8_t>& v);
@@ -56,8 +58,6 @@ size_t firstmatch(string& s, string m, int startpos);
 void upperCase(string& s);
 vector<RawChar> HexstringToRawChar(string& s);
 vector<RawChar> StringToRawChar(string& s);
-// [[Rcpp::export]]
 std::vector<int> refFinder(const std::string& s);
-
 
 #endif

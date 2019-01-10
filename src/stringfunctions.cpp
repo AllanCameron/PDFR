@@ -53,30 +53,16 @@ vector<string> splitter(const string& s, const string& m)
 }
 
 /*---------------------------------------------------------------------------*/
-// Return the first substring of s that lies between two regexes
+// Return the first substring of s that lies between two strings
 string carveout(const string& s, const string& pre, const string& post)
 {
-  int firstpos  = 0;
-  int secondpos = s.length();
-  vector<int>&& FPV = Rex(s, pre).ends();
-  vector<int>&& SPV = Rex(s, post).pos();
-  int fpvs = FPV.size();
-  int spvs = SPV.size();
-  // Ensure the match lies between the first balanced matches
-  if((fpvs == 0) && (spvs > 0)) secondpos = SPV.at(spvs - 1);
-  if((fpvs > 0) && (spvs == 0)) firstpos = FPV.at(0);
-  if((fpvs > 0) && (spvs > 0))
-  {
-    firstpos = FPV.at(0);
-    for(auto i : SPV)
-      if(i > firstpos)
-      {
-        secondpos = i;
-        break;
-      }
-  }
-  string res(s.begin() + firstpos, s.begin() + secondpos);
-  return res;
+  int start = s.find(pre);
+  if(start == -1) start++;
+  else start += pre.size();
+  string str = s.substr(start, s.size() - start);
+  int stop = str.find(post);
+  if(stop == -1) return str;
+  return str.substr(0, stop);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -86,30 +72,6 @@ bool IsAscii(const string& tempint)
   int mymin = *min_element(tempint.begin(), tempint.end());
   int mymax = *max_element(tempint.begin(), tempint.end());
   return (mymin > 7) && (mymax < 126);
-}
-
-/*---------------------------------------------------------------------------*/
-// Generalizes stof to allow multiple floats from a single string
-vector<float> getnums(const string& s)
-{
-  vector<float> res;
-  string numstring = "(-)?(\\.)?\\d+(\\.)?\\d*"; // float regex
-  vector<string>&& strs = Rex(s, numstring).get();
-  for(auto i : strs)
-    res.emplace_back(stof(i));
-  return res;
-}
-
-/*---------------------------------------------------------------------------*/
-// Generalizes stoi to allow multiple ints to be derived from a string
-vector<int> getints(const string& s)
-{
-  vector<int> res;
-  string numstring = "(-)?(0|1|2|3|4|5|6|7|8|9)+"; // int regex
-  vector<string>&& strs = Rex(s, numstring).get();
-  for(auto i : strs)
-    res.emplace_back(stoi(i));
-  return res;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -356,9 +318,9 @@ std::vector<int> refFinder(const std::string& s)
     {
       switch(m)
       {
-      case 'D' : buf += i; break;
-      case ' ' : state = "wait2"; break;
-      default:   buf.clear(); state = "waiting";
+        case 'D' : buf += i; break;
+        case ' ' : state = "wait2"; break;
+        default:   buf.clear(); state = "waiting";
       }
       continue;
     }
@@ -366,8 +328,8 @@ std::vector<int> refFinder(const std::string& s)
     {
       switch(m)
       {
-      case 'D' : state = "insecondint"; break;
-      default:   state = "waiting"; break;
+        case 'D' : state = "insecondint"; break;
+        default:   state = "waiting"; break;
       }
       continue;
     }
@@ -375,9 +337,9 @@ std::vector<int> refFinder(const std::string& s)
     {
       switch(m)
       {
-      case 'D' : break;
-      case ' ' : state = "wait3"; break;
-      default:   buf.clear(); state = "waiting"; break;
+        case 'D' : break;
+        case ' ' : state = "wait3"; break;
+        default:   buf.clear(); state = "waiting"; break;
       }
       continue;
     }
@@ -385,12 +347,165 @@ std::vector<int> refFinder(const std::string& s)
     {
       switch(m)
       {
-      case 'L' : if(i == 'R') res.push_back(stoi(buf));
-                 buf.clear(); state = "waiting"; break;
-      default:   buf.clear(); state = "waiting";
+        case 'L' : if(i == 'R') res.push_back(stoi(buf));
+                   buf.clear(); state = "waiting"; break;
+        default:   buf.clear(); state = "waiting";
       }
       continue;
     }
   }
+  return res;
+}
+
+/*--------------------------------------------------------------------------*/
+
+std::vector<int> getints(const std::string& s)
+{
+  std::vector<int> res;
+  std::string buf;
+  enum IntState {WAITING, NEG, INT, IGNORE};
+  IntState state = WAITING;
+  for(auto i : s)
+  {
+    char m = symbol_type(i);
+    if(state == WAITING)
+    {
+      if(m == 'D')
+      {
+        if(buf.length() > 10)
+          state = IGNORE;
+        else
+        {
+          buf += i;
+          state = INT;
+        }
+      }
+      else if(i == '-')
+      {
+        buf += i;
+        state = NEG;
+      }
+      continue;
+    }
+    if(state == NEG)
+    {
+      if(m == 'D')
+      {
+        buf += i;
+        state = INT;
+      }
+      else
+      {
+        buf.clear();
+        state = WAITING;
+      }
+      continue;
+    }
+    if(state == INT)
+    {
+      if(m == 'D') buf += i;
+      else
+      {
+        if(buf != "-")
+          res.push_back(stoi(buf));
+        buf.clear();
+        if(i == '.')
+          state = IGNORE;
+        else
+          state = WAITING;
+      }
+      continue;
+    }
+    if(state == IGNORE)
+      if(m != 'D')
+        state = WAITING;
+  }
+  if(state == INT && !buf.empty())
+    res.push_back(stoi(buf));
+  return res;
+}
+
+/*--------------------------------------------------------------------------*/
+
+std::vector<float> getnums(const std::string& s)
+{
+  std::vector<float> res;
+  std::string buf;
+  enum FloatState {WAITING, NEG, PRE, POST};
+  FloatState state = WAITING;
+  for(auto i : s)
+  {
+    char m = symbol_type(i);
+    if(state == WAITING)
+    {
+      if(m == 'D')
+      {
+        buf += i;
+        state = PRE;
+      }
+      else if(i == '-')
+      {
+        buf += i;
+        state = NEG;
+      }
+      else if(i == '.')
+      {
+        buf += i;
+        state = POST;
+      }
+      continue;
+    }
+    if(state == NEG)
+    {
+      if(m == 'D')
+      {
+        buf += i;
+        state = PRE;
+      }
+      else if (i == '.')
+      {
+        buf = "-0.";
+        state = POST;
+      }
+      else
+      {
+        buf.clear();
+        state = WAITING;
+      }
+      continue;
+    }
+    if(state == PRE)
+    {
+      if(m == 'D') buf += i;
+      else if (i == '.')
+      {
+        buf += i;
+        state = POST;
+      }
+      else
+      {
+        if(buf != "-")
+          res.push_back(stof(buf));
+        buf.clear();
+        state = WAITING;
+      }
+      continue;
+    }
+    if(state == POST)
+    {
+      if(m != 'D')
+      {
+        res.push_back(stof(buf));
+        state = WAITING;
+        buf.clear();
+      }
+      else
+        buf += i;
+    }
+  }
+  if(state == PRE && !buf.empty())
+    res.push_back(stof(buf));
+  if(state == POST && buf != "-0.")
+    res.push_back(stof(buf));
   return res;
 }

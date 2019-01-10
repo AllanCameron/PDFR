@@ -113,7 +113,7 @@ void document::getPageDir()
 
 void document::isLinearized()
 {
-  linearized = Rex(filestring.substr(0, 100), "<</Linearized").has();
+  linearized = filestring.substr(0, 100).find("<</Linearized") != string::npos;
 }
 
 /*---------------------------------------------------------------------------*/
