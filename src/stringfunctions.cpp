@@ -26,31 +26,10 @@
 //---------------------------------------------------------------------------//
 
 #include "pdfr.h"
-#include "Rex.h"
 #include "stringfunctions.h"
 #include "debugtools.h"
 
 using namespace std;
-
-/*---------------------------------------------------------------------------*/
-// Finds matches m in string s, returning a vector of (matches + 1) substrings
-vector<string> splitter(const string& s, const string& m)
-{
-  Rex&& sl = Rex(s, m);
-  vector<string> RC, res;
-  if(!sl.has())
-    return sl.get();
-  size_t n = sl.n();
-  RC.emplace_back(s.substr(0, sl.pos().at(0)));
-  if(n > 1)
-    for(size_t i = 1; i < n; i++)
-      RC.emplace_back(s.substr(sl.ends()[i-1], sl.pos()[i] - sl.ends()[i - 1]));
-  RC.emplace_back(s.substr(sl.ends()[n - 1], s.size() - sl.ends().at(n - 1)));
-  for(auto i : RC)
-    if(!i.empty())
-      res.push_back(i);
-  return res;
-}
 
 /*---------------------------------------------------------------------------*/
 // Return the first substring of s that lies between two strings

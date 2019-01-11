@@ -172,7 +172,7 @@ void tokenizer::numberState()
     case ' ':   pushbuf(NUMBER,     NEWSYMBOL);   break;
     case '[':   pushbuf(NUMBER,     ARRAY);       break;
     case '(':   pushbuf(NUMBER,     STRING);      break;
-    case '<':   pushbuf(IDENTIFIER, HEXSTRING);   break;
+    case '<':   pushbuf(NUMBER,     HEXSTRING);   break;
   }
 }
 
@@ -277,5 +277,6 @@ void tokenizer::waitState()
 
 void tokenizer::subtokenizer(string &str)
 {
+  state = NEWSYMBOL;
   concat(output, tokenizer(str).result());
 }

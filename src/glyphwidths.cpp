@@ -33,7 +33,6 @@
 #include "font.h"
 #include "document.h"
 #include "object_class.h"
-#include "Rex.h"
 #include "dictionary.h"
 
 #define DEFAULT_WIDTH 500;
@@ -61,9 +60,7 @@ void glyphwidths::parseWidths(dictionary& dict, document* d)
   {
     object_class o = d->getobject(dict.getRefs("/Widths").at(0));
     string ostring = o.getStream();
-    vector<string> arrstrings = Rex(ostring, numstring).get();
-    if (!arrstrings.empty())
-      widtharray = getnums(arrstrings[0]);
+    widtharray = getnums(ostring);
   }
   else widtharray = dict.getNums("/Widths");
   if (!widtharray.empty())
@@ -92,12 +89,8 @@ void glyphwidths::parseDescendants(dictionary& dict, document* d)
       widthstring = d->getobject(descdict.getRefs("/W").at(0)).getStream();
     else
       widthstring = descdict.get("/W");
-    vector<string> tmp = Rex(widthstring, numstring).get();
-    if(!tmp.empty())
-    {
-      parsewidtharray(tmp[0]);
-      this->widthFromCharCodes = true;
-    }
+    parsewidtharray(widthstring);
+    this->widthFromCharCodes = true;
   }
 }
 

@@ -132,54 +132,6 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// carveout
-std::string carveout(const std::string& subject, const std::string& pre, const std::string& post);
-RcppExport SEXP _PDFR_carveout(SEXP subjectSEXP, SEXP preSEXP, SEXP postSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const std::string& >::type subject(subjectSEXP);
-    Rcpp::traits::input_parameter< const std::string& >::type pre(preSEXP);
-    Rcpp::traits::input_parameter< const std::string& >::type post(postSEXP);
-    rcpp_result_gen = Rcpp::wrap(carveout(subject, pre, post));
-    return rcpp_result_gen;
-END_RCPP
-}
-// getnums
-std::vector<float> getnums(const std::string& s);
-RcppExport SEXP _PDFR_getnums(SEXP sSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const std::string& >::type s(sSEXP);
-    rcpp_result_gen = Rcpp::wrap(getnums(s));
-    return rcpp_result_gen;
-END_RCPP
-}
-// getints
-std::vector<int> getints(const std::string& s);
-RcppExport SEXP _PDFR_getints(SEXP sSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const std::string& >::type s(sSEXP);
-    rcpp_result_gen = Rcpp::wrap(getints(s));
-    return rcpp_result_gen;
-END_RCPP
-}
-// multicarve
-std::vector<std::string> multicarve(const std::string& s, const std::string& a, const std::string& b);
-RcppExport SEXP _PDFR_multicarve(SEXP sSEXP, SEXP aSEXP, SEXP bSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const std::string& >::type s(sSEXP);
-    Rcpp::traits::input_parameter< const std::string& >::type a(aSEXP);
-    Rcpp::traits::input_parameter< const std::string& >::type b(bSEXP);
-    rcpp_result_gen = Rcpp::wrap(multicarve(s, a, b));
-    return rcpp_result_gen;
-END_RCPP
-}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_PDFR_rc4", (DL_FUNC) &_PDFR_rc4, 2},
@@ -193,10 +145,6 @@ static const R_CallMethodDef CallEntries[] = {
     {"_PDFR_pdfpage", (DL_FUNC) &_PDFR_pdfpage, 2},
     {"_PDFR_pdfpageraw", (DL_FUNC) &_PDFR_pdfpageraw, 2},
     {"_PDFR_getglyphmap", (DL_FUNC) &_PDFR_getglyphmap, 2},
-    {"_PDFR_carveout", (DL_FUNC) &_PDFR_carveout, 3},
-    {"_PDFR_getnums", (DL_FUNC) &_PDFR_getnums, 1},
-    {"_PDFR_getints", (DL_FUNC) &_PDFR_getints, 1},
-    {"_PDFR_multicarve", (DL_FUNC) &_PDFR_multicarve, 3},
     {NULL, NULL, 0}
 };
 

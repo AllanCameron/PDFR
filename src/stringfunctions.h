@@ -33,14 +33,9 @@ using namespace std;
 
 /*---------------------------------------------------------------------------*/
 
-vector<string> splitter(const string& s, const string& m);
-// [[Rcpp::export]]
-std::string carveout(const std::string& subject, const std::string& pre,
-                     const std::string& post);
+string carveout(const string& subject, const string& pre, const string& post);
 bool IsAscii(const string& tempint);
-// [[Rcpp::export]]
 std::vector<float> getnums(const std::string& s);
-// [[Rcpp::export]]
 std::vector<int> getints(const std::string& s);
 int oct2dec(int x);
 vector<unsigned char> bytesFromArray(const string& s);
@@ -58,8 +53,7 @@ size_t firstmatch(string& s, string m, int startpos);
 void upperCase(string& s);
 vector<RawChar> HexstringToRawChar(string& s);
 vector<RawChar> StringToRawChar(string& s);
-std::vector<int> refFinder(const std::string& s);
-// [[Rcpp::export]]
-std::vector<std::string>
-  multicarve(const std::string& s, const std::string& a, const std::string& b);
+vector<int> refFinder(const std::string& s);
+vector<string> multicarve(const string& s, const string& a, const string& b);
+
 #endif

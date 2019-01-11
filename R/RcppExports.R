@@ -58,19 +58,3 @@ getglyphmap <- function(s, pagenum) {
     .Call('_PDFR_getglyphmap', PACKAGE = 'PDFR', s, pagenum)
 }
 
-carveout <- function(subject, pre, post) {
-    .Call('_PDFR_carveout', PACKAGE = 'PDFR', subject, pre, post)
-}
-
-getnums <- function(s) {
-    .Call('_PDFR_getnums', PACKAGE = 'PDFR', s)
-}
-
-getints <- function(s) {
-    .Call('_PDFR_getints', PACKAGE = 'PDFR', s)
-}
-
-multicarve <- function(s, a, b) {
-    .Call('_PDFR_multicarve', PACKAGE = 'PDFR', s, a, b)
-}
-

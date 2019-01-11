@@ -32,7 +32,6 @@
 #include "font.h"
 #include "document.h"
 #include "object_class.h"
-#include "Rex.h"
 #include "dictionary.h"
 #include "debugtools.h"
 

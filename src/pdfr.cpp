@@ -45,7 +45,7 @@
 Rcpp::DataFrame getglyphmap(const std::string& s, int pagenum)
 {
   document d = document(s);
-  page p = d.getPage(pagenum);
+  page p = d.getPage(pagenum - 1);
   std::vector<std::string> FontName;
   std::vector<uint16_t> codepoint, unicode, width;
   for(auto i : p.fontnames)
