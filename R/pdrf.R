@@ -24,9 +24,6 @@
 ##  SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                   ##
 ##                                                                           ##
 ##---------------------------------------------------------------------------##
-
-
-
 #' Paths to test pdfs
 #'
 #' A list of paths to locally stored test pdfs
@@ -43,21 +40,19 @@
 #'   \item{tex}{a simple tex test}
 #'   \item{rcpp}{a CRAN package vignette}
 #' }
-"testfiles"
+##---------------------------------------------------------------------------##
 testfiles <- list(
-  barcodes = system.file("extdata", "barcodes.pdf", package = "PDFR"),
-  chestpain = system.file("extdata", "chestpain.pdf", package = "PDFR"),
-  pdfinfo = system.file("extdata", "pdfinfo.pdf", package = "PDFR"),
-  adobe = system.file("extdata", "adobe.pdf", package = "PDFR"),
-  leeds = system.file("extdata", "leeds.pdf", package = "PDFR"),
-  sams = system.file("extdata", "sams.pdf", package = "PDFR"),
-  testreader = system.file("extdata", "testreader.pdf", package = "PDFR"),
-  tex = system.file("extdata", "tex.pdf", package = "PDFR"),
-  rcpp = system.file("extdata", "rcpp.pdf", package = "PDFR")
-)
+  barcodes   =  system.file("extdata", "barcodes.pdf",   package = "PDFR"),
+  chestpain  =  system.file("extdata", "chestpain.pdf",  package = "PDFR"),
+  pdfinfo    =  system.file("extdata", "pdfinfo.pdf",    package = "PDFR"),
+  adobe      =  system.file("extdata", "adobe.pdf",      package = "PDFR"),
+  leeds      =  system.file("extdata", "leeds.pdf",      package = "PDFR"),
+  sams       =  system.file("extdata", "sams.pdf",       package = "PDFR"),
+  testreader =  system.file("extdata", "testreader.pdf", package = "PDFR"),
+  tex        =  system.file("extdata", "tex.pdf",        package = "PDFR"),
+  rcpp       =  system.file("extdata", "rcpp.pdf",       package = "PDFR"))
 
-
-
+##---------------------------------------------------------------------------##
 #' get a file from the internet
 #'
 #' Returns the character string or raw vector (depending on content) from
@@ -70,6 +65,7 @@ testfiles <- list(
 #' @export
 #'
 #' @examples internetFile("http://www.google.com")
+##---------------------------------------------------------------------------##
 internetFile <- function(x, filename = NULL)
 {
   xloc <- tempfile();
@@ -84,17 +80,19 @@ internetFile <- function(x, filename = NULL)
 else cat("file saved to ", path.expand("~/"), filename, "\n", collapse = "")
 }
 
+##---------------------------------------------------------------------------##
 #' pdfpage
 #'
 #' Returns contents of a pdf page
 #'
 #' @param pdf a valid pdf file location
-#' @param page the page number to be plotted
+#' @param page the page number to be extracted
 #'
 #' @return a list containing data frames
 #' @export
 #'
 #' @examples pdfpage(testfiles$leeds, 1)
+##---------------------------------------------------------------------------##
 pdfpage <- function(pdf, page){
   if(class(pdf) == "raw") {
     a <- .pdfpageraw(pdf, page);
@@ -105,15 +103,16 @@ pdfpage <- function(pdf, page){
   return(a)
 }
 
-
+##---------------------------------------------------------------------------##
 #' Get a pdf's xref table as an R dataframe
 #'
 #' @param pdf a valid pdf file location or raw data vector
 #'
-#' @return a data frame showing the positions of each object
+#' @return a data frame showing the bytewise positions of each object in the pdf
 #' @export
 #'
 #' @examples get_xref(testfiles$leeds)
+##---------------------------------------------------------------------------##
 get_xref <- function(pdf){
   if(class(pdf) == "raw") {
     return(.get_xrefraw(pdf));
@@ -122,8 +121,12 @@ get_xref <- function(pdf){
     }
 }
 
-
+##---------------------------------------------------------------------------##
 #' Get the contents of a pdf object
+#'
+#' Returns a list consisting of a named vector representing key:value pairs
+#' in a specified object. It also contains any stream data associated with
+#' the object.
 #'
 #' @param pdf a valid pdf file location
 #' @param number the object number
@@ -132,6 +135,7 @@ get_xref <- function(pdf){
 #' @export
 #'
 #' @examples get_object(testfiles$leeds, 1)
+##---------------------------------------------------------------------------##
 get_object <- function(pdf, number){
   if(class(pdf) == "raw") {
     return(.get_objraw(pdf, number));
@@ -140,7 +144,7 @@ get_object <- function(pdf, number){
     }
 }
 
-
+##---------------------------------------------------------------------------##
 #' pdfplot
 #'
 #' Plots the text elements from a page as a ggplot.
@@ -155,6 +159,7 @@ get_object <- function(pdf, number){
 #' @export
 #'
 #' @examples pdfplot(testfiles$leeds, 1)
+##---------------------------------------------------------------------------##
 pdfplot <- function(pdf, page = 1, textsize = 1)
 {
   pdfpage(pdf, page) -> x;
@@ -168,5 +173,25 @@ pdfplot <- function(pdf, page = 1, textsize = 1)
     ) + ggplot2::geom_text(ggplot2::aes(label = y$text), hjust = 0, vjust = 0
     ) + ggplot2::coord_equal(
     ) + ggplot2::scale_size_identity();
+}
+
+##---------------------------------------------------------------------------##
+#' Return map of glyphs from a page
+#'
+#' Used mainly for debugging, this function returns an R dataframe, one row for
+#' each byte that may be used as a glyph. It shows the unicode number of
+#' each interpreted glyph, as well as its width in text space.
+#'
+#' @param pdf a valid pdf file location
+#' @param page the page number from which to extract glyphs
+#'
+#' @return a dataframe of all entries of font encoding tables with width mapping
+#' @export
+#'
+#' @examples getglyphmap(testfiles$leeds, 1)
+##---------------------------------------------------------------------------##
+getglyphmap <- function(pdf, page = 1)
+{
+  return(.getglyphmap(pdf, page))
 }
 

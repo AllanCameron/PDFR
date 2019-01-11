@@ -15,7 +15,9 @@ get_object(pdf, number)
 a named vector of the dictionary and stream of the pdf object
 }
 \description{
-Get the contents of a pdf object
+Returns a list consisting of a named vector representing key:value pairs
+in a specified object. It also contains any stream data associated with
+the object.
 }
 \examples{
 get_object(testfiles$leeds, 1)

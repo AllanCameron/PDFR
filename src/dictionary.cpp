@@ -33,15 +33,6 @@ using namespace std;
 
 /*---------------------------------------------------------------------------*/
 
-void dictionary::printdict()
-{
-  vector<string> dickeys = this->getDictKeys();
-  for(auto i : dickeys)
-    cout << i << ": " << DictionaryMap[i] << std::endl;
-}
-
-/*---------------------------------------------------------------------------*/
-
 void dictionary::tokenize_dict()
 {
   size_t maxlen = i + 100000;

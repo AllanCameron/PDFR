@@ -10,7 +10,7 @@ get_xref(pdf)
 \item{pdf}{a valid pdf file location or raw data vector}
 }
 \value{
-a data frame showing the positions of each object
+a data frame showing the bytewise positions of each object in the pdf
 }
 \description{
 Get a pdf's xref table as an R dataframe

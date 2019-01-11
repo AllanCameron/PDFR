@@ -9,7 +9,7 @@ pdfpage(pdf, page)
 \arguments{
 \item{pdf}{a valid pdf file location}
 
-\item{page}{the page number to be plotted}
+\item{page}{the page number to be extracted}
 }
 \value{
 a list containing data frames

@@ -54,7 +54,7 @@ md5 <- function(input) {
     .Call('_PDFR_pdfpageraw', PACKAGE = 'PDFR', rawfile, pagenum)
 }
 
-getglyphmap <- function(s, pagenum) {
+.getglyphmap <- function(s, pagenum) {
     .Call('_PDFR_getglyphmap', PACKAGE = 'PDFR', s, pagenum)
 }
 

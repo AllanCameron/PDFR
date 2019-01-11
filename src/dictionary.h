@@ -70,7 +70,6 @@ public:
   dictionary(std::string* s, size_t);
   dictionary(std::map<std::string, std::string> d) : DictionaryMap(d) {};
   dictionary();
-  void printdict();
   std::string get(const std::string& Key);
   bool has(const std::string& Key);
   bool hasRefs(const std::string& Key);
