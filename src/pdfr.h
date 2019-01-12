@@ -28,56 +28,22 @@
 #ifndef PDFR_H
 #define PDFR_H
 
-#include<string>
-#include<map>
-#include<vector>
-#include<algorithm>
-#include<regex>
-#include<chrono>
-#include<cassert>
-#include<iostream>
-#include<fstream>
-#include<thread>
-#include<ratio>
-#include<Rcpp.h>
-
 typedef std::vector<std::vector<int>> XRtab;
 typedef std::vector<std::vector<std::vector<std::string>>> Instructionset;
 typedef uint16_t Unicode;
 typedef uint16_t RawChar;
-typedef std::map<RawChar, std::pair<Unicode, int>> GlyphMap;
+typedef std::unordered_map<RawChar, std::pair<Unicode, int>> GlyphMap;
 
-class object_class;
 class page;
-class xref;
 class document;
-class font;
-class Encoding;
-class glyphwidths;
-class tokenizer;
-
-
-#include "stringfunctions.h"
-#include "streams.h"
-#include "dictionary.h"
-#include "encoding.h"
-#include "glyphwidths.h"
-#include "font.h"
-#include "object_class.h"
-#include "xref.h"
-#include "document.h"
-#include "page.h"
-#include "GraphicsState.h"
-#include "tokenizer.h"
-
 //---------------------------------------------------------------------------//
 
 template< typename Mt, typename T >
-std::vector<Mt> getKeys(std::map<Mt, T>& Map)
+std::vector<Mt> getKeys(std::unordered_map<Mt, T>& Map)
 {
   std::vector<Mt> keyvec;
   keyvec.reserve(Map.size());
-  for(typename std::map<Mt, T>::iterator i = Map.begin(); i != Map.end(); i++)
+  for(typename std::unordered_map<Mt, T>::iterator i = Map.begin(); i != Map.end(); i++)
     keyvec.push_back(i->first);
   return keyvec;
 }
@@ -92,21 +58,23 @@ void concat(std::vector<T>& A, const std::vector<T>& B)
 
 //---------------------------------------------------------------------------//
 
-inline void createpdf(const std::string& filename)
+template <typename T>
+std::vector<int> order(const std::vector<T>& data)
 {
-  document res = document(filename);
+  std::vector<int> index(data.size(), 0);
+  int i = 0;
+  for (auto &j : index) j = i++;
+
+  sort(index.begin(), index.end(), [&](const T& a, const T& b)
+  {
+    return (data[a] < data[b]);
+  });
+  return index;
 }
 
-//---------------------------------------------------------------------------//
-
-inline std::string getpagestring(page p){return p.contentstring;}
-
-//---------------------------------------------------------------------------//
-
-inline std::string getPageString(const std::string& filename, int pagenum)
-{
-  return getpagestring(document(filename).getPage(pagenum - 1));
-}
+void createpdf(const std::string& filename);
+std::string getpagestring(page p);
+std::string getPageString(const std::string& filename, int pagenum);
 
 //---------------------------------------------------------------------------//
 
@@ -117,8 +85,8 @@ Rcpp::List PDFpage(document mypdf, page pg, int clump);
 //'
 //' Performs an RC4 hash for a given key
 //'
-//' @param msg The message to be hashed as a raw vector
-//' @param key the raw vector with which to hash
+//' @param msg The message to be hashed as a raw std::vector
+//' @param key the raw std::vector with which to hash
 //' @export
 // [[Rcpp::export]]
 std::vector<uint8_t> rc4(std::vector<uint8_t> msg, std::vector<uint8_t> key);
@@ -126,9 +94,9 @@ std::vector<uint8_t> rc4(std::vector<uint8_t> msg, std::vector<uint8_t> key);
 //---------------------------------------------------------------------------//
 //' md5
 //'
-//' returns an md5 hash of a given raw vector as a raw vector
+//' returns an md5 hash of a given raw std::vector as a raw std::vector
 //'
-//' @param input A raw vector
+//' @param input A raw std::vector
 //' @export
 // [[Rcpp::export]]
 std::vector<uint8_t> md5(std::vector<uint8_t> input);

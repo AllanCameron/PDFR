@@ -25,9 +25,12 @@
 //                                                                           //
 //---------------------------------------------------------------------------//
 
+#include<Rcpp.h>
+#include<string>
+#include<vector>
+#include<unordered_map>
 #include "pdfr.h"
 #include "stringfunctions.h"
-#include "debugtools.h"
 
 using namespace std;
 
@@ -509,3 +512,5 @@ std::vector<float> getnums(const std::string& s)
     res.push_back(stof(buf));
   return res;
 }
+
+

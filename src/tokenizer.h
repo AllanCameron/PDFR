@@ -28,6 +28,23 @@
 #ifndef PDFR_TOKEN
 #define PDFR_TOKEN
 
+namespace Token
+{
+  enum TState
+  {
+    NEWSYMBOL,
+    IDENTIFIER,
+    NUMBER,
+    RESOURCE,
+    STRING,
+    HEXSTRING,
+    ARRAY,
+    DICT,
+    WAIT,
+    OPERATOR
+  };
+};
+
 using namespace std;
 using namespace Token;
 

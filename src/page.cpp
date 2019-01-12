@@ -26,13 +26,22 @@
 //---------------------------------------------------------------------------//
 
 
+#include<Rcpp.h>
+#include<string>
+#include<vector>
+#include<unordered_map>
 #include "pdfr.h"
 #include "stringfunctions.h"
-#include "streams.h"
+#include "adobetounicode.h"
+#include "chartounicode.h"
 #include "dictionary.h"
+#include "xref.h"
+#include "object_class.h"
+#include "glyphwidths.h"
+#include "encoding.h"
+#include "font.h"
 #include "document.h"
 #include "page.h"
-#include "debugtools.h"
 
 /*---------------------------------------------------------------------------*/
 
@@ -158,7 +167,7 @@ void page::parseXObjStream(document& d)
 
 page::page(document& d, int pagenum) : pagenumber(pagenum), rotate(0)
 {
-  std::map<std::string, std::string> blankmap;
+  std::unordered_map<std::string, std::string> blankmap;
   getHeader(d);
   getResources(d);
   parseXObjStream(d);

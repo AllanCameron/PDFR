@@ -25,15 +25,22 @@
 //                                                                           //
 //---------------------------------------------------------------------------//
 
+#include<Rcpp.h>
+#include<string>
+#include<vector>
+#include<unordered_map>
 #include "pdfr.h"
+#include "stringfunctions.h"
 #include "adobetounicode.h"
 #include "chartounicode.h"
 #include "corefonts.h"
+#include "dictionary.h"
+#include "xref.h"
+#include "object_class.h"
+#include "glyphwidths.h"
 #include "encoding.h"
 #include "font.h"
 #include "document.h"
-#include "object_class.h"
-#include "dictionary.h"
 
 #define DEFAULT_WIDTH 500;
 

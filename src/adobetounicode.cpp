@@ -25,12 +25,14 @@
 //                                                                           //
 //---------------------------------------------------------------------------//
 
+#include<Rcpp.h>
 #include<string>
-#include<map>
+#include<vector>
+#include<unordered_map>
 #include "pdfr.h"
 #include "adobetounicode.h"
 
-std::map<std::string, Unicode> AdobeToUnicode =
+std::unordered_map<std::string, Unicode> AdobeToUnicode =
 {
   {"/.notdef", 0x2022},
   {"/controlSOT", 0x0002},

@@ -26,12 +26,22 @@
 //---------------------------------------------------------------------------//
 
 
+#include<Rcpp.h>
+#include<string>
+#include<vector>
+#include<unordered_map>
 #include "pdfr.h"
 #include "stringfunctions.h"
-#include "streams.h"
+#include "adobetounicode.h"
+#include "chartounicode.h"
 #include "dictionary.h"
-#include "document.h"
+#include "xref.h"
+#include "streams.h"
 #include "object_class.h"
+#include "glyphwidths.h"
+#include "encoding.h"
+#include "font.h"
+#include "document.h"
 #include "crypto.h"
 
 object_class::object_class(document* doc, int objnum) : number(objnum), d(doc),

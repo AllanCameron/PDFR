@@ -28,11 +28,11 @@
 
 #ifndef PDFR_ENCODING
 #define PDFR_ENCODING
-
+class font;
 class Encoding
 {
 private:
-  map<RawChar, Unicode> EncodingMap;
+  unordered_map<RawChar, Unicode> EncodingMap;
   document* d;
   font* f;
   string BaseEncoding;

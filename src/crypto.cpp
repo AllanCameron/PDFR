@@ -25,6 +25,10 @@
 //                                                                           //
 //---------------------------------------------------------------------------//
 
+#include<Rcpp.h>
+#include<string>
+#include<vector>
+#include<unordered_map>
 #include "pdfr.h"
 #include "stringfunctions.h"
 #include "streams.h"

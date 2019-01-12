@@ -42,6 +42,8 @@ enum DState     {PREENTRY,
                  CLOSE,
                  THE_END};
 
+using namespace std;
+
 class dictionary
 {
   string* s;
@@ -50,7 +52,7 @@ class dictionary
   bool keyPending;
   string buf, pendingKey;
   DState state;
-  std::map<std::string, std::string> DictionaryMap;
+  std::unordered_map<std::string, std::string> DictionaryMap;
   void tokenize_dict();
   void sortkey(string, DState);
   void assignValue(string, DState);
@@ -68,7 +70,7 @@ class dictionary
 public:
   dictionary(std::string* s);
   dictionary(std::string* s, size_t);
-  dictionary(std::map<std::string, std::string> d) : DictionaryMap(d) {};
+  dictionary(std::unordered_map<string, string> d) : DictionaryMap(d) {};
   dictionary();
   std::string get(const std::string& Key);
   bool has(const std::string& Key);
@@ -80,7 +82,7 @@ public:
   std::vector<float> getNums(const std::string& Key);
   std::vector<std::string> getDictKeys();
   dictionary getDictionary(const std::string& Key);
-  std::map<std::string, std::string> R_out() {return this->DictionaryMap;}
+  std::unordered_map<string, string> R_out() {return this->DictionaryMap;}
 };
 
 #endif

@@ -24,13 +24,21 @@
 //  SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                   //
 //                                                                           //
 //---------------------------------------------------------------------------//
-
+#include<string>
+#include<vector>
+#include<unordered_map>
+#include<Rcpp.h>
 #include "pdfr.h"
 #include "stringfunctions.h"
+#include "dictionary.h"
+#include "xref.h"
+#include "object_class.h"
+#include "encoding.h"
+#include "glyphwidths.h"
+#include "font.h"
+#include "page.h"
 #include "document.h"
-#include "debugtools.h"
 #include "tokenizer.h"
-#include "debugtools.h"
 #include "GraphicsState.h"
 
 using namespace std;

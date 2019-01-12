@@ -25,12 +25,23 @@
 //                                                                           //
 //---------------------------------------------------------------------------//
 
+#include<Rcpp.h>
+#include<string>
+#include<vector>
+#include<unordered_map>
 #include "pdfr.h"
-#include "GraphicsState.h"
 #include "stringfunctions.h"
-#include "tokenizer.h"
+#include "adobetounicode.h"
 #include "chartounicode.h"
-#include "debugtools.h"
+#include "dictionary.h"
+#include "xref.h"
+#include "object_class.h"
+#include "glyphwidths.h"
+#include "encoding.h"
+#include "font.h"
+#include "document.h"
+#include "page.h"
+#include "tokenizer.h"
 
 using namespace std;
 using namespace Token;

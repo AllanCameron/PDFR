@@ -29,20 +29,20 @@
 #ifndef PDFR_COREFONTS
 #define PDFR_COREFONTS
 
-extern std::map<Unicode, int> courierwidths;
-extern std::map<Unicode, int> courierboldwidths;
-extern std::map<Unicode, int> courierboldobliquewidths;
-extern std::map<Unicode, int> courierobliquewidths;
-extern std::map<Unicode, int> helveticawidths;
-extern std::map<Unicode, int> helveticaboldwidths;
-extern std::map<Unicode, int> helveticaboldobliquewidths;
-extern std::map<Unicode, int> helveticaobliquewidths;
-extern std::map<Unicode, int> symbolwidths;
-extern std::map<Unicode, int> timesboldwidths;
-extern std::map<Unicode, int> timesbolditalicwidths;
-extern std::map<Unicode, int> timesitalicwidths;
-extern std::map<Unicode, int> timesromanwidths;
-extern std::map<Unicode, int> dingbatswidths;
+extern std::unordered_map<Unicode, int> courierwidths;
+extern std::unordered_map<Unicode, int> courierboldwidths;
+extern std::unordered_map<Unicode, int> courierboldobliquewidths;
+extern std::unordered_map<Unicode, int> courierobliquewidths;
+extern std::unordered_map<Unicode, int> helveticawidths;
+extern std::unordered_map<Unicode, int> helveticaboldwidths;
+extern std::unordered_map<Unicode, int> helveticaboldobliquewidths;
+extern std::unordered_map<Unicode, int> helveticaobliquewidths;
+extern std::unordered_map<Unicode, int> symbolwidths;
+extern std::unordered_map<Unicode, int> timesboldwidths;
+extern std::unordered_map<Unicode, int> timesbolditalicwidths;
+extern std::unordered_map<Unicode, int> timesitalicwidths;
+extern std::unordered_map<Unicode, int> timesromanwidths;
+extern std::unordered_map<Unicode, int> dingbatswidths;
 
 
 #endif

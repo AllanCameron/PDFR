@@ -31,16 +31,41 @@
 //---------------------------------------------------------------------------//
 
 #include<Rcpp.h>
+#include<string>
+#include<vector>
+#include<unordered_map>
 #include "pdfr.h"
-#include "debugtools.h"
+#include "stringfunctions.h"
+#include "adobetounicode.h"
 #include "chartounicode.h"
 #include "dictionary.h"
-#include "stringfunctions.h"
+#include "xref.h"
+#include "object_class.h"
+#include "glyphwidths.h"
+#include "encoding.h"
+#include "font.h"
 #include "document.h"
-#include "crypto.h"
-#include "streams.h"
+#include "page.h"
+#include "tokenizer.h"
+#include "GraphicsState.h"
 
 //---------------------------------------------------------------------------//
+
+void createpdf(const std::string& filename)
+{
+  document res = document(filename);
+}
+
+//---------------------------------------------------------------------------//
+
+std::string getpagestring(page p){return p.contentstring;}
+
+//---------------------------------------------------------------------------//
+
+std::string getPageString(const std::string& filename, int pagenum)
+{
+  return getpagestring(document(filename).getPage(pagenum - 1));
+}
 
 Rcpp::DataFrame getglyphmap(const std::string& s, int pagenum)
 {

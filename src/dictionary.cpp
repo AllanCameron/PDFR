@@ -25,6 +25,10 @@
 //                                                                           //
 //---------------------------------------------------------------------------//
 
+#include<Rcpp.h>
+#include<string>
+#include<vector>
+#include<unordered_map>
 #include "pdfr.h"
 #include "stringfunctions.h"
 #include "dictionary.h"
@@ -248,7 +252,7 @@ dictionary::dictionary(string* str, size_t pos) :
 
 dictionary::dictionary()
 {
-  map<string, string> Empty;
+  unordered_map<string, string> Empty;
   DictionaryMap = Empty;
 }
 

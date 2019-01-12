@@ -29,10 +29,12 @@
 #ifndef PDFR_WIDTH
 #define PDFR_WIDTH
 
+class font;
+
 class glyphwidths
 {
 private:
-  map<RawChar, int> Width;
+  unordered_map<RawChar, int> Width;
   document* d;
   font* f;
   dictionary fontref;

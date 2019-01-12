@@ -46,7 +46,7 @@ private:
   void xrefFromStream(int xrefloc);
   void xrefFromString(std::string& s);
   void buildXRtable();
-  std::map<int, xrefrow> xreftab;
+  std::unordered_map<int, xrefrow> xreftab;
   std::vector<int> objenum;
   dictionary TrailerDictionary;
 

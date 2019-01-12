@@ -5,8 +5,8 @@
 #'
 #' Performs an RC4 hash for a given key
 #'
-#' @param msg The message to be hashed as a raw vector
-#' @param key the raw vector with which to hash
+#' @param msg The message to be hashed as a raw std::vector
+#' @param key the raw std::vector with which to hash
 #' @export
 rc4 <- function(msg, key) {
     .Call('_PDFR_rc4', PACKAGE = 'PDFR', msg, key)
@@ -14,9 +14,9 @@ rc4 <- function(msg, key) {
 
 #' md5
 #'
-#' returns an md5 hash of a given raw vector as a raw vector
+#' returns an md5 hash of a given raw std::vector as a raw std::vector
 #'
-#' @param input A raw vector
+#' @param input A raw std::vector
 #' @export
 md5 <- function(input) {
     .Call('_PDFR_md5', PACKAGE = 'PDFR', input)

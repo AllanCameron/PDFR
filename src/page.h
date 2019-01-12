@@ -29,6 +29,8 @@
 #ifndef PDFR_PAGE
 #define PDFR_PAGE
 
+class font;
+
 class page
 {
 public:
@@ -36,13 +38,13 @@ public:
   int pagenumber, objectnumber, parent;
   dictionary header, resources, fonts, realfonts;
   std::string contentstring, xobjstring;
-  std::map<std::string, std::string> XObjects;
+  std::unordered_map<std::string, std::string> XObjects;
   std::vector<int> resourceobjs, contents;
   std::vector<float> bleedbox, cropbox, mediabox, trimbox, artbox, minbox;
   double rotate;
   std::vector<std::string> fontnames;
   std::vector<dictionary> UnicodeMaps, fontrefs;
-  std::map<std::string, font> fontmap;
+  std::unordered_map<std::string, font> fontmap;
 
 private:
   void parseXObjStream(document& d);

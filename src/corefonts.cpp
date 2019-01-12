@@ -25,8 +25,10 @@
 //                                                                           //
 //---------------------------------------------------------------------------//
 
-#include<map>
+#include<Rcpp.h>
+#include<string>
 #include<vector>
+#include<unordered_map>
 #include "pdfr.h"
 #include "corefonts.h"
 
@@ -45,7 +47,7 @@ static std::vector<float> timesitalicbox          = {-169, -217, 1010,  883};
 static std::vector<float> timesromanbox           = {-168, -218, 1000,  898};
 static std::vector<float> dingbatsbox             = {-1,   -143, 981,   820};
 
-std::map<Unicode, int> courierwidths =
+std::unordered_map<Unicode, int> courierwidths =
 {
   {0x0020, 0x0258}, {0x0021, 0x0258}, {0x0022, 0x0258}, {0x0023, 0x0258},
   {0x0024, 0x0258}, {0x0025, 0x0258}, {0x0026, 0x0258}, {0x0027, 0x0258},
@@ -87,13 +89,13 @@ std::map<Unicode, int> courierwidths =
   {0x00fb, 0x0258}
 };
 
- std::map<Unicode, int> courierboldwidths = courierwidths;
+ std::unordered_map<Unicode, int> courierboldwidths = courierwidths;
 
- std::map<Unicode, int> courierboldobliquewidths = courierwidths;
+ std::unordered_map<Unicode, int> courierboldobliquewidths = courierwidths;
 
- std::map<Unicode, int> courierobliquewidths = courierwidths;
+ std::unordered_map<Unicode, int> courierobliquewidths = courierwidths;
 
- std::map<Unicode, int> helveticawidths =
+ std::unordered_map<Unicode, int> helveticawidths =
 {
   {0x0020, 0x0116}, {0x0021, 0x0116}, {0x0022, 0x0163}, {0x0023, 0x022c},
   {0x0024, 0x022c}, {0x0025, 0x0379}, {0x0026, 0x029b}, {0x0027, 0x00de},
@@ -135,7 +137,7 @@ std::map<Unicode, int> courierwidths =
   {0x00fb, 0x0263}
 };
 
- std::map<Unicode, int> helveticaboldwidths =
+ std::unordered_map<Unicode, int> helveticaboldwidths =
 {
   {0x0020, 0x0116}, {0x0021, 0x014d}, {0x0022, 0x01da}, {0x0023, 0x022c},
   {0x0024, 0x022c}, {0x0025, 0x0379}, {0x0026, 0x02d2}, {0x0027, 0x0116},
@@ -177,7 +179,7 @@ std::map<Unicode, int> courierwidths =
   {0x00fb, 0x0263}
 };
 
- std::map<Unicode, int> helveticaboldobliquewidths =
+ std::unordered_map<Unicode, int> helveticaboldobliquewidths =
 {
   {0x0020, 0x0116}, {0x0021, 0x014d}, {0x0022, 0x01da}, {0x0023, 0x022c},
   {0x0024, 0x022c}, {0x0025, 0x0379}, {0x0026, 0x02d2}, {0x0027, 0x0116},
@@ -219,7 +221,7 @@ std::map<Unicode, int> courierwidths =
   {0x00fb, 0x0263}
 };
 
- std::map<Unicode, int> helveticaobliquewidths =
+ std::unordered_map<Unicode, int> helveticaobliquewidths =
 {
   {0x0020, 0x0116}, {0x0021, 0x0116}, {0x0022, 0x0163}, {0x0023, 0x022c},
   {0x0024, 0x022c}, {0x0025, 0x0379}, {0x0026, 0x029b}, {0x0027, 0x00de},
@@ -261,7 +263,7 @@ std::map<Unicode, int> courierwidths =
   {0x00fb, 0x0263}
 };
 
- std::map<Unicode, int> symbolwidths =
+ std::unordered_map<Unicode, int> symbolwidths =
 {
   {0x0020, 0x00fa}, {0x0021, 0x014d}, {0x0022, 0x02c9}, {0x0023, 0x01f4},
   {0x0024, 0x0225}, {0x0025, 0x0341}, {0x0026, 0x030a}, {0x0027, 0x01b7},
@@ -313,7 +315,7 @@ std::map<Unicode, int> courierwidths =
   {0x00fe, 0x01ee}
 };
 
- std::map<Unicode, int> timesboldwidths =
+ std::unordered_map<Unicode, int> timesboldwidths =
 {
   {0x0020, 0x00fa}, {0x0021, 0x014d}, {0x0022, 0x022b}, {0x0023, 0x01f4},
   {0x0024, 0x01f4}, {0x0025, 0x03e8}, {0x0026, 0x0341}, {0x0027, 0x014d},
@@ -355,7 +357,7 @@ std::map<Unicode, int> courierwidths =
   {0x00fb, 0x022c}
 };
 
- std::map<Unicode, int> timesbolditalicwidths =
+ std::unordered_map<Unicode, int> timesbolditalicwidths =
 {
   {0x0020, 0x00fa}, {0x0021, 0x0185}, {0x0022, 0x022b}, {0x0023, 0x01f4},
   {0x0024, 0x01f4}, {0x0025, 0x0341}, {0x0026, 0x030a}, {0x0027, 0x014d},
@@ -397,7 +399,7 @@ std::map<Unicode, int> courierwidths =
   {0x00fb, 0x01f4}
 };
 
- std::map<Unicode, int> timesitalicwidths =
+ std::unordered_map<Unicode, int> timesitalicwidths =
 {
   {0x0020, 0x00fa}, {0x0021, 0x014d}, {0x0022, 0x01a4}, {0x0023, 0x01f4},
   {0x0024, 0x01f4}, {0x0025, 0x0341}, {0x0026, 0x030a}, {0x0027, 0x014d},
@@ -439,7 +441,7 @@ std::map<Unicode, int> courierwidths =
   {0x00fb, 0x01f4}
 };
 
- std::map<Unicode, int> timesromanwidths =
+ std::unordered_map<Unicode, int> timesromanwidths =
 {
   {0x0020, 0x00fa}, {0x0021, 0x014d}, {0x0022, 0x0198}, {0x0023, 0x01f4},
   {0x0024, 0x01f4}, {0x0025, 0x0341}, {0x0026, 0x030a}, {0x0027, 0x014d},
@@ -481,7 +483,7 @@ std::map<Unicode, int> courierwidths =
   {0x00fb, 0x01f4}
 };
 
- std::map<Unicode, int> dingbatswidths =
+ std::unordered_map<Unicode, int> dingbatswidths =
 {
   {0x0020, 0x0116}, {0x0021, 0x03ce}, {0x0022, 0x03c1}, {0x0023, 0x03ce},
   {0x0024, 0x03d4}, {0x0025, 0x02cf}, {0x0026, 0x0315}, {0x0027, 0x0316},

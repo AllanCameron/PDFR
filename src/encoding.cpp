@@ -25,15 +25,22 @@
 //                                                                           //
 //---------------------------------------------------------------------------//
 
+#include<Rcpp.h>
+#include<string>
+#include<vector>
+#include<unordered_map>
 #include "pdfr.h"
+#include "stringfunctions.h"
 #include "adobetounicode.h"
 #include "chartounicode.h"
+#include "dictionary.h"
+#include "xref.h"
+#include "object_class.h"
+#include "glyphwidths.h"
 #include "encoding.h"
 #include "font.h"
 #include "document.h"
-#include "object_class.h"
-#include "dictionary.h"
-#include "debugtools.h"
+
 
 
 enum DiffState
@@ -46,7 +53,7 @@ enum DiffState
 
 /*---------------------------------------------------------------------------*/
 
-void parseDifferences(const string& enc, map<RawChar, Unicode>& symbmap)
+void parseDifferences(const string& enc, unordered_map<RawChar, Unicode>& symbmap)
 {
   DiffState state = NEWSYMB;
   string buffer = "";

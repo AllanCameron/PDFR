@@ -28,23 +28,6 @@
 #ifndef PDFR_GS
 #define PDFR_GS
 
-namespace Token
-{
-  enum TState
-  {
-    NEWSYMBOL,
-    IDENTIFIER,
-    NUMBER,
-    RESOURCE,
-    STRING,
-    HEXSTRING,
-    ARRAY,
-    DICT,
-    WAIT,
-    OPERATOR
-  };
-};
-
 using namespace Token;
 using namespace std;
 

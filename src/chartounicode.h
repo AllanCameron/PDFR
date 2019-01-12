@@ -28,8 +28,8 @@
 #ifndef PDFR_CHARTOUNICODE
 #define PDFR_CHARTOUNICODE
 
-extern std::map<RawChar, Unicode> macRomanEncodingToUnicode;
-extern std::map<RawChar, Unicode> winAnsiEncodingToUnicode;
-extern std::map<RawChar, Unicode> pdfDocEncodingToUnicode;
+extern std::unordered_map<RawChar, Unicode> macRomanEncodingToUnicode;
+extern std::unordered_map<RawChar, Unicode> winAnsiEncodingToUnicode;
+extern std::unordered_map<RawChar, Unicode> pdfDocEncodingToUnicode;
 
 #endif
