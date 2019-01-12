@@ -231,11 +231,10 @@ void glyphwidths::parsewidtharray(string s)
 
 /*---------------------------------------------------------------------------*/
 
-glyphwidths::glyphwidths(font* f)
+glyphwidths::glyphwidths(dictionary& dic, document* doc, string bf):
+  fontref(dic), d(doc)
 {
-  fontref = f->fontref;
-  d = f->d;
-  getCoreFont(f->BaseFont);
+  getCoreFont(bf);
   if(Width.empty())
     getWidthTable(fontref, d);
 }

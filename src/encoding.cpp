@@ -53,7 +53,8 @@ enum DiffState
 
 /*---------------------------------------------------------------------------*/
 
-void parseDifferences(const string& enc, unordered_map<RawChar, Unicode>& symbmap)
+void parseDifferences(const string& enc,
+                      unordered_map<RawChar, Unicode>& symbmap)
 {
   DiffState state = NEWSYMB;
   string buffer = "";
@@ -165,7 +166,7 @@ void Encoding::processUnicodeRange(vector<string>& Range)
 
 /*---------------------------------------------------------------------------*/
 
-void Encoding::getEncoding(dictionary fontref, document* d)
+void Encoding::getEncoding(dictionary& fontref, document* d)
 {
   dictionary encref = fontref;
   string encname = encref.get("/Encoding");
@@ -195,10 +196,9 @@ void Encoding::getEncoding(dictionary fontref, document* d)
 
 /*---------------------------------------------------------------------------*/
 
-Encoding::Encoding(font* f)
+Encoding::Encoding(const dictionary& fontdict, document* doc):
+  fontref(fontdict), d(doc)
 {
-  fontref = f->fontref;
-  d = f->d;
   getEncoding(fontref, d);
   mapUnicode(fontref, d);
 }

@@ -64,13 +64,14 @@ std::string getpagestring(page p){return p.contentstring;}
 
 std::string getPageString(const std::string& filename, int pagenum)
 {
-  return getpagestring(document(filename).getPage(pagenum - 1));
+  document d = document(filename);
+  return getpagestring(page(&d, pagenum - 1));
 }
 
 Rcpp::DataFrame getglyphmap(const std::string& s, int pagenum)
 {
   document d = document(s);
-  page p = d.getPage(pagenum - 1);
+  page p = page(&d, pagenum);
   std::vector<std::string> FontName;
   std::vector<uint16_t> codepoint, unicode, width;
   for(auto i : p.fontnames)
@@ -180,13 +181,15 @@ Rcpp::List pdfdocraw(const std::vector<uint8_t> & rawfile)
 Rcpp::List pdfpage(const std::string& filename, int pagenum)
 {
   document myfile = document(filename);
-  return PDFpage(myfile, myfile.getPage(pagenum - 1));
+  page p = page(&myfile, pagenum - 1);
+  return PDFpage(myfile, p);
 }
 
 //---------------------------------------------------------------------------//
 
 Rcpp::List pdfpageraw(const std::vector<uint8_t>& rawfile, int pagenum)
 {
-  document&& doc = document(rawfile);
-  return PDFpage(doc, doc.getPage(pagenum - 1));
+  document doc = document(rawfile);
+  page p = page(&doc, pagenum - 1);
+  return PDFpage(doc, p);
 }

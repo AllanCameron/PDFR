@@ -34,10 +34,6 @@
 #include "dictionary.h"
 #include "object_class.h"
 #include "xref.h"
-#include "encoding.h"
-#include "glyphwidths.h"
-#include "font.h"
-#include "page.h"
 #include "document.h"
 #include "streams.h"
 #include "stringfunctions.h"
@@ -179,12 +175,6 @@ void document::getPageHeaders()
   }
 }
 
-/*---------------------------------------------------------------------------*/
-
-page document::getPage(int pagenum)
-{
-  return page(*this, pagenum);
-}
 
 /*---------------------------------------------------------------------------*/
 

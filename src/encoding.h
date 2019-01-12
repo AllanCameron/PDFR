@@ -25,27 +25,25 @@
 //                                                                           //
 //---------------------------------------------------------------------------//
 
-
 #ifndef PDFR_ENCODING
 #define PDFR_ENCODING
-class font;
+
 class Encoding
 {
 private:
-  unordered_map<RawChar, Unicode> EncodingMap;
-  document* d;
-  font* f;
-  string BaseEncoding;
+  std::unordered_map<RawChar, Unicode> EncodingMap;
   dictionary fontref;
-  void getEncoding(dictionary, document*);
-  void processUnicodeRange(vector<string>&);
-  void processUnicodeChars(vector<string>&);
+  document* d;
+  std::string BaseEncoding;
+  void getEncoding(dictionary&, document*);
+  void processUnicodeRange(std::vector<std::string>&);
+  void processUnicodeChars(std::vector<std::string>&);
   void mapUnicode(dictionary&, document*);
 
 public:
-  Encoding(font*);
+  Encoding(const dictionary&, document*);
   Unicode Interpret(RawChar);
-  vector<RawChar> encKeys();
+  std::vector<RawChar> encKeys();
 };
 
 #endif

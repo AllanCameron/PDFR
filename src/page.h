@@ -34,7 +34,8 @@ class font;
 class page
 {
 public:
-  page(document& pdfdoc, int pagenum);
+  page(document* pdfdoc, int pagenum);
+  document* d;
   int pagenumber, objectnumber, parent;
   dictionary header, resources, fonts, realfonts;
   std::string contentstring, xobjstring;
@@ -47,12 +48,12 @@ public:
   std::unordered_map<std::string, font> fontmap;
 
 private:
-  void parseXObjStream(document& d);
-  void boxes(document& d);
-  void getHeader(document& d);
-  void getResources(document& d);
-  void getFonts(document& d);
-  void getContents(document& d);
+  void parseXObjStream();
+  void boxes();
+  void getHeader();
+  void getResources();
+  void getFonts();
+  void getContents();
 };
 
 #endif

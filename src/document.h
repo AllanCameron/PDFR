@@ -45,7 +45,6 @@ public:
   dictionary catalogue;
   object_class pagedir;
   xref Xref;
-  page getPage(int pagenum);
   object_class getobject(int objnum);
   std::vector<int> expandContents(std::vector<int> objnums);
 

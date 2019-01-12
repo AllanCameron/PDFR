@@ -52,7 +52,7 @@ d(doc), fontref(Fontref), FontID(fontid)
   FontRef = "In file";
   BaseFont = fontref.get("/BaseFont");
   getFontName();
-  makeGlyphTable(Encoding(this), glyphwidths(this));
+  makeGlyphTable();
 }
 
 /*---------------------------------------------------------------------------*/
@@ -79,8 +79,10 @@ vector<pair<Unicode, int>> font::mapRawChar(vector<RawChar> raw)
 
 /*---------------------------------------------------------------------------*/
 
-void font::makeGlyphTable(Encoding Enc, glyphwidths Wid)
+void font::makeGlyphTable()
 {
+  Encoding Enc = Encoding(this->fontref, this->d);
+  glyphwidths Wid = glyphwidths(this->fontref, this->d, this->BaseFont);
   vector<RawChar> inkeys = Enc.encKeys();
   if(Wid.widthFromCharCodes)
     for(auto i : inkeys)

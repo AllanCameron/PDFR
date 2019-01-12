@@ -45,7 +45,7 @@
 
 /*---------------------------------------------------------------------------*/
 
-void page::boxes(document& d)
+void page::boxes()
 {
   dictionary boxheader = header;
   bool hasparent = true;
@@ -66,7 +66,7 @@ void page::boxes(document& d)
       if(boxheader.hasRefs("/Parent"))
       {
         int parent = boxheader.getRefs("/Parent").at(0);
-        boxheader = d.getobject(parent).getDict();
+        boxheader = d->getobject(parent).getDict();
       }
       else hasparent = false;
     }
@@ -76,12 +76,12 @@ void page::boxes(document& d)
 
 /*--------------------------------------------------------------------------*/
 
-void page::getHeader(document& d)
+void page::getHeader()
 {
   std::string E = "No header found for page ";
   E += std::to_string(pagenumber);
-  if ((int) d.pageheaders.size() >= pagenumber)
-    header = d.pageheaders[pagenumber];
+  if ((int) d->pageheaders.size() >= pagenumber)
+    header = d->pageheaders[pagenumber];
   else
     Rcpp::stop(E);
   if (!header.has("/Type"))
@@ -92,13 +92,13 @@ void page::getHeader(document& d)
 
 /*--------------------------------------------------------------------------*/
 
-void page::getResources(document& d)
+void page::getResources()
 {
   if (!header.hasDictionary("/Resources"))
   {
     resourceobjs = header.getRefs("/Resources");
     for (auto q : resourceobjs)
-      resources = d.getobject(q).getDict();
+      resources = d->getobject(q).getDict();
   }
   else
   {
@@ -109,13 +109,13 @@ void page::getResources(document& d)
 
 /*--------------------------------------------------------------------------*/
 
-void page::getFonts(document& d)
+void page::getFonts()
 {
   if (!resources.hasDictionary("/Font"))
   {
     std::vector<int> fontobjs = resources.getRefs("/Font");
     if (fontobjs.size() == 1)
-      fonts = d.getobject(fontobjs.at(0)).getDict();
+      fonts = d->getobject(fontobjs.at(0)).getDict();
   }
   else
   {
@@ -125,25 +125,25 @@ void page::getFonts(document& d)
   fontnames = fonts.getDictKeys();
   for(auto h : fontnames)
     for(auto hh : fonts.getRefs(h))
-      fontmap[h] = font(&d, d.getobject(hh).getDict(), h);
+      fontmap[h] = font(d, d->getobject(hh).getDict(), h);
 }
 
 /*--------------------------------------------------------------------------*/
 
-void page::getContents(document& d)
+void page::getContents()
 {
   std::vector<int> cts = header.getRefs("/Contents");
   if (!cts.empty())
   {
-    contents = d.expandContents(cts);
+    contents = d->expandContents(cts);
     for (auto m : contents)
-      contentstring += d.getobject(m).getStream() + std::string("\n");
+      contentstring += d->getobject(m).getStream() + std::string("\n");
   }
 }
 
 /*---------------------------------------------------------------------------*/
 
-void page::parseXObjStream(document& d)
+void page::parseXObjStream()
 {
   if (resources.has("/XObject"))
     xobjstring = resources.get("/XObject");
@@ -157,7 +157,7 @@ void page::parseXObjStream(document& d)
       {
         std::vector<int> refints = objdict.getRefs(i);
         if(!refints.empty())
-          XObjects[i] = d.getobject(refints.at(0)).getStream();
+          XObjects[i] = d->getobject(refints.at(0)).getStream();
       }
     }
   }
@@ -165,13 +165,13 @@ void page::parseXObjStream(document& d)
 
 /*--------------------------------------------------------------------------*/
 
-page::page(document& d, int pagenum) : pagenumber(pagenum), rotate(0)
+page::page(document* doc, int pagenum) : d(doc), pagenumber(pagenum), rotate(0)
 {
   std::unordered_map<std::string, std::string> blankmap;
-  getHeader(d);
-  getResources(d);
-  parseXObjStream(d);
-  getFonts(d);
-  getContents(d);
-  boxes(d);
+  getHeader();
+  getResources();
+  parseXObjStream();
+  getFonts();
+  getContents();
+  boxes();
 }

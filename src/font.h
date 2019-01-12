@@ -34,7 +34,7 @@ class font
 {
 private:
   void getWidthTable(dictionary&, document*);
-  void makeGlyphTable(Encoding, glyphwidths);
+  void makeGlyphTable();
   void getFontName();
 
 public:

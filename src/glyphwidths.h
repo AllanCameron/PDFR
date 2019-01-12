@@ -29,15 +29,12 @@
 #ifndef PDFR_WIDTH
 #define PDFR_WIDTH
 
-class font;
-
 class glyphwidths
 {
 private:
   unordered_map<RawChar, int> Width;
-  document* d;
-  font* f;
   dictionary fontref;
+  document* d;
   void parsewidtharray(string);
   void getCoreFont(string);
   void parseDescendants(dictionary&, document*);
@@ -45,7 +42,7 @@ private:
   void getWidthTable(dictionary&, document*);
 
 public:
-  glyphwidths(font*);
+  glyphwidths(dictionary& dic, document* doc, string bf);
   int getwidth(RawChar);
   vector<RawChar> widthKeys();
   bool widthFromCharCodes;
