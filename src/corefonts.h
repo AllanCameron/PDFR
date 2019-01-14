@@ -29,6 +29,8 @@
 #ifndef PDFR_COREFONTS
 #define PDFR_COREFONTS
 
+#include "stringfunctions.h"
+
 extern std::unordered_map<Unicode, int> courierwidths;
 extern std::unordered_map<Unicode, int> courierboldwidths;
 extern std::unordered_map<Unicode, int> courierboldobliquewidths;

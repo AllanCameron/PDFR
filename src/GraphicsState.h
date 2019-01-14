@@ -28,6 +28,8 @@
 #ifndef PDFR_GS
 #define PDFR_GS
 
+#include "tokenizer.h"
+
 using namespace Token;
 using namespace std;
 

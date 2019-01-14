@@ -28,6 +28,11 @@
 #ifndef PDFR_DOCUMENT
 #define PDFR_DOCUMENT
 
+#include "xref.h"
+#include "object_class.h"
+#include "crypto.h"
+#include "streams.h"
+
 class document
 {
 public:
@@ -60,7 +65,6 @@ private:
   void getFilekey(dictionary& encdict);
   void checkKeyR2(dictionary& encdict);
   void checkKeyR3(dictionary& encdict);
-  std::vector<page> getPages(std::vector<dictionary> pageheaders);
   void get_cryptkey();
   std::vector<int> expandKids(std::vector<int> objnums);
   void getPageHeaders();

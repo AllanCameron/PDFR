@@ -25,16 +25,7 @@
 //                                                                           //
 //---------------------------------------------------------------------------//
 
-#include<Rcpp.h>
-#include<string>
-#include<vector>
-#include<unordered_map>
-#include "pdfr.h"
-#include "stringfunctions.h"
-#include "streams.h"
 #include "crypto.h"
-
-#define unsigned long UL;
 
 std::vector<uint8_t> perm(std::string str)
 {

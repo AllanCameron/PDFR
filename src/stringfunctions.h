@@ -29,31 +29,80 @@
 #ifndef PDFR_STRINGFUNCTIONS
 #define PDFR_STRINGFUNCTIONS
 
-using namespace std;
+#include<Rcpp.h>
+#include<string>
+#include<vector>
+#include<unordered_map>
+
+typedef uint16_t RawChar;
+typedef uint16_t Unicode;
+typedef std::vector<std::vector<int>> XRtab;
+typedef std::vector<std::vector<std::vector<std::string>>> Instructionset;
+typedef uint16_t Unicode;
+typedef std::unordered_map<RawChar, std::pair<Unicode, int>> GlyphMap;
+
+
+template< typename Mt, typename T >
+std::vector<Mt> getKeys(std::unordered_map<Mt, T>& Map)
+{
+  std::vector<Mt> keyvec;
+  keyvec.reserve(Map.size());
+  for(typename std::unordered_map<Mt, T>::iterator i = Map.begin();
+      i != Map.end(); i++)
+    keyvec.push_back(i->first);
+  return keyvec;
+}
+
+//---------------------------------------------------------------------------//
+
+template <typename T>
+void concat(std::vector<T>& A, const std::vector<T>& B)
+{
+  A.insert(A.end(), B.begin(), B.end());
+}
+
+//---------------------------------------------------------------------------//
+
+template <typename T>
+std::vector<int> order(const std::vector<T>& data)
+{
+  std::vector<int> index(data.size(), 0);
+  int i = 0;
+  for (auto &j : index) j = i++;
+
+  sort(index.begin(), index.end(), [&](const T& a, const T& b)
+  {
+    return (data[a] < data[b]);
+  });
+  return index;
+}
 
 /*---------------------------------------------------------------------------*/
 
-string carveout(const string& subject, const string& pre, const string& post);
-bool IsAscii(const string& tempint);
+std::string carveout(const std::string& subject, const std::string& pre,
+                     const std::string& post);
+bool IsAscii(const std::string& tempint);
 std::vector<float> getnums(const std::string& s);
 std::vector<int> getints(const std::string& s);
 int oct2dec(int x);
-vector<unsigned char> bytesFromArray(const string& s);
-string bytestostring(const vector<uint8_t>& v);
-vector<float> matmul(vector<float> b, vector<float> a);
-vector<float> stringvectomat(vector<string> b);
-vector<float> stringtofloat(vector<string> b);
-string intToHexstring(int i);
-vector<string> splitfours(string s);
-vector<int> getObjRefs(string& ds);
-bool isDictString(const string& s);
+std::vector<unsigned char> bytesFromArray(const std::string& s);
+std::string bytestostring(const std::vector<uint8_t>& v);
+std::vector<float> matmul(std::vector<float> b, std::vector<float> a);
+std::vector<float> stringvectomat(std::vector<std::string> b);
+std::vector<float> stringtofloat(std::vector<std::string> b);
+std::string intToHexstring(int i);
+std::vector<std::string> splitfours(std::string s);
+std::vector<int> getObjRefs(std::string& ds);
+bool isDictString(const std::string& s);
 char symbol_type(const char c);
-void trimRight(string& s);
-size_t firstmatch(string& s, string m, int startpos);
-void upperCase(string& s);
-vector<RawChar> HexstringToRawChar(string& s);
-vector<RawChar> StringToRawChar(string& s);
-vector<int> refFinder(const std::string& s);
-vector<string> multicarve(const string& s, const string& a, const string& b);
+void trimRight(std::string& s);
+size_t firstmatch(std::string& s, std::string m, int startpos);
+void upperCase(std::string& s);
+std::vector<RawChar> HexstringToRawChar(std::string& s);
+std::vector<RawChar> StringToRawChar(std::string& s);
+std::vector<int> refFinder(const std::string& s);
+std::vector<std::string> multicarve(const std::string& s,
+                                    const std::string& a,
+                                    const std::string& b);
 
 #endif

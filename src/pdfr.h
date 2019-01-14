@@ -28,49 +28,9 @@
 #ifndef PDFR_H
 #define PDFR_H
 
-typedef std::vector<std::vector<int>> XRtab;
-typedef std::vector<std::vector<std::vector<std::string>>> Instructionset;
-typedef uint16_t Unicode;
-typedef uint16_t RawChar;
-typedef std::unordered_map<RawChar, std::pair<Unicode, int>> GlyphMap;
-
-class page;
-class document;
-//---------------------------------------------------------------------------//
-
-template< typename Mt, typename T >
-std::vector<Mt> getKeys(std::unordered_map<Mt, T>& Map)
-{
-  std::vector<Mt> keyvec;
-  keyvec.reserve(Map.size());
-  for(typename std::unordered_map<Mt, T>::iterator i = Map.begin(); i != Map.end(); i++)
-    keyvec.push_back(i->first);
-  return keyvec;
-}
+#include "GraphicsState.h"
 
 //---------------------------------------------------------------------------//
-
-template <typename T>
-void concat(std::vector<T>& A, const std::vector<T>& B)
-{
-  A.insert(A.end(), B.begin(), B.end());
-}
-
-//---------------------------------------------------------------------------//
-
-template <typename T>
-std::vector<int> order(const std::vector<T>& data)
-{
-  std::vector<int> index(data.size(), 0);
-  int i = 0;
-  for (auto &j : index) j = i++;
-
-  sort(index.begin(), index.end(), [&](const T& a, const T& b)
-  {
-    return (data[a] < data[b]);
-  });
-  return index;
-}
 
 void createpdf(const std::string& filename);
 std::string getpagestring(page p);

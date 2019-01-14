@@ -29,6 +29,9 @@
 #ifndef PDFR_WIDTH
 #define PDFR_WIDTH
 
+#include "document.h"
+#include "font.h"
+
 class glyphwidths
 {
 private:

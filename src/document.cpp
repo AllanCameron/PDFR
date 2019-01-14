@@ -25,19 +25,8 @@
 //                                                                           //
 //---------------------------------------------------------------------------//
 
-#include<Rcpp.h>
-#include<string>
-#include<vector>
-#include<unordered_map>
 #include<fstream>
-#include "pdfr.h"
-#include "dictionary.h"
-#include "object_class.h"
-#include "xref.h"
 #include "document.h"
-#include "streams.h"
-#include "stringfunctions.h"
-#include "crypto.h"
 
 using namespace std;
 

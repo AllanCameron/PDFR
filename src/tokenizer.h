@@ -28,6 +28,8 @@
 #ifndef PDFR_TOKEN
 #define PDFR_TOKEN
 
+#include "page.h"
+
 namespace Token
 {
   enum TState

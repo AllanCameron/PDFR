@@ -28,6 +28,8 @@
 #ifndef PDFR_CRYPTO
 #define PDFR_CRYPTO
 
+#include "stringfunctions.h"
+
 typedef unsigned long UL;
 typedef std::vector<uint8_t> bytes;
 

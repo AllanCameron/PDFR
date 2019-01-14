@@ -28,6 +28,8 @@
 #ifndef PDFR_DICT
 #define PDFR_DICT
 
+#include "stringfunctions.h"
+
 enum DState     {PREENTRY,
                  QUERYCLOSE,
                  VALUE,

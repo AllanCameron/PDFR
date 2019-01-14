@@ -29,9 +29,12 @@
 #ifndef PDFR_XREF
 #define PDFR_XREF
 
+#include "dictionary.h"
+
 struct xrefrow { int object, startbyte, stopbyte, in_object; };
 
 /*---------------------------------------------------------------------------*/
+class document;
 
 class xref
 {
