@@ -25,11 +25,6 @@
 //                                                                           //
 //---------------------------------------------------------------------------//
 
-#include<Rcpp.h>
-#include<string>
-#include<vector>
-#include<unordered_map>
-#include "pdfr.h"
 #include "corefonts.h"
 
 static std::vector<float> courierbox              = {-23,  -250, 715,   805};

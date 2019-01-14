@@ -25,11 +25,6 @@
 //                                                                           //
 //---------------------------------------------------------------------------//
 
-#include<unordered_map>
-#include<vector>
-#include<string>
-#include<Rcpp.h>
-#include "pdfr.h"
 #include"chartounicode.h"
 
 std::unordered_map<RawChar, Unicode> macRomanEncodingToUnicode =

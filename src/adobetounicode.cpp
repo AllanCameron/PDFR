@@ -25,11 +25,6 @@
 //                                                                           //
 //---------------------------------------------------------------------------//
 
-#include<Rcpp.h>
-#include<string>
-#include<vector>
-#include<unordered_map>
-#include "pdfr.h"
 #include "adobetounicode.h"
 
 std::unordered_map<std::string, Unicode> AdobeToUnicode =
