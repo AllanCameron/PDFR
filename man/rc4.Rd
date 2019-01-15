@@ -7,9 +7,9 @@
 rc4(msg, key)
 }
 \arguments{
-\item{msg}{The message to be hashed as a raw vector}
+\item{msg}{The message to be hashed as a raw std::vector}
 
-\item{key}{the raw vector with which to hash}
+\item{key}{the raw std::vector with which to hash}
 }
 \description{
 Performs an RC4 hash for a given key

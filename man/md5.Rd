@@ -7,8 +7,8 @@
 md5(input)
 }
 \arguments{
-\item{input}{A raw vector}
+\item{input}{A raw std::vector}
 }
 \description{
-returns an md5 hash of a given raw vector as a raw vector
+returns an md5 hash of a given raw std::vector as a raw std::vector
 }

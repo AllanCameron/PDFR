@@ -28,6 +28,9 @@
 #ifndef PDFR_FONT
 #define PDFR_FONT
 
+#include "encoding.h"
+#include "glyphwidths.h"
+
 using namespace std;
 
 class font

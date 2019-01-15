@@ -28,10 +28,9 @@
 #ifndef PDFR_STREAMS
 #define PDFR
 
-using namespace std;
+#include "dictionary.h"
 
-string FlateDecode(const string& s);
-vector<size_t> getStreamLoc(document* d, string& fs, int objstart);
+std::string FlateDecode(const std::string& s);
 
 #endif
 

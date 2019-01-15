@@ -26,24 +26,23 @@
 //---------------------------------------------------------------------------//
 
 #include "xref.h"
-#include "document.h"
-#include "streams.h"
+#include "crypto.h"
 
 /*---------------------------------------------------------------------------*/
 
 void xref::locateXrefs()
 {
-  std::string&& partial = d->filestring.substr(d->filesize - 50, 50);
+  std::string&& partial = fs.substr(fs.size() - 50, 50);
   std::string&& xrefstring =  carveout(partial, "startxref", "%%EOF");
   Xreflocations.emplace_back(stoi(xrefstring));
   if(Xreflocations.empty()) throw runtime_error("No xref entry found");
-  TrailerDictionary = dictionary(&(d->filestring), Xreflocations[0]);
+  TrailerDictionary = dictionary(&(fs), Xreflocations[0]);
   dictionary tempdict = TrailerDictionary;
   while (true)
     if(tempdict.hasInts("/Prev"))
     {
       Xreflocations.emplace_back(tempdict.getInts("/Prev")[0]);
-      tempdict = dictionary(&(d->filestring), Xreflocations.back());
+      tempdict = dictionary(&(fs), Xreflocations.back());
     }
     else break;
 }
@@ -56,10 +55,10 @@ void xref::xrefstrings()
   for(auto i : Xreflocations)
   {
     std::string startxref = "startxref";
-    int minloc = firstmatch(d->filestring, startxref, i) - 9;
+    int minloc = firstmatch(fs, startxref, i) - 9;
     if (minloc > 0)
     {
-      string firstpass = d->filestring.substr(i + 5, minloc - i);
+      string firstpass = fs.substr(i + 5, minloc - i);
       firstpass = carveout(firstpass, "xref", "trailer");
       res.push_back(firstpass);
     }
@@ -84,7 +83,7 @@ void xref::xrefFromStream(int xrefloc)
   XRtab xreftable;
   try
   {
-    xreftable = xrefstream(d, xrefloc).table();
+    xreftable = xrefstream(this, xrefloc).table();
   }
   catch(...)
   {
@@ -144,9 +143,9 @@ void xrefstream::getParms()
 
 void xrefstream::getRawMatrix()
 {
-  std::vector<size_t> sl = getStreamLoc(d, d->filestring, objstart);
-  std::string SS = d->filestring.substr(sl[0], sl[1] - sl[0]);
-  dictionary dict = dictionary(&(d->filestring), objstart);
+  std::vector<size_t> sl = XR->getStreamLoc(objstart);
+  std::string SS = XR->fs.substr(sl[0], sl[1] - sl[0]);
+  dictionary dict = dictionary(&(XR->fs), objstart);
   if(dict.get("/Filter").find("/FlateDecode", 0) != string::npos)
     SS = FlateDecode(SS);
   std::vector<unsigned char> rawarray(SS.begin(), SS.end());
@@ -252,11 +251,10 @@ std::vector<std::vector<int>> xrefstream::table()
 
 /*---------------------------------------------------------------------------*/
 
-xrefstream::xrefstream(document* doc, int starts) : ncols(0), firstObject(0),
-predictor(0), objstart(starts)
+xrefstream::xrefstream(xref* Xref, int starts) : XR(Xref), ncols(0),
+firstObject(0), predictor(0), objstart(starts)
 {
-  d = doc;
-  dict = dictionary(&(d->filestring), objstart);
+  dict = dictionary(&(XR->fs), objstart);
   string decodestring = dict.get("/DecodeParms");
   subdict = dictionary(&decodestring);
   getIndex();
@@ -320,12 +318,13 @@ void xref::buildXRtable()
 
 /*---------------------------------------------------------------------------*/
 
-xref::xref(document& d) : d(&d)
+xref::xref(const string& s) : fs(s)
 {
   locateXrefs();
   xrefstrings();
   xrefIsstream();
   buildXRtable();
+  get_cryptkey();
 }
 
 /*---------------------------------------------------------------------------*/
@@ -354,7 +353,7 @@ size_t xref::getEnd(int objnum)
   size_t i = xreftab[objnum].startbyte;
   if((i > 0))
   {
-    return (int) firstmatch(d->filestring, "endobj", i);
+    return (int) firstmatch(fs, "endobj", i);
   }
   else
     return 0;
@@ -388,3 +387,132 @@ std::vector<int> xref::getObjects()
 }
 
 /*---------------------------------------------------------------------------*/
+
+vector<size_t> xref::getStreamLoc(int objstart)
+{
+  dictionary dict = dictionary(&(fs), objstart);
+  if(dict.has("stream"))
+    if(dict.has("/Length"))
+    {
+      int streamlen;
+      if(dict.hasRefs("/Length"))
+      {
+        int lengthob = dict.getRefs("/Length")[0];
+        size_t firstpos = getStart(lengthob);
+        size_t lastpos = firstmatch(fs, "endobj", firstpos);
+        size_t len = lastpos - firstpos;
+        string objstr = fs.substr(firstpos, len);
+        streamlen = getints(objstr).back();
+      }
+      else
+        streamlen = dict.getInts("/Length")[0];
+      int streamstart = dict.getInts("stream")[0];
+      vector<size_t> res = {(size_t) streamstart,
+                                 (size_t) streamstart + streamlen};
+      return res;
+    }
+  vector<size_t> res = {0,0};
+  return res;
+}
+
+
+vector<uint8_t> xref::getPassword(const string& key, dictionary& encdict)
+{
+  string ostarts = encdict.get(key);
+  vector<uint8_t> obytes;
+  if(ostarts.size() > 32)
+    for(auto j : ostarts.substr(1, 32))
+      obytes.push_back(j);
+  return obytes;
+}
+
+/*---------------------------------------------------------------------------*/
+
+void xref::getFilekey(dictionary& encdict)
+{
+  vector<uint8_t> Fstring = UPW;
+  concat(Fstring, getPassword("/O", encdict));
+  concat(Fstring, perm(encdict.get("/P")));
+  vector<uint8_t> idbytes = bytesFromArray(TrailerDictionary.get("/ID"));
+  idbytes.resize(16);
+  concat(Fstring, idbytes);
+  filekey = md5(Fstring);
+  size_t cryptlen = 5;
+  if(encdict.hasInts("/Length"))
+    cryptlen = encdict.getInts("/Length").at(0) / 8;
+  filekey.resize(cryptlen);
+}
+
+/*---------------------------------------------------------------------------*/
+
+void xref::checkKeyR2(dictionary& encdict)
+{
+  vector<uint8_t> ubytes = getPassword("/U", encdict);
+  vector<uint8_t> checkans = rc4(UPW, filekey);
+  if(checkans.size() == 32)
+  {
+    int m = 0;
+    for(int l = 0; l < 32; l++)
+    {
+      if(checkans[l] != ubytes[l]) break;
+      m++;
+    }
+    if(m == 32)
+      return;
+  }
+  throw runtime_error("Incorrect cryptkey");
+}
+
+/*---------------------------------------------------------------------------*/
+
+void xref::checkKeyR3(dictionary& encdict)
+{/*
+  vector<uint8_t> ubytes = getPassword("/U", encdict);
+  vector<uint8_t> buf = UPW;
+  concat(buf, bytesFromArray(trailer.get("/ID")));
+  buf.resize(48);
+  vector<uint8_t> checkans = rc4(md5(buf), filekey);
+  for (int i = 19; i >= 0; i--)
+  {
+    vector<uint8_t> tmpkey;
+    for (auto j : filekey)
+      tmpkey.push_back(j ^ ((uint8_t) i));
+    checkans = rc4(checkans, tmpkey);
+  }
+  int m = 0;
+  for(int l = 0; l < 16; l++)
+  {
+    if(checkans[l] != ubytes[l]) break;
+    m++;
+  }
+  if(m != 16) std::cout << "cryptkey doesn't match";
+*/}
+
+/*---------------------------------------------------------------------------*/
+
+void xref::get_cryptkey()
+{
+  if(!TrailerDictionary.has("/Encrypt"))
+    return;
+  int encnum = TrailerDictionary.getRefs("/Encrypt").at(0);
+  if(!objectExists(encnum))
+    return;
+  encrypted = true;
+  dictionary encdict = dictionary(&fs, getStart(encnum));
+  int rnum = 2;
+  if(encdict.hasInts("/R")) rnum = encdict.getInts("/R").at(0);
+  getFilekey(encdict);
+  if(rnum == 2)
+    checkKeyR2(encdict);
+  else
+  {
+    size_t cryptlen = filekey.size();
+    for(int i = 0; i < 50; i++)
+    {
+      filekey = md5(filekey);
+      filekey.resize(cryptlen);
+    }
+    checkKeyR3(encdict);
+  }
+}
+

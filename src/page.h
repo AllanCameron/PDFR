@@ -29,12 +29,7 @@
 #ifndef PDFR_PAGE
 #define PDFR_PAGE
 
-#include "adobetounicode.h"
-#include "chartounicode.h"
-#include "glyphwidths.h"
-#include "encoding.h"
 #include "font.h"
-#include "document.h"
 
 class page
 {

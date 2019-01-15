@@ -28,6 +28,10 @@
 #ifndef PDFR_DEBUG
 #define PDFR_DEBUG
 
+#include<string>
+#include<vector>
+#include<chrono>
+
 template<typename T>
 void printvec(std::vector<T> x)
 {

@@ -30,11 +30,12 @@
 #define PDFR_XREF
 
 #include "dictionary.h"
+#include "streams.h"
+#include "crypto.h"
 
 struct xrefrow { int object, startbyte, stopbyte, in_object; };
 
 /*---------------------------------------------------------------------------*/
-class document;
 
 class xref
 {
@@ -52,11 +53,18 @@ private:
   std::unordered_map<int, xrefrow> xreftab;
   std::vector<int> objenum;
   dictionary TrailerDictionary;
+  std::vector<uint8_t> getPassword(const std::string& key, dictionary& encdict);
+  void getFilekey(dictionary& encdict);
+  void checkKeyR2(dictionary& encdict);
+  void checkKeyR3(dictionary& encdict);
+  void get_cryptkey();
 
 public:
-  document* d;
   xref(){};
-  xref(document& doc);
+  xref(const string&);
+  bool encrypted;
+  std::vector<uint8_t> filekey;
+  std::string fs;
   dictionary trailer() {return TrailerDictionary;}
   size_t getStart(int objnum);
   size_t getEnd(int objnum);
@@ -64,11 +72,12 @@ public:
   size_t inObject(int objnum);
   std::vector<int> getObjects();
   bool objectExists(int objnum);
+  vector<size_t> getStreamLoc(int objstart);
 };
 
 class xrefstream
 {
-  document* d;
+  xref* XR;
   dictionary dict, subdict;
   std::vector<std::vector<int>> rawMatrix, finalArray, result;
   std::vector<int> arrayWidths, objectIndex, objectNumbers, indexEntries;
@@ -83,8 +92,10 @@ class xrefstream
   void numberRows();
 
 public:
-  xrefstream(document* d, int objstart);
+  xrefstream(xref*, int objstart);
   std::vector<std::vector<int>> table();
 };
+
+
 
 #endif

@@ -25,35 +25,18 @@
 //                                                                           //
 //---------------------------------------------------------------------------//
 
-
-#include<Rcpp.h>
-#include<string>
-#include<vector>
-#include<unordered_map>
-#include "pdfr.h"
-#include "stringfunctions.h"
-#include "adobetounicode.h"
-#include "chartounicode.h"
-#include "dictionary.h"
-#include "xref.h"
-#include "streams.h"
 #include "object_class.h"
-#include "glyphwidths.h"
-#include "encoding.h"
-#include "font.h"
-#include "document.h"
-#include "crypto.h"
 
-object_class::object_class(document* doc, int objnum) : number(objnum), d(doc),
+object_class::object_class(xref* Xref, int objnum) : XR(Xref), number(objnum),
 has_stream(false)
 {
-  std::string &fs = d->filestring;
+  std::string &fs = XR->fs;
   streampos = {0, 0};
-  size_t startbyte = d->Xref.getStart(objnum);
-  size_t stopbyte  = d->Xref.getEnd(objnum);
+  size_t startbyte = XR->getStart(objnum);
+  size_t stopbyte  = XR->getEnd(objnum);
   if(objnum != 0)
   {
-    if(!d->Xref.isInObject(objnum))
+    if(!XR->isInObject(objnum))
     {
       if(fs.substr(startbyte, 20).find("<<") == string::npos)
       {
@@ -65,15 +48,15 @@ has_stream(false)
       else
       {
         header = dictionary(&fs, startbyte);
-        streampos = getStreamLoc(d, fs, startbyte);
+        streampos = XR->getStreamLoc(startbyte);
         has_stream = streampos[1] > streampos[0];
       }
     }
     else
     {
-      int holdingobj = d->Xref.inObject(objnum);
-      if(d->Xref.objectExists(holdingobj))
-        *this = object_class(d, d->getobject(holdingobj).getStream(), objnum);
+      int holder = XR->inObject(objnum);
+      if(XR->objectExists(holder))
+        *this = object_class(XR, object_class(XR, holder).getStream(), objnum);
     }
   }
   if(header.has("/Kids"))
@@ -84,8 +67,8 @@ has_stream(false)
 
 /*---------------------------------------------------------------------------*/
 
-object_class::object_class(document* doc, std::string str, int objnum)
-  : number(objnum), d(doc)
+object_class::object_class(xref* XRef, std::string str, int objnum)
+  :  XR(XRef), number(objnum)
 {
   int startbyte = 0;
   streampos = {0,0};
@@ -133,7 +116,7 @@ object_class::object_class(document* doc, std::string str, int objnum)
           has_stream = true;
           if(stream.size() < 15 && stream.find(" R", 0) < 15)
           {
-            *this = object_class(d, getObjRefs(stream)[0]);
+            *this = object_class(XR, getObjRefs(stream)[0]);
           }
         }
         break;
@@ -158,9 +141,9 @@ std::string object_class::getStream()
   else if(!stream.empty())
     return stream;
   else
-    stream = d->filestring.substr(streampos[0], streampos[1] - streampos[0]);
-  if(d->encrypted)
-    stream = decryptStream(stream, d->filekey, number, 0);
+    stream = XR->fs.substr(streampos[0], streampos[1] - streampos[0]);
+  if(XR->encrypted)
+    stream = decryptStream(stream, XR->filekey, number, 0);
   if(header.get("/Filter").find("/FlateDecode", 0) != string::npos)
     stream = FlateDecode(stream);
   return stream;

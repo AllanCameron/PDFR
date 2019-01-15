@@ -28,7 +28,7 @@
 #ifndef PDFR_ADOBETOUNICODE
 #define PDFR_ADOBETOUNICODE
 
-#include "stringfunctions.h"
+#include "utilities.h"
 
 extern std::unordered_map<std::string, Unicode> AdobeToUnicode;
 

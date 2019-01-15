@@ -28,10 +28,7 @@
 #ifndef PDFR_DOCUMENT
 #define PDFR_DOCUMENT
 
-#include "xref.h"
 #include "object_class.h"
-#include "crypto.h"
-#include "streams.h"
 
 class document
 {
@@ -61,11 +58,6 @@ private:
   void getPageDir();
   void isLinearized();
   void buildDoc();
-  std::vector<uint8_t> getPassword(const std::string& key, dictionary& encdict);
-  void getFilekey(dictionary& encdict);
-  void checkKeyR2(dictionary& encdict);
-  void checkKeyR3(dictionary& encdict);
-  void get_cryptkey();
   std::vector<int> expandKids(std::vector<int> objnums);
   void getPageHeaders();
 };

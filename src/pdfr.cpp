@@ -86,16 +86,16 @@ Rcpp::List PDFpage(document mypdf, page pg)
 
 Rcpp::DataFrame get_xref(const std::string& filename)
 {
-  document&& mydoc = document(filename);
+  xref Xref = xref(get_file(filename));
   std::vector<int> ob, startb, inob;
-  if(!mydoc.Xref.getObjects().empty())
+  if(!Xref.getObjects().empty())
   {
-    std::vector<int>&& allobs = mydoc.Xref.getObjects();
+    std::vector<int>&& allobs = Xref.getObjects();
     for(int j : allobs)
     {
       ob.push_back(j);
-      startb.push_back(mydoc.Xref.getStart(j));
-      inob.push_back(mydoc.Xref.inObject(j));
+      startb.push_back(Xref.getStart(j));
+      inob.push_back(Xref.inObject(j));
     }
   }
   return Rcpp::DataFrame::create(Rcpp::Named("Object") = ob,
@@ -107,14 +107,15 @@ Rcpp::DataFrame get_xref(const std::string& filename)
 
 Rcpp::DataFrame get_xrefraw(const std::vector<uint8_t>& rawfile)
 {
-  document&& mydoc = document(rawfile);
+  std::string fs = bytestostring(rawfile);
+  xref Xref = xref(fs);
   std::vector<int> ob, startb, inob;
-  if(!mydoc.Xref.getObjects().empty())
-    for(int j : mydoc.Xref.getObjects())
+  if(!Xref.getObjects().empty())
+    for(int j : Xref.getObjects())
     {
       ob.push_back(j);
-      startb.push_back(mydoc.Xref.getStart(j));
-      inob.push_back(mydoc.Xref.inObject(j));
+      startb.push_back(Xref.getStart(j));
+      inob.push_back(Xref.inObject(j));
     }
   return Rcpp::DataFrame::create(Rcpp::Named("Object") = ob,
                                  Rcpp::Named("StartByte") = startb,

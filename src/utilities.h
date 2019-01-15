@@ -1,6 +1,6 @@
 //---------------------------------------------------------------------------//
 //                                                                           //
-//  PDFR stringfunctions header file                                         //
+//  PDFR utilities header file                                               //
 //                                                                           //
 //  Copyright (C) 2018 by Allan Cameron                                      //
 //                                                                           //
@@ -25,14 +25,14 @@
 //                                                                           //
 //---------------------------------------------------------------------------//
 
-
-#ifndef PDFR_STRINGFUNCTIONS
-#define PDFR_STRINGFUNCTIONS
+#ifndef PDFR_UTILTIES
+#define PDFR_UTILTIES
 
 #include<Rcpp.h>
 #include<string>
 #include<vector>
 #include<unordered_map>
+#include "debugtools.h"
 
 typedef uint16_t RawChar;
 typedef uint16_t Unicode;
@@ -40,7 +40,6 @@ typedef std::vector<std::vector<int>> XRtab;
 typedef std::vector<std::vector<std::vector<std::string>>> Instructionset;
 typedef uint16_t Unicode;
 typedef std::unordered_map<RawChar, std::pair<Unicode, int>> GlyphMap;
-
 
 template< typename Mt, typename T >
 std::vector<Mt> getKeys(std::unordered_map<Mt, T>& Map)
@@ -104,5 +103,6 @@ std::vector<int> refFinder(const std::string& s);
 std::vector<std::string> multicarve(const std::string& s,
                                     const std::string& a,
                                     const std::string& b);
+std::string get_file(const std::string& file);
 
 #endif

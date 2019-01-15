@@ -1,6 +1,6 @@
 //---------------------------------------------------------------------------//
 //                                                                           //
-//  PDFR stringfunctions implementation file                                 //
+//  PDFR utilities implementation file                                       //
 //                                                                           //
 //  Copyright (C) 2018 by Allan Cameron                                      //
 //                                                                           //
@@ -25,7 +25,8 @@
 //                                                                           //
 //---------------------------------------------------------------------------//
 
-#include "stringfunctions.h"
+#include "utilities.h"
+#include <fstream>
 
 using namespace std;
 
@@ -508,4 +509,19 @@ std::vector<float> getnums(const std::string& s)
   return res;
 }
 
+/*--------------------------------------------------------------------------*/
 
+std::string get_file(const std::string& file)
+{
+  string filestring;
+  ifstream in(file.c_str(), ios::in | ios::binary);
+  auto fileCon = &in;
+  fileCon->seekg(0, ios::end);
+  size_t filesize = fileCon->tellg();
+  filestring.resize(filesize);
+  fileCon->seekg(0, ios::beg);
+  fileCon->read(&filestring[0], filestring.size());
+  fileCon->seekg(0, ios::beg);
+  fileCon->close();
+  return filestring;
+}

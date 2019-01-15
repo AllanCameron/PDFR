@@ -28,7 +28,7 @@
 #ifndef PDFR_CHARTOUNICODE
 #define PDFR_CHARTOUNICODE
 
-#include "stringfunctions.h"
+#include "utilities.h"
 
 extern std::unordered_map<RawChar, Unicode> macRomanEncodingToUnicode;
 extern std::unordered_map<RawChar, Unicode> winAnsiEncodingToUnicode;

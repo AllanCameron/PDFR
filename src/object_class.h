@@ -29,16 +29,18 @@
 #ifndef PDFR_OC
 #define PDFR_OC
 
-#include "dictionary.h"
+#include "xref.h"
 
 class object_class
 {
+public:
+  xref* XR;
+
 private:
   int number, startpos;
   dictionary header;
   std::string stream;
   std::vector<size_t> streampos;
-  document* d;
   std::vector<int> Kids, Contents;
   bool has_stream;
   void objectHasKids();
@@ -50,8 +52,8 @@ public:
   bool hasStream();
   std::string getStream();
   dictionary getDict();
-  object_class(document*, int objnum);
-  object_class(document*, std::string str, int objnum);
+  object_class(xref*, int objnum);
+  object_class(xref*, std::string str, int objnum);
   object_class(){};
 };
 

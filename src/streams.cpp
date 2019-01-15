@@ -25,19 +25,6 @@
 //                                                                           //
 //---------------------------------------------------------------------------//
 
-#include<Rcpp.h>
-#include<string>
-#include<vector>
-#include<unordered_map>
-#include "pdfr.h"
-#include "dictionary.h"
-#include "xref.h"
-#include "object_class.h"
-#include "glyphwidths.h"
-#include "encoding.h"
-#include "font.h"
-#include "document.h"
-#include "page.h"
 #include "streams.h"
 #include "../src/external/miniz.h"
 #include "../src/external/miniz.c"
@@ -77,27 +64,4 @@ string FlateDecode(const string& s)
 }
 
 /*---------------------------------------------------------------------------*/
-
-vector<size_t> getStreamLoc(document* d, string& fs, int objstart)
-{
-  dictionary dict = dictionary(&fs, objstart);
-  if(dict.has("stream"))
-    if(dict.has("/Length"))
-    {
-      int streamlen;
-      if(dict.hasRefs("/Length"))
-      {
-        int lengthob = dict.getRefs("/Length")[0];
-        streamlen = std::stoi(d->getobject(lengthob).getStream());
-      }
-      else
-        streamlen = dict.getInts("/Length")[0];
-      int streamstart = dict.getInts("stream")[0];
-      vector<size_t> res = {(size_t) streamstart,
-                                 (size_t) streamstart + streamlen};
-      return res;
-    }
-  vector<size_t> res = {0,0};
-  return res;
-}
 
