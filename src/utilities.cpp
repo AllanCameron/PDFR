@@ -26,33 +26,40 @@
 //---------------------------------------------------------------------------//
 
 #include "utilities.h"
-#include <fstream>
+#include <fstream>   // for get_file - uses ifstream
+#include <algorithm> // for min_element
+#include <cmath>     // for pow()
 
 using namespace std;
 
 /*---------------------------------------------------------------------------*/
 // Return the first substring of s that lies between two strings
+
 string carveout(const string& s, const string& pre, const string& post)
 {
   int start = s.find(pre);
-  if(start == -1) start++;
+  if(start == -1) start++; // if pre not found in s, start at beginning of s
   else start += pre.size();
-  string str = s.substr(start, s.size() - start);
+  string str = s.substr(start, s.size() - start); // trim start of s
   int stop = str.find(post);
-  if(stop == -1) return str;
+  if(stop == -1) return str; // if post not found, finish at end
   return str.substr(0, stop);
 }
 
 /*---------------------------------------------------------------------------*/
-// finds all closest pairs of strings a, b and returns the substring between
+// finds all closest pairs of strings a, b and returns the substring between.
+// This is used to carve out variable substrings between fixed substrings -
+// a surprisingly common task in parsing text.
+
 std::vector<std::string>
   multicarve(const std::string& s, const std::string& a, const std::string& b)
 {
   std::vector<std::string> res;
   if(a.size() == 0 || b.size() == 0 || s.size() == 0) return res;
-  std::string str = s;
+  std::string str = s; // makes a copy to allow const correctness
   while(true)
   {
+    // this loop progressively finds and chops matches from str until its empty
     int start = str.find(a);
     if(start == -1) break;
     str = str.substr(start + a.size(), str.size() - (start + a.size()));
@@ -66,6 +73,8 @@ std::vector<std::string>
 
 /*---------------------------------------------------------------------------*/
 // Decent approximation of whether a string contains binary data or not
+// Uses <algorithm> from std
+
 bool IsAscii(const string& tempint)
 {
   int mymin = *min_element(tempint.begin(), tempint.end());
@@ -75,6 +84,8 @@ bool IsAscii(const string& tempint)
 
 /*---------------------------------------------------------------------------*/
 // converts an octal (as captured by stoi) to intended decimal value
+// e.g "\020"  is captured as 20 by stoi but represents 16 in decimal
+
 int oct2dec(int x)
 {
   int res = 0;
@@ -93,13 +104,14 @@ int oct2dec(int x)
 
 /*---------------------------------------------------------------------------*/
 //Takes a string of bytes represented in ASCII and converts to actual bytes
+// eg "48656c6c6f20576f726c6421" -> "Hello World!"
 
 vector<uint8_t> bytesFromArray(const string& s)
 {
   if(s.empty())
     throw std::runtime_error("Zero-length string passed to bytesFromArray");
   vector<int> tmpvec;
-  for(auto a : s)
+  for(auto a : s) // Extracts chars from string which could be hexadecimal
   {
     if(a > 47 && a < 58)  tmpvec.emplace_back(a - 48); //Digits 0-9
     if(a > 64 && a < 71)  tmpvec.emplace_back(a - 55); //Uppercase A-F
@@ -109,7 +121,7 @@ vector<uint8_t> bytesFromArray(const string& s)
   if(ts == 0)
     throw std::runtime_error("arrayFromBytes not given a byte string");
   if(ts % 2 == 1)
-    tmpvec.push_back(0);
+    tmpvec.push_back(0); // add an extra zero to the end of odd-length strings
   vector<uint8_t> resvec;
   for(size_t i = 0; i < ts; i += 2)
     resvec.emplace_back((uint8_t) (16 * tmpvec.at(i) + tmpvec.at(i + 1)));
@@ -117,7 +129,8 @@ vector<uint8_t> bytesFromArray(const string& s)
 }
 
 /*---------------------------------------------------------------------------*/
-// reinterprets vector of bytes as a string
+// reinterprets a vector of bytes as a string
+
 string bytestostring(const vector<uint8_t>& v)
 {
   string res(v.begin(), v.end());
@@ -125,35 +138,9 @@ string bytestostring(const vector<uint8_t>& v)
 }
 
 /*---------------------------------------------------------------------------*/
-// Matrix mulitplication on two 3 x 3 matrices
-vector<float> matmul(vector<float> b, vector<float> a)
-{
-  if(a.size() != b.size())
-    throw std::runtime_error("matmul: Vectors must have same size.");
-  if(a.size() != 9)
-    throw std::runtime_error("matmul: Vectors must be size 9.");
-  vector<float> newmat;
-  for(size_t i = 0; i < 9; i++) //clever use of indices to allow fill by loop
-    newmat.emplace_back(a[i % 3 + 0] * b[3 * (i / 3) + 0] +
-                     a[i % 3 + 3] * b[3 * (i / 3) + 1] +
-                     a[i % 3 + 6] * b[3 * (i / 3) + 2] );
-  return newmat;
-}
+// Transforms a vector of strings to a fector of floats
+// (vectorised version of stof)
 
-/*---------------------------------------------------------------------------*/
-// Allows a length-6 vector of number strings to be converted to 3x3 matrix
-vector<float> stringvectomat(vector<string> b)
-{
-  if(b.size() != 6)
-    throw std::runtime_error("stringvectomat: Vectors must be size 6.");
-  vector<float> a;
-  for(auto i : b) a.emplace_back(stof(i));
-  vector<float> newmat {a[0], a[1], 0, a[2], a[3], 0, a[4], a[5], 1};
-  return newmat;
-}
-
-/*---------------------------------------------------------------------------*/
-// generalizes stof to vectors
 vector<float> stringtofloat(vector<string> b)
 {
   vector<float> r;
@@ -164,14 +151,16 @@ vector<float> stringtofloat(vector<string> b)
 
 /*---------------------------------------------------------------------------*/
 //Converts an int to the relevant 2-byte ASCII hex (4 characters long)
+// eg 161 -> A1
+
 string intToHexstring(int i)
 {
   string hex = "0123456789ABCDEF";
   string res;
-  int firstnum = i / (16 * 16 * 16);
-  i -= firstnum * (16 * 16 * 16);
-  int secondnum = i / (16 * 16);
-  i -= secondnum * (16 * 16);
+  int firstnum = i / 4096; // 16^3
+  i -= firstnum * 4096;
+  int secondnum = i / 256; // 16^2
+  i -= secondnum * 256;
   int thirdnum = i / 16;
   i -= thirdnum * 16;
   res += hex[firstnum];
@@ -179,20 +168,21 @@ string intToHexstring(int i)
   res += hex[thirdnum];
   res += hex[i];
   while(res.length() < 4)
-    res = "0" + res;
-  transform(res.begin(), res.end(), res.begin(), ptr_fun<int, int>(toupper));
+    res = "0" + res; // sanity clause; adds null digits if length < 4
   return res;
 }
 
 /*---------------------------------------------------------------------------*/
-//Split a string into length-4 elements
+// Splits a string into a vector of length-4 elements. Useful for Ascii-
+// encoded strings
+
 vector<string> splitfours(string s)
 {
   vector<string> res;
   if(s.empty())
     return res;
   while(s.size() % 4 != 0)
-    s = '0' + s;
+    s = '0' + s; // if length of s not divisible by 4, prepend zeros until it is
   for(unsigned i = 0; i < s.length()/4; i++)
     res.emplace_back(s.substr(i * 4, 4));
   return res;
@@ -200,43 +190,49 @@ vector<string> splitfours(string s)
 
 /*--------------------------------------------------------------------------*/
 // Extracts pdf object references from string
+// simple synonym function to access refFinder
+
 vector<int> getObjRefs(string& ds)
 {
   return refFinder(ds);
 }
 
 /*--------------------------------------------------------------------------*/
-//test of whether string s contains a dictionary
+// test of whether string s contains a dictionary
+
 bool isDictString(const string& s)
 {
   return s.find("<<", 0) < s.length();
 }
 
 /*---------------------------------------------------------------------------*/
-//helper function to classify tokens in lexers
+// Classify characters for use in lexers
+
 char symbol_type(const char c)
 {
   if(c > 0x40 && c < 0x5b) return 'L'; //UPPERCASE
   if(c > 0x60 && c < 0x7b) return 'L'; //lowercase
   if(c > 0x2f && c < 0x3a) return 'D'; //digits
   if(c == ' ' || c == 0x0d || c == 0x0a ) return ' '; //whitespace
-  return c;
+  return c; // if none of the above, return the char itself;
 }
 
 /*--------------------------------------------------------------------------*/
 // Removes whitespace from right of a string
+
 void trimRight(string& s)
 {
   if(s.length() == 0)
     return;
   for(int i = s.length() - 1; i >= 0; i--)
-    if(s[i] == ' ' || s[i] == '\t' || s[i] == '\n' || s[i] == '\r')
+    if(s[i] == ' ' || s[i] == '\t' || s[i] == '\n' || s[i] == '\r') //whitespace
       s.resize(i);
     else
       break;
 }
 
 /*--------------------------------------------------------------------------*/
+// Similar to string.find()
 
 size_t firstmatch(std::string& s, std::string m, int startpos)
 {
@@ -260,13 +256,8 @@ size_t firstmatch(std::string& s, std::string m, int startpos)
 }
 
 /*--------------------------------------------------------------------------*/
-
-void upperCase(string& s)
-{
-  transform(s.begin(), s.end(), s.begin(), ptr_fun<int, int>(toupper));
-}
-
-/*--------------------------------------------------------------------------*/
+// Returns the data represented by an Ascii encoded hex string as a vector
+// of two-byte numbers
 
 vector<RawChar> HexstringToRawChar(string& s)
 {
@@ -282,6 +273,7 @@ vector<RawChar> HexstringToRawChar(string& s)
 }
 
 /*--------------------------------------------------------------------------*/
+// Converts normal string to a vector of 2-byte width numbers (RawChar)
 
 vector<RawChar> StringToRawChar(string& s)
 {
@@ -296,6 +288,10 @@ vector<RawChar> StringToRawChar(string& s)
 }
 
 /*--------------------------------------------------------------------------*/
+// This is a simple lexer to find any object references in the given string,
+// in the form "xx x R". It is far quicker than finding matches with Regex,
+// even though the code is more unwieldy. It is essentially a finite state
+// machine that reads character by character.
 
 std::vector<int> refFinder(const std::string& s)
 {
@@ -357,6 +353,8 @@ std::vector<int> refFinder(const std::string& s)
 }
 
 /*--------------------------------------------------------------------------*/
+// Another lexer. This one finds any integers in a string.
+// If there are decimal points, it ignores the fractional part.
 
 std::vector<int> getints(const std::string& s)
 {
@@ -425,6 +423,7 @@ std::vector<int> getints(const std::string& s)
 }
 
 /*--------------------------------------------------------------------------*/
+// This lexer retrieves floats from a string
 
 std::vector<float> getnums(const std::string& s)
 {
@@ -510,18 +509,19 @@ std::vector<float> getnums(const std::string& s)
 }
 
 /*--------------------------------------------------------------------------*/
+// Loads a file's contents into a single string
 
 std::string get_file(const std::string& file)
 {
   string filestring;
-  ifstream in(file.c_str(), ios::in | ios::binary);
+  ifstream in(file.c_str(), ios::in | ios::binary); // open connection to file
   auto fileCon = &in;
-  fileCon->seekg(0, ios::end);
-  size_t filesize = fileCon->tellg();
-  filestring.resize(filesize);
-  fileCon->seekg(0, ios::beg);
-  fileCon->read(&filestring[0], filestring.size());
-  fileCon->seekg(0, ios::beg);
+  fileCon->seekg(0, ios::end); // move to end of file
+  size_t filesize = fileCon->tellg(); // reads position
+  filestring.resize(filesize); // ensure string is big enough
+  fileCon->seekg(0, ios::beg); // move to start of file
+  fileCon->read(&filestring[0], filestring.size()); // copy contents
+  fileCon->seekg(0, ios::beg); // move back to start of file
   fileCon->close();
   return filestring;
 }

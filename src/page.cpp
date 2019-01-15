@@ -67,11 +67,11 @@ void page::getHeader()
   if ((int) d->pageheaders.size() >= pagenumber)
     header = d->pageheaders[pagenumber];
   else
-    Rcpp::stop(E);
+    throw runtime_error(E);
   if (!header.has("/Type"))
-    Rcpp::stop(E);
+    throw runtime_error(E);
   if(header.get("/Type") != "/Page")
-    Rcpp::stop(E);
+    throw runtime_error(E);
 }
 
 /*--------------------------------------------------------------------------*/

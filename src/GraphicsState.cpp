@@ -324,3 +324,34 @@ void GraphicsState::MakeGS()
 }
 
 /*---------------------------------------------------------------------------*/
+// Matrix mulitplication on two 3 x 3 matrices
+// Note there is no matrix class - these are pseudo 3 x 3 matrices formed
+// from single length-9 vectors
+
+vector<float> GraphicsState::matmul(vector<float> b, vector<float> a)
+{
+  if(a.size() != b.size())
+    throw std::runtime_error("matmul: Vectors must have same size.");
+  if(a.size() != 9)
+    throw std::runtime_error("matmul: Vectors must be size 9.");
+  vector<float> newmat;
+  for(size_t i = 0; i < 9; i++) //clever use of indices to allow fill by loop
+    newmat.emplace_back(a[i % 3 + 0] * b[3 * (i / 3) + 0] +
+                     a[i % 3 + 3] * b[3 * (i / 3) + 1] +
+                     a[i % 3 + 6] * b[3 * (i / 3) + 2] );
+  return newmat;
+}
+
+/*---------------------------------------------------------------------------*/
+// Allows a length-6 vector of number strings to be converted to 3x3 matrix
+// (This is the way transformation matrices are represented in pdfs)
+
+vector<float> GraphicsState::stringvectomat(vector<string> b)
+{
+  if(b.size() != 6)
+    throw std::runtime_error("stringvectomat: Vectors must be size 6.");
+  vector<float> a;
+  for(auto i : b) a.emplace_back(stof(i));
+  vector<float> newmat {a[0], a[1], 0, a[2], a[3], 0, a[4], a[5], 1};
+  return newmat;
+}

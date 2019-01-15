@@ -42,7 +42,7 @@ public:
   bool linearized, encrypted;
   std::vector<dictionary> pageheaders;
   std::vector<uint8_t> filekey;
-  std::map <int, object_class> objects;
+  std::unordered_map <int, object_class> objects;
   dictionary trailer;
   dictionary catalogue;
   object_class pagedir;

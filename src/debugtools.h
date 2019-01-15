@@ -31,6 +31,7 @@
 #include<string>
 #include<vector>
 #include<chrono>
+#include<iostream>
 
 template<typename T>
 void printvec(std::vector<T> x)

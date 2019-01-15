@@ -26,7 +26,6 @@
 //---------------------------------------------------------------------------//
 
 #include "xref.h"
-#include "crypto.h"
 
 /*---------------------------------------------------------------------------*/
 
@@ -469,7 +468,7 @@ void xref::checkKeyR3(dictionary& encdict)
 {/*
   vector<uint8_t> ubytes = getPassword("/U", encdict);
   vector<uint8_t> buf = UPW;
-  concat(buf, bytesFromArray(trailer.get("/ID")));
+  concat(buf, bytesFromArray(TrailerDictionary.get("/ID")));
   buf.resize(48);
   vector<uint8_t> checkans = rc4(md5(buf), filekey);
   for (int i = 19; i >= 0; i--)

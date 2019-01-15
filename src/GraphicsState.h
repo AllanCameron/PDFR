@@ -26,12 +26,18 @@
 //---------------------------------------------------------------------------//
 
 #ifndef PDFR_GS
+
+//---------------------------------------------------------------------------//
+
 #define PDFR_GS
 
+#include <Rcpp.h> // This is the first header file to require Rcpp-specific fx
 #include "tokenizer.h"
 
-using namespace Token;
+using namespace Token; // Needs to use enumerator defined in Token namespace
 using namespace std;
+
+//---------------------------------------------------------------------------//
 
 class GraphicsState
 {
@@ -71,6 +77,10 @@ private:
   void TJ(string, vector<string>&, vector<TState>&);
   void processRawChar(vector<RawChar>&, float&, vector<float>&, float&);
   void MakeGS();
+  std::vector<float> matmul(std::vector<float>, std::vector<float>);
+  std::vector<float> stringvectomat(std::vector<std::string>);
 };
+
+//---------------------------------------------------------------------------//
 
 #endif
