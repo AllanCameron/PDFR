@@ -28,7 +28,6 @@
 #include "utilities.h"
 #include <fstream>   // for get_file - uses ifstream
 #include <algorithm> // for min_element
-#include <cmath>     // for pow()
 
 using namespace std;
 
@@ -53,15 +52,17 @@ string carveout(const string& s, const string& pre, const string& post)
 // This is used to carve out variable substrings between fixed substrings -
 // a surprisingly common task in parsing text.
 
-std::vector<std::string>
-  multicarve(const std::string& s, const std::string& a, const std::string& b)
+vector<string> multicarve(const string& s, const string& a, const string& b)
 {
-  std::vector<std::string> res;
+  std::vector<std::string> res; // vector to store results
+  // if any of the strings are length 0 then return an empty vector
   if(a.size() == 0 || b.size() == 0 || s.size() == 0) return res;
   std::string str = s; // makes a copy to allow const correctness
   while(true)
   {
-    // this loop progressively matches and removes from str until it's empty
+    // this loop progressively finds matches in s and removes from the start
+    // of the string all characters up to the end of matched b.
+    // It does this until there are no paired matches left in the string
     int start = str.find(a);
     if(start == -1) break; // no more matched pairs so halt
     // chop start off string up to end of first match of a
@@ -79,12 +80,12 @@ std::vector<std::string>
 // Decent approximation of whether a string contains binary data or not
 // Uses <algorithm> from std
 
-bool IsAscii(const string& tempint)
+bool IsAscii(const string& s)
 {
-  int mymin = *min_element(tempint.begin(), tempint.end());
-  int mymax = *max_element(tempint.begin(), tempint.end());
+  char minchar = *min_element(s.begin(), s.end()); // minimum char in s
+  char maxchar = *max_element(s.begin(), s.end()); // maximum char in s
   // if at least one character is outside the ASCII range, return false
-  return (mymin > 7) && (mymax < 126);
+  return (minchar > 7) && (maxchar < 127);
 
 }
 
@@ -94,9 +95,9 @@ bool IsAscii(const string& tempint)
 
 vector<uint8_t> bytesFromArray(const string& s)
 {
-  vector<uint8_t> resvec;
+  vector<uint8_t> resvec; // vector to store results
   if(s.empty()) return resvec; // if string is empty, return empty vector;
-  vector<int> tmpvec;
+  vector<int> tmpvec; // temporary vector to hold results
   for(auto a : s) // convert hex characters to numerical values
   {
     if(a > 47 && a < 58)  tmpvec.emplace_back(a - 48); //Digits 0-9
@@ -140,7 +141,7 @@ string intToHexstring(int i)
 {
   if(i < 0 || i > 0xffff) return "FFFF"; // returns max if out of range
   string hex = "0123456789ABCDEF";
-  string res;
+  string res; // string to hold results
   res += hex[(i & 0xf000) >> 12]; // gets index of hex from first 4 bits
   res += hex[(i & 0x0f00) >> 8];  // gets index of hex from second 4 bits
   res += hex[(i & 0x00f0) >> 4];  // gets index of hex from third 4 bits
@@ -154,7 +155,7 @@ string intToHexstring(int i)
 
 vector<string> splitfours(string s)
 {
-  vector<string> res;
+  vector<string> res; // vector to hold results
   // if string empty, return empty vector
   if(s.empty()) return res;
   // if length of s not divisible by 4, prepend zeros until it is
@@ -175,7 +176,11 @@ bool isDictString(const string& s)
 }
 
 /*---------------------------------------------------------------------------*/
-// Classify characters for use in lexers
+// Classify characters for use in lexers. This allows the use of switch
+// statements that depend on whether a letter is a character, digit or
+// whitespace but is indifferent to which specific instance of each it finds.
+// For cases where the lexer needs to find a specific symbol, this function
+// returns the original character if it is not a digit, a letter or whitespace
 
 char symbol_type(const char c)
 {
@@ -191,7 +196,7 @@ char symbol_type(const char c)
 
 void trimRight(string& s)
 {
-  if(s.length() == 0) return; // nothing to do
+  if(s.length() == 0) return; // nothing to do if string is empty
   for(int i = s.length() - 1; i >= 0; i--) // reverse iterator
     if(s[i] == ' ' || s[i] == '\t' || s[i] == '\n' || s[i] == '\r') //whitespace
       s.resize(i); // shrink string to before whitespace character
@@ -513,7 +518,7 @@ std::vector<float> getnums(const std::string& s)
 }
 
 /*--------------------------------------------------------------------------*/
-// Loads a file's contents into a single string using <fstream>
+// Loads a file's contents into a single std::string using <fstream>
 
 std::string get_file(const std::string& file)
 {

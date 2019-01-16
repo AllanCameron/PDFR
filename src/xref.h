@@ -33,6 +33,8 @@
 #include "streams.h"
 #include "crypto.h"
 
+typedef std::vector<std::vector<int>> XRtab;
+
 struct xrefrow { int object, startbyte, stopbyte, in_object; };
 
 /*---------------------------------------------------------------------------*/

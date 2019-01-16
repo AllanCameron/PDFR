@@ -41,15 +41,17 @@
  * about adding new functions - if possible, new functions should be added
  * to "downstream" classes.
  *
- * There are a small number of templates defined here which are used to reduce
- * boilerplate code in the rest of the program.
- *
+ * There are also a small number of templates defined here which are used to
+ * reduce boilerplate code in the rest of the program.
  */
 
 #include<string>
 #include<vector>
 #include<unordered_map>
-// #include "debugtools.h" Uncomment if debug functions required
+
+//Uncomment the following line if debug functions required in the program:
+// #include "debugtools.h"
+
 
 /* The characters in pdf strings are most portably interpreted as uint16_t.
  * They need to be translated to Unicode for rendition to the intended
@@ -63,18 +65,17 @@ typedef uint16_t RawChar;
 typedef uint16_t Unicode;
 
 
-typedef std::vector<std::vector<int>> XRtab;
-typedef std::vector<std::vector<std::vector<std::string>>> Instructionset;
-typedef std::unordered_map<RawChar, std::pair<Unicode, int>> GlyphMap;
-
 //---------------------------------------------------------------------------//
-// Returns vector of a std::map's keys.
+// Template returning a vector of a std::map's keys. This can be used to
+// enumerate the keys for iterating through the map or as a method of printing
+// the map to the console
 
 template< typename Mt, typename T >
 std::vector<Mt> getKeys(std::unordered_map<Mt, T>& Map)
 {
-  std::vector<Mt> keyvec;
-  keyvec.reserve(Map.size());
+  std::vector<Mt> keyvec; // vector to store results
+  keyvec.reserve(Map.size()); // Ensure it is big enough
+  // the following loop iterates through the map, gets the key and stores it
   for(typename std::unordered_map<Mt, T>::iterator i = Map.begin();
       i != Map.end(); i++)
     keyvec.push_back(i->first);
@@ -82,7 +83,9 @@ std::vector<Mt> getKeys(std::unordered_map<Mt, T>& Map)
 }
 
 //---------------------------------------------------------------------------//
-//Simple template to shorten boilerplate of sticking vectors together
+// Simple template to shorten boilerplate of sticking vectors together
+// Given two vectors of the same type, add B's contents to the end of A
+// This modifies A
 
 template <typename T>
 void concat(std::vector<T>& A, const std::vector<T>& B)
@@ -91,15 +94,16 @@ void concat(std::vector<T>& A, const std::vector<T>& B)
 }
 
 //---------------------------------------------------------------------------//
-// Mimics R's order(); allows sorting of one vector by another's order
+// Mimics R's order(); returns the indices which if applied would sort the
+// vector from lowest to highest
 
 template <typename T>
 std::vector<int> order(const std::vector<T>& data)
 {
-  std::vector<int> index(data.size(), 0);
+  std::vector<int> index(data.size(), 0); // a new int vector to store results
   int i = 0;
-  for (auto &j : index) j = i++;
-
+  for (auto &j : index) j = i++; // fills the new vector with 0,1,2,3,..etc
+  // Use a lambda function to sort 'index' based on the order of 'data'
   sort(index.begin(), index.end(), [&](const T& a, const T& b)
   {
     return (data[a] < data[b]);
@@ -108,44 +112,65 @@ std::vector<int> order(const std::vector<T>& data)
 }
 
 /*---------------------------------------------------------------------------*/
-// Sort one vector by another's order
-template <typename T>
-void sortby(std::vector<T>& vec, const std::vector<T>& data)
+// Sort one vector by another's order. Modified supplied vector
+
+template <typename Ta, typename Tb>
+void sortby(std::vector<Ta>& vec, const std::vector<Tb>& data)
 {
   if(vec.size() == 0) return; // Nothing to do!
 
-  if(vec.size() != data.size())
+  if(vec.size() != data.size()) // throw error if vector lengths don't match
     throw std::runtime_error("sortby requires equal-lengthed vectors");
-  std::vector<T> res(vec.size(), 0);
+  std::vector<Ta> res; // vector to store results
+  // Use order(data) as defined above to sort vec
   for(auto i : order(data))
     res.emplace_back(vec[i]);
-  vec = res;
+  vec = res; // replace vec by the stored results
   return;
 }
 
 /*---------------------------------------------------------------------------*/
-// global function declarations - see utilities.cpp for definitions
-std::string carveout(const std::string& subject, const std::string& pre,
-                     const std::string& post);
-bool IsAscii(const std::string& tempint);
-std::vector<float> getnums(const std::string& s);
-std::vector<int> getints(const std::string& s);
-std::vector<unsigned char> bytesFromArray(const std::string& s);
-std::string bytestostring(const std::vector<uint8_t>& v);
-std::vector<float> stringtofloat(std::vector<std::string> b);
-std::string intToHexstring(int i);
-std::vector<std::string> splitfours(std::string s);
-std::vector<int> getObjRefs(const std::string& ds);
-bool isDictString(const std::string& s);
-char symbol_type(const char c);
-void trimRight(std::string& s);
-size_t firstmatch(std::string& s, std::string m, int startpos);
-std::vector<RawChar> HexstringToRawChar(std::string& s);
-std::vector<RawChar> StringToRawChar(std::string& s);
-std::vector<std::string> multicarve(const std::string& s,
-                                    const std::string& a,
-                                    const std::string& b);
-std::string get_file(const std::string& file);
+// global function declarations - see utilities.cpp for descriptions
+
+std::string carveout(const std::string&,
+                     const std::string&,
+                     const std::string&);
+
+bool IsAscii(const std::string&);
+
+std::vector<float> getnums(const std::string&);
+
+std::vector<int> getints(const std::string&);
+
+std::vector<unsigned char> bytesFromArray(const std::string&);
+
+std::string bytestostring(const std::vector<uint8_t>&);
+
+std::vector<float> stringtofloat(std::vector<std::string>);
+
+std::string intToHexstring(int);
+
+std::vector<std::string> splitfours(std::string);
+
+std::vector<int> getObjRefs(const std::string&);
+
+bool isDictString(const std::string&);
+
+char symbol_type(const char);
+
+void trimRight(std::string&);
+
+size_t firstmatch(std::string&, std::string, int);
+
+std::vector<RawChar> HexstringToRawChar(std::string&);
+
+std::vector<RawChar> StringToRawChar(std::string&);
+
+std::vector<std::string> multicarve(const std::string&,
+                                    const std::string&,
+                                    const std::string&);
+
+std::string get_file(const std::string&);
 
 //---------------------------------------------------------------------------//
 

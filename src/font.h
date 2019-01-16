@@ -33,6 +33,8 @@
 
 using namespace std;
 
+typedef std::unordered_map<RawChar, std::pair<Unicode, int>> GlyphMap;
+
 class font
 {
 private:
