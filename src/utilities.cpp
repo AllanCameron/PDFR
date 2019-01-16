@@ -122,7 +122,7 @@ string bytestostring(const vector<uint8_t>& v)
 }
 
 /*---------------------------------------------------------------------------*/
-// Transforms a vector of strings to a fector of floats
+// Transforms a vector of strings to a vector of floats
 // (vectorised version of stof)
 
 vector<float> stringtofloat(vector<string> b)
@@ -134,24 +134,17 @@ vector<float> stringtofloat(vector<string> b)
 
 /*---------------------------------------------------------------------------*/
 //Converts an int to the relevant 2-byte ASCII hex (4 characters long)
-// eg 161 -> A1
+// eg 161 -> "00A1"
 
 string intToHexstring(int i)
 {
+  if(i < 0 || i > 0xffff) return "FFFF"; // returns max if out of range
   string hex = "0123456789ABCDEF";
   string res;
-  int firstnum = i / 4096; // 16^3
-  i -= firstnum * 4096;
-  int secondnum = i / 256; // 16^2
-  i -= secondnum * 256;
-  int thirdnum = i / 16;
-  i -= thirdnum * 16;
-  res += hex[firstnum];
-  res += hex[secondnum];
-  res += hex[thirdnum];
-  res += hex[i];
-  while(res.length() < 4)
-    res = "0" + res; // sanity clause; adds null digits if length < 4
+  res += hex[(i & 0xf000) >> 12]; // gets index of hex from first 4 bits
+  res += hex[(i & 0x0f00) >> 8];  // gets index of hex from second 4 bits
+  res += hex[(i & 0x00f0) >> 4];  // gets index of hex from third 4 bits
+  res += hex[i & 0x000f];         // gets index of hex from last 4 bits
   return res;
 }
 
@@ -198,11 +191,10 @@ char symbol_type(const char c)
 
 void trimRight(string& s)
 {
-  if(s.length() == 0)
-    return;
-  for(int i = s.length() - 1; i >= 0; i--)
+  if(s.length() == 0) return; // nothing to do
+  for(int i = s.length() - 1; i >= 0; i--) // reverse iterator
     if(s[i] == ' ' || s[i] == '\t' || s[i] == '\n' || s[i] == '\r') //whitespace
-      s.resize(i);
+      s.resize(i); // shrink string to before whitespace character
     else
       break;
 }
@@ -214,21 +206,33 @@ size_t firstmatch(std::string& s, std::string m, int startpos)
 {
   size_t ssize = s.size();
   size_t msize = m.size();
-  if(startpos < 0 || startpos > (int) ssize || msize > ssize) return -1;
-  size_t state = 0;
+  if(startpos < 0 || startpos > (int) ssize || msize > ssize)
+    return -1; // negative value indicates no match; same as string.find();
+  size_t state = 0; // this variable records how many consecutive chars match
   size_t j = startpos;
   while(j < ssize)
   {
+    /* This loop iterates through string s until it finds a character that
+     * matches the first character in m. It then increments 'state' to record
+     * that it has macthed one character. If the next character in s matches
+     * the second character in m, s increments again. If 'state' increments up
+     * to the value of m's length then a complete match has been found.
+     * If at any stage the next character of s does not match the next
+     * character of m, the increment state is reset to 0 (or 1 if the first
+     * character of m appears in s to stop the increment)
+     */
     if(s[j] == m[state])
-      state++;
+      state++;                      // found a match - increment
+    else if(s[j] == m[0])
+      state = 1;                    // match broken but character matches m[0]
     else
-      state = 0;
+      state = 0;                    // match broken, start again
     if (state == msize)
-      break;
-    if (ssize - j == 1) return -1;
+      break;                        // full match found
+    if (ssize - j == 1) return -1;  // insufficient string left for match
     j++;
   }
-  return j + 1 - msize;
+  return j + 1 - msize; // returns the first position of the match
 }
 
 /*--------------------------------------------------------------------------*/
@@ -237,90 +241,98 @@ size_t firstmatch(std::string& s, std::string m, int startpos)
 
 vector<RawChar> HexstringToRawChar(string& s)
 {
-  vector<string>&& sv = splitfours(s);
-  vector<RawChar> uv;
-  for(auto& i : sv)
+  // first split the string into length 4 blocks to represent two-byte uints
+  vector<string>&& string_vector = splitfours(s);
+  vector<RawChar> raw_vector; // vector to store results
+  for(auto& i : string_vector)
   {
-    if(i.length() < 4) while(i.length() < 4) i = "0" + i;
-    i = "0x" + i;
-    uv.push_back((RawChar) stoul(i, nullptr, 0));
+    i = "0x" + i; // prepend "0x" to string to ensure it is converted properly
+    raw_vector.push_back((RawChar) stoul(i, nullptr, 0)); // push uint16_t
   }
-  return uv;
+  return raw_vector;
 }
 
 /*--------------------------------------------------------------------------*/
 // Converts normal string to a vector of 2-byte width numbers (RawChar)
+// This requires sequential conversion from char to uint8_t to uint16_t
+// (RawChar is just a synonym for uint16_t)
 
 vector<RawChar> StringToRawChar(string& s)
 {
-  vector<RawChar> res;
-  if(s.size() == 0) return res;
-  for(size_t i = 0; i < s.size(); i++)
+  vector<RawChar> result; // vector to hold results
+  if(s.size() == 0) return result; // string s is empty - nothing to do.
+  for(auto i : s)
   {
-    uint8_t a = (uint8_t) s[i];
-    res.push_back((uint16_t) a);
+    uint8_t a = (uint8_t) i; // char to uint8
+    result.push_back((uint16_t) a); // convert uint8 to uint16 and store result
   }
-  return res;
+  return result;
 }
 
 /*--------------------------------------------------------------------------*/
 // This is a simple lexer to find any object references in the given string,
 // in the form "xx x R". It is far quicker than finding matches with Regex,
 // even though the code is more unwieldy. It is essentially a finite state
-// machine that reads character by character.
+// machine that reads character by character and stores any matches found
 
 vector<int> getObjRefs(const string& s)
 {
-  std::vector<int> res;
-  std::string buf;
-  std::string state = "waiting";
+  enum RefState // defines the possible states of the finite state machine (fsm)
+  {
+    WAIT_FOR_START, // Waiting for an integer
+    IN_FIRST_INT,   // In an integer
+    WAIT_FOR_GEN,   // Waiting for a generation number
+    IN_GEN,         // In a second integer
+    WAIT_FOR_R      // Wait to see if next char is R to confirm this is a ref
+  };
+  std::vector<int> res; // vector to hold result
+  std::string buf; // a buffer to hold characters until stored or discarded
+  RefState state = WAIT_FOR_START; // the current state of the fsm
   for(auto i : s)
   {
-    char m = symbol_type(i);
-    if(state == "waiting")
+    char m = symbol_type(i); // finds out if current char is digit, letter, ws
+    if(state == WAIT_FOR_START)
     {
       if(m == 'D')
-      {
-        buf += i; state = "infirstint";
-      }
-      continue;
+        buf += i; state = IN_FIRST_INT;
+      continue; // restarts next iteration of loop.
     }
-    if(state == "infirstint")
+    if(state == IN_FIRST_INT)
     {
       switch(m)
       {
         case 'D' : buf += i; break;
-        case ' ' : state = "wait2"; break;
-        default:   buf.clear(); state = "waiting";
+        case ' ' : state = WAIT_FOR_GEN; break;
+        default:   buf.clear(); state = WAIT_FOR_START;
       }
       continue;
     }
-    if(state == "wait2")
+    if(state == WAIT_FOR_GEN)
     {
       switch(m)
       {
-        case 'D' : state = "insecondint"; break;
-        default:   state = "waiting"; break;
+        case 'D' : state = IN_GEN; break;
+        default:   state = WAIT_FOR_START; break;
       }
       continue;
     }
-    if(state == "insecondint")
+    if(state == IN_GEN)
     {
       switch(m)
       {
         case 'D' : break;
-        case ' ' : state = "wait3"; break;
-        default:   buf.clear(); state = "waiting"; break;
+        case ' ' : state = WAIT_FOR_R; break;
+        default:   buf.clear(); state = WAIT_FOR_START; break;
       }
       continue;
     }
-    if(state == "wait3")
+    if(state == WAIT_FOR_R)
     {
       switch(m)
       {
         case 'L' : if(i == 'R') res.push_back(stoi(buf));
-                   buf.clear(); state = "waiting"; break;
-        default:   buf.clear(); state = "waiting";
+                   buf.clear(); state = WAIT_FOR_START; break;
+        default:   buf.clear(); state = WAIT_FOR_START;
       }
       continue;
     }
@@ -331,13 +343,20 @@ vector<int> getObjRefs(const string& s)
 /*--------------------------------------------------------------------------*/
 // Another lexer. This one finds any integers in a string.
 // If there are decimal points, it ignores the fractional part.
+// It will not accurately represent hex, octal or scientific notation (eg 10e5)
 
 std::vector<int> getints(const std::string& s)
 {
-  std::vector<int> res;
-  std::string buf;
-  enum IntState {WAITING, NEG, INT, IGNORE};
-  IntState state = WAITING;
+  std::vector<int> res; // vector to store results
+  std::string buf;  // string buffer to hold characters which may be ints
+  enum IntState
+  {
+    WAITING, // waiting for first digit or minus sign
+    NEG,    // found a minus sign, looking to see if this starts a negative int
+    INT,    // found a digit, now recording successive digits to buffer
+    IGNORE  // ignoring any digits between decimal point and next non-number
+  };
+  IntState state = WAITING; // current state of fsm.
   for(auto i : s)
   {
     char m = symbol_type(i);
@@ -399,14 +418,23 @@ std::vector<int> getints(const std::string& s)
 }
 
 /*--------------------------------------------------------------------------*/
-// This lexer retrieves floats from a string
+// This lexer retrieves floats from a string. It searches through the entire
+// given string character by character and returns all instances where the
+// result can be interpreted as a decimally represented number. It will also
+// include ints but not hex, octal or scientific notation (eg 10e5)
 
 std::vector<float> getnums(const std::string& s)
 {
-  std::vector<float> res;
-  std::string buf;
-  enum FloatState {WAITING, NEG, PRE, POST};
-  FloatState state = WAITING;
+  std::vector<float> res; // vector to store and return results
+  std::string buf; // a buffer to hold characters until stored or discarded
+  enum FloatState // The possible states of the fsm
+  {
+    WAITING, // awaiting the first character that might represent a number
+    NEG,    // found a minus sign. Could be start of negative number
+    PRE,    // Now reading an integer, waiting for whitespace or decimal point
+    POST    // Have read integer and found point, now reading fractional number
+  };
+  FloatState state = WAITING; // current state of fsm
   for(auto i : s)
   {
     char m = symbol_type(i);
@@ -485,11 +513,11 @@ std::vector<float> getnums(const std::string& s)
 }
 
 /*--------------------------------------------------------------------------*/
-// Loads a file's contents into a single string
+// Loads a file's contents into a single string using <fstream>
 
 std::string get_file(const std::string& file)
 {
-  string filestring;
+  string filestring; // a new string in which to store file contents.
   ifstream in(file.c_str(), ios::in | ios::binary); // open connection to file
   auto fileCon = &in;
   fileCon->seekg(0, ios::end); // move to end of file
@@ -498,6 +526,6 @@ std::string get_file(const std::string& file)
   fileCon->seekg(0, ios::beg); // move to start of file
   fileCon->read(&filestring[0], filestring.size()); // copy contents
   fileCon->seekg(0, ios::beg); // move back to start of file
-  fileCon->close();
+  fileCon->close(); // Ensure the connection is closed before proceeding
   return filestring;
 }
