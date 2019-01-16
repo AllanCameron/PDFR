@@ -246,7 +246,7 @@ void tokenizer::escapeState()
       octcount++;
       n = symbol_type(s[i]);
     }
-    int newint = oct2dec(stoi(buf));
+    int newint = stoi(buf, nullptr, 8);
     buf = intToHexstring(newint);
     pushbuf(HEXSTRING, STRING);
     i--;

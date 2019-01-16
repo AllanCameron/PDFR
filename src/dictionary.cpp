@@ -282,7 +282,7 @@ bool dictionary::hasInts(const string& Key)
 
 vector<int> dictionary::getRefs(const string& Key)
 {
-  return refFinder(this->get(Key));
+  return getObjRefs(this->get(Key));
 }
 
 /*---------------------------------------------------------------------------*/

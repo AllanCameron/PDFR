@@ -49,7 +49,7 @@
 #include<string>
 #include<vector>
 #include<unordered_map>
-#include "debugtools.h"
+// #include "debugtools.h" Uncomment if debug functions required
 
 /* The characters in pdf strings are most portably interpreted as uint16_t.
  * They need to be translated to Unicode for rendition to the intended
@@ -112,7 +112,8 @@ std::vector<int> order(const std::vector<T>& data)
 template <typename T>
 void sortby(std::vector<T>& vec, const std::vector<T>& data)
 {
-  if(vec.size() == 0) return;
+  if(vec.size() == 0) return; // Nothing to do!
+
   if(vec.size() != data.size())
     throw std::runtime_error("sortby requires equal-lengthed vectors");
   std::vector<T> res(vec.size(), 0);
@@ -129,20 +130,18 @@ std::string carveout(const std::string& subject, const std::string& pre,
 bool IsAscii(const std::string& tempint);
 std::vector<float> getnums(const std::string& s);
 std::vector<int> getints(const std::string& s);
-int oct2dec(int x);
 std::vector<unsigned char> bytesFromArray(const std::string& s);
 std::string bytestostring(const std::vector<uint8_t>& v);
 std::vector<float> stringtofloat(std::vector<std::string> b);
 std::string intToHexstring(int i);
 std::vector<std::string> splitfours(std::string s);
-std::vector<int> getObjRefs(std::string& ds);
+std::vector<int> getObjRefs(const std::string& ds);
 bool isDictString(const std::string& s);
 char symbol_type(const char c);
 void trimRight(std::string& s);
 size_t firstmatch(std::string& s, std::string m, int startpos);
 std::vector<RawChar> HexstringToRawChar(std::string& s);
 std::vector<RawChar> StringToRawChar(std::string& s);
-std::vector<int> refFinder(const std::string& s);
 std::vector<std::string> multicarve(const std::string& s,
                                     const std::string& a,
                                     const std::string& b);

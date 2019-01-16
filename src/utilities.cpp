@@ -33,17 +33,19 @@
 using namespace std;
 
 /*---------------------------------------------------------------------------*/
-// Return the first substring of s that lies between two strings
+// Return the first substring of s that lies between two strings.
+// This can be used e.g. to find the byte position that always sits between
+// "startxref" and "%%EOF"
 
 string carveout(const string& s, const string& pre, const string& post)
 {
   int start = s.find(pre);
   if(start == -1) start++; // if pre not found in s, start at beginning of s
-  else start += pre.size();
+  else start += pre.size(); // otherwise start at end of first pre
   string str = s.substr(start, s.size() - start); // trim start of s
   int stop = str.find(post);
-  if(stop == -1) return str; // if post not found, finish at end
-  return str.substr(0, stop);
+  if(stop == -1) return str; // if post not found, finish at end of string
+  return str.substr(0, stop); // discard end of string starting at end of post
 }
 
 /*---------------------------------------------------------------------------*/
@@ -59,13 +61,15 @@ std::vector<std::string>
   std::string str = s; // makes a copy to allow const correctness
   while(true)
   {
-    // this loop progressively finds and chops matches from str until its empty
+    // this loop progressively matches and removes from str until it's empty
     int start = str.find(a);
-    if(start == -1) break;
+    if(start == -1) break; // no more matched pairs so halt
+    // chop start off string up to end of first match of a
     str = str.substr(start + a.size(), str.size() - (start + a.size()));
     int stop = str.find(b);
-    if(stop == -1) break;
-    res.push_back(str.substr(0, stop));
+    if(stop == -1) break; // no more matched pairs so halt
+    res.push_back(str.substr(0, stop)); // target found - push to result
+    // Now discard the target plus the following instance of b
     str = str.substr(stop + b.size(), str.size() - (stop + b.size()));
   }
   return res;
@@ -79,27 +83,9 @@ bool IsAscii(const string& tempint)
 {
   int mymin = *min_element(tempint.begin(), tempint.end());
   int mymax = *max_element(tempint.begin(), tempint.end());
+  // if at least one character is outside the ASCII range, return false
   return (mymin > 7) && (mymax < 126);
-}
 
-/*---------------------------------------------------------------------------*/
-// converts an octal (as captured by stoi) to intended decimal value
-// e.g "\020"  is captured as 20 by stoi but represents 16 in decimal
-
-int oct2dec(int x)
-{
-  int res = 0;
-  string str = to_string(x);
-  int l = str.length();
-  if(l == 0) return res;
-  for (int i = 0; i < l; i++)
-  {
-    int e = stoi(str.substr(i,1));
-    if(e > 7)
-      throw std::runtime_error("Invalid octal");
-    res += (e * pow(8, l - i - 1));
-  }
-  return res;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -108,21 +94,19 @@ int oct2dec(int x)
 
 vector<uint8_t> bytesFromArray(const string& s)
 {
-  if(s.empty())
-    throw std::runtime_error("Zero-length string passed to bytesFromArray");
+  vector<uint8_t> resvec;
+  if(s.empty()) return resvec; // if string is empty, return empty vector;
   vector<int> tmpvec;
-  for(auto a : s) // Extracts chars from string which could be hexadecimal
+  for(auto a : s) // convert hex characters to numerical values
   {
     if(a > 47 && a < 58)  tmpvec.emplace_back(a - 48); //Digits 0-9
     if(a > 64 && a < 71)  tmpvec.emplace_back(a - 55); //Uppercase A-F
     if(a > 96 && a < 103) tmpvec.emplace_back(a - 87); //Lowercase a-f
   }
   size_t ts = tmpvec.size();
-  if(ts == 0)
-    throw std::runtime_error("arrayFromBytes not given a byte string");
+  if(ts == 0) return resvec; // if no hex characters, return empty vector;
   if(ts % 2 == 1)
     tmpvec.push_back(0); // add an extra zero to the end of odd-length strings
-  vector<uint8_t> resvec;
   for(size_t i = 0; i < ts; i += 2)
     resvec.emplace_back((uint8_t) (16 * tmpvec.at(i) + tmpvec.at(i + 1)));
   return resvec;
@@ -144,8 +128,7 @@ string bytestostring(const vector<uint8_t>& v)
 vector<float> stringtofloat(vector<string> b)
 {
   vector<float> r;
-  for(auto i : b)
-    r.push_back(stof(i));
+  for(auto i : b) r.push_back(stof(i));
   return r;
 }
 
@@ -174,31 +157,24 @@ string intToHexstring(int i)
 
 /*---------------------------------------------------------------------------*/
 // Splits a string into a vector of length-4 elements. Useful for Ascii-
-// encoded strings
+// encoded strings e.g. "00FF00AA1234" -> {"00FF", "00AA", "1234"}
 
 vector<string> splitfours(string s)
 {
   vector<string> res;
-  if(s.empty())
-    return res;
-  while(s.size() % 4 != 0)
-    s = '0' + s; // if length of s not divisible by 4, prepend zeros until it is
+  // if string empty, return empty vector
+  if(s.empty()) return res;
+  // if length of s not divisible by 4, prepend zeros until it is
+  while(s.size() % 4 != 0) s = '0' + s;
+  // push back sequential substrings of length 4
   for(unsigned i = 0; i < s.length()/4; i++)
     res.emplace_back(s.substr(i * 4, 4));
   return res;
 }
 
 /*--------------------------------------------------------------------------*/
-// Extracts pdf object references from string
-// simple synonym function to access refFinder
-
-vector<int> getObjRefs(string& ds)
-{
-  return refFinder(ds);
-}
-
-/*--------------------------------------------------------------------------*/
-// test of whether string s contains a dictionary
+// test of whether string s contains a dictionary by looking for double
+// angle brackets
 
 bool isDictString(const string& s)
 {
@@ -210,10 +186,10 @@ bool isDictString(const string& s)
 
 char symbol_type(const char c)
 {
-  if(c > 0x40 && c < 0x5b) return 'L'; //UPPERCASE
-  if(c > 0x60 && c < 0x7b) return 'L'; //lowercase
-  if(c > 0x2f && c < 0x3a) return 'D'; //digits
-  if(c == ' ' || c == 0x0d || c == 0x0a ) return ' '; //whitespace
+  if(c > 0x40 && c < 0x5b) return 'L'; // character is UPPERCASE
+  if(c > 0x60 && c < 0x7b) return 'L'; // character is lowercase
+  if(c > 0x2f && c < 0x3a) return 'D'; // character is a digit
+  if(c == ' ' || c == 0x0d || c == 0x0a ) return ' '; // character is whitespace
   return c; // if none of the above, return the char itself;
 }
 
@@ -293,7 +269,7 @@ vector<RawChar> StringToRawChar(string& s)
 // even though the code is more unwieldy. It is essentially a finite state
 // machine that reads character by character.
 
-std::vector<int> refFinder(const std::string& s)
+vector<int> getObjRefs(const string& s)
 {
   std::vector<int> res;
   std::string buf;
