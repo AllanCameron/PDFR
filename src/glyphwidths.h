@@ -33,19 +33,19 @@
 class glyphwidths
 {
 private:
-  unordered_map<RawChar, int> Width;
+  std::unordered_map<RawChar, int> Width;
   dictionary fontref;
   document* d;
-  void parsewidtharray(string);
-  void getCoreFont(string);
+  void parsewidtharray(std::string);
+  void getCoreFont(std::string);
   void parseDescendants(dictionary&, document*);
   void parseWidths(dictionary&, document*);
   void getWidthTable(dictionary&, document*);
 
 public:
-  glyphwidths(dictionary& dic, document* doc, string bf);
+  glyphwidths(dictionary& dic, document* doc, std::string bf);
   int getwidth(RawChar);
-  vector<RawChar> widthKeys();
+  std::vector<RawChar> widthKeys();
   bool widthFromCharCodes;
 };
 

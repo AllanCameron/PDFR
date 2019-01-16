@@ -63,7 +63,7 @@ private:
 
 public:
   xref(){};
-  xref(const string&);
+  xref(const std::string&);
   bool encrypted;
   std::vector<uint8_t> filekey;
   std::string fs;
@@ -74,7 +74,7 @@ public:
   size_t inObject(int objnum);
   std::vector<int> getObjects();
   bool objectExists(int objnum);
-  vector<size_t> getStreamLoc(int objstart);
+  std::vector<size_t> getStreamLoc(int objstart);
 };
 
 class xrefstream

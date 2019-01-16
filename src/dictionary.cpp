@@ -178,7 +178,7 @@ void dictionary::handleQuerydict(char n)
   {
     buf = "<<";
     state = SUBDICT;
-    minibuf = 2;
+    bracket = 2;
   }
   else
   {
@@ -193,11 +193,11 @@ void dictionary::handleSubdict(char n)
 {
   switch(n)
   {
-    case '<': buf += (*s)[i]; minibuf ++; break;
-    case '>': buf += (*s)[i]; minibuf --; break;
+    case '<': buf += (*s)[i]; bracket ++; break;
+    case '>': buf += (*s)[i]; bracket --; break;
     default:  buf += (*s)[i];             break;
   }
-  if (minibuf == 0)
+  if (bracket == 0)
     assignValue("", START);
 }
 
@@ -227,7 +227,7 @@ void dictionary::handleClose(char n)
 /*---------------------------------------------------------------------------*/
 
 dictionary::dictionary(string* str) :
-  s(str), i(0), minibuf(0), keyPending(false), state(PREENTRY)
+  s(str), i(0), bracket(0), keyPending(false), state(PREENTRY)
 {
   if(((*s).length() == 0)) *this = dictionary();
   tokenize_dict();
@@ -236,7 +236,7 @@ dictionary::dictionary(string* str) :
 /*---------------------------------------------------------------------------*/
 
 dictionary::dictionary(string* str, size_t pos) :
-  s(str), i(pos), minibuf(0), keyPending(false), state(PREENTRY)
+  s(str), i(pos), bracket(0), keyPending(false), state(PREENTRY)
 {
   if(((*s).length() == 0) || (i >= (*s).length())) *this = dictionary();
   else tokenize_dict();
@@ -249,6 +249,13 @@ dictionary::dictionary()
   unordered_map<string, string> Empty;
   DictionaryMap = Empty;
 }
+
+/*---------------------------------------------------------------------------*/
+
+dictionary::dictionary(std::unordered_map<string, string> d)
+{
+  DictionaryMap = d;
+};
 
 /*---------------------------------------------------------------------------*/
 
@@ -329,4 +336,11 @@ bool dictionary::hasDictionary(const string& Key)
 vector<string> dictionary::getDictKeys()
 {
   return getKeys(this->DictionaryMap);
+}
+
+/*---------------------------------------------------------------------------*/
+
+std::unordered_map<string, string> dictionary::R_out()
+{
+  return this->DictionaryMap;
 }

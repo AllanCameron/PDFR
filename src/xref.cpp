@@ -27,6 +27,8 @@
 
 #include "xref.h"
 
+using namespace std;
+
 /*---------------------------------------------------------------------------*/
 
 void xref::locateXrefs()

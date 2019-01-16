@@ -27,6 +27,8 @@
 
 #include "object_class.h"
 
+using namespace std;
+
 object_class::object_class(xref* Xref, int objnum) : XR(Xref), number(objnum),
 has_stream(false)
 {

@@ -34,9 +34,6 @@
 #include <Rcpp.h> // This is the first header file to require Rcpp-specific fx
 #include "tokenizer.h"
 
-using namespace Token; // Needs to use enumerator defined in Token namespace
-using namespace std;
-
 //---------------------------------------------------------------------------//
 
 class GraphicsState
@@ -48,34 +45,35 @@ public:
 private:
   page* p;
   font* wfont;
-  vector<vector<float>> gs, statehx;
-  vector<float> xvals, yvals, fontsize, widths, Tmstate, Tdstate, R,
+  std::vector<std::vector<float>> gs, statehx;
+  std::vector<float> xvals, yvals, fontsize, widths, Tmstate, Tdstate, R,
   left, right, bottom, size, width, fontsizestack, initstate;
-  vector<string> fontname, fonts, fontstack;
-  vector<Unicode> stringres, text;
-  vector<int> leftmatch, rightmatch;
+  std::vector<std::string> fontname, fonts, fontstack;
+  std::vector<Unicode> stringres, text;
+  std::vector<int> leftmatch, rightmatch;
   int PRstate;
   float Tl, Tw, Th, Tc, currfontsize;
-  string currentfont;
-  vector<pair<string, TState>> Instructions;
-  void parser(vector<pair<string, TState>>&, string);
-  void Do(string&);
-  void Q(vector<string>& );
-  void q(vector<string>& );
-  void TH(vector<string>& );
-  void TW(vector<string>& );
-  void TC(vector<string>& );
-  void TL(vector<string>& );
-  void Tstar(vector<string>& );
-  void Tm(vector<string>& );
-  void cm(vector<string>& );
-  void Td(vector<string>& );
-  void TD(vector<string>& );
-  void BT(vector<string>& );
-  void ET(vector<string>& );
-  void Tf(vector<string>& );
-  void TJ(string, vector<string>&, vector<TState>&);
-  void processRawChar(vector<RawChar>&, float&, vector<float>&, float&);
+  std::string currentfont;
+  std::vector<std::pair<std::string, Token::TState>> Instructions;
+  void parser(std::vector<std::pair<std::string, Token::TState>>&, std::string);
+  void Do(std::string&);
+  void Q(std::vector<std::string>& );
+  void q(std::vector<std::string>& );
+  void TH(std::vector<std::string>& );
+  void TW(std::vector<std::string>& );
+  void TC(std::vector<std::string>& );
+  void TL(std::vector<std::string>& );
+  void Tstar(std::vector<std::string>& );
+  void Tm(std::vector<std::string>& );
+  void cm(std::vector<std::string>& );
+  void Td(std::vector<std::string>& );
+  void TD(std::vector<std::string>& );
+  void BT(std::vector<std::string>& );
+  void ET(std::vector<std::string>& );
+  void Tf(std::vector<std::string>& );
+  void TJ(std::string, std::vector<std::string>&, std::vector<Token::TState>&);
+  void processRawChar(std::vector<RawChar>&, float&,
+                      std::vector<float>&,   float&);
   void MakeGS();
   std::vector<float> matmul(std::vector<float>, std::vector<float>);
   std::vector<float> stringvectomat(std::vector<std::string>);

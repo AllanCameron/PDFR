@@ -27,6 +27,8 @@
 
 #include "page.h"
 
+using namespace std;
+
 /*---------------------------------------------------------------------------*/
 
 void page::boxes()
@@ -65,7 +67,7 @@ void page::getHeader()
   std::string E = "No header found for page ";
   E += std::to_string(pagenumber);
   if ((int) d->pageheaders.size() >= pagenumber)
-    header = d->pageheaders[pagenumber];
+    header = d->pageheaders.at(pagenumber);
   else
     throw runtime_error(E);
   if (!header.has("/Type"))

@@ -26,9 +26,42 @@
 //---------------------------------------------------------------------------//
 
 #ifndef PDFR_DICT
+
+//---------------------------------------------------------------------------//
+
 #define PDFR_DICT
 
+/* The dictionary is an important part of a pdf's data structure. It consists
+ * of a variable number of name-value pairs. The names are designated by a
+ * preceding forward slash, eg /PDFName. The values in the name:value pair can
+ * be of four different basic types: boolean, number, object reference and
+ * string. It can also be one of two composite types: an array (enclosed in
+ * square brackets), or another dictionary. Dictionaries can thus be arbitrarily
+ * nested.
+ *
+ * A dictionary is enclosed in <<double angle brackets>>. Most pdf objects
+ * start with a dictionary, and many are only dictionaries. It is therefore
+ * necessary to define a dictionary class early on as it is a prerequisite
+ * of navigating and interpreting a pdf.
+ *
+ * This class is created by providing a std::string containing a pdf dictionary.
+ * This string is passed through a lexer which parses the name:value pairs
+ * into a std::unordered_map. The values are all stored as strings and
+ * processed as required. Mostly this processing is done by the class itself
+ * from public member functions which can return numbers, references, strings
+ * and dictionaries on request.
+ *
+ * This header is the second in a "daisy chain" of headers which build up the
+ * tools needed to read pdfs. It comes straight after utilities.h, and is
+ * required by most of the other source files here.
+ */
+
 #include "utilities.h"
+
+// The lexer which constructs the dictionary is a finite state machine, which
+// behaves in different ways to parse the string depending on its state.
+// The state in turn may be changed by the character read by the lexer.
+// The following enum lists the possible states of the finite state machine.
 
 enum DState     {PREENTRY,
                  QUERYCLOSE,
@@ -44,47 +77,60 @@ enum DState     {PREENTRY,
                  CLOSE,
                  THE_END};
 
-using namespace std;
 
 class dictionary
 {
-  string* s;
-  size_t i;
-  int minibuf;
-  bool keyPending;
-  string buf, pendingKey;
-  DState state;
-  std::unordered_map<std::string, std::string> DictionaryMap;
-  void tokenize_dict();
-  void sortkey(string, DState);
-  void assignValue(string, DState);
-  void handleMaybe(char);
-  void handleStart(char);
-  void handleKey(char);
-  void handlePrevalue(char);
-  void handleValue(char);
-  void handleArrayval(char);
-  void handleDstring(char);
-  void handleQuerydict(char);
-  void handleSubdict(char);
-  void handleClose(char);
+private:
+  // Private data members
+
+  std::string* s;   // pointer to the string being read
+  size_t i;         // the string's iterator which is passed between functions
+  int bracket;      // integer to store the nesting level of angle brackets
+  bool keyPending;  // flag that indicates a key name has been read
+  std::string buf;  // string to hold the read characters in memory until needed
+  std::string pendingKey; // name of key waiting for a value
+  DState state;     // current state of fsm
+  std::unordered_map<std::string, std::string> DictionaryMap; // data holder
+
+  // Private functions
+
+  void tokenize_dict(); // co-ordinates the lexer
+
+  void sortkey(std::string, DState);//----//
+  void assignValue(std::string, DState);  //
+  void handleMaybe(char);                 //
+  void handleStart(char);                 //
+  void handleKey(char);                   //
+  void handlePrevalue(char);              //--> functions to handle lexer states
+  void handleValue(char);                 //
+  void handleArrayval(char);              //
+  void handleDstring(char);               //
+  void handleQuerydict(char);             //
+  void handleSubdict(char);               //
+  void handleClose(char);           //----//
 
 public:
-  dictionary(std::string* s);
-  dictionary(std::string* s, size_t);
-  dictionary(std::unordered_map<string, string> d) : DictionaryMap(d) {};
-  dictionary();
-  std::string get(const std::string& Key);
-  bool has(const std::string& Key);
-  bool hasRefs(const std::string& Key);
-  bool hasInts(const std::string& Key);
-  bool hasDictionary(const std::string& Key);
-  std::vector<int> getRefs(const std::string& Key);
-  std::vector<int> getInts(const std::string& Key);
-  std::vector<float> getNums(const std::string& Key);
-  std::vector<std::string> getDictKeys();
-  dictionary getDictionary(const std::string& Key);
-  std::unordered_map<string, string> R_out() {return this->DictionaryMap;}
+  // Creator functions
+
+  dictionary(std::string*); // make dictionary from string
+  dictionary(std::string*, size_t); // make dictionary from position in string
+  dictionary(std::unordered_map<std::string, std::string>); // create from map
+  dictionary(); // empty dictionary
+
+  // Public member functions
+  std::string get(const std::string&);  // get value as string given name
+  bool has(const std::string&);         // confirms a key is present
+  bool hasRefs(const std::string&);     // tests if given key has references
+  bool hasInts(const std::string&);     // tests if given key has ints
+  bool hasDictionary(const std::string&); // tests if key has dictionary
+  std::vector<int> getRefs(const std::string&); // gets references from key
+  std::vector<int> getInts(const std::string&); // gets ints from key
+  std::vector<float> getNums(const std::string&); // gets floats from key
+  std::vector<std::string> getDictKeys(); // gets all keys from dictionary
+  dictionary getDictionary(const std::string&); // gets sub-dictionary from key
+  std::unordered_map<std::string, std::string> R_out(); // returns full map
 };
+
+//---------------------------------------------------------------------------//
 
 #endif

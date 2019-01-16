@@ -35,6 +35,8 @@ enum DiffState
   STOP
 };
 
+using namespace std;
+
 /*---------------------------------------------------------------------------*/
 
 void parseDifferences(const string& enc,

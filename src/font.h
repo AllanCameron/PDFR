@@ -31,8 +31,6 @@
 #include "encoding.h"
 #include "glyphwidths.h"
 
-using namespace std;
-
 typedef std::unordered_map<RawChar, std::pair<Unicode, int>> GlyphMap;
 
 class font
@@ -45,12 +43,12 @@ private:
 public:
   document* d;
   dictionary fontref;
-  string FontRef, FontName, FontID;
-  vector<int> FontBBox;
+  std::string FontRef, FontName, FontID;
+  std::vector<int> FontBBox;
   GlyphMap glyphmap;
-  string BaseFont;
-  vector<pair<Unicode, int>> mapRawChar(vector<RawChar>);
-  font(document*, dictionary, const string&);
+  std::string BaseFont;
+  std::vector<std::pair<Unicode, int>> mapRawChar(std::vector<RawChar>);
+  font(document*, dictionary, const std::string&);
   font(){};
 };
 

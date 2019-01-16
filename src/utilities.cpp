@@ -299,7 +299,10 @@ vector<int> getObjRefs(const string& s)
     if(state == WAIT_FOR_START)
     {
       if(m == 'D')
-        buf += i; state = IN_FIRST_INT;
+      {
+        buf += i;
+        state = IN_FIRST_INT;
+      }
       continue; // restarts next iteration of loop.
     }
     if(state == IN_FIRST_INT)

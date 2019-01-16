@@ -30,6 +30,8 @@
 
 #define DEFAULT_WIDTH 500;
 
+using namespace std;
+
 /*---------------------------------------------------------------------------*/
 
 void glyphwidths::getWidthTable(dictionary& dict, document* d)

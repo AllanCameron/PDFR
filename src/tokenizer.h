@@ -47,18 +47,15 @@ namespace Token
   };
 };
 
-using namespace std;
-using namespace Token;
-
 class tokenizer
 {
   size_t i;
-  string s, buf;
-  TState state;
-  vector<pair<string, TState>> output;
+  std::string s, buf;
+  Token::TState state;
+  std::vector<std::pair<std::string, Token::TState>> output;
   void tokenize();
-  void subtokenizer(string&);
-  void pushbuf(TState, TState);
+  void subtokenizer(std::string&);
+  void pushbuf(Token::TState, Token::TState);
   void newsymbolState();
   void resourceState();
   void identifierState();
@@ -71,8 +68,8 @@ class tokenizer
   void waitState();
 
 public:
-  tokenizer(string& s);
-  vector<pair<string, TState>> result();
+  tokenizer(std::string& s);
+  std::vector<std::pair<std::string, Token::TState>> result();
 };
 
 #endif

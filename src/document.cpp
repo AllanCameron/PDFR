@@ -28,6 +28,7 @@
 #include<fstream>
 #include "document.h"
 
+#include<iostream>
 using namespace std;
 
 /*---------------------------------------------------------------------------*/
