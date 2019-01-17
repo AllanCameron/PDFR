@@ -52,13 +52,7 @@
 
 #include "utilities.h"
 
-// The md5 algorithm makes use of 4-byte numbers (unsigned long or uint32_t).
-// To shorten the name and make it explicit what we are talking about I have
-// typedef'd uint32_t as fourbyte
-
-typedef uint32_t fourbyte;
-
-// similarly, a std::vector<uint8_t> is well desribed by the type name "bytes"
+// A std::vector<uint8_t> is more succinctly described by the type name "bytes"
 
 typedef std::vector<uint8_t> bytes;
 

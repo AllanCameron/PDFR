@@ -27,7 +27,13 @@
 
 #include "crypto.h"
 
-std::vector<uint8_t> perm(std::string str)
+// The md5 algorithm makes use of 4-byte numbers (unsigned long or uint32_t).
+// To shorten the name and make it explicit what we are talking about I have
+// typedef'd uint32_t as fourbytes
+
+typedef uint32_t fourbytes;
+
+bytes perm(std::string str)
 {
   if(str.length() == 0)
     throw std::runtime_error("Could not determine permission flags");
@@ -36,17 +42,17 @@ std::vector<uint8_t> perm(std::string str)
   uint8_t c = (a >> 8) & 0xff;
   uint8_t d = (a >> 16) & 0xff;
   uint8_t e = (a >> 24) & 0xff;
-  std::vector<uint8_t> res = {b, c, d, e};
+  bytes res = {b, c, d, e};
   return res;
 }
 
 
 /*---------------------------------------------------------------------------*/
 
-fourbyte md5mix(int n,      fourbyte a, fourbyte b, fourbyte c,
-                fourbyte d, fourbyte e, fourbyte f, fourbyte g)
+fourbytes md5mix(int n,      fourbytes a, fourbytes b, fourbytes c,
+                fourbytes d, fourbytes e, fourbytes f, fourbytes g)
 {
-  fourbyte mixer;
+  fourbytes mixer;
   switch(n)
   {
     case 1  : mixer = (a + ((b & c) | (~b & d)) + e + f); break;
@@ -61,15 +67,15 @@ fourbyte md5mix(int n,      fourbyte a, fourbyte b, fourbyte c,
 
 /*---------------------------------------------------------------------------*/
 
-std::vector<uint8_t> md5(std::vector<uint8_t> input)
+bytes md5(bytes input)
 {
   int len = input.size();
-  std::vector<fourbyte> x {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+  std::vector<fourbytes> x {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
   int nblocks = (len + 72) / 64;
-  fourbyte a = 1732584193;
-  fourbyte b = 4023233417;
-  fourbyte c = 2562383102;
-  fourbyte d = 271733878;
+  fourbytes a = 1732584193;
+  fourbytes b = 4023233417;
+  fourbytes c = 2562383102;
+  fourbytes d = 271733878;
 
   int i, j, k;
   k = 0;
@@ -99,10 +105,10 @@ std::vector<uint8_t> md5(std::vector<uint8_t> input)
       x.at(14) = len << 3;
     }
 
-    fourbyte astore = a;
-    fourbyte bstore = b;
-    fourbyte cstore = c;
-    fourbyte dstore = d;
+    fourbytes astore = a;
+    fourbytes bstore = b;
+    fourbytes cstore = c;
+    fourbytes dstore = d;
 
     a = md5mix(1, a, b, c, d, x.at(0), 3614090360, 7);
     d = md5mix(1, d, a, b, c, x.at(1), 3905402710, 12);
@@ -169,13 +175,14 @@ std::vector<uint8_t> md5(std::vector<uint8_t> input)
     c = md5mix(4, c, d, a, b, x.at(2), 718787259, 15);
     b = md5mix(4, b, c, d, a, x.at(9), 3951481745, 21);
 
+
     a += astore;
     b += bstore;
     c += cstore;
     d += dstore;
   }
 
-  std::vector<uint8_t> output;
+  bytes output;
 
   output.push_back((uint8_t)(a & 255));
   output.push_back((uint8_t)((a >>= 8) & 255));
@@ -199,9 +206,9 @@ std::vector<uint8_t> md5(std::vector<uint8_t> input)
 
 //----------------------------------------------------------------------------//
 
-std::vector<uint8_t> md5(std::string input)
+bytes md5(std::string input)
 {
-    std::vector<uint8_t> res;
+    bytes res;
     for(size_t i = 0; i < input.length(); i++)
     {
       char a = input[i];
@@ -214,13 +221,13 @@ std::vector<uint8_t> md5(std::string input)
 
 //-------------------------------------------------------------------------//
 
-std::vector<uint8_t> rc4(std::vector<uint8_t> msg, std::vector<uint8_t> key)
+bytes rc4(bytes msg, bytes key)
   {
     int keyLen = key.size();
     int msgLen = msg.size();
     uint8_t a, b, t;
     int i;
-    std::vector<uint8_t> state;
+    bytes state;
     for (i = 0; i < 256; ++i) state.push_back(i);
     if (keyLen == 0) return state;
     a = b = 0;
@@ -235,7 +242,7 @@ std::vector<uint8_t> rc4(std::vector<uint8_t> msg, std::vector<uint8_t> key)
 
     uint8_t x = 0;
     uint8_t y = 0;
-    std::vector<uint8_t> res = msg;
+    bytes res = msg;
     for(int k = 0; k < msgLen; k++)
       {
         uint8_t x1, y1, tx, ty;
@@ -252,11 +259,11 @@ std::vector<uint8_t> rc4(std::vector<uint8_t> msg, std::vector<uint8_t> key)
 
 /*---------------------------------------------------------------------------*/
 
-std::string decryptStream(std::string streamstr, std::vector<uint8_t> key,
+std::string decryptStream(std::string streamstr, bytes key,
                              int objNum, int objGen)
   {
-    std::vector<uint8_t> streambytes(streamstr.begin(), streamstr.end());
-    std::vector<uint8_t> objkey = key;
+    bytes streambytes(streamstr.begin(), streamstr.end());
+    bytes objkey = key;
     objkey.push_back(objNum & 0xff);
     objkey.push_back( (objNum >> 8) & 0xff);
     objkey.push_back( (objNum >> 16) & 0xff);
@@ -265,7 +272,7 @@ std::string decryptStream(std::string streamstr, std::vector<uint8_t> key,
     uint8_t objkeysize = objkey.size();
     objkey = md5(objkey);
     while(objkey.size() > objkeysize) objkey.pop_back();
-    std::vector<uint8_t> bytevec = rc4(streambytes, objkey);
+    bytes bytevec = rc4(streambytes, objkey);
     std::string restring =  bytestostring(bytevec);
     return restring;
   }
