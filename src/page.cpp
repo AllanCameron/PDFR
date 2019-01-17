@@ -135,7 +135,7 @@ void page::parseXObjStream()
     xobjstring = resources.get("/XObject");
   if(xobjstring.length() > 0)
   {
-    if(isDictString(xobjstring))
+    if(xobjstring.find("<<") != string::npos)
     {
       dictionary objdict = dictionary(&xobjstring);
       std::vector<std::string> dictkeys = objdict.getDictKeys();

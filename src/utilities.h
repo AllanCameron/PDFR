@@ -154,8 +154,6 @@ std::vector<std::string> splitfours(std::string);
 
 std::vector<int> getObjRefs(const std::string&);
 
-bool isDictString(const std::string&);
-
 char symbol_type(const char);
 
 void trimRight(std::string&);
