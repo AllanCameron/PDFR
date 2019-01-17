@@ -26,6 +26,21 @@
 //---------------------------------------------------------------------------//
 
 #include "corefonts.h"
+#include <vector>
+
+/* This file defines characteristics of the 14 core or built-in pdf fonts as
+ * described in the comments of corefonts.h. These are necessary for backwards-
+ * compatability with earlier versions of the pdf standard which did not
+ * mandate specifying all character widths.
+ *
+ * The following data by their nature are not really human-readable and can
+ * only be checked by testing their output
+ */
+
+// The pdf font files include a 4-point vector for each font defining a
+// bouding-box in text space. At present bounding boxes are not used in the
+// program. However, the vectors are included here in case they are required
+// for future feature development. The names are self-explanatory
 
 static std::vector<float> courierbox              = {-23,  -250, 715,   805};
 static std::vector<float> courierboldobliquebox   = {-57,  -250, 869,   801};
@@ -41,6 +56,14 @@ static std::vector<float> timesbolditalicbox      = {-200, -218, 996,   921};
 static std::vector<float> timesitalicbox          = {-169, -217, 1010,  883};
 static std::vector<float> timesromanbox           = {-168, -218, 1000,  898};
 static std::vector<float> dingbatsbox             = {-1,   -143, 981,   820};
+
+// Courier is a monospaced font and it seems a bit silly to specifically declare
+// all its widths manually. I have done so here for consistency and simplicity
+// rather than defining a loop to create the widths. In any case, the code
+// points are not all contiguous so a simple loop would require further coding
+// to make it an accurate and memory-minimal map. I thought it simplest to just
+// define the whole map for Courier and copy that map to the Courier variants
+// which are all also of the same width and have the same code points.
 
 std::unordered_map<Unicode, int> courierwidths =
 {
@@ -84,11 +107,20 @@ std::unordered_map<Unicode, int> courierwidths =
   {0x00fb, 0x0258}
 };
 
+// The Courier variants have identical mapping to plain Courier, so they are
+// copied directly from it
+
  std::unordered_map<Unicode, int> courierboldwidths = courierwidths;
 
  std::unordered_map<Unicode, int> courierboldobliquewidths = courierwidths;
 
  std::unordered_map<Unicode, int> courierobliquewidths = courierwidths;
+
+// There were no obvious shortcuts to simply defining the remaining widths
+// manually. It can be done in less space but would involve numerous
+// substitutions and be error-prone. Safest to just define them character
+// by character (this was obviously automated and the numbers lifted directly
+// from the font description files then translated to 0xffff format)
 
  std::unordered_map<Unicode, int> helveticawidths =
 {

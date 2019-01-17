@@ -27,6 +27,14 @@
 
 #include"chartounicode.h"
 
+/* These codes were taken directly from the pdf specification. For each pair
+ * the first number represents the code point given in the pdf string and
+ * the second gives the intended Unicode code point.
+ *
+ * By its nature this file is not really human-readable and any bugs will only
+ * be picked up by testing the validity of the output.
+ */
+
 std::unordered_map<RawChar, Unicode> macRomanEncodingToUnicode =
 {
   {0x0020, 0x0020}, {0x0021, 0x0021}, {0x0022, 0x0022}, {0x0023, 0x0023},

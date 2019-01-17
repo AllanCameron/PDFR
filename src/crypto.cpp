@@ -43,9 +43,10 @@ std::vector<uint8_t> perm(std::string str)
 
 /*---------------------------------------------------------------------------*/
 
-UL md5mix(int n, UL a, UL b, UL c, UL d, UL e, UL f, UL g)
+fourbyte md5mix(int n,      fourbyte a, fourbyte b, fourbyte c,
+                fourbyte d, fourbyte e, fourbyte f, fourbyte g)
 {
-  UL mixer;
+  fourbyte mixer;
   switch(n)
   {
     case 1  : mixer = (a + ((b & c) | (~b & d)) + e + f); break;
@@ -63,12 +64,12 @@ UL md5mix(int n, UL a, UL b, UL c, UL d, UL e, UL f, UL g)
 std::vector<uint8_t> md5(std::vector<uint8_t> input)
 {
   int len = input.size();
-  std::vector<UL> x {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+  std::vector<fourbyte> x {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
   int nblocks = (len + 72) / 64;
-  UL a = 1732584193;
-  UL b = 4023233417;
-  UL c = 2562383102;
-  UL d = 271733878;
+  fourbyte a = 1732584193;
+  fourbyte b = 4023233417;
+  fourbyte c = 2562383102;
+  fourbyte d = 271733878;
 
   int i, j, k;
   k = 0;
@@ -98,10 +99,10 @@ std::vector<uint8_t> md5(std::vector<uint8_t> input)
       x.at(14) = len << 3;
     }
 
-    UL astore = a;
-    UL bstore = b;
-    UL cstore = c;
-    UL dstore = d;
+    fourbyte astore = a;
+    fourbyte bstore = b;
+    fourbyte cstore = c;
+    fourbyte dstore = d;
 
     a = md5mix(1, a, b, c, d, x.at(0), 3614090360, 7);
     d = md5mix(1, d, a, b, c, x.at(1), 3905402710, 12);
