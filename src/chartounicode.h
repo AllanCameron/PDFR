@@ -51,8 +51,7 @@
 
 // Although these maps are direct uint16_t to uint16_t mappings, it is easier
 // to keep track of pre-translation and post-translation code points if we
-// give them different type names. It also tips our hat at the attempt to
-// encapsulate Encoding's interface
+// give them different type names.
 
 typedef uint16_t Unicode;
 typedef uint16_t RawChar;

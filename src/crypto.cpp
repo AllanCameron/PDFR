@@ -33,39 +33,82 @@
 
 typedef uint32_t fourbytes;
 
-bytes perm(std::string str)
+//---------------------------------------------------------------------------//
+// This simple function "chops" a four-byte int to a vector of four bytes.
+// The bytes are returned lowest-order first as this is the typical use.
+
+bytes chopLong(fourbytes longInt)
 {
-  if(str.length() == 0)
-    throw std::runtime_error("Could not determine permission flags");
-  int a = stoi(str);
-  uint8_t b = a & 0xff;
-  uint8_t c = (a >> 8) & 0xff;
-  uint8_t d = (a >> 16) & 0xff;
-  uint8_t e = (a >> 24) & 0xff;
-  bytes res = {b, c, d, e};
-  return res;
+  bytes result;
+   // The mask specifies that only the last byte is read when used with &
+  fourbytes mask = 0x000000ff;
+  result.push_back(longInt & mask);         // read last byte
+  result.push_back((longInt >> 8) & mask);  // read penultimate byte
+  result.push_back((longInt >> 16) & mask); // read second byte
+  result.push_back((longInt >> 24) & mask); // read first byte
+  return result;
 }
 
+//---------------------------------------------------------------------------//
+// perm is short for permissions. The permission flags for which actions are
+// available to the User are somewhat obfuscated in pdf. The flags are given
+// as a string representing a 4-byte integer - this can be stoi'd easily enough
+// to the intended integer. That integer then needs to be interpreted as a
+// set of 32 bits, each of which acts as a permission flag. The permissions
+// are required in order to construct the file key. To make this a compliant
+// reader, we should also handle the flags appropriately. For the purposes of
+// text extraction however, this is not required, and we just need the
+// permissions flag to produce the file key.
+
+bytes perm(std::string str) // takes the string containing the permissions int
+{
+  // No string == no permissions. Can't decode pdf, so throw an error
+  if(str.length() == 0)
+    throw std::runtime_error("Could not determine permission flags");
+  int flags = stoi(str); // Convert the string to a 4-byte int
+  // This reads off the bytes from lowest order to highest order
+  return chopLong(flags);
+}
 
 /*---------------------------------------------------------------------------*/
+// The md5 algorithm produces a "hash" of 16 bytes from any given sequence
+// of bytes. It is not practically possible to reverse the hash or find
+// a random set of bytes that when passed through the function will match the
+// hash. It is therefore like a "fingerprint" of any given plain data or string.
+// You need to have the same data from which the hash was created in order to
+// get the same hash. This allows passwords to be matched without the need for
+// the actual password to be stored anywhere: a program or service can be
+// protected just by insisting that a string is passed which matches the
+// stored hash.
+//
+// The main work of the md5 function is done by shuffling byte positions around
+// and performing bitwise operations on them. It seems fairly random and
+// arbitrary, but is completely deterministic so that a given set of bytes
+// always produced the same output.
+//
+// This function is called several times with different parameters as part
+// of the main md5 algorithm
 
 fourbytes md5mix(int n,      fourbytes a, fourbytes b, fourbytes c,
                 fourbytes d, fourbytes e, fourbytes f, fourbytes g)
 {
   fourbytes mixer;
-  switch(n)
+  switch(n) // chops and mangles bytes in various ways as per md5 algorithm
   {
     case 1  : mixer = (a + ((b & c) | (~b & d)) + e + f); break;
     case 2  : mixer = (a + ((b & d) | (c & ~d)) + e + f); break;
-    case 3  : mixer = (a + (b ^ c ^ d) + e + f); break;
-    case 4  : mixer = (a + (c ^ (b | ~d)) + e + f); break;
-    default : throw std::runtime_error("MD5 error");
+    case 3  : mixer = (a + (b ^ c ^ d) + e + f);          break;
+    case 4  : mixer = (a + (c ^ (b | ~d)) + e + f);       break;
+    default : throw std::runtime_error("MD5 error"); // this function needs n!
   }
-  mixer &= 4294967295;
-  return b + (((mixer << g) | (mixer >> (32 - g))) & 4294967295);
+  mixer &= 0xffffffff; // applies a four-byte mask
+
+  return b + (((mixer << g) | (mixer >> (32 - g))) & 0xffffffff);
 }
 
 /*---------------------------------------------------------------------------*/
+// The main md5 algorithm. This version of if was modified from various
+// open source online implementations.
 
 bytes md5(bytes input)
 {
@@ -77,15 +120,12 @@ bytes md5(bytes input)
   fourbytes c = 2562383102;
   fourbytes d = 271733878;
 
-  int i, j, k;
-  k = 0;
+  int i, j, k = 0;
   for (i = 0; i < nblocks; ++i)
   {
     for (j = 0; j < 16 && k < len - 3; ++j, k += 4)
-      x.at(j) = (((((input.at(k + 3) << 8) +
-                input.at(k + 2)) << 8) +
-                input.at(k + 1)) << 8) +
-                input.at(k);
+      x[j] = (((((input[k+3] << 8) + input[k+2]) << 8) + input[k+1]) << 8)
+      + input[k];
     if (i == nblocks - 1)
     {
       if (k == len - 3)
@@ -105,10 +145,12 @@ bytes md5(bytes input)
       x.at(14) = len << 3;
     }
 
-    fourbytes astore = a;
-    fourbytes bstore = b;
-    fourbytes cstore = c;
-    fourbytes dstore = d;
+    fourbytes astore = a; //------------------------------//
+    fourbytes bstore = b; //  Store the interim results   //
+    fourbytes cstore = c; //  to be added on again later  //
+    fourbytes dstore = d; //------------------------------//
+
+    // now shuffle the deck using the md5mix function
 
     a = md5mix(1, a, b, c, d, x.at(0), 3614090360, 7);
     d = md5mix(1, d, a, b, c, x.at(1), 3905402710, 12);
@@ -175,73 +217,60 @@ bytes md5(bytes input)
     c = md5mix(4, c, d, a, b, x.at(2), 718787259, 15);
     b = md5mix(4, b, c, d, a, x.at(9), 3951481745, 21);
 
-
-    a += astore;
-    b += bstore;
-    c += cstore;
-    d += dstore;
+    a += astore;  //-----------------------------------//
+    b += bstore;  // Add the numbers to each variable  //
+    c += cstore;  // that was stored before shuffling  //
+    d += dstore;  //-----------------------------------//
   }
-
-  bytes output;
-
-  output.push_back((uint8_t)(a & 255));
-  output.push_back((uint8_t)((a >>= 8) & 255));
-  output.push_back((uint8_t)((a >>= 8) & 255));
-  output.push_back((uint8_t)((a >>= 8) & 255));
-  output.push_back((uint8_t)(b & 255));
-  output.push_back((uint8_t)((b >>= 8) & 255));
-  output.push_back((uint8_t)((b >>= 8) & 255));
-  output.push_back((uint8_t)((b >>= 8) & 255));
-  output.push_back((uint8_t)(c & 255));
-  output.push_back((uint8_t)((c >>= 8) & 255));
-  output.push_back((uint8_t)((c >>= 8) & 255));
-  output.push_back((uint8_t)((c >>= 8) & 255));
-  output.push_back((uint8_t)(d & 255));
-  output.push_back((uint8_t)((d >>= 8) & 255));
-  output.push_back((uint8_t)((d >>= 8) & 255));
-  output.push_back((uint8_t)((d >>= 8) & 255));
+  bytes output;                // create empty output vector for bytes
+  concat(output, chopLong(a)); //--------------------------------------------//
+  concat(output, chopLong(b)); // For each of a, b, c, and d, return vector  //
+  concat(output, chopLong(c)); // of bytes low order first and add to output //
+  concat(output, chopLong(d)); //--------------------------------------------//
 
   return output;
 }
 
 //----------------------------------------------------------------------------//
+// This allows the md5 function to be run on a std::string without prior
+// conversion. It simply converts a string to vector<uint8_t> than puts it
+// into the "bytes" version of the function
 
 bytes md5(std::string input)
 {
-    bytes res;
-    for(size_t i = 0; i < input.length(); i++)
-    {
-      char a = input[i];
-      int b = a;
-      uint8_t c = b;
-      res.push_back(c);
-    }
-    return md5(res);
+    bytes res(input.begin(), input.end()); // simple conversion to bytes
+    return md5(res); // run md5 on bytes
 }
 
 //-------------------------------------------------------------------------//
+// RC4 is a stream cipher used in encryption. It takes a string (or, as in this
+// function, a vector of bytes) called a key, as well as the message to be
+// scrambled. It uses the key as a seed from which to generate a seemingly
+// random string of bytes. However, this stream of bytes can then be converted
+// directly back into the original message using exactly the same key.
+// The algorithm is now in the public domain
 
 bytes rc4(bytes msg, bytes key)
   {
     int keyLen = key.size();
     int msgLen = msg.size();
-    uint8_t a, b, t;
+    uint8_t a, b, t, x, y;
     int i;
     bytes state;
-    for (i = 0; i < 256; ++i) state.push_back(i);
-    if (keyLen == 0) return state;
-    a = b = 0;
-    for (i = 0; i < 256; ++i)
+    for (i = 0; i <= 0xff; ++i)
+      state.push_back(i); // fill state with 0 - 0xff
+    if (keyLen == 0)
+      return state;
+    a = b = x = y = 0;
+    for (auto& i : state)
       {
-        b = (key[a] + state[i] + b) % 256;
-        t = state[i];
-        state[i] = state[b];
+        b = (key[a] + i + b) % 256;
+        t = i;
+        i = state[b];
         state[b] = t;
         a = (a + 1) % keyLen;
       }
 
-    uint8_t x = 0;
-    uint8_t y = 0;
     bytes res = msg;
     for(int k = 0; k < msgLen; k++)
       {
@@ -258,21 +287,32 @@ bytes rc4(bytes msg, bytes key)
   }
 
 /*---------------------------------------------------------------------------*/
+// In order to decrypt an encrypted pdf stream, we need a few pieces of
+// information. Firstly, the file key is required - this is constructed by
+// the get_cryptkey() function. We also need to know the object number and
+// generation number of the object where the stream is found.
+//
+// The decryption algorithm takes these pieces of information and adds their
+// low order bytes to the end of the file key before running the result
+// through an md5 hash. The first n bytes of the result, where n is the file
+// key length plus 5, is then used as the key with which to decrypt the
+// stream using the rc4 algorithm.
 
 std::string decryptStream(std::string streamstr, bytes key,
                              int objNum, int objGen)
   {
-    bytes streambytes(streamstr.begin(), streamstr.end());
-    bytes objkey = key;
-    objkey.push_back(objNum & 0xff);
-    objkey.push_back( (objNum >> 8) & 0xff);
-    objkey.push_back( (objNum >> 16) & 0xff);
-    objkey.push_back( objGen & 0xff);
-    objkey.push_back((objGen >> 8) & 0xff);
+    bytes streambytes(streamstr.begin(), streamstr.end()); // stream as bytes
+    bytes objkey = key; // Start building the object key with the file key
+    concat(objkey, chopLong(objNum)); // append the bytes of the object number
+    objkey.pop_back(); // we only wanted the three lowest order bytes; pop last
+    objkey.push_back( objGen & 0xff); // append lowest order byte of gen number
+    objkey.push_back((objGen >> 8) & 0xff); // then the second lowest byte
     uint8_t objkeysize = objkey.size();
-    objkey = md5(objkey);
-    while(objkey.size() > objkeysize) objkey.pop_back();
+    objkey = md5(objkey); // md5 hash the resultant key
+    while(objkey.size() > objkeysize) objkey.pop_back(); // then trim to fit
+    // Now we use this key to decrypt the stream using rc4
     bytes bytevec = rc4(streambytes, objkey);
+    // finally we convert the resultant bytes to a string
     std::string restring =  bytestostring(bytevec);
     return restring;
   }

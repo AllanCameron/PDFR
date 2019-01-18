@@ -42,15 +42,16 @@
  * The /Differences entry describes a mapping of single-byte (or sometimes two-
  * byte) characters from a pdf stream to the intended Adobe glyph. The most
  * portable way to deal with this is to convert the glyphs to Unicode code
- * points. These can then be output safely to a variety of systems as intended.
+ * points. These can then be output safely to a variety of systems as needed.
  *
  * The conversions from Adobe code points to Unicode are widely available as
  * open source resources online.
- *
  */
+
 #include<string>
 #include<unordered_map>
 
+// Make the fact that the mapped values represent Unicode specific by typedef
 typedef uint16_t Unicode;
 
 // The map is declared 'extern' as a promise to the linker that this global

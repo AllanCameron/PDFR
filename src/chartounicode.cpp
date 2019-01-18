@@ -33,6 +33,8 @@
  *
  * By its nature this file is not really human-readable and any bugs will only
  * be picked up by testing the validity of the output.
+ *
+ * The map's names are self-explanatory
  */
 
 std::unordered_map<RawChar, Unicode> macRomanEncodingToUnicode =

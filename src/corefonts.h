@@ -45,7 +45,6 @@
  * class. It is only made seperate to reduce clutter in the glyphwidths class,
  * as it consists of a large amount of read-only data and would make
  * gylphwidths.cpp unwieldy to navigate to put all the data in that file too.
- *
  */
 
 // This header should compile with only a std::unordered_map #include'd

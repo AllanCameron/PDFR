@@ -28,10 +28,10 @@
 #include "adobetounicode.h"
 
 /* See the adobetounicode.h file for the need for this global object.
- * It uses strings as keys rather than enums because the names to be interpreted
- * are extracted as strings from the pdf and can be read off directly. Any
- * saving in memory of switching to enum would therefore be offset by the
- * processing time of a translation step from string to enum.
+ * It uses strings as keys rather than enums because the names to be
+ * interpreted are extracted as strings from the pdf and can be read off
+ * directly. Any saving in memory of switching to enum would therefore be
+ * at the cose of processing time for the translation step from string to enum.
  */
 
 std::unordered_map<std::string, Unicode> AdobeToUnicode =

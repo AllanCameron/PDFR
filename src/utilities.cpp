@@ -166,15 +166,6 @@ vector<string> splitfours(string s)
   return res;
 }
 
-/*--------------------------------------------------------------------------*/
-// test of whether string s contains a dictionary by looking for double
-// angle brackets
-
-bool isDictString(const string& s)
-{
-  return s.find("<<", 0) < s.length();
-}
-
 /*---------------------------------------------------------------------------*/
 // Classify characters for use in lexers. This allows the use of switch
 // statements that depend on whether a letter is a character, digit or
