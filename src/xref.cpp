@@ -81,7 +81,7 @@ void xref::xrefIsstream()
 
 void xref::xrefFromStream(int xrefloc)
 {
-  XRtab xreftable;
+  vector<vector<int>> xreftable;
   try
   {
     xreftable = xrefstream(this, xrefloc).table();
@@ -287,7 +287,7 @@ void xref::xrefFromString(std::string& xstr)
       objnumber.emplace_back(startingobj + (i / 2) - 1);
     }
   }
-  XRtab xreftable = {inuse, objnumber, byteloc};
+  vector<vector<int>> xreftable = {inuse, objnumber, byteloc};
   for (unsigned int j = 0; j < xreftable[0].size(); j++)
   {
     if (xreftable[0][j] < 65535)
