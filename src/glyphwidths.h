@@ -25,26 +25,64 @@
 //                                                                           //
 //---------------------------------------------------------------------------//
 
-/* This small header file gives the default glyph widths for the common
+#ifndef PDFR_WIDTH
+
+//---------------------------------------------------------------------------//
+
+#define PDFR_WIDTH
+
+/* Calculating the width of each glyph is necessary for working out the spacing
+ * between letters, words, paragraphs and other text elements, and is one of
+ * the more complex tasks in text extraction. The glyph widths in pdf are
+ * given in units of text space, where 1000 = 1 point = 1/72 inch in 1-point
+ * font size.
+ *
+ * There are various ways to describe glyph widths in pdf files. The most
+ * explicit way is by listing the font widths at each code point after the
+ * text string has been decoded, in an array. The array usually starts with the
+ * first code point that is being described, then gives a list of numbers for
+ * the widths of consecutive code points. Sometimes it is just an array of
+ * widths, and the first code point is given seperately in the font
+ * dictionary. Sometimes there is a default width for missing glyphs.
+ *
+ * In older pdfs, the widths may not be specified at all if the font used is
+ * one of 14 core fonts in the pdf specification. A conforming reader is
+ * supposed to know the glyph widths for these fonts.
+ *
+ * The glyphwidth class attempts to work out the method used to describe
+ * glyph widths and produce a map of the intended glyphs to their intended
+ * widths, without bothering any other classes with its implementation.
+ *
+ * Among the tools it needs to do this, it requires navigating the document,
+ * reading dictionaries and streams, and parsing a width description array.
+ * It therefore needs the document.h header which wraps these capabilities.
+ *
+ * It also needs a group of static objects listing the widths of each of the
  * characters used in the 'built-in' fonts used in pdfs. In theory, later
  * versions of pdf require specification of all glyph widths, but for back-
  * compatability, the widths of the 14 core fonts still need to be defined.
  *
- * All widths are given as ints in "text space", which is 1/1000 of the point
- * size of the text being described.
- *
  * The widths are available as an open online resource from Adobe.
  *
- * To preserve encapsulation, this header is included only by the glyphwidths
- * class. It is only made seperate to reduce clutter in the glyphwidths class,
- * as it consists of a large amount of read-only data and would make
- * gylphwidths.cpp unwieldy to navigate to put all the data in that file too.
+ * To preserve encapsulation, this header is included only by the fonts
+ * class. The fonts class merges its width map with the encoding map to
+ * produce the glyphmap, which gives the intended Unicode code point and
+ * width as a paired value for any given input character in a pdf string.
  */
 
-#ifndef PDFR_WIDTH
-#define PDFR_WIDTH
+//---------------------------------------------------------------------------//
 
 #include "document.h"
+
+//---------------------------------------------------------------------------//
+// The glyphwidths class contains private methods to find the description of
+// widths for each character in a font. It only makes sense to the font class,
+// from whence it is created and accessed.
+//
+// The core font widths are declared static private because they are only
+// needed by this class, and we don't want an extra copy of all of them if
+// several fonts are created. This also prevents them polluting the global
+// namespace
 
 class glyphwidths
 {
