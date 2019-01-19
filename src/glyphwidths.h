@@ -25,6 +25,22 @@
 //                                                                           //
 //---------------------------------------------------------------------------//
 
+/* This small header file gives the default glyph widths for the common
+ * characters used in the 'built-in' fonts used in pdfs. In theory, later
+ * versions of pdf require specification of all glyph widths, but for back-
+ * compatability, the widths of the 14 core fonts still need to be defined.
+ *
+ * All widths are given as ints in "text space", which is 1/1000 of the point
+ * size of the text being described.
+ *
+ * The widths are available as an open online resource from Adobe.
+ *
+ * To preserve encapsulation, this header is included only by the glyphwidths
+ * class. It is only made seperate to reduce clutter in the glyphwidths class,
+ * as it consists of a large amount of read-only data and would make
+ * gylphwidths.cpp unwieldy to navigate to put all the data in that file too.
+ */
+
 #ifndef PDFR_WIDTH
 #define PDFR_WIDTH
 
@@ -41,6 +57,20 @@ private:
   void parseDescendants(dictionary&, document*);
   void parseWidths(dictionary&, document*);
   void getWidthTable(dictionary&, document*);
+  static std::unordered_map<Unicode, int> courierwidths;
+  static std::unordered_map<Unicode, int> courierboldwidths;
+  static std::unordered_map<Unicode, int> courierboldobliquewidths;
+  static std::unordered_map<Unicode, int> courierobliquewidths;
+  static std::unordered_map<Unicode, int> helveticawidths;
+  static std::unordered_map<Unicode, int> helveticaboldwidths;
+  static std::unordered_map<Unicode, int> helveticaboldobliquewidths;
+  static std::unordered_map<Unicode, int> helveticaobliquewidths;
+  static std::unordered_map<Unicode, int> symbolwidths;
+  static std::unordered_map<Unicode, int> timesboldwidths;
+  static std::unordered_map<Unicode, int> timesbolditalicwidths;
+  static std::unordered_map<Unicode, int> timesitalicwidths;
+  static std::unordered_map<Unicode, int> timesromanwidths;
+  static std::unordered_map<Unicode, int> dingbatswidths;
 
 public:
   glyphwidths(dictionary& dic, document* doc, std::string bf);

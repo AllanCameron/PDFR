@@ -26,7 +26,6 @@
 //---------------------------------------------------------------------------//
 
 #include "glyphwidths.h"
-#include "corefonts.h"
 
 #define DEFAULT_WIDTH 500;
 
