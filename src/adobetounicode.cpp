@@ -25,16 +25,31 @@
 //                                                                           //
 //---------------------------------------------------------------------------//
 
-#include "adobetounicode.h"
+#include "encoding.h"
 
-/* See the adobetounicode.h file for the need for this global object.
+/* This is a large data file to define a single large static object -
+ * an unordered map of all the Adobe glyph names and their corresponding
+ * Unicode code points ('Unicode' type in the declaration is just a synonym for
+ * uint16_t).
+ *
+ * This object is only required for one stage of the pdf reading process:
+ * interpreting the "/Differences" entry of a font's encoding dictionary.
+ *
+ * The /Differences entry describes a mapping of single-byte (or sometimes two-
+ * byte) characters from a pdf stream to the intended Adobe glyph. The most
+ * portable way to deal with this is to convert the glyphs to Unicode code
+ * points. These can then be output safely to a variety of systems as needed.
+ *
+ * The conversions from Adobe code points to Unicode are widely available as
+ * open source resources online.
+ *
  * It uses strings as keys rather than enums because the names to be
  * interpreted are extracted as strings from the pdf and can be read off
  * directly. Any saving in memory of switching to enum would therefore be
  * at the cose of processing time for the translation step from string to enum.
  */
 
-std::unordered_map<std::string, Unicode> AdobeToUnicode =
+std::unordered_map<std::string, Unicode> Encoding::AdobeToUnicode =
 {
   {"/.notdef",    0x2022},
   {"/controlSOT", 0x0002},

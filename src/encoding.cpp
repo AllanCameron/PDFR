@@ -39,7 +39,7 @@ using namespace std;
 
 /*---------------------------------------------------------------------------*/
 
-void parseDifferences(const string& enc,
+void Encoding::parseDifferences(const string& enc,
                       unordered_map<RawChar, Unicode>& symbmap)
 {
   DiffState state = NEWSYMB;
@@ -90,7 +90,7 @@ void parseDifferences(const string& enc,
     if(entries[i].first == NUM)
       k = (RawChar) stoi(entries[i].second);
     else
-      symbmap[k++] = AdobeToUnicode[entries[i].second];
+      symbmap[k++] = Encoding::AdobeToUnicode[entries[i].second];
 }
 
 /*---------------------------------------------------------------------------*/
@@ -165,11 +165,11 @@ void Encoding::getEncoding(dictionary& fontref, document* d)
       encname = encref.get("/BaseEncoding");
   }
   if( encname == "/WinAnsiEncoding")
-    EncodingMap = winAnsiEncodingToUnicode;
+    EncodingMap = Encoding::winAnsiEncodingToUnicode;
   else if(encname == "/MacRomanEncoding")
-    EncodingMap = macRomanEncodingToUnicode;
+    EncodingMap = Encoding::macRomanEncodingToUnicode;
   else if(encname == "/PDFDocEncoding")
-    EncodingMap = pdfDocEncodingToUnicode;
+    EncodingMap = Encoding::pdfDocEncodingToUnicode;
   else
     for(RawChar i = 0; i < 256; i++)
       EncodingMap[i] = (Unicode) i;

@@ -25,9 +25,21 @@
 //                                                                           //
 //---------------------------------------------------------------------------//
 
-#include"chartounicode.h"
+#include"Encoding.h"
 
-/* These codes were taken directly from the pdf specification. For each pair
+/* This data file defines three std::unordered_maps as static members of the
+ * Encoding class. They are required to translate pdf strings to Unicode
+ * characters. The translation is a little different for each of the five
+ * base encodings which can be declared in the /Encoding entry of a font
+ * dictionary.
+ *
+ * There are actually two base encodings which are not defined here -
+ * standardEncoding, which for these purposes is just defined as a straight
+ * widechar to Unicode mapping, and /identity-H. The latter means that the
+ * encoding is described in a seperate CMap stream. This requires special
+ * consideration and is dealt with elsewhere in the Encoding class.
+ *
+ * These codes were taken directly from the pdf specification. For each pair
  * the first number represents the code point given in the pdf string and
  * the second gives the intended Unicode code point.
  *
@@ -37,7 +49,7 @@
  * The map's names are self-explanatory
  */
 
-std::unordered_map<RawChar, Unicode> macRomanEncodingToUnicode =
+std::unordered_map<RawChar, Unicode> Encoding::macRomanEncodingToUnicode =
 {
   {0x0020, 0x0020}, {0x0021, 0x0021}, {0x0022, 0x0022}, {0x0023, 0x0023},
   {0x0024, 0x0024}, {0x0025, 0x0025}, {0x0026, 0x0026}, {0x0027, 0x0027},
@@ -97,7 +109,7 @@ std::unordered_map<RawChar, Unicode> macRomanEncodingToUnicode =
   {0x00FC, 0x00B8}, {0x00FD, 0x02DD}, {0x00FE, 0x02DB}, {0x00FF, 0x02C7},
 };
 
-std::unordered_map<RawChar, Unicode> winAnsiEncodingToUnicode =
+std::unordered_map<RawChar, Unicode> Encoding::winAnsiEncodingToUnicode =
 {
   {0x0020, 0x0020}, {0x0021, 0x0021}, {0x0022, 0x0022}, {0x0023, 0x0023},
   {0x0024, 0x0024}, {0x0025, 0x0025}, {0x0026, 0x0026}, {0x0027, 0x0027},
@@ -157,7 +169,7 @@ std::unordered_map<RawChar, Unicode> winAnsiEncodingToUnicode =
   {0x00FC, 0x00FC}, {0x00FD, 0x00FD}, {0x00FE, 0x00FE}, {0x00FF, 0x00FF}
 };
 
-std::unordered_map<RawChar, Unicode> pdfDocEncodingToUnicode =
+std::unordered_map<RawChar, Unicode> Encoding::pdfDocEncodingToUnicode =
 {
   {0x0000, 0x0000}, {0x0009, 0x0009}, {0x000A, 0x000A}, {0x000C, 0x000C},
   {0x000D, 0x000D}, {0x0018, 0x02D8}, {0x0019, 0x02C7}, {0x001A, 0x02C6},

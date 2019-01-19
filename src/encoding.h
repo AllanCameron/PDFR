@@ -29,13 +29,17 @@
 #define PDFR_ENCODING
 
 #include "document.h"
-#include "adobetounicode.h"
-#include "chartounicode.h"
 
 class Encoding
 {
 private:
+  static std::unordered_map<std::string, Unicode> AdobeToUnicode;
   std::unordered_map<RawChar, Unicode> EncodingMap;
+  void parseDifferences(const std::string&,
+                        std::unordered_map<RawChar, Unicode>&);
+  static std::unordered_map<RawChar, Unicode> macRomanEncodingToUnicode;
+  static std::unordered_map<RawChar, Unicode> winAnsiEncodingToUnicode;
+  static std::unordered_map<RawChar, Unicode> pdfDocEncodingToUnicode;
   dictionary fontref;
   document* d;
   std::string BaseEncoding;

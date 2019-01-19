@@ -27,19 +27,37 @@
 
 #include "xref.h"
 
+//---------------------------------------------------------------------------//
+
 using namespace std;
 
 /*---------------------------------------------------------------------------*/
+// The first job of the creator function (after its initializers) is to find
+// out where the xrefs are. It does this by reading the penultimate line
+// of the file, which contains the byte offset of the first xref.
+//
+// However, there can be multiple xrefs in a file, so for each xref this
+// function finds the associated dictionary (either a trailer dictionary or an
+// Xrefstream dictionary), and finds out if there are more xrefs to parse
+// by checking for the "/Previous" entry, which points to the next xref
+// location. All the locations are stored as a vector for passing to
+// other creators.
 
 void xref::locateXrefs()
 {
+  // get last 50 chars of the file
   std::string&& partial = fs.substr(fs.size() - 50, 50);
+  // use carveout() from utilities.h to find the first xref offset
   std::string&& xrefstring =  carveout(partial, "startxref", "%%EOF");
+  // convert the number string to an int
   Xreflocations.emplace_back(stoi(xrefstring));
   if(Xreflocations.empty()) throw runtime_error("No xref entry found");
+  // the first dictionary found after any xref offset is always a trailer
+  // dictionary, though sometimes it doubles as an xrefstream dictionary.
+  // We make the first one found the canonical trailer dictionary
   TrailerDictionary = dictionary(&(fs), Xreflocations[0]);
   dictionary tempdict = TrailerDictionary;
-  while (true)
+  while (true) // Follow pointers to all xrefs sequentially.
     if(tempdict.hasInts("/Prev"))
     {
       Xreflocations.emplace_back(tempdict.getInts("/Prev")[0]);

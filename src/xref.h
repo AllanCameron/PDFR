@@ -135,10 +135,20 @@ class xrefstream
 {
   friend class xref;
   xref* XR;
-  dictionary dict, subdict;
-  std::vector<std::vector<int>> rawMatrix, finalArray, result;
-  std::vector<int> arrayWidths, objectIndex, objectNumbers, indexEntries;
-  int ncols, nrows, firstObject, predictor, objstart;
+  dictionary dict,
+             subdict;
+  std::vector<std::vector<int>> rawMatrix,
+                                finalArray,
+                                result;
+  std::vector<int> arrayWidths,
+                   objectIndex,
+                   objectNumbers,
+                   indexEntries;
+  int ncols,
+      nrows,
+      firstObject,
+      predictor,
+      objstart;
   void getIndex();
   void getParms();
   void getRawMatrix();
