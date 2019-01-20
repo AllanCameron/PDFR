@@ -27,36 +27,43 @@
 
 #include "glyphwidths.h"
 
+//---------------------------------------------------------------------------//
+// Where a glyph's width in missing and there is no default width, we need a
+// "default" default width. Set as a macro for easy changing and to avoid
+// a "magic constant" in the program.
+
 #define DEFAULT_WIDTH 500;
+
+
+//---------------------------------------------------------------------------//
 
 using namespace std;
 
 /*---------------------------------------------------------------------------*/
-
-void glyphwidths::getWidthTable(dictionary& dict, document* d)
+//
+void glyphwidths::getWidthTable()
 {
-  if (dict.has("/Widths"))
-    parseWidths(dict, d);
-  else if(dict.hasRefs("/DescendantFonts"))
-    parseDescendants(dict, d);
+  if (fontref.has("/Widths"))
+    parseWidths();
+  else if(fontref.hasRefs("/DescendantFonts"))
+    parseDescendants();
 }
 
 /*---------------------------------------------------------------------------*/
 
-void glyphwidths::parseWidths(dictionary& dict, document* d)
+void glyphwidths::parseWidths()
 {
   vector<float> widtharray;
   RawChar firstchar = 0x0000;
-  string numstring = "\\[(\\[|]| |\\.|\\d+)+"; // numeric array regex
-  if(dict.hasInts("/FirstChar"))
-    firstchar = dict.getInts("/FirstChar")[0];
-  if (dict.hasRefs("/Widths"))
+  if(fontref.hasInts("/FirstChar"))
+    firstchar = fontref.getInts("/FirstChar")[0];
+  if (fontref.hasRefs("/Widths"))
   {
-    object_class o = d->getobject(dict.getRefs("/Widths").at(0));
+    object_class o = d->getobject(fontref.getRefs("/Widths").at(0));
     string ostring = o.getStream();
     widtharray = getnums(ostring);
   }
-  else widtharray = dict.getNums("/Widths");
+  else widtharray = fontref.getNums("/Widths");
   if (!widtharray.empty())
   {
     this->widthFromCharCodes = true;
@@ -67,10 +74,9 @@ void glyphwidths::parseWidths(dictionary& dict, document* d)
 
 /*---------------------------------------------------------------------------*/
 
-void glyphwidths::parseDescendants(dictionary& dict, document* d)
+void glyphwidths::parseDescendants()
 {
-  string numstring = "\\[(\\[|]| |\\.|\\d+)+"; // numeric array regex
-  vector<int> os = dict.getRefs("/DescendantFonts");
+  vector<int> os = fontref.getRefs("/DescendantFonts");
   object_class desc = d->getobject(os[0]);
   dictionary descdict = desc.getDict();
   string descstream = desc.getStream();
@@ -89,27 +95,31 @@ void glyphwidths::parseDescendants(dictionary& dict, document* d)
 }
 
 /*---------------------------------------------------------------------------*/
+// The creator function includes a string passed from the "BaseFont" entry
+// of the encoding dictionary.
 
-void glyphwidths::getCoreFont(string s)
+void glyphwidths::getCoreFont()
 {
-       if(s == "/Courier") Width = courierwidths;
-  else if(s == "/Courier-Bold") Width = courierboldwidths;
-  else if(s == "/Courier-BoldOblique") Width = courierboldobliquewidths;
-  else if(s == "/Courier-Oblique") Width = courierobliquewidths;
-  else if(s == "/Helvetica") Width = helveticawidths;
-  else if(s == "/Helvetica-Bold") Width = helveticaboldwidths;
-  else if(s == "/Helvetica-Boldoblique") Width = helveticaboldobliquewidths;
-  else if(s == "/Helvetica-Oblique") Width = helveticaobliquewidths;
-  else if(s == "/Symbol") Width = symbolwidths;
-  else if(s == "/Times-Bold") Width = timesboldwidths;
-  else if(s == "/Times-BoldItalic") Width = timesbolditalicwidths;
-  else if(s == "/Times-Italic") Width =timesitalicwidths;
-  else if(s == "/Times-Roman") Width = timesromanwidths;
-  else if(s == "/ZapfDingbats") Width = dingbatswidths;
+       if(basefont == "/Courier") Width = courierwidths;
+  else if(basefont == "/Courier-Bold") Width = courierboldwidths;
+  else if(basefont == "/Courier-BoldOblique") Width = courierboldobliquewidths;
+  else if(basefont == "/Courier-Oblique") Width = courierobliquewidths;
+  else if(basefont == "/Helvetica") Width = helveticawidths;
+  else if(basefont == "/Helvetica-Bold") Width = helveticaboldwidths;
+  else if(basefont == "/Helvetica-Boldoblique") Width = helveticaboldobliquewidths;
+  else if(basefont == "/Helvetica-Oblique") Width = helveticaobliquewidths;
+  else if(basefont == "/Symbol") Width = symbolwidths;
+  else if(basefont == "/Times-Bold") Width = timesboldwidths;
+  else if(basefont == "/Times-BoldItalic") Width = timesbolditalicwidths;
+  else if(basefont == "/Times-Italic") Width =timesitalicwidths;
+  else if(basefont == "/Times-Roman") Width = timesromanwidths;
+  else if(basefont == "/ZapfDingbats") Width = dingbatswidths;
   else widthFromCharCodes = true;
 }
 
 /*---------------------------------------------------------------------------*/
+// Getter. Finds the width for a given character. If it is not specified
+// returns the default width
 
 int glyphwidths::getwidth(RawChar raw)
 {
@@ -217,11 +227,13 @@ void glyphwidths::parsewidtharray(string s)
 }
 
 /*---------------------------------------------------------------------------*/
+// Main creator function. If font is a core font, get the widths from built in
+// tables. Otherwise find and interpret specified widths.
 
-glyphwidths::glyphwidths(dictionary& dic, document* doc, string bf):
-  fontref(dic), d(doc)
+glyphwidths::glyphwidths(dictionary& dic, document* doc):
+  fontref(dic), d(doc) // Initialiser list
 {
-  getCoreFont(bf);
-  if(Width.empty())
-    getWidthTable(fontref, d);
+  basefont = fontref.get("/BaseFont");
+  getCoreFont();
+  if(Width.empty()) getWidthTable();
 }

@@ -69,7 +69,7 @@ vector<pair<Unicode, int>> font::mapRawChar(vector<RawChar> raw)
 void font::makeGlyphTable()
 {
   Encoding Enc = Encoding(this->fontref, this->d);
-  glyphwidths Wid = glyphwidths(this->fontref, this->d, this->BaseFont);
+  glyphwidths Wid = glyphwidths(this->fontref, this->d);
   vector<RawChar> inkeys = Enc.encKeys();
   if(Wid.widthFromCharCodes)
     for(auto i : inkeys)
