@@ -32,6 +32,22 @@
 using namespace std;
 
 /*---------------------------------------------------------------------------*/
+// the xref creator function. It takes the entire file contents as a string
+// then sequentially runs the steps in creation of an xref master map
+
+xref::xref(const string& s) : fs(s)
+{
+  locateXrefs();           // find all xrefs
+  xrefstrings();           // get the strings containing all xrefs
+  xrefIsstream();          // find which are streams
+  buildXRtable();          // create the xrefs from strings and / or streams
+  get_cryptkey();          // get the file key, needed for decryption of streams
+  Xreflocations.clear();   //-----//
+  Xrefstrings.clear();            //--> clear data used only in construction
+  XrefsAreStreams.clear(); //-----//
+}
+
+/*---------------------------------------------------------------------------*/
 // The first job of the creator function (after its initializers) is to find
 // out where the xrefs are. It does this by reading the penultimate line
 // of the file, which contains the byte offset of the first xref.
@@ -47,17 +63,22 @@ void xref::locateXrefs()
 {
   // get last 50 chars of the file
   std::string&& partial = fs.substr(fs.size() - 50, 50);
+
   // use carveout() from utilities.h to find the first xref offset
   std::string&& xrefstring =  carveout(partial, "startxref", "%%EOF");
+
   // convert the number string to an int
   Xreflocations.emplace_back(stoi(xrefstring));
   if(Xreflocations.empty()) throw runtime_error("No xref entry found");
+
   // the first dictionary found after any xref offset is always a trailer
   // dictionary, though sometimes it doubles as an xrefstream dictionary.
   // We make the first one found the canonical trailer dictionary
   TrailerDictionary = dictionary(&(fs), Xreflocations[0]);
   dictionary tempdict = TrailerDictionary;
-  while (true) // Follow pointers to all xrefs sequentially.
+
+  // Follow pointers to all xrefs sequentially.
+  while (true)
     if(tempdict.hasInts("/Prev"))
     {
       Xreflocations.emplace_back(tempdict.getInts("/Prev")[0]);
@@ -72,13 +93,17 @@ void xref::locateXrefs()
 
 void xref::xrefstrings()
 {
-  for(auto i : Xreflocations) // get a string from each xref location or die
+  // get a string from each xref location or die
+  for(auto i : Xreflocations)
   {
     int len = firstmatch(fs, "startxref", i) - i; // length of xref in chars
+
     // Throw error if no xref found
     if (len <= 0) throw std::runtime_error("No object found at location");
+
     // extract the xref string from the file string
     string fullxref = fs.substr(i, len);
+
     // stick a trimmed version of the xref onto Xrefstrings
     // Note the carveout should leave xrefstreams unaltered
     Xrefstrings.emplace_back(carveout(fullxref, "xref", "trailer"));
@@ -136,9 +161,11 @@ void xref::xrefFromString(std::string& xstr)
   std::vector<int> allints = getints(xstr); // use getints() from utilities
   if(allints.size() < 4) return;            // valid xref has >= 4 ints in it
   int startingobj = allints[0];             // the first object == first int
+
   // The number of ints must be even or the xref is malformed
   if(allints.size() % 2)
     throw runtime_error("Malformed xref");
+
   // This loop starts on the second row of the table. Even numbers are the
   // byte offsets and odd numbers are the in_use numbers
   int bytestore = 0;
@@ -147,7 +174,7 @@ void xref::xrefFromString(std::string& xstr)
     if(i % 2 == 0)
       bytestore = allints[i]; // store byte offsets
     else
-    {     // last row entry - write results to xref
+    {
       if(allints[i] < 65535) // indicates object in use
       {
         xrefrow txr; // the map is of object numbers to xrefrow
@@ -163,33 +190,18 @@ void xref::xrefFromString(std::string& xstr)
 
 /*---------------------------------------------------------------------------*/
 // This is the main loop that co-ordinates parsing of the xrefs once they have
-// been located and extracted. It checks that there are xref locations,
-// then for each location decides whether it is a stream or plaintext and
-// calls the correct parser
-
+// been located and extracted. It checks each location to decide whether it is
+// a stream or plaintext and calls the correct parser once it knows
 
 void xref::buildXRtable()
 {
-  if (Xreflocations.empty()) // Redundant check for validity
-    throw std::runtime_error("Couldn't get xref locations");
   for(size_t i = 0; i < Xreflocations.size(); i++) // for each location
   {
     if(XrefsAreStreams[i])
-      xrefFromStream(Xreflocations[i]);   //
-    else                                  // Parse string or stream as needed
-      xrefFromString(Xrefstrings[i]);     //
+      xrefFromStream(Xreflocations[i]);   //----------------------------------//
+    else                                  // Parse string or stream as needed //
+      xrefFromString(Xrefstrings[i]);     //----------------------------------//
   }
-}
-
-/*---------------------------------------------------------------------------*/
-
-xref::xref(const string& s) : fs(s)
-{
-  locateXrefs();    // find all xrefs
-  xrefstrings();    // get the strings containing all xrefs
-  xrefIsstream();   // find which are streams
-  buildXRtable();   // create the xrefs from strings and / or streams
-  get_cryptkey();   // get the file key, needed for decryption of streams
 }
 
 /*---------------------------------------------------------------------------*/
@@ -217,15 +229,14 @@ size_t xref::getStart(int objnum)
 
 size_t xref::getEnd(int objnum)
 {
-  if(!objectExists(objnum))
-    throw std::runtime_error("Object does not exist");
-  size_t i = xreftab[objnum].startbyte;
-  if((i > 0))
-  {
-    return (int) firstmatch(fs, "endobj", i);
-  }
-  else
-    return 0;
+  // throw an error if objnum isn't a valid object
+  if(!objectExists(objnum)) throw std::runtime_error("Object does not exist");
+
+  // If the object is in an object stream, return 0;
+  if(xreftab[objnum].in_object) return 0;
+
+  // else find the first match of "endobj" and return
+  return (int) firstmatch(fs, "endobj", xreftab[objnum].startbyte);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -245,10 +256,8 @@ bool xref::isInObject(int objnum)
 
 size_t xref::inObject(int objnum)
 {
-  if(objectExists(objnum))
-    return (size_t) xreftab.at(objnum).in_object;
-  else
-    throw std::runtime_error("Object does not exist");
+  if(!objectExists(objnum)) throw std::runtime_error("Object does not exist");
+  return (size_t) xreftab.at(objnum).in_object;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -265,27 +274,29 @@ std::vector<int> xref::getObjects()
 
 vector<size_t> xref::getStreamLoc(int objstart)
 {
-  dictionary dict = dictionary(&(fs), objstart);
-  if(dict.has("stream"))
-    if(dict.has("/Length"))
+  dictionary dict = dictionary(&(fs), objstart); // get the object dictionary
+  if(dict.has("stream"))     // this is created automatically in dictionary
+    if(dict.has("/Length"))  // sanity check; should length if there is stream
     {
       int streamlen;
-      if(dict.hasRefs("/Length"))
+      if(dict.hasRefs("/Length")) // sometimes length is given as another object
       {
-        int lengthob = dict.getRefs("/Length")[0];
-        size_t firstpos = getStart(lengthob);
-        size_t lastpos = firstmatch(fs, "endobj", firstpos);
-        size_t len = lastpos - firstpos;
-        string objstr = fs.substr(firstpos, len);
-        streamlen = getints(objstr).back();
+        int lengthob = dict.getRefs("/Length")[0]; // finds reference
+        size_t firstpos = getStart(lengthob);      // gets start of length obj
+        size_t lastpos = firstmatch(fs, "endobj", firstpos); // and end of it
+        size_t len = lastpos - firstpos;  // from which we can get its length
+        string objstr = fs.substr(firstpos, len); // from which we get a string
+        streamlen = getints(objstr).back(); // from which we get the number
       }
-      else
-        streamlen = dict.getInts("/Length")[0];
-      int streamstart = dict.getInts("stream")[0];
+      else                                      // thankfully though...
+        streamlen = dict.getInts("/Length")[0]; // most lengths are more direct
+      int streamstart = dict.getInts("stream")[0]; // now get stream's start
+      // now we can return a length-2 vector of the stream start + end
       vector<size_t> res = {(size_t) streamstart,
                                  (size_t) streamstart + streamlen};
       return res;
     }
+  // No stream; return a zero-pair.
   vector<size_t> res = {0,0};
   return res;
 }
@@ -296,52 +307,61 @@ vector<size_t> xref::getStreamLoc(int objstart)
 
 vector<uint8_t> xref::getPassword(const string& key, dictionary& encdict)
 {
-  string ostarts = encdict.get(key);
-  vector<uint8_t> obytes;
-  if(ostarts.size() > 32)
-    for(auto j : ostarts.substr(1, 32))
-      obytes.push_back(j);
+  string ostarts = encdict.get(key);  // get raw bytes of owner password hash
+
+  // The owner password has should have >= 32 characters
+  if(ostarts.size() < 33) throw runtime_error("Corrupted password hash");
+
+  // Return first 32 bytes (skip the first char which is the opening bracket)
+  vector<uint8_t> obytes(ostarts.begin() + 1, ostarts.begin() + 33);
   return obytes;
 }
 
 /*---------------------------------------------------------------------------*/
+// The decryption key is needed to decrypt all streams except the xrefstream
+// Its creation is described in ISO 3200 and implented here
 
 void xref::getFilekey(dictionary& encdict)
 {
-  vector<uint8_t> Fstring = UPW;
-  concat(Fstring, getPassword("/O", encdict));
-  concat(Fstring, perm(encdict.get("/P")));
+  vector<uint8_t> Fstring = UPW; // The generic or null user password
+  concat(Fstring, getPassword("/O", encdict)); // stick the owner password on
+  concat(Fstring, perm(encdict.get("/P"))); // Stick permissions flags on
+
+  // get first 16 bytes of file ID and stick them on too
   vector<uint8_t> idbytes = bytesFromArray(TrailerDictionary.get("/ID"));
   idbytes.resize(16);
   concat(Fstring, idbytes);
+
+  // now md5 hash the result
   filekey = md5(Fstring);
-  size_t cryptlen = 5;
+
+  size_t cryptlen = 5; // the default filekey size
+
+  // if the filekey length is not 5, it will be specified as a number of bits
+  // so divide by 8 to get the number of bytes and resize the key as needed.
   if(encdict.hasInts("/Length"))
     cryptlen = encdict.getInts("/Length").at(0) / 8;
   filekey.resize(cryptlen);
 }
 
 /*---------------------------------------------------------------------------*/
+// This algorithm checks that the file key is correct by ensuring that an rc4
+// cipher of the default user password matches the user password hash in
+// the encoding dictionary
 
 void xref::checkKeyR2(dictionary& encdict)
 {
-  vector<uint8_t> ubytes = getPassword("/U", encdict);
-  vector<uint8_t> checkans = rc4(UPW, filekey);
-  if(checkans.size() == 32)
-  {
-    int m = 0;
-    for(int l = 0; l < 32; l++)
-    {
-      if(checkans[l] != ubytes[l]) break;
-      m++;
-    }
-    if(m == 32)
-      return;
-  }
+  vector<uint8_t> ubytes = getPassword("/U", encdict); // user password cipher
+  vector<uint8_t> checkans = rc4(UPW, filekey); // rc4 of default user password
+  if(checkans.size() == 32 && checkans == ubytes) return;
   throw runtime_error("Incorrect cryptkey");
 }
 
 /*---------------------------------------------------------------------------*/
+// This is a more involved checking algorithm which I can't get to work on
+// a test file, even though I know the key is right (it deciphers the streams)
+// I have checked the ISO 32000 spec, Poppler and pdf.js but it just doesn't
+// seem to work. Maybe one for Stackoverflow...
 
 void xref::checkKeyR3(dictionary& encdict)
 {/*
@@ -367,30 +387,34 @@ void xref::checkKeyR3(dictionary& encdict)
 */}
 
 /*---------------------------------------------------------------------------*/
+// This co-ordinates the creation of the encryption dictionary (if any), and
+// the building plus testing of the file decryption key (if any)
 
 void xref::get_cryptkey()
 {
-  if(!TrailerDictionary.has("/Encrypt"))
-    return;
+   // if there's no encryption dictionary, there's nothing else to do
+  if(!TrailerDictionary.has("/Encrypt")) return;
   int encnum = TrailerDictionary.getRefs("/Encrypt").at(0);
-  if(!objectExists(encnum))
-    return;
+  if(!objectExists(encnum)) return; // No encryption dict - should be exception
+
+  // mark the file as encrypted and read the encryption dictionary
   encrypted = true;
   dictionary encdict = dictionary(&fs, getStart(encnum));
-  int rnum = 2;
-  if(encdict.hasInts("/R")) rnum = encdict.getInts("/R").at(0);
-  getFilekey(encdict);
-  if(rnum == 2)
-    checkKeyR2(encdict);
+
+  // rnum is the security revision number which affects encryption method
+  int rnum = 2; // default is 2
+  if(encdict.hasInts("/R")) rnum = encdict.getInts("/R")[0]; // unless specified
+  getFilekey(encdict); // gets the filekey
+  if(rnum == 2) checkKeyR2(encdict); // if rnum 2, check it and we're done
   else
-  {
+  {//  Otherwise we're going to md5 and trim the filekey 50 times
     size_t cryptlen = filekey.size();
     for(int i = 0; i < 50; i++)
     {
       filekey = md5(filekey);
       filekey.resize(cryptlen);
     }
-    checkKeyR3(encdict);
+    checkKeyR3(encdict); // check the filekey and we're done
   }
 }
 
