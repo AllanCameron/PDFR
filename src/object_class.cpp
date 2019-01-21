@@ -145,7 +145,7 @@ std::string object_class::getStream()
   else
     stream = XR->fs.substr(streampos[0], streampos[1] - streampos[0]);
   if(XR->encrypted)
-    stream = decryptStream(stream, XR->filekey, number, 0);
+    stream = XR->decrypt(stream, number, 0);
   if(header.get("/Filter").find("/FlateDecode", 0) != string::npos)
     stream = FlateDecode(stream);
   return stream;

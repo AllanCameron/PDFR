@@ -40,27 +40,6 @@ std::string getPageString(const std::string& filename, int pagenum);
 
 Rcpp::List PDFpage(document mypdf, page pg, int clump);
 
-//---------------------------------------------------------------------------//
-//' rc4
-//'
-//' Performs an RC4 hash for a given key
-//'
-//' @param msg The message to be hashed as a raw std::vector
-//' @param key the raw std::vector with which to hash
-//' @export
-// [[Rcpp::export]]
-std::vector<uint8_t> rc4(std::vector<uint8_t> msg, std::vector<uint8_t> key);
-
-//---------------------------------------------------------------------------//
-//' md5
-//'
-//' returns an md5 hash of a given raw std::vector as a raw std::vector
-//'
-//' @param input A raw std::vector
-//' @export
-// [[Rcpp::export]]
-std::vector<uint8_t> md5(std::vector<uint8_t> input);
-
 // [[Rcpp::export(.get_xref)]]
 Rcpp::DataFrame get_xref(const std::string& filename);
 

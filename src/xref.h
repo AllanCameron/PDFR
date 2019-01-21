@@ -109,6 +109,7 @@ private:
 
   // This is the main data member used for accessing xref and negotiating pdf
   std::unordered_map<int, xrefrow> xreftab;
+  crypto encryption;                      // crypto object for decrypting files
 
 // private member functions
 
@@ -118,15 +119,7 @@ private:
   void xrefFromStream(int);               // Uses xrefstream class to get xref
   void xrefFromString(std::string&);      // parses xref directly
   void buildXRtable();                    // constructs main data member
-  void get_cryptkey();                    // Allows decryption of encrypted docs
-
-// Cryptography sub functions
-
-  bytes getPassword(const std::string&, dictionary&); // gets /O and /U cipher
-  void getFilekey(dictionary&);                       // constructs file key
-  void checkKeyR2(dictionary&);                       // checks file key
-  void checkKeyR3(dictionary&);                       // checks file key
-
+  void get_crypto();                      // Allows decryption of encrypted docs
 
 public:
   xref(){};                     // Default creator
@@ -148,6 +141,7 @@ public:
 
   std::vector<size_t> getStreamLoc(int); // finds start and stop of the first
                                          // stream after the given byte offset
+  std::string decrypt(std::string, int, int); // Interface for decryption object
 
 };
 

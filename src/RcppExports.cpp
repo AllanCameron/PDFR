@@ -5,29 +5,6 @@
 
 using namespace Rcpp;
 
-// rc4
-std::vector<uint8_t> rc4(std::vector<uint8_t> msg, std::vector<uint8_t> key);
-RcppExport SEXP _PDFR_rc4(SEXP msgSEXP, SEXP keySEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< std::vector<uint8_t> >::type msg(msgSEXP);
-    Rcpp::traits::input_parameter< std::vector<uint8_t> >::type key(keySEXP);
-    rcpp_result_gen = Rcpp::wrap(rc4(msg, key));
-    return rcpp_result_gen;
-END_RCPP
-}
-// md5
-std::vector<uint8_t> md5(std::vector<uint8_t> input);
-RcppExport SEXP _PDFR_md5(SEXP inputSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< std::vector<uint8_t> >::type input(inputSEXP);
-    rcpp_result_gen = Rcpp::wrap(md5(input));
-    return rcpp_result_gen;
-END_RCPP
-}
 // get_xref
 Rcpp::DataFrame get_xref(const std::string& filename);
 RcppExport SEXP _PDFR_get_xref(SEXP filenameSEXP) {
@@ -134,8 +111,6 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_PDFR_rc4", (DL_FUNC) &_PDFR_rc4, 2},
-    {"_PDFR_md5", (DL_FUNC) &_PDFR_md5, 1},
     {"_PDFR_get_xref", (DL_FUNC) &_PDFR_get_xref, 1},
     {"_PDFR_get_xrefraw", (DL_FUNC) &_PDFR_get_xrefraw, 1},
     {"_PDFR_get_object", (DL_FUNC) &_PDFR_get_object, 2},

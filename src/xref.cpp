@@ -79,7 +79,7 @@ xref::xref(const string& s) : fs(s)
   xrefstrings();           // get the strings containing all xrefs
   xrefIsstream();          // find which are streams
   buildXRtable();          // create the xrefs from strings and / or streams
-  get_cryptkey();          // get the file key, needed for decryption of streams
+  get_crypto();          // get the file key, needed for decryption of streams
   Xreflocations.clear();   //-----//
   Xrefstrings.clear();            //--> clear data used only in construction
   XrefsAreStreams.clear(); //-----//
@@ -340,6 +340,14 @@ vector<size_t> xref::getStreamLoc(int objstart)
 }
 
 /*---------------------------------------------------------------------------*/
+// Wrapper for Encryption object so that xref is the only class that uses it
+
+std::string xref::decrypt(std::string s, int obj, int gen)
+{
+  return encryption.decryptStream(s, obj, gen);
+}
+
+/*---------------------------------------------------------------------------*/
 // getter function to access the trailer dictionary - a private data member
 
 dictionary xref::trailer()
@@ -348,95 +356,10 @@ dictionary xref::trailer()
 }
 
 /*---------------------------------------------------------------------------*/
-// Gets the bytes comprising the hashed owner password from the encryption
-// dictionary
-
-vector<uint8_t> xref::getPassword(const string& key, dictionary& encdict)
-{
-  string ostarts = encdict.get(key);  // get raw bytes of owner password hash
-
-  // The owner password has should have >= 32 characters
-  if(ostarts.size() < 33) throw runtime_error("Corrupted password hash");
-
-  // Return first 32 bytes (skip the first char which is the opening bracket)
-  vector<uint8_t> obytes(ostarts.begin() + 1, ostarts.begin() + 33);
-  return obytes;
-}
-
-/*---------------------------------------------------------------------------*/
-// The decryption key is needed to decrypt all streams except the xrefstream
-// Its creation is described in ISO 3200 and implented here
-
-void xref::getFilekey(dictionary& encdict)
-{
-  vector<uint8_t> Fstring = UPW; // The generic or null user password
-  concat(Fstring, getPassword("/O", encdict)); // stick the owner password on
-  concat(Fstring, perm(encdict.get("/P"))); // Stick permissions flags on
-
-  // get first 16 bytes of file ID and stick them on too
-  vector<uint8_t> idbytes = bytesFromArray(TrailerDictionary.get("/ID"));
-  idbytes.resize(16);
-  concat(Fstring, idbytes);
-
-  // now md5 hash the result
-  filekey = md5(Fstring);
-
-  size_t cryptlen = 5; // the default filekey size
-
-  // if the filekey length is not 5, it will be specified as a number of bits
-  // so divide by 8 to get the number of bytes and resize the key as needed.
-  if(encdict.hasInts("/Length"))
-    cryptlen = encdict.getInts("/Length").at(0) / 8;
-  filekey.resize(cryptlen);
-}
-
-/*---------------------------------------------------------------------------*/
-// This algorithm checks that the file key is correct by ensuring that an rc4
-// cipher of the default user password matches the user password hash in
-// the encoding dictionary
-
-void xref::checkKeyR2(dictionary& encdict)
-{
-  vector<uint8_t> ubytes = getPassword("/U", encdict); // user password cipher
-  vector<uint8_t> checkans = rc4(UPW, filekey); // rc4 of default user password
-  if(checkans.size() == 32 && checkans == ubytes) return;
-  throw runtime_error("Incorrect cryptkey");
-}
-
-/*---------------------------------------------------------------------------*/
-// This is a more involved checking algorithm which I can't get to work on
-// a test file, even though I know the key is right (it deciphers the streams)
-// I have checked the ISO 32000 spec, Poppler and pdf.js but it just doesn't
-// seem to work. Maybe one for Stackoverflow...
-
-void xref::checkKeyR3(dictionary& encdict)
-{/*
-  vector<uint8_t> ubytes = getPassword("/U", encdict);
-  vector<uint8_t> buf = UPW;
-  concat(buf, bytesFromArray(TrailerDictionary.get("/ID")));
-  buf.resize(48);
-  vector<uint8_t> checkans = rc4(md5(buf), filekey);
-  for (int i = 19; i >= 0; i--)
-  {
-    vector<uint8_t> tmpkey;
-    for (auto j : filekey)
-      tmpkey.push_back(j ^ ((uint8_t) i));
-    checkans = rc4(checkans, tmpkey);
-  }
-  int m = 0;
-  for(int l = 0; l < 16; l++)
-  {
-    if(checkans[l] != ubytes[l]) break;
-    m++;
-  }
-  if(m != 16) std::cout << "cryptkey doesn't match";
-*/}
-
-/*---------------------------------------------------------------------------*/
 // This co-ordinates the creation of the encryption dictionary (if any), and
 // the building plus testing of the file decryption key (if any)
 
-void xref::get_cryptkey()
+void xref::get_crypto()
 {
    // if there's no encryption dictionary, there's nothing else to do
   if(!TrailerDictionary.has("/Encrypt")) return;
@@ -446,24 +369,8 @@ void xref::get_cryptkey()
   // mark the file as encrypted and read the encryption dictionary
   encrypted = true;
   dictionary encdict = dictionary(&fs, getStart(encnum));
-
-  // rnum is the security revision number which affects encryption method
-  int rnum = 2; // default is 2
-  if(encdict.hasInts("/R")) rnum = encdict.getInts("/R")[0]; // unless specified
-  getFilekey(encdict); // gets the filekey
-  if(rnum == 2) checkKeyR2(encdict); // if rnum 2, check it and we're done
-  else
-  {//  Otherwise we're going to md5 and trim the filekey 50 times
-    size_t cryptlen = filekey.size();
-    for(int i = 0; i < 50; i++)
-    {
-      filekey = md5(filekey);
-      filekey.resize(cryptlen);
-    }
-    checkKeyR3(encdict); // check the filekey and we're done
-  }
+  encryption = crypto(encdict, TrailerDictionary);
 }
-
 
 /*---------------------------------------------------------------------------*/
 // simple getter for the output of an xrefstream

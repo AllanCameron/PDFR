@@ -27,25 +27,32 @@
 
 #include "crypto.h"
 
-// The md5 algorithm makes use of 4-byte numbers (unsigned long or uint32_t).
-// To shorten the name and make it explicit what we are talking about I have
-// typedef'd uint32_t as fourbytes
+using namespace std;
 
-typedef uint32_t fourbytes;
+//---------------------------------------------------------------------------//
+// The default user password cipher is required to construct the file key and is
+// declared as a static member of the crypto class
+
+bytes crypto::UPW = { 0x28, 0xBF, 0x4E, 0x5E, 0x4E, 0x75, 0x8A, 0x41,
+                      0x64, 0x00, 0x4E, 0x56, 0xFF, 0xFA, 0x01, 0x08,
+                      0x2E, 0x2E, 0x00, 0xB6, 0xD0, 0x68, 0x3E, 0x80,
+                      0x2F, 0x0C, 0xA9, 0xFE, 0x64, 0x53, 0x69, 0x7A };
 
 //---------------------------------------------------------------------------//
 // This simple function "chops" a four-byte int to a vector of four bytes.
 // The bytes are returned lowest-order first as this is the typical use.
 
-bytes chopLong(fourbytes longInt)
+bytes crypto::chopLong(fourbytes longInt)
 {
-  bytes result;
+  bytes result; //container for result
+
    // The mask specifies that only the last byte is read when used with &
   fourbytes mask = 0x000000ff;
   result.push_back(longInt & mask);         // read last byte
   result.push_back((longInt >> 8) & mask);  // read penultimate byte
   result.push_back((longInt >> 16) & mask); // read second byte
   result.push_back((longInt >> 24) & mask); // read first byte
+
   return result;
 }
 
@@ -60,12 +67,13 @@ bytes chopLong(fourbytes longInt)
 // text extraction however, this is not required, and we just need the
 // permissions flag to produce the file key.
 
-bytes perm(std::string str) // takes the string containing the permissions int
+bytes crypto::perm(std::string str) // takes a string with the permissions int
 {
   // No string == no permissions. Can't decode pdf, so throw an error
-  if(str.length() == 0)
-    throw std::runtime_error("Could not determine permission flags");
+  if(str.length() == 0) throw std::runtime_error("No permission flags");
+
   int flags = stoi(str); // Convert the string to a 4-byte int
+
   // This reads off the bytes from lowest order to highest order
   return chopLong(flags);
 }
@@ -87,13 +95,15 @@ bytes perm(std::string str) // takes the string containing the permissions int
 // always produced the same output.
 //
 // This function is called several times with different parameters as part
-// of the main md5 algorithm
+// of the main md5 algorithm. It can be considered a "shuffler" of bytes
 
-fourbytes md5mix(int n,      fourbytes a, fourbytes b, fourbytes c,
-                fourbytes d, fourbytes e, fourbytes f, fourbytes g)
+fourbytes crypto::md5mix(int n, fourbytes a, fourbytes b, fourbytes c,
+                  fourbytes  d, fourbytes e, fourbytes f, fourbytes g)
 {
-  fourbytes mixer;
-  switch(n) // chops and mangles bytes in various ways as per md5 algorithm
+  fourbytes mixer; // temporary container for results
+
+  // chops and mangles bytes in various ways as per md5 algorithm
+  switch(n)
   {
     case 1  : mixer = (a + ((b & c) | (~b & d)) + e + f); break;
     case 2  : mixer = (a + ((b & d) | (c & ~d)) + e + f); break;
@@ -110,7 +120,7 @@ fourbytes md5mix(int n,      fourbytes a, fourbytes b, fourbytes c,
 // The main md5 algorithm. This version of if was modified from various
 // open source online implementations.
 
-bytes md5(bytes input)
+bytes crypto::md5(bytes input)
 {
   int len = input.size();
   std::vector<fourbytes> x {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
@@ -233,10 +243,10 @@ bytes md5(bytes input)
 
 //----------------------------------------------------------------------------//
 // This allows the md5 function to be run on a std::string without prior
-// conversion. It simply converts a string to vector<uint8_t> than puts it
+// conversion. It simply converts a string to bytes than puts it
 // into the "bytes" version of the function
 
-bytes md5(std::string input)
+bytes crypto::md5(std::string input)
 {
     bytes res(input.begin(), input.end()); // simple conversion to bytes
     return md5(res); // run md5 on bytes
@@ -250,7 +260,7 @@ bytes md5(std::string input)
 // directly back into the original message using exactly the same key.
 // The algorithm is now in the public domain
 
-bytes rc4(bytes msg, bytes key)
+bytes crypto::rc4(bytes msg, bytes key)
   {
     int keyLen = key.size();
     int msgLen = msg.size();
@@ -298,11 +308,10 @@ bytes rc4(bytes msg, bytes key)
 // key length plus 5, is then used as the key with which to decrypt the
 // stream using the rc4 algorithm.
 
-std::string decryptStream(std::string streamstr, bytes key,
-                             int objNum, int objGen)
+std::string crypto::decryptStream(std::string streamstr, int objNum, int objGen)
   {
     bytes streambytes(streamstr.begin(), streamstr.end()); // stream as bytes
-    bytes objkey = key; // Start building the object key with the file key
+    bytes objkey = filekey; // Start building the object key with the file key
     concat(objkey, chopLong(objNum)); // append the bytes of the object number
     objkey.pop_back(); // we only wanted the three lowest order bytes; pop last
     objkey.push_back( objGen & 0xff); // append lowest order byte of gen number
@@ -310,11 +319,119 @@ std::string decryptStream(std::string streamstr, bytes key,
     uint8_t objkeysize = objkey.size();
     objkey = md5(objkey); // md5 hash the resultant key
     while(objkey.size() > objkeysize) objkey.pop_back(); // then trim to fit
+
     // Now we use this key to decrypt the stream using rc4
     bytes bytevec = rc4(streambytes, objkey);
+
     // finally we convert the resultant bytes to a string
     std::string restring =  bytestostring(bytevec);
     return restring;
   }
 
 /*---------------------------------------------------------------------------*/
+// Gets the bytes comprising the hashed owner password from the encryption
+// dictionary
+
+bytes crypto::getPassword(const string& key)
+{
+  string ostarts = encdict.get(key);  // get raw bytes of owner password hash
+
+  // The owner password has should have >= 32 characters
+  if(ostarts.size() < 33) throw runtime_error("Corrupted password hash");
+
+  // Return first 32 bytes (skip the first char which is the opening bracket)
+  bytes obytes(ostarts.begin() + 1, ostarts.begin() + 33);
+  return obytes;
+}
+
+/*---------------------------------------------------------------------------*/
+// The decryption key is needed to decrypt all streams except the xrefstream
+// Its creation is described in ISO 3200 and implented here
+
+void crypto::getFilekey()
+{
+  bytes Fstring = UPW; // The generic or null user password
+  concat(Fstring, getPassword("/O")); // stick the owner password on
+  concat(Fstring, perm(encdict.get("/P"))); // Stick permissions flags on
+
+  // get first 16 bytes of file ID and stick them on too
+  bytes idbytes = bytesFromArray(trailer.get("/ID"));
+  idbytes.resize(16);
+  concat(Fstring, idbytes);
+
+  // now md5 hash the result
+  filekey = md5(Fstring);
+
+  size_t cryptlen = 5; // the default filekey size
+
+  // if the filekey length is not 5, it will be specified as a number of bits
+  // so divide by 8 to get the number of bytes and resize the key as needed.
+  if(encdict.hasInts("/Length"))
+    cryptlen = encdict.getInts("/Length").at(0) / 8;
+  filekey.resize(cryptlen);
+}
+
+/*---------------------------------------------------------------------------*/
+// This algorithm checks that the file key is correct by ensuring that an rc4
+// cipher of the default user password matches the user password hash in
+// the encoding dictionary
+
+void crypto::checkKeyR2()
+{
+  bytes ubytes = getPassword("/U"); // user password cipher
+  bytes checkans = rc4(UPW, filekey); // rc4 of default user password
+  if(checkans.size() == 32 && checkans == ubytes) return;
+  throw runtime_error("Incorrect cryptkey");
+}
+
+/*---------------------------------------------------------------------------*/
+// This is a more involved checking algorithm which I can't get to work on
+// a test file, even though I know the key is right (it deciphers the streams)
+// I have checked the ISO 32000 spec, Poppler and pdf.js but it just doesn't
+// seem to work. Maybe one for Stackoverflow...
+
+void crypto::checkKeyR3()
+{/*
+  bytes ubytes = getPassword("/U");
+  bytes buf = UPW;
+  concat(buf, bytesFromArray(trailer.get("/ID")));
+  buf.resize(48);
+  bytes checkans = rc4(md5(buf), filekey);
+  for (int i = 19; i >= 0; i--)
+  {
+    bytes tmpkey;
+    for (auto j : filekey)
+      tmpkey.push_back(j ^ ((uint8_t) i));
+    checkans = rc4(checkans, tmpkey);
+  }
+  int m = 0;
+  for(int l = 0; l < 16; l++)
+  {
+    if(checkans[l] != ubytes[l]) break;
+    m++;
+  }
+  if(m != 16) std::cout << "cryptkey doesn't match";
+*/}
+
+
+crypto::crypto(dictionary enc, dictionary trail) :
+  encdict(enc), trailer(trail), revision(2)
+{
+  // Unless specified, the revision number used for encryption is 2
+  if(encdict.hasInts("/R")) revision = encdict.getInts("/R")[0];
+
+  //  gets the filekey
+  getFilekey();
+
+  if(revision == 2) checkKeyR2(); // if rnum 2, check it and we're done
+  else
+  {//  Otherwise we're going to md5 and trim the filekey 50 times
+    size_t cryptlen = filekey.size();
+    for(int i = 0; i < 50; i++)
+    {
+      filekey = md5(filekey);
+      filekey.resize(cryptlen);
+    }
+    checkKeyR3(); // check the filekey and we're done
+  }
+}
