@@ -33,7 +33,7 @@ using namespace std;
 
 /*---------------------------------------------------------------------------*/
 
-document::document(const string& filename) : file(filename), encrypted(false)
+document::document(const string& filename) : file(filename)
 {
   get_file();
   buildDoc();
@@ -41,7 +41,7 @@ document::document(const string& filename) : file(filename), encrypted(false)
 
 /*---------------------------------------------------------------------------*/
 
-document::document(const vector<uint8_t>& bytevector) : encrypted(false)
+document::document(const vector<uint8_t>& bytevector)
 {
   filestring = bytestostring(bytevector);
   filesize = filestring.size();

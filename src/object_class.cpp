@@ -61,10 +61,6 @@ has_stream(false)
         *this = object_class(XR, object_class(XR, holder).getStream(), objnum);
     }
   }
-  if(header.has("/Kids"))
-    Kids = header.getRefs("/Kids");
-  if(header.has("/Contents"))
-    Contents = header.getRefs("/Contents");
 }
 
 /*---------------------------------------------------------------------------*/
@@ -144,7 +140,7 @@ std::string object_class::getStream()
     return stream;
   else
     stream = XR->fs.substr(streampos[0], streampos[1] - streampos[0]);
-  if(XR->encrypted)
+  if(XR->isEncrypted())
     stream = XR->decrypt(stream, number, 0);
   if(header.get("/Filter").find("/FlateDecode", 0) != string::npos)
     stream = FlateDecode(stream);

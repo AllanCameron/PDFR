@@ -348,6 +348,14 @@ std::string xref::decrypt(std::string s, int obj, int gen)
 }
 
 /*---------------------------------------------------------------------------*/
+// Getter for encryption state
+
+bool xref::isEncrypted()
+{
+  return this->encrypted;
+}
+
+/*---------------------------------------------------------------------------*/
 // getter function to access the trailer dictionary - a private data member
 
 dictionary xref::trailer()

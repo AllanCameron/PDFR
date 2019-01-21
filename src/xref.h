@@ -106,10 +106,11 @@ private:
   std::vector<std::string>  Xrefstrings;  // The actual strings of xref tables
   std::vector<bool> XrefsAreStreams;      // records if each xref is stream
   dictionary TrailerDictionary;           // Canonical trailer dictionary
+  bool encrypted;                         // Flag to indicate if encryption used
+   crypto encryption;                      // crypto object for decrypting files
 
   // This is the main data member used for accessing xref and negotiating pdf
   std::unordered_map<int, xrefrow> xreftab;
-  crypto encryption;                      // crypto object for decrypting files
 
 // private member functions
 
@@ -129,7 +130,7 @@ public:
   std::string fs;     //           Any other class needing to access the file
                       //           should use a pointer to this string
 
-  bool encrypted;               // Flag to indicate whether encryption used
+  bool isEncrypted();           // returns encryption state
   std::vector<uint8_t> filekey; // Vector of bytes acting as encryption key
   dictionary trailer() ;        // Public access for the trailer dictionary
   size_t getStart(int);         // Returns byte offset of a given object

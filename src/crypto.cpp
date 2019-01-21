@@ -31,7 +31,7 @@ using namespace std;
 
 //---------------------------------------------------------------------------//
 // The default user password cipher is required to construct the file key and is
-// declared as a static member of the crypto class
+// declared as a static member of the crypto class; it is defined here
 
 bytes crypto::UPW = { 0x28, 0xBF, 0x4E, 0x5E, 0x4E, 0x75, 0x8A, 0x41,
                       0x64, 0x00, 0x4E, 0x56, 0xFF, 0xFA, 0x01, 0x08,
@@ -124,12 +124,12 @@ void crypto::md5mix(int n, fourbytes& a, fourbytes b, fourbytes c,
 bytes crypto::md5(bytes input)
 {
   int len = input.size();
-  std::vector<fourbytes> x {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+  std::vector<fourbytes> x {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}; // 16 * fourbytes
   int nblocks = (len + 72) / 64;
-  fourbytes a = 1732584193;
-  fourbytes b = 4023233417;
-  fourbytes c = 2562383102;
-  fourbytes d = 271733878;
+  fourbytes a = 1732584193;  //----//--------------------------------//
+  fourbytes b = 4023233417;        //  Starting values for pseudo -  //
+  fourbytes c = 2562383102;        //    random number generator     //
+  fourbytes d = 271733878;   //----//--------------------------------//
 
   int i, j, k = 0;
   for (i = 0; i < nblocks; ++i)
@@ -163,77 +163,78 @@ bytes crypto::md5(bytes input)
 
     // now shuffle the deck using the md5mix function
 
-    md5mix(1, a, b, c, d, x.at(0), 3614090360, 7);
-    md5mix(1, d, a, b, c, x.at(1), 3905402710, 12);
-    md5mix(1, c, d, a, b, x.at(2), 606105819, 17);
-    md5mix(1, b, c, d, a, x.at(3), 3250441966, 22);
-    md5mix(1, a, b, c, d, x.at(4), 4118548399, 7);
-    md5mix(1, d, a, b, c, x.at(5), 1200080426, 12);
-    md5mix(1, c, d, a, b, x.at(6), 2821735955, 17);
-    md5mix(1, b, c, d, a, x.at(7), 4249261313, 22);
-    md5mix(1, a, b, c, d, x.at(8), 1770035416, 7);
-    md5mix(1, d, a, b, c, x.at(9), 2336552879, 12);
+    md5mix(1, a, b, c, d, x.at(0),  3614090360,  7);
+    md5mix(1, d, a, b, c, x.at(1),  3905402710, 12);
+    md5mix(1, c, d, a, b, x.at(2),  606105819,  17);
+    md5mix(1, b, c, d, a, x.at(3),  3250441966, 22);
+    md5mix(1, a, b, c, d, x.at(4),  4118548399,  7);
+    md5mix(1, d, a, b, c, x.at(5),  1200080426, 12);
+    md5mix(1, c, d, a, b, x.at(6),  2821735955, 17);
+    md5mix(1, b, c, d, a, x.at(7),  4249261313, 22);
+    md5mix(1, a, b, c, d, x.at(8),  1770035416,  7);
+    md5mix(1, d, a, b, c, x.at(9),  2336552879, 12);
     md5mix(1, c, d, a, b, x.at(10), 4294925233, 17);
     md5mix(1, b, c, d, a, x.at(11), 2304563134, 22);
-    md5mix(1, a, b, c, d, x.at(12), 1804603682, 7);
+    md5mix(1, a, b, c, d, x.at(12), 1804603682,  7);
     md5mix(1, d, a, b, c, x.at(13), 4254626195, 12);
     md5mix(1, c, d, a, b, x.at(14), 2792965006, 17);
     md5mix(1, b, c, d, a, x.at(15), 1236535329, 22);
-    md5mix(2, a, b, c, d, x.at(1), 4129170786, 5);
-    md5mix(2, d, a, b, c, x.at(6), 3225465664, 9);
-    md5mix(2, c, d, a, b, x.at(11), 643717713, 14);
-    md5mix(2, b, c, d, a, x.at(0), 3921069994, 20);
-    md5mix(2, a, b, c, d, x.at(5), 3593408605, 5);
-    md5mix(2, d, a, b, c, x.at(10), 38016083, 9);
+    md5mix(2, a, b, c, d, x.at(1),  4129170786,  5);
+    md5mix(2, d, a, b, c, x.at(6),  3225465664,  9);
+    md5mix(2, c, d, a, b, x.at(11), 643717713,  14);
+    md5mix(2, b, c, d, a, x.at(0),  3921069994, 20);
+    md5mix(2, a, b, c, d, x.at(5),  3593408605,  5);
+    md5mix(2, d, a, b, c, x.at(10), 38016083,    9);
     md5mix(2, c, d, a, b, x.at(15), 3634488961, 14);
-    md5mix(2, b, c, d, a, x.at(4), 3889429448, 20);
-    md5mix(2, a, b, c, d, x.at(9), 568446438, 5);
-    md5mix(2, d, a, b, c, x.at(14), 3275163606, 9);
-    md5mix(2, c, d, a, b, x.at(3), 4107603335, 14);
-    md5mix(2, b, c, d, a, x.at(8), 1163531501, 20);
-    md5mix(2, a, b, c, d, x.at(13), 2850285829, 5);
-    md5mix(2, d, a, b, c, x.at(2), 4243563512, 9);
-    md5mix(2, c, d, a, b, x.at(7), 1735328473, 14);
+    md5mix(2, b, c, d, a, x.at(4),  3889429448, 20);
+    md5mix(2, a, b, c, d, x.at(9),  568446438,   5);
+    md5mix(2, d, a, b, c, x.at(14), 3275163606,  9);
+    md5mix(2, c, d, a, b, x.at(3),  4107603335, 14);
+    md5mix(2, b, c, d, a, x.at(8),  1163531501, 20);
+    md5mix(2, a, b, c, d, x.at(13), 2850285829,  5);
+    md5mix(2, d, a, b, c, x.at(2),  4243563512,  9);
+    md5mix(2, c, d, a, b, x.at(7),  1735328473, 14);
     md5mix(2, b, c, d, a, x.at(12), 2368359562, 20);
-    md5mix(3, a, b, c, d, x.at(5), 4294588738, 4);
-    md5mix(3, d, a, b, c, x.at(8), 2272392833, 11);
+    md5mix(3, a, b, c, d, x.at(5),  4294588738,  4);
+    md5mix(3, d, a, b, c, x.at(8),  2272392833, 11);
     md5mix(3, c, d, a, b, x.at(11), 1839030562, 16);
     md5mix(3, b, c, d, a, x.at(14), 4259657740, 23);
-    md5mix(3, a, b, c, d, x.at(1), 2763975236, 4);
-    md5mix(3, d, a, b, c, x.at(4), 1272893353, 11);
-    md5mix(3, c, d, a, b, x.at(7), 4139469664, 16);
+    md5mix(3, a, b, c, d, x.at(1),  2763975236,  4);
+    md5mix(3, d, a, b, c, x.at(4),  1272893353, 11);
+    md5mix(3, c, d, a, b, x.at(7),  4139469664, 16);
     md5mix(3, b, c, d, a, x.at(10), 3200236656, 23);
-    md5mix(3, a, b, c, d, x.at(13), 681279174, 4);
-    md5mix(3, d, a, b, c, x.at(0), 3936430074, 11);
-    md5mix(3, c, d, a, b, x.at(3), 3572445317, 16);
-    md5mix(3, b, c, d, a, x.at(6), 76029189, 23);
-    md5mix(3, a, b, c, d, x.at(9), 3654602809, 4);
+    md5mix(3, a, b, c, d, x.at(13), 681279174,   4);
+    md5mix(3, d, a, b, c, x.at(0),  3936430074, 11);
+    md5mix(3, c, d, a, b, x.at(3),  3572445317, 16);
+    md5mix(3, b, c, d, a, x.at(6),  76029189,   23);
+    md5mix(3, a, b, c, d, x.at(9),  3654602809,  4);
     md5mix(3, d, a, b, c, x.at(12), 3873151461, 11);
-    md5mix(3, c, d, a, b, x.at(15), 530742520, 16);
-    md5mix(3, b, c, d, a, x.at(2), 3299628645, 23);
-    md5mix(4, a, b, c, d, x.at(0), 4096336452, 6);
-    md5mix(4, d, a, b, c, x.at(7), 1126891415, 10);
+    md5mix(3, c, d, a, b, x.at(15), 530742520,  16);
+    md5mix(3, b, c, d, a, x.at(2),  3299628645, 23);
+    md5mix(4, a, b, c, d, x.at(0),  4096336452,  6);
+    md5mix(4, d, a, b, c, x.at(7),  1126891415, 10);
     md5mix(4, c, d, a, b, x.at(14), 2878612391, 15);
-    md5mix(4, b, c, d, a, x.at(5), 4237533241, 21);
-    md5mix(4, a, b, c, d, x.at(12), 1700485571, 6);
-    md5mix(4, d, a, b, c, x.at(3), 2399980690, 10);
+    md5mix(4, b, c, d, a, x.at(5),  4237533241, 21);
+    md5mix(4, a, b, c, d, x.at(12), 1700485571,  6);
+    md5mix(4, d, a, b, c, x.at(3),  2399980690, 10);
     md5mix(4, c, d, a, b, x.at(10), 4293915773, 15);
-    md5mix(4, b, c, d, a, x.at(1), 2240044497, 21);
-    md5mix(4, a, b, c, d, x.at(8), 1873313359, 6);
+    md5mix(4, b, c, d, a, x.at(1),  2240044497, 21);
+    md5mix(4, a, b, c, d, x.at(8),  1873313359,  6);
     md5mix(4, d, a, b, c, x.at(15), 4264355552, 10);
-    md5mix(4, c, d, a, b, x.at(6), 2734768916, 15);
+    md5mix(4, c, d, a, b, x.at(6),  2734768916, 15);
     md5mix(4, b, c, d, a, x.at(13), 1309151649, 21);
-    md5mix(4, a, b, c, d, x.at(4), 4149444226, 6);
+    md5mix(4, a, b, c, d, x.at(4),  4149444226,  6);
     md5mix(4, d, a, b, c, x.at(11), 3174756917, 10);
-    md5mix(4, c, d, a, b, x.at(2), 718787259, 15);
-    md5mix(4, b, c, d, a, x.at(9), 3951481745, 21);
+    md5mix(4, c, d, a, b, x.at(2),  718787259,  15);
+    md5mix(4, b, c, d, a, x.at(9),  3951481745, 21);
 
     a += astore;  //-----------------------------------//
     b += bstore;  // Add the numbers to each variable  //
     c += cstore;  // that was stored before shuffling  //
     d += dstore;  //-----------------------------------//
   }
-  bytes output;                // create empty output vector for bytes
+  bytes output;                // create empty output vector for output
+
   concat(output, chopLong(a)); //--------------------------------------------//
   concat(output, chopLong(b)); // For each of a, b, c, and d, return vector  //
   concat(output, chopLong(c)); // of bytes low order first and add to output //
@@ -268,8 +269,7 @@ bytes crypto::rc4(bytes msg, bytes key)
     uint8_t a, b, t, x, y;
     int i;
     bytes state;
-    for (i = 0; i <= 0xff; ++i)
-      state.push_back(i); // fill state with 0 - 0xff
+    for (i = 0; i <= 0xff; ++i) state.push_back(i); // fill state with 0 - 0xff
     if (keyLen == 0)
       return state;
     a = b = x = y = 0;
@@ -414,6 +414,9 @@ void crypto::checkKeyR3()
   if(m != 16) std::cout << "cryptkey doesn't match";
 */}
 
+/*---------------------------------------------------------------------------*/
+// Creator function for the crypto class. Its two jobs are to obtain the
+// file key and to check it's right.
 
 crypto::crypto(dictionary enc, dictionary trail) :
   encdict(enc), trailer(trail), revision(2)

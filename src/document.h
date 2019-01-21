@@ -39,7 +39,7 @@ public:
   std::ifstream *fileCon;
   size_t filesize;
   std::string file, filestring;
-  bool linearized, encrypted;
+  bool linearized;
   std::vector<dictionary> pageheaders;
   std::vector<uint8_t> filekey;
   std::unordered_map <int, object_class> objects;

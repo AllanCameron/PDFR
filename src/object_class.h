@@ -25,36 +25,56 @@
 //                                                                           //
 //---------------------------------------------------------------------------//
 
-
 #ifndef PDFR_OC
+
+//---------------------------------------------------------------------------//
+
 #define PDFR_OC
+
+/* This is the fourth header file in a daisy-chain of main headers which builds
+ * up an interface for parsing pdf files. It comes directly after xref.h and is
+ * the last step before the main document class is declared.
+ *
+ * The object class comprises the data and functions needed to represent a pdf
+ * object. Each object_class object is made of two main items of data: a
+ * dictionary (which can be empty), and a stream (which can be empty).
+ *
+ * The job of finding the object, parsing its dictionary and decoding its stream
+ * is abstracted away using this class, so that pdf objects can be directly
+ * interrogated for key:value pairs and their streams can be parsed as plain
+ * text where appropriate. This means that logical structures such as pages,
+ * fonts and form objects can be built by interfacing directly with pdf objects
+ * rather than indirectly through byte offsets and binary streams
+ */
 
 #include "xref.h"
 
+//---------------------------------------------------------------------------//
+
 class object_class
 {
-public:
-  xref* XR;
-
 private:
-  int number, startpos;
-  dictionary header;
-  std::string stream;
-  std::vector<size_t> streampos;
-  std::vector<int> Kids, Contents;
-  bool has_stream;
-  void objectHasKids();
-  void objectHasContents();
-  void findKids();
-  void findContents();
+  // private data members
+  xref* XR;                       // Pointer to xref allows data to be found
+  int number,                     // The object knows its own number
+      startpos;                   // The object knows its own starting position
+  dictionary header;              // The object's dictionary
+  std::string stream;             // The object's stream or contents
+  bool has_stream;                // Records whether stream is zero length
+  std::vector<size_t> streampos;  // start/stop file offsets for stream position
 
 public:
-  bool hasStream();
-  std::string getStream();
-  dictionary getDict();
-  object_class(xref*, int objnum);
-  object_class(xref*, std::string str, int objnum);
-  object_class(){};
+  // public member functions
+  bool hasStream();               // returns has_stream boolean
+  std::string getStream();        // returns stream as string
+  dictionary getDict();           // returns header as dictionary object
+
+  // creators
+  object_class(xref*, int objnum);                  // get direct object
+  object_class(xref*, std::string str, int objnum); // get object from stream
+  object_class(){};                                 // default constructor
 };
+
+//---------------------------------------------------------------------------//
 
 #endif
