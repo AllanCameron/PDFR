@@ -58,10 +58,11 @@ using namespace std;
  * The rest of the functions are essentially just getters, which request or
  * test for particular data types and act as the public interface for the class.
  *
- * Apologies for the non-standard layout of the code here. I find this layout
+ * A word about the non-standard layout of the code here: I find this layout
  * much more readable for switch statements, and the same format is used
  * elsewhere in this codebase for lexers which makes them more obvious and
- * easier to spot and debug.
+ * easier to spot and debug. It's very unlikely to be to everyone's taste
+ * though, so apologies if you find it hard to read.
  */
 
 /*---------------------------------------------------------------------------*/

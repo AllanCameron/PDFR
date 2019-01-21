@@ -37,7 +37,17 @@
  *
  * The object class comprises the data and functions needed to represent a pdf
  * object. Each object_class object is made of two main items of data: a
- * dictionary (which can be empty), and a stream (which can be empty).
+ * dictionary (which can be empty), and a pair of size_t indicating the offset
+ * of the stream's start and stop. The reason we don't just build the stream
+ * is that decryption and deflation of large streams is computationally
+ * expensive, and we should only do it on request. As an object may be requested
+ * more than once however, if we have gone to the trouble of calculating the
+ * stream, it is stored as a private data member.
+ *
+ * Of course, for objects to have this memory of their state, they need to
+ * stay in scope from creation until the program exits. This is done by keeping
+ * a vector of retrieved objects in the document class, which persists through
+ * the lifetime of the program.
  *
  * The job of finding the object, parsing its dictionary and decoding its stream
  * is abstracted away using this class, so that pdf objects can be directly
@@ -63,6 +73,9 @@ private:
   bool has_stream;                // Records whether stream is zero length
   std::vector<size_t> streampos;  // start/stop file offsets for stream position
 
+  // this private constructor is only called if required by the public one
+  object_class(xref*, std::string str, int objnum);
+
 public:
   // public member functions
   bool hasStream();               // returns has_stream boolean
@@ -70,9 +83,10 @@ public:
   dictionary getDict();           // returns header as dictionary object
 
   // creators
-  object_class(xref*, int objnum);                  // get direct object
-  object_class(xref*, std::string str, int objnum); // get object from stream
-  object_class(){};                                 // default constructor
+  object_class(xref*, int objnum);  // get direct object
+  object_class(){}; // default constructor (needed for document class to
+                    // initialize its vector of objects)
+
 };
 
 //---------------------------------------------------------------------------//

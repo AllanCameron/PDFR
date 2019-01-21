@@ -37,14 +37,15 @@ using namespace std;
 // class, but it has been seperated out to remove clutter and because it
 // represents one encapsulated and complex task. Because it is only used to
 // help in the construction of an xref object, it has no public interface. The
-// xref class accesses it as a friend class
+// xref class accesses it as a friend class so no-one needs to worry about it
+// (unless it breaks...)
 
 class xrefstream
 {
-  friend class xref;
-  xref* XR;
-  dictionary dict,
-             subdict;
+  friend class xref;  // This class is only constructible from xref...
+  xref* XR;           // ...to which it needs a pointer
+  dictionary dict,    // The dictionary of the object containing the xrefstream
+             subdict; // The decode parameters dictionary, an entry in dict
   std::vector<std::vector<int>> rawMatrix,
                                 finalArray,
                                 result;
@@ -397,32 +398,58 @@ std::vector<std::vector<int>> xrefstream::table()
 xrefstream::xrefstream(xref* Xref, int starts) :
   XR(Xref), ncols(0), firstObject(0), predictor(0), objstart(starts)
 {
-  dict = dictionary(&(XR->fs), objstart);
-  string decodestring = dict.get("/DecodeParms");
-  subdict = dictionary(&decodestring);
-  getIndex();
-  getParms();
+  dict = dictionary(&(XR->fs), objstart);         // get the xrefstream dict
+  string decodestring = dict.get("/DecodeParms"); // string for subdict
+  subdict = dictionary(&decodestring);            // get parameters (subdict)
+  getIndex(); // read Index entry of dict so we know which objects are in stream
+  getParms(); // read the PNG decoding parameters
+  // If there is no /W entry, we don't know how to interpret the stream. Abort!
   if(!dict.hasInts("/W")) throw std::runtime_error("Malformed xref stream");
-  getRawMatrix();
-  if(predictor == 12) diffup();
-  modulotranspose();
-  expandbytes();
-  mergecolumns();
-  numberRows();
+  getRawMatrix(); // arrange the raw data in the stream into correct table form
+  if(predictor == 12) diffup(); // Undiff the raw data
+  modulotranspose(); // transposes table which ensuring all numbers are <256
+  expandbytes(); // multiply numbers to intended size based on their position
+  mergecolumns(); // add up adjacent columns that represent large numbers
+  numberRows(); // marry the rows to the object numbers from the /Index entry
 }
 
 /*---------------------------------------------------------------------------*/
+// The first job of the xrefstream class is to read and parse the /Index entry
+// of the stream's dictionary. This entry is a series of ints which represents
+// the object numbers described in the xrefstream. The first number is the
+// object number of the first object being described in the first row of the
+// table in the stream. The second number is the number of rows in the table
+// which describe sequentially numbered objects after the first.
+//
+// For example, the numbers 3 5 mean that there are five objects described in
+// this xrefstream starting from object number 3: {3, 4, 5, 6, 7}.
+//
+// However, there can be multiple pairs of numbers in the /Index entry, so the
+// sequence 3 5 10 1 20 3 equates to {3, 4, 5, 6, 7, 10, 20, 21, 22}.
+// The expanded sequence is stored as a private data member of type integer
+// vector: objectNumbers
 
 void xrefstream::getIndex()
 {
-  indexEntries = dict.getInts("/Index");
-  if(indexEntries.empty()) objectNumbers = {0};
+  indexEntries = dict.getInts("/Index");        // Gets the numbers in the entry
+  if(indexEntries.empty()) objectNumbers = {0}; // Sanity check - ?exception
   else
+  {
+    // Loop to expand the shorthand list of objects into a vector
     for(size_t i = 0; i < indexEntries.size(); i++)
-      if(i % 2 == 0) firstObject = indexEntries[i];
+    {
+      // even indices represent the first object being described in a group
+      if(i % 2 == 0)
+        firstObject = indexEntries[i];
       else
+      {
+        // odd indices are the number of objects present
+        // This subloop just adds sequentially to the first object in the group
         for(auto j = 0; j < indexEntries[i]; j++)
           objectNumbers.emplace_back(firstObject + j);
+      }
+    }
+  }
 }
 
 /*---------------------------------------------------------------------------*/

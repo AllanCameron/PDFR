@@ -27,103 +27,140 @@
 
 #include "object_class.h"
 
+//---------------------------------------------------------------------------//
+
 using namespace std;
 
-object_class::object_class(xref* Xref, int objnum) : XR(Xref), number(objnum),
-has_stream(false)
+//---------------------------------------------------------------------------//
+// The main object creator class. It needs a pointer to the xref and a number
+// representing the object's number as set out in the xref table.
+
+object_class::object_class(xref* Xref, int objnum) :
+  XR(Xref), number(objnum), has_stream(false), streampos({0, 0})
 {
-  std::string &fs = XR->fs;
-  streampos = {0, 0};
-  size_t startbyte = XR->getStart(objnum);
-  size_t stopbyte  = XR->getEnd(objnum);
-  if(objnum != 0)
+  size_t startbyte = XR->getStart(objnum);  // Finds start of obj
+  size_t stopbyte  = XR->getEnd(objnum);    // Finds endobj
+
+  if(objnum != 0) // Object 0 does not exist but can be specified in xref
   {
-    if(!XR->isInObject(objnum))
+    if(!XR->isInObject(objnum)) // This loop gets direct objects only
     {
-      if(fs.substr(startbyte, 20).find("<<") == string::npos)
+      // We check to see if the object has a header dictionary by finding '<<'
+      if(XR->fs.substr(startbyte, 20).find("<<") == string::npos)
       {
-        header = dictionary();
-        streampos[0] = firstmatch(fs, " obj", startbyte) + 4;
+        // No dictionary found
+        header = dictionary(); // make blank dictionary for header
+        // find start of contents
+        streampos[0] = firstmatch(XR->fs, " obj", startbyte) + 4;
+        // find end of contents
         streampos[1] = stopbyte - 1;
+        // ensure the resulting "stream" has positive length
+        // The scare quotes are there because it is not a true stream, but
+        // direct contents such as a string, array or just an int
         has_stream = streampos[1] > streampos[0];
       }
       else
       {
-        header = dictionary(&fs, startbyte);
-        streampos = XR->getStreamLoc(startbyte);
-        has_stream = streampos[1] > streampos[0];
+        // The object has a header dictionary
+        header = dictionary(&(XR->fs), startbyte); // construct the dictionary
+        streampos = XR->getStreamLoc(startbyte);   // find the stream (if any)
+        has_stream = streampos[1] > streampos[0];  // record stream's existence
       }
     }
-    else
+    else // The object is insider another object
     {
-      int holder = XR->inObject(objnum);
-      if(XR->objectExists(holder))
+      int holder = XR->inObject(objnum); // find which object it is in
+      if(XR->objectExists(holder)) // Ensure that object exists
+      {
+        // get the holding object and call the constructor for in-stream objects
         *this = object_class(XR, object_class(XR, holder).getStream(), objnum);
+      }
     }
   }
 }
 
 /*---------------------------------------------------------------------------*/
+// The constructor for in-stream objects. This is called automatically by the
+// main object constructor if the main object constructor determines that the
+// requested object lies inside the stream of another object
 
 object_class::object_class(xref* XRef, std::string str, int objnum)
-  :  XR(XRef), number(objnum)
+  :  XR(XRef), number(objnum), streampos({0, 0})
 {
   int startbyte = 0;
-  streampos = {0,0};
+  // object streams start with a group of integers representing the object
+  // numbers and the byte offset of each object relative to the stream.
+  // This loop tells us where the boundary between these registration numbers
+  // and the objects proper begins using the symbol_type function declared in
+  // utilities.h
   for(auto i : str)
   {
     char a = symbol_type(i);
     if(a != ' ' && a != 'D') break;
     startbyte++;
   }
+  // Now get the substring with the objects proper...
   std::string s(str.begin() + startbyte, str.end());
+
+  // ...and the substring with the registration numbers...
   std::string pre(str.begin(), str.begin() + startbyte - 1);
+
+  // .. from which we extract the numbers as a vector.
   std::vector<int> numarray = getints(pre);
-  std::vector<int> objnums, bytenums, bytelen;
-  size_t numarrsize = numarray.size();
-  if(!numarray.empty())
+
+  // If this is empty, something has gone wrong.
+  if(numarray.empty()) throw runtime_error("Couldn't parse object stream");
+
+  // We now set up a loop that determines which numbers are object numbers and
+  // which are byte offsets
+  std::vector<int> objnums, bytenums, bytelen; // temporary containers for loop
+  for(size_t i = 0; i < numarray.size(); i++)
   {
-    for(size_t i = 0; i < numarrsize; i++)
+    if(i % 2 == 0)
+      objnums.push_back(numarray[i]); // even entries are object numbers
+    if(i % 2 == 1)
     {
-      if(i % 2 == 0) objnums.push_back(numarray[i]);
-      if(i % 2 == 1)
-      {
-        bytenums.push_back(numarray[i]);
-        if(i == (numarrsize - 1))
-          bytelen.push_back(s.size() - numarray[i]);
-        else
-          bytelen.push_back(numarray[i + 2] - numarray[i]);
-      }
-    }
-    size_t onsize = objnums.size();
-    for(size_t i = 0; i < onsize; i++)
+      bytenums.push_back(numarray[i]); // odd entries are byte offsets
+      if(i == (numarray.size() - 1))                      //--//
+        bytelen.push_back(s.size() - numarray[i]);            //    get objects'
+      else                                                    //--> lengths from
+        bytelen.push_back(numarray[i + 2] - numarray[i]);     //    offset diffs
+    }                                                     //--//
+  }
+
+  size_t onsize = objnums.size(); // This is how many objects were in the stream
+  // now iterate through the objects we have identified until we find a match
+  for(size_t i = 0; i < onsize; i++)
+  {
+    if(objnums[i] == objnum)
     {
-      if(objnums[i] == objnum)
+      std::string H = s.substr(bytenums[i], bytelen[i]); // string with our obj
+      if(H[0] == '<') // Most stream objects consist of just a dictionary
       {
-        std::string H = s.substr(bytenums[i], bytelen[i]);
-        if(H[0] == '<')
-        {
-          header = dictionary(&H);
-          stream = "";
-          has_stream = false;
-        }
-        else
-        {
-          header = dictionary();
-          stream = H;
-          has_stream = true;
-          if(stream.size() < 15 && stream.find(" R", 0) < 15)
-          {
-            *this = object_class(XR, getObjRefs(stream)[0]);
-          }
-        }
-        break;
+        header = dictionary(&H); // read the dictionary as the object's header
+        stream = "";             // stream objects don't have their own stream
+        has_stream = false;      // stream objects don't have their own stream
       }
+      else // The object is not a dictionary - maybe just an array or int etc
+      {
+        header = dictionary();   // gets an empty dictionary as header
+        stream = H;              // We'll call the contents a stream for ease
+        has_stream = true;       // We'll call the contents a stream for ease
+        // Annoyingly, some "objects" in an object stream are just pointers
+        // to other objects. This is pointless but does happen and needs to
+        // be handled by recursively calling the main creator function
+        if(stream.size() < 15 && stream.find(" R", 0) < 15)
+        {
+          *this = object_class(XR, getObjRefs(stream)[0]);
+        }
+      }
+      break;
     }
   }
 }
 
 /*---------------------------------------------------------------------------*/
+// Simple public getter for the header dictionary
 
 dictionary object_class::getDict()
 {
@@ -131,23 +168,24 @@ dictionary object_class::getDict()
 }
 
 /*---------------------------------------------------------------------------*/
+// We have to create the stream on the fly when it is needed rather than
+// calculating and storing all the streams upon document creation
 
 std::string object_class::getStream()
 {
-  if(!hasStream())
-    return "";
-  else if(!stream.empty())
-    return stream;
-  else
+  if(!hasStream()) return ""; // no stream - return empty string
+  else if(!stream.empty()) return stream; // stream already calculated - return
+  else // get the stream from known stream locations
     stream = XR->fs.substr(streampos[0], streampos[1] - streampos[0]);
-  if(XR->isEncrypted())
+  if(XR->isEncrypted()) // decrypt if necessary
     stream = XR->decrypt(stream, number, 0);
   if(header.get("/Filter").find("/FlateDecode", 0) != string::npos)
-    stream = FlateDecode(stream);
+    stream = FlateDecode(stream); // de-deflate if necessary
   return stream;
 }
 
 /*---------------------------------------------------------------------------*/
+// Simple public getter that is a check of whether the object has a stream
 
 bool object_class::hasStream()
 {

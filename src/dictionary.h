@@ -58,6 +58,7 @@
 
 #include "utilities.h"
 
+//---------------------------------------------------------------------------//
 // The lexer which constructs the dictionary is a finite state machine, which
 // behaves in different ways to parse the string depending on its state.
 // The state in turn may be changed by the character read by the lexer.
@@ -77,6 +78,7 @@ enum DState     {PREENTRY,
                  CLOSE,
                  THE_END};
 
+//---------------------------------------------------------------------------//
 
 class dictionary
 {
