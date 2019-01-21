@@ -81,8 +81,8 @@ private:
 // private member functions
   bytes chopLong(fourbytes);    // Chops fourbytes into vector of 4 bytes lo-hi
   bytes perm(std::string);      // Return permission flags for file
-  fourbytes md5mix( int,        //---------//
-                    fourbytes,             //
+  void md5mix(int,              //---------//
+                    fourbytes&,            //
                     fourbytes,             //
                     fourbytes,             //--> "byte mangler" for md5
                     fourbytes,             //
