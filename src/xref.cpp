@@ -31,6 +31,44 @@
 
 using namespace std;
 
+//---------------------------------------------------------------------------//
+// The xrefstream class is private a helper class for xref. It contains
+// only private members and functions. Its functions could all sit in the xref
+// class, but it has been seperated out to remove clutter and because it
+// represents one encapsulated and complex task. Because it is only used to
+// help in the construction of an xref object, it has no public interface. The
+// xref class accesses it as a friend class
+
+class xrefstream
+{
+  friend class xref;
+  xref* XR;
+  dictionary dict,
+             subdict;
+  std::vector<std::vector<int>> rawMatrix,
+                                finalArray,
+                                result;
+  std::vector<int> arrayWidths,
+                   objectIndex,
+                   objectNumbers,
+                   indexEntries;
+  int ncols,
+      nrows,
+      firstObject,
+      predictor,
+      objstart;
+  void getIndex();
+  void getParms();
+  void getRawMatrix();
+  void diffup();
+  void modulotranspose();
+  void expandbytes();
+  void mergecolumns();
+  void numberRows();
+  xrefstream(xref*, int objstart);
+  std::vector<std::vector<int>> table();
+};
+
 /*---------------------------------------------------------------------------*/
 // the xref creator function. It takes the entire file contents as a string
 // then sequentially runs the steps in creation of an xref master map
@@ -302,6 +340,14 @@ vector<size_t> xref::getStreamLoc(int objstart)
 }
 
 /*---------------------------------------------------------------------------*/
+// getter function to access the trailer dictionary - a private data member
+
+dictionary xref::trailer()
+{
+  return TrailerDictionary;
+}
+
+/*---------------------------------------------------------------------------*/
 // Gets the bytes comprising the hashed owner password from the encryption
 // dictionary
 
@@ -417,6 +463,7 @@ void xref::get_cryptkey()
     checkKeyR3(encdict); // check the filekey and we're done
   }
 }
+
 
 /*---------------------------------------------------------------------------*/
 // simple getter for the output of an xrefstream

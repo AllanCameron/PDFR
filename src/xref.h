@@ -45,9 +45,9 @@
  *
  * However, it is not always quite that simple. Firstly, documents can and do
  * have more than one xref that lists different objects. Secondly, the xref
- * can itself be a compressed and encrypted stream which must be found and
- * translated before being read. This means the xref class must have access to
- * decryption and decoding algorithms.
+ * can itself be a compressed stream which must be found and translated before
+ * being read. This means the xref class must have access to decryption and
+ * decoding algorithms.
  *
  * Fortunately, the location of the start of an xref table (as number of bytes
  * offset from the start of the file) is given right at the end of a file, just
@@ -62,11 +62,13 @@
  *
  * If, however, the xref is located in a stream, things get more complicated.
  * The stream belongs to an object, and the dictionary at the beginning of that
- * object doubles as the trailer dictionary. As well as being possibly
- * encrypted and compressed, the stream containing the xref is usually encoded
- * as a string of bytes which then need to be interpreted using the algorithm
- * normally used for decompressing PNG files. This makes handling xref streams
- * complex enough to warrant their own class.
+ * object doubles as the trailer dictionary. As well as being compressed, the
+ * stream containing the xref is usually encoded as a string of bytes which
+ * then need to be interpreted using the algorithm normally used for
+ * decompressing PNG files. This makes handling xref streams complex enough to
+ * warrant their own class. However, since this class only has to perform a part
+ * of xref implementation, it has no public interface and is therefore not
+ * defined in this header file, but rather within xref.cpp
 */
 
 #include "dictionary.h"
@@ -79,87 +81,76 @@
 
 struct xrefrow
 {
-  int object,
-      startbyte,
-      stopbyte,
-      in_object;
-};
+  int object,     // The object number itself
+      startbyte,  // Its byte offset
+      stopbyte,   // The offset of the corresponding endobj marker
+      in_object;  // If this is a stream object, in which other object is it
+};                // located? Has a value of 0 if the object is not in a stream
 
 /*---------------------------------------------------------------------------*/
+// The main xref class definition. Since this is the main "skeleton" of the pdf
+// which is used by other classes to negotiate and parse the pdf, and because it
+// can be complex to construct, it is a fairly large and complex class.
+//
+// Where possible I have tried to delegate some of its work to other classes
+// or subclasses, but even still it is a little unwieldy.
 
 class xref
 {
 private:
-  std::string file;
-  std::vector<int> Xreflocations,
-                   objenum;
-  std::vector<std::string>  Xrefstrings;
-  std::vector<bool> XrefsAreStreams;
-  void locateXrefs();
-  void xrefstrings();
-  void xrefIsstream();
-  void xrefFromStream(int);
-  void xrefFromString(std::string&);
-  void buildXRtable();
+
+// private data members
+
+  std::vector<int> Xreflocations,         // vector of offsets of xref starts
+                   objenum;               // All object numbers found in xref
+  std::vector<std::string>  Xrefstrings;  // The actual strings of xref tables
+  std::vector<bool> XrefsAreStreams;      // records if each xref is stream
+  dictionary TrailerDictionary;           // Canonical trailer dictionary
+
+  // This is the main data member used for accessing xref and negotiating pdf
   std::unordered_map<int, xrefrow> xreftab;
-  dictionary TrailerDictionary;
-  bytes getPassword(const std::string&, dictionary&);
-  void getFilekey(dictionary&);
-  void checkKeyR2(dictionary&);
-  void checkKeyR3(dictionary&);
-  void get_cryptkey();
+
+// private member functions
+
+  void locateXrefs();                     // Finds xref locations
+  void xrefstrings();                     // Gets strings from xref locations
+  void xrefIsstream();                    // fills XrefsAreStreams vector
+  void xrefFromStream(int);               // Uses xrefstream class to get xref
+  void xrefFromString(std::string&);      // parses xref directly
+  void buildXRtable();                    // constructs main data member
+  void get_cryptkey();                    // Allows decryption of encrypted docs
+
+// Cryptography sub functions
+
+  bytes getPassword(const std::string&, dictionary&); // gets /O and /U cipher
+  void getFilekey(dictionary&);                       // constructs file key
+  void checkKeyR2(dictionary&);                       // checks file key
+  void checkKeyR3(dictionary&);                       // checks file key
+
 
 public:
-  xref(){};
-  xref(const std::string&);
-  bool encrypted;
-  std::vector<uint8_t> filekey;
-  std::string fs;
-  dictionary trailer() {return TrailerDictionary;}
-  size_t getStart(int);
-  size_t getEnd(int);
-  bool isInObject(int);
-  size_t inObject(int);
-  std::vector<int> getObjects();
-  bool objectExists(int);
-  std::vector<size_t> getStreamLoc(int);
+  xref(){};                     // Default creator
+  xref(const std::string&);     // The creator called during document creation
+
+  //-----------------------------  A large string containing the whole file.
+  std::string fs;     //           Any other class needing to access the file
+                      //           should use a pointer to this string
+
+  bool encrypted;               // Flag to indicate whether encryption used
+  std::vector<uint8_t> filekey; // Vector of bytes acting as encryption key
+  dictionary trailer() ;        // Public access for the trailer dictionary
+  size_t getStart(int);         // Returns byte offset of a given object
+  size_t getEnd(int);           // Returns byte offset of end of given object
+  bool isInObject(int);         // Test whether given object is part of a stream
+  size_t inObject(int);         // The object whose stream a given object is in
+  std::vector<int> getObjects();// A vector of all objects recorded in xref
+  bool objectExists(int);       // check for an object's existence
+
+  std::vector<size_t> getStreamLoc(int); // finds start and stop of the first
+                                         // stream after the given byte offset
+
 };
 
-//---------------------------------------------------------------------------//
-// The xrefstream class is really just a helper class for xref. It contains
-// only private members and functions. Its functions could all sit in the xref
-// class, but it has been seperated out to remove clutter and because it
-// represents one encapsulated and complex task.
-
-class xrefstream
-{
-  friend class xref;
-  xref* XR;
-  dictionary dict,
-             subdict;
-  std::vector<std::vector<int>> rawMatrix,
-                                finalArray,
-                                result;
-  std::vector<int> arrayWidths,
-                   objectIndex,
-                   objectNumbers,
-                   indexEntries;
-  int ncols,
-      nrows,
-      firstObject,
-      predictor,
-      objstart;
-  void getIndex();
-  void getParms();
-  void getRawMatrix();
-  void diffup();
-  void modulotranspose();
-  void expandbytes();
-  void mergecolumns();
-  void numberRows();
-  xrefstream(xref*, int objstart);
-  std::vector<std::vector<int>> table();
-};
 
 //---------------------------------------------------------------------------//
 
