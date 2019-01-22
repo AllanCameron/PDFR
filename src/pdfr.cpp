@@ -86,7 +86,8 @@ Rcpp::List PDFpage(document mypdf, page pg)
 
 Rcpp::DataFrame get_xref(const std::string& filename)
 {
-  xref Xref = xref(get_file(filename));
+  std::string fs = get_file(filename);
+  xref Xref = xref(&fs);
   std::vector<int> ob, startb, inob;
   if(!Xref.getObjects().empty())
   {
@@ -108,7 +109,7 @@ Rcpp::DataFrame get_xref(const std::string& filename)
 Rcpp::DataFrame get_xrefraw(const std::vector<uint8_t>& rawfile)
 {
   std::string fs = bytestostring(rawfile);
-  xref Xref = xref(fs);
+  xref Xref = xref(&fs);
   std::vector<int> ob, startb, inob;
   if(!Xref.getObjects().empty())
     for(int j : Xref.getObjects())

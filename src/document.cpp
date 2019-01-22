@@ -52,7 +52,7 @@ document::document(const vector<uint8_t>& bytevector)
 
 void document::buildDoc()
 {
-  Xref = xref(filestring);
+  Xref = xref(&filestring);
   trailer = Xref.trailer();
   getCatalogue();
   getPageDir();

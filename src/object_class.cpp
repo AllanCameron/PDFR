@@ -46,12 +46,12 @@ object_class::object_class(xref* Xref, int objnum) :
     if(!XR->isInObject(objnum)) // This loop gets direct objects only
     {
       // We check to see if the object has a header dictionary by finding '<<'
-      if(XR->fs.substr(startbyte, 20).find("<<") == string::npos)
+      if(XR->fs->substr(startbyte, 20).find("<<") == string::npos)
       {
         // No dictionary found
         header = dictionary(); // make blank dictionary for header
         // find start of contents
-        streampos[0] = firstmatch(XR->fs, " obj", startbyte) + 4;
+        streampos[0] = firstmatch(*(XR->fs), " obj", startbyte) + 4;
         // find end of contents
         streampos[1] = stopbyte - 1;
         // ensure the resulting "stream" has positive length
@@ -62,7 +62,7 @@ object_class::object_class(xref* Xref, int objnum) :
       else
       {
         // The object has a header dictionary
-        header = dictionary(&(XR->fs), startbyte); // construct the dictionary
+        header = dictionary(XR->fs, startbyte); // construct the dictionary
         streampos = XR->getStreamLoc(startbyte);   // find the stream (if any)
         has_stream = streampos[1] > streampos[0];  // record stream's existence
       }
@@ -176,7 +176,7 @@ std::string object_class::getStream()
   if(!hasStream()) return ""; // no stream - return empty string
   else if(!stream.empty()) return stream; // stream already calculated - return
   else // get the stream from known stream locations
-    stream = XR->fs.substr(streampos[0], streampos[1] - streampos[0]);
+    stream = XR->fs->substr(streampos[0], streampos[1] - streampos[0]);
   if(XR->isEncrypted()) // decrypt if necessary
     stream = XR->decrypt(stream, number, 0);
   if(header.get("/Filter").find("/FlateDecode", 0) != string::npos)

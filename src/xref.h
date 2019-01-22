@@ -124,11 +124,11 @@ private:
 
 public:
   xref(){};                     // Default creator
-  xref(const std::string&);     // The creator called during document creation
+  xref(std::string*);           // The creator called during document creation
 
   //-----------------------------  A large string containing the whole file.
-  std::string  fs;    //           Any other class needing to access the file
-                      //           should use a pointer to this string
+  std::string* fs;    //           Any other class needing to access the file
+                      //           should use a pointer to this pointer
 
   bool isEncrypted();           // returns encryption state
   dictionary trailer() ;        // Public access for the trailer dictionary

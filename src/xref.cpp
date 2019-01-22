@@ -76,7 +76,7 @@ class xrefstream
 // the xref creator function. It takes the entire file contents as a string
 // then sequentially runs the steps in creation of an xref master map
 
-xref::xref(const string& s) : fs(s)
+xref::xref(string* s) : fs(s)
 {
   locateXrefs();           // find all xrefs
   xrefstrings();           // get the strings containing all xrefs
@@ -103,7 +103,7 @@ xref::xref(const string& s) : fs(s)
 void xref::locateXrefs()
 {
   // get last 50 chars of the file
-  std::string&& partial = fs.substr(fs.size() - 50, 50);
+  std::string&& partial = fs->substr(fs->size() - 50, 50);
 
   // use carveout() from utilities.h to find the first xref offset
   std::string&& xrefstring =  carveout(partial, "startxref", "%%EOF");
@@ -115,7 +115,7 @@ void xref::locateXrefs()
   // the first dictionary found after any xref offset is always a trailer
   // dictionary, though sometimes it doubles as an xrefstream dictionary.
   // We make the first one found the canonical trailer dictionary
-  TrailerDictionary = dictionary(&(fs), Xreflocations[0]);
+  TrailerDictionary = dictionary(fs, Xreflocations[0]);
   dictionary tempdict = TrailerDictionary;
 
   // Follow pointers to all xrefs sequentially.
@@ -123,7 +123,7 @@ void xref::locateXrefs()
     if(tempdict.hasInts("/Prev"))
     {
       Xreflocations.emplace_back(tempdict.getInts("/Prev")[0]);
-      tempdict = dictionary(&(fs), Xreflocations.back());
+      tempdict = dictionary(fs, Xreflocations.back());
     }
     else break;
 }
@@ -137,13 +137,13 @@ void xref::xrefstrings()
   // get a string from each xref location or die
   for(auto i : Xreflocations)
   {
-    int len = firstmatch(fs, "startxref", i) - i; // length of xref in chars
+    int len = firstmatch(*fs, "startxref", i) - i; // length of xref in chars
 
     // Throw error if no xref found
     if (len <= 0) throw std::runtime_error("No object found at location");
 
     // extract the xref string from the file string
-    string fullxref = fs.substr(i, len);
+    string fullxref = fs->substr(i, len);
 
     // stick a trimmed version of the xref onto Xrefstrings
     // Note the carveout should leave xrefstreams unaltered
@@ -275,7 +275,7 @@ size_t xref::getEnd(int objnum)
   if(xreftab[objnum].in_object) return 0;
 
   // else find the first match of "endobj" and return
-  return (int) firstmatch(fs, "endobj", xreftab[objnum].startbyte);
+  return (int) firstmatch(*fs, "endobj", xreftab[objnum].startbyte);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -311,7 +311,7 @@ std::vector<int> xref::getObjects()
 
 vector<size_t> xref::getStreamLoc(int objstart)
 {
-  dictionary dict = dictionary(&(fs), objstart); // get the object dictionary
+  dictionary dict = dictionary(fs, objstart); // get the object dictionary
   if(dict.has("stream"))     // this is created automatically in dictionary
     if(dict.has("/Length"))  // sanity check; should length if there is stream
     {
@@ -320,9 +320,9 @@ vector<size_t> xref::getStreamLoc(int objstart)
       {
         int lengthob = dict.getRefs("/Length")[0]; // finds reference
         size_t firstpos = getStart(lengthob);      // gets start of length obj
-        size_t lastpos = firstmatch(fs, "endobj", firstpos); // and end of it
+        size_t lastpos = firstmatch(*fs, "endobj", firstpos); // and end of it
         size_t len = lastpos - firstpos;  // from which we can get its length
-        string objstr = fs.substr(firstpos, len); // from which we get a string
+        string objstr = fs->substr(firstpos, len); // from which we get a string
         streamlen = getints(objstr).back(); // from which we get the number
       }
       // thankfully though most lengths are just direct ints
@@ -377,7 +377,7 @@ void xref::get_crypto()
 
   // mark the file as encrypted and read the encryption dictionary
   encrypted = true;
-  dictionary encdict = dictionary(&fs, getStart(encnum));
+  dictionary encdict = dictionary(fs, getStart(encnum));
   encryption = crypto(encdict, TrailerDictionary);
 }
 
@@ -398,7 +398,7 @@ std::vector<std::vector<int>> xrefstream::table()
 xrefstream::xrefstream(xref* Xref, int starts) :
   XR(Xref), ncols(0), predictor(0), objstart(starts)
 {
-  dict = dictionary(&(XR->fs), objstart);         // get the xrefstream dict
+  dict = dictionary(XR->fs, objstart);         // get the xrefstream dict
   string decodestring = dict.get("/DecodeParms"); // string for subdict
   subdict = dictionary(&decodestring);            // get parameters (subdict)
   getIndex(); // read Index entry of dict so we know which objects are in stream
@@ -478,10 +478,10 @@ void xrefstream::getRawMatrix()
   std::vector<size_t> sl = XR->getStreamLoc(objstart);
 
   // extracts stream from file
-  std::string SS = XR->fs.substr(sl[0], sl[1] - sl[0]);
+  std::string SS = XR->fs->substr(sl[0], sl[1] - sl[0]);
 
   // gets the containing object's dictionary
-  dictionary dict = dictionary(&(XR->fs), objstart);
+  dictionary dict = dictionary(XR->fs, objstart);
 
   // applies decompression to stream if needed
   if(dict.get("/Filter").find("/FlateDecode", 0) != string::npos)
