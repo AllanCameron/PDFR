@@ -39,7 +39,7 @@ using namespace std;
 
 /*---------------------------------------------------------------------------*/
 
-void Encoding::parseDifferences(const string& enc,
+void Encoding::Differences(const string& enc,
                       unordered_map<RawChar, Unicode>& symbmap)
 {
   DiffState state = NEWSYMB;
@@ -176,7 +176,7 @@ void Encoding::getEncoding(dictionary& fontref, document* d)
   if(encref.has("/Differences"))
   {
     BaseEncoding = encref.get("/Differences");
-    parseDifferences(BaseEncoding, EncodingMap);
+    Differences(BaseEncoding, EncodingMap);
   }
 }
 
