@@ -107,7 +107,7 @@ private:
   std::vector<bool> XrefsAreStreams;      // records if each xref is stream
   dictionary TrailerDictionary;           // Canonical trailer dictionary
   bool encrypted;                         // Flag to indicate if encryption used
-   crypto encryption;                      // crypto object for decrypting files
+  crypto encryption;                      // crypto object for decrypting files
 
   // This is the main data member used for accessing xref and negotiating pdf
   std::unordered_map<int, xrefrow> xreftab;
@@ -125,11 +125,7 @@ private:
 public:
   xref(){};                     // Default creator
   xref(std::string*);           // The creator called during document creation
-
-  //-----------------------------  A large string containing the whole file.
-  std::string* fs;    //           Any other class needing to access the file
-                      //           should use a pointer to this pointer
-
+  std::string* fs;              // a pointer to the creating file string
   bool isEncrypted();           // returns encryption state
   dictionary trailer() ;        // Public access for the trailer dictionary
   size_t getStart(int);         // Returns byte offset of a given object
@@ -138,7 +134,6 @@ public:
   size_t inObject(int);         // The object whose stream a given object is in
   std::vector<int> getObjects();// A vector of all objects recorded in xref
   bool objectExists(int);       // check for an object's existence
-
   std::vector<size_t> getStreamLoc(int); // finds start and stop of the first
                                          // stream after the given byte offset
   std::string decrypt(std::string, int, int); // Interface for decryption object

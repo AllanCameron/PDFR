@@ -61,7 +61,7 @@
  * The document also needs to have an outline of its own logical structure,
  * in terms of the pages it contains and where they are located. Part of the
  * task of document creation is therefore to count and locate the objects
- * that act as page descriptors. It does this by finding the catalogue
+ * that act as page descriptors. It does this by finding the catalog
  * dictionary and then following pointers to dictionaries that contain
  * individual page headers. There is then a "getter" function for other classes
  * to access the dictionary pertaining to a particular page
@@ -98,7 +98,7 @@ private:
   std::string filestring;             // Full contents of file
   xref Xref;                          // Contains the xref object for navigation
   object_class pagedir;               // Object containing pointers to pages
-  dictionary catalogue;               // The pdf catalog dictionary
+  dictionary catalog;                 // The pdf catalog dictionary
   std::vector<dictionary> pageheaders;// A vector containing page dictionaries
 
   // This map holds object_class objects. Since some objects may be read
@@ -110,7 +110,7 @@ private:
 
   // private member functions used in construction only
 
-  void getCatalogue();  // finds and stores the catalogue dictionary
+  void getCatalog();    // finds and stores the catalog dictionary
   void getPageDir();    // finds and stores the /Pages dictionary
   void buildDoc();      // the constructors use this as a common pathway
   void getPageHeaders();// finds and stores all /Page dictionaries in document
