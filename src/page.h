@@ -54,6 +54,7 @@ private:
   void getResources();
   void getFonts();
   void getContents();
+  std::vector<int> expandContents(std::vector<int> objnums);
 };
 
 #endif

@@ -47,56 +47,76 @@
  * Each document will have one and only one xref class. Instead of a pointer to
  * the xref as in other classes, the xref is actually a data member of the
  * document class. PDF objects are created and stored in a map for easy access.
+ * The file string is stored here and any other class that needs to read the
+ * file accesses a pointer to the filestring held in the document class.
  *
  * The document class is therefore self-contained, in that after the initial
  * step of reading in the file, it has everything in needs to build up its
  * own components and interface. The logical PDF structures we go on to build
  * only need to know about the document class, and can use it as the interface
- * they need to build up objects purely in terms of asking for objects by
- * number, interrogating the object's dictionary, or by reading its stream
- * contents as decrypted and uncompressed strings.
+ * they need. They "see" the pdf as a random access collection of numbered
+ * objects with key:value dictionaries and uncompressed streams without being
+ * concerned about how that is implemented.
  *
  * The document also needs to have an outline of its own logical structure,
  * in terms of the pages it contains and where they are located. Part of the
  * task of document creation is therefore to count and locate the objects
  * that act as page descriptors. It does this by finding the catalogue
  * dictionary and then following pointers to dictionaries that contain
- * individual page headers.
+ * individual page headers. There is then a "getter" function for other classes
+ * to access the dictionary pertaining to a particular page
  */
 
 #include "object_class.h"
 
 //---------------------------------------------------------------------------//
+// The public interface of the document class comprises constructors and two
+// member functions - one to return any object from the pdf and one to retrieve
+// a specific page header.
 
 class document
 {
 public:
-  document(const std::string& filename);
-  document(const std::vector<uint8_t>& rawfile);
-  document();
-  std::ifstream *fileCon;
-  size_t filesize;
-  std::string file, filestring;
-  bool linearized;
-  std::vector<dictionary> pageheaders;
-  std::unordered_map <int, object_class> objects;
-  dictionary trailer;
-  dictionary catalogue;
-  object_class pagedir;
-  xref Xref;
-  object_class getobject(int objnum);
-  std::vector<int> expandContents(std::vector<int> objnums);
 
-  // member functions
+    // constructors
+
+  document(const std::string& filename);          // create doc from filepath
+  document(const std::vector<uint8_t>& rawfile);  // create doc from raw data
+  document();                                     // default constructor
+
+
+  // public member functions
+
+  object_class getobject(int objnum); // returns object and retains copy
+  dictionary pageHeader(int p);       // returns header dictionary for page p
+
 private:
-  void get_file();
-  std::string subfile(int startbyte, int len);
-  void getCatalogue();
-  void getPageDir();
-  void isLinearized();
-  void buildDoc();
-  std::vector<int> expandKids(std::vector<int> objnums);
-  void getPageHeaders();
-};
+
+  // private data members
+
+  std::string file;                   // Path used to create file (if used)
+  std::string filestring;             // Full contents of file
+  xref Xref;                          // Contains the xref object for navigation
+  object_class pagedir;               // Object containing pointers to pages
+  dictionary catalogue;               // The pdf catalog dictionary
+  std::vector<dictionary> pageheaders;// A vector containing page dictionaries
+
+  // This map holds object_class objects. Since some objects may be read
+  // multiple times, it is best to store them when they are first created,
+  // then return the stored object on request rather than creating a new
+  // instance of the object every time it is requested.
+  std::unordered_map <int, object_class> objects;
+
+
+  // private member functions used in construction only
+
+  void getCatalogue();  // finds and stores the catalogue dictionary
+  void getPageDir();    // finds and stores the /Pages dictionary
+  void buildDoc();      // the constructors use this as a common pathway
+  void getPageHeaders();// finds and stores all /Page dictionaries in document
+  std::vector<int> expandKids(std::vector<int> objnums); // finds descendants
+};                                                       // of /Pages object
+
+//---------------------------------------------------------------------------//
 
 #endif

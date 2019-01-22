@@ -35,7 +35,7 @@ using namespace std;
 
 document::document(const string& filename) : file(filename)
 {
-  get_file();
+  filestring = get_file(file);
   buildDoc();
 }
 
@@ -44,7 +44,6 @@ document::document(const string& filename) : file(filename)
 document::document(const vector<uint8_t>& bytevector)
 {
   filestring = bytestostring(bytevector);
-  filesize = filestring.size();
   buildDoc();
 }
 
@@ -53,26 +52,9 @@ document::document(const vector<uint8_t>& bytevector)
 void document::buildDoc()
 {
   Xref = xref(&filestring);
-  trailer = Xref.trailer();
   getCatalogue();
   getPageDir();
-  isLinearized();
   getPageHeaders();
-}
-
-/*---------------------------------------------------------------------------*/
-
-void document::get_file()
-{
-  ifstream in(file.c_str(), ios::in | ios::binary);
-  fileCon = &in;
-  fileCon->seekg(0, ios::end);
-  filesize = fileCon->tellg();
-  filestring.resize(filesize);
-  fileCon->seekg(0, ios::beg);
-  fileCon->read(&filestring[0], filestring.size());
-  fileCon->seekg(0, ios::beg);
-  fileCon->close();
 }
 
 /*---------------------------------------------------------------------------*/
@@ -88,7 +70,7 @@ object_class document::getobject(int n)
 
 void document::getCatalogue()
 {
-  vector<int> rootnums = trailer.getRefs("/Root");
+  vector<int> rootnums = Xref.TrailerDictionary.getRefs("/Root");
   if (rootnums.empty())
     throw runtime_error("Couldn't find catalogue from trailer");
   catalogue = getobject(rootnums.at(0)).getDict();
@@ -102,13 +84,6 @@ void document::getPageDir()
     throw runtime_error("No valid /Pages entry");
   int pagenum = catalogue.getRefs("/Pages").at(0);
   pagedir = getobject(pagenum);
-}
-
-/*---------------------------------------------------------------------------*/
-
-void document::isLinearized()
-{
-  linearized = filestring.substr(0, 100).find("<</Linearized") != string::npos;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -131,25 +106,6 @@ vector <int> document::expandKids(vector<int> objnums)
   return res;
 }
 
-/*---------------------------------------------------------------------------*/
-
-vector <int> document::expandContents(vector<int> objnums)
-{
-  if(objnums.empty())
-    return objnums;
-  size_t i = 0;
-  vector<int> res;
-  while (i < objnums.size())
-  {
-    object_class o = getobject(objnums[i]);
-    if (o.getDict().hasRefs("/Contents"))
-      concat(objnums, o.getDict().getRefs("/Contents"));
-    else
-      res.push_back(objnums[i]);
-    i++;
-  }
-  return objnums;
-}
 
 /*---------------------------------------------------------------------------*/
 
@@ -167,3 +123,9 @@ void document::getPageHeaders()
 
 /*---------------------------------------------------------------------------*/
 
+dictionary document::pageHeader(int pagenumber)
+{
+  if(pageheaders.size() < (uint16_t) pagenumber)
+    throw runtime_error("Invalid page number");
+  return pageheaders.at(pagenumber);
+}

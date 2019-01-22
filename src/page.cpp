@@ -66,10 +66,7 @@ void page::getHeader()
 {
   std::string E = "No header found for page ";
   E += std::to_string(pagenumber);
-  if ((int) d->pageheaders.size() >= pagenumber)
-    header = d->pageheaders.at(pagenumber);
-  else
-    throw runtime_error(E);
+  header = d->pageHeader(pagenumber);
   if (!header.has("/Type"))
     throw runtime_error(E);
   if(header.get("/Type") != "/Page")
@@ -121,7 +118,7 @@ void page::getContents()
   std::vector<int> cts = header.getRefs("/Contents");
   if (!cts.empty())
   {
-    contents = d->expandContents(cts);
+    contents = expandContents(cts);
     for (auto m : contents)
       contentstring += d->getobject(m).getStream() + std::string("\n");
   }
@@ -147,6 +144,25 @@ void page::parseXObjStream()
       }
     }
   }
+}
+
+/*---------------------------------------------------------------------------*/
+
+vector <int> page::expandContents(vector<int> objnums)
+{
+  if(objnums.empty()) return objnums;
+  size_t i = 0;
+  vector<int> res;
+  while (i < objnums.size())
+  {
+    object_class o = d->getobject(objnums[i]);
+    if (o.getDict().hasRefs("/Contents"))
+      concat(objnums, o.getDict().getRefs("/Contents"));
+    else
+      res.push_back(objnums[i]);
+    i++;
+  }
+  return objnums;
 }
 
 /*--------------------------------------------------------------------------*/

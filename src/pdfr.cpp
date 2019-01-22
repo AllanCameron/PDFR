@@ -148,7 +148,7 @@ Rcpp::List get_objectraw(const std::vector<uint8_t>& rawfile, int object)
 Rcpp::List pdfdoc(const std::string & filepath)
 {
   document&& myfile = document(filepath);
-  Rcpp::CharacterVector filename = Rcpp::wrap(myfile.file);
+  Rcpp::CharacterVector filename = Rcpp::wrap(filepath);
   return Rcpp::List::create(Rcpp::Named("file") = filename);
 }
 
