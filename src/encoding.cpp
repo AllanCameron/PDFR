@@ -27,13 +27,11 @@
 
 #include "encoding.h"
 
-enum DiffState
-{
-  NEWSYMB = 0,
-  NUM,
-  NAME,
-  STOP
-};
+//---------------------------------------------------------------------------//
+// Encoding includes a finite state machine lexer used for parsing the
+// /Differences entry in the encoding dictionary
+
+//---------------------------------------------------------------------------//
 
 using namespace std;
 

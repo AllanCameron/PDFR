@@ -114,6 +114,7 @@ private:
   dictionary fontref;       // the main font dictionary
   document* d;              // pointer to the containing document
   std::string BaseEncoding; // value of /BaseEncoding entry
+  enum DiffState { NEWSYMB, NUM, NAME, STOP }; // states for /Differences lexer
 
   // private member functions
 
