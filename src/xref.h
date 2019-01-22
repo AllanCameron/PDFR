@@ -127,11 +127,10 @@ public:
   xref(const std::string&);     // The creator called during document creation
 
   //-----------------------------  A large string containing the whole file.
-  std::string fs;     //           Any other class needing to access the file
+  std::string  fs;    //           Any other class needing to access the file
                       //           should use a pointer to this string
 
   bool isEncrypted();           // returns encryption state
-  std::vector<uint8_t> filekey; // Vector of bytes acting as encryption key
   dictionary trailer() ;        // Public access for the trailer dictionary
   size_t getStart(int);         // Returns byte offset of a given object
   size_t getEnd(int);           // Returns byte offset of end of given object
