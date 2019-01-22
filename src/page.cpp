@@ -52,7 +52,7 @@ void page::boxes()
       if(boxheader.hasRefs("/Parent"))
       {
         int parent = boxheader.getRefs("/Parent").at(0);
-        boxheader = d->getobject(parent).getDict();
+        boxheader = d->getobject(parent)->getDict();
       }
       else hasparent = false;
     }
@@ -81,7 +81,7 @@ void page::getResources()
   {
     resourceobjs = header.getRefs("/Resources");
     for (auto q : resourceobjs)
-      resources = d->getobject(q).getDict();
+      resources = d->getobject(q)->getDict();
   }
   else
   {
@@ -98,7 +98,7 @@ void page::getFonts()
   {
     std::vector<int> fontobjs = resources.getRefs("/Font");
     if (fontobjs.size() == 1)
-      fonts = d->getobject(fontobjs.at(0)).getDict();
+      fonts = d->getobject(fontobjs.at(0))->getDict();
   }
   else
   {
@@ -108,7 +108,7 @@ void page::getFonts()
   fontnames = fonts.getDictKeys();
   for(auto h : fontnames)
     for(auto hh : fonts.getRefs(h))
-      fontmap[h] = font(d, d->getobject(hh).getDict(), h);
+      fontmap[h] = font(d, d->getobject(hh)->getDict(), h);
 }
 
 /*--------------------------------------------------------------------------*/
@@ -120,7 +120,7 @@ void page::getContents()
   {
     contents = expandContents(cts);
     for (auto m : contents)
-      contentstring += d->getobject(m).getStream() + std::string("\n");
+      contentstring += d->getobject(m)->getStream() + std::string("\n");
   }
 }
 
@@ -140,7 +140,7 @@ void page::parseXObjStream()
       {
         std::vector<int> refints = objdict.getRefs(i);
         if(!refints.empty())
-          XObjects[i] = d->getobject(refints.at(0)).getStream();
+          XObjects[i] = d->getobject(refints.at(0))->getStream();
       }
     }
   }
@@ -155,9 +155,9 @@ vector <int> page::expandContents(vector<int> objnums)
   vector<int> res;
   while (i < objnums.size())
   {
-    object_class o = d->getobject(objnums[i]);
-    if (o.getDict().hasRefs("/Contents"))
-      concat(objnums, o.getDict().getRefs("/Contents"));
+    object_class* o = d->getobject(objnums[i]);
+    if (o->getDict().hasRefs("/Contents"))
+      concat(objnums, o->getDict().getRefs("/Contents"));
     else
       res.push_back(objnums[i]);
     i++;

@@ -87,7 +87,7 @@ public:
 
   // public member functions
 
-  object_class getobject(int objnum); // returns object and retains copy
+  object_class* getobject(int objnum); // creates object and returns pointer
   dictionary pageHeader(int p);       // returns header dictionary for page p
 
 private:
@@ -97,7 +97,7 @@ private:
   std::string file;                   // Path used to create file (if used)
   std::string filestring;             // Full contents of file
   xref Xref;                          // Contains the xref object for navigation
-  object_class pagedir;               // Object containing pointers to pages
+  dictionary pagedir;                 // dict containing pointers to pages
   dictionary catalog;                 // The pdf catalog dictionary
   std::vector<dictionary> pageheaders;// A vector containing page dictionaries
 

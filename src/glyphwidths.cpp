@@ -59,8 +59,8 @@ void glyphwidths::parseWidths()
     firstchar = fontref.getInts("/FirstChar")[0];
   if (fontref.hasRefs("/Widths"))
   {
-    object_class o = d->getobject(fontref.getRefs("/Widths").at(0));
-    string ostring = o.getStream();
+    object_class* o = d->getobject(fontref.getRefs("/Widths").at(0));
+    string ostring = o->getStream();
     widtharray = getnums(ostring);
   }
   else widtharray = fontref.getNums("/Widths");
@@ -77,16 +77,16 @@ void glyphwidths::parseWidths()
 void glyphwidths::parseDescendants()
 {
   vector<int> os = fontref.getRefs("/DescendantFonts");
-  object_class desc = d->getobject(os[0]);
-  dictionary descdict = desc.getDict();
-  string descstream = desc.getStream();
+  object_class* desc = d->getobject(os[0]);
+  dictionary descdict = desc->getDict();
+  string descstream = desc->getStream();
   if(!getObjRefs(descstream).empty())
-    descdict = d->getobject(getObjRefs(descstream)[0]).getDict();
+    descdict = d->getobject(getObjRefs(descstream)[0])->getDict();
   if (descdict.has("/W"))
   {
     string widthstring;
     if (descdict.hasRefs("/W"))
-      widthstring = d->getobject(descdict.getRefs("/W").at(0)).getStream();
+      widthstring = d->getobject(descdict.getRefs("/W").at(0))->getStream();
     else
       widthstring = descdict.get("/W");
     parsewidtharray(widthstring);

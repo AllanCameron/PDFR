@@ -76,11 +76,11 @@ void document::buildDoc()
 // returns it from the 'objects' vector. If not, it creates the object then
 // stores a copy in the 'objects' vector before returning the requested object.
 
-object_class document::getobject(int n)
+object_class* document::getobject(int n)
 {
   if(objects.find(n) == objects.end())           // check if object is stored
     objects[n] = object_class(&(this->Xref), n); // if not, create and store it
-  return objects[n];                             // return a copy
+  return &(objects[n]);                          // return a pointer to it
 }
 
 /*---------------------------------------------------------------------------*/
@@ -98,7 +98,7 @@ void document::getCatalog()
   if (rootnums.empty()) throw runtime_error("Couldn't find catalog dictionary");
 
   // With errors handled, we can now just get the pointed-to object's dictionary
-  catalog = getobject(rootnums.at(0)).getDict();
+  catalog = getobject(rootnums.at(0))->getDict();
 }
 
 /*---------------------------------------------------------------------------*/
@@ -115,7 +115,7 @@ void document::getPageDir()
   int pagesobject = catalog.getRefs("/Pages").at(0);
 
   // Now fetch that object and store it
-  pagedir = getobject(pagesobject);
+  pagedir = getobject(pagesobject)->getDict();
 }
 
 /*---------------------------------------------------------------------------*/
@@ -150,10 +150,10 @@ vector <int> document::expandKids(vector<int> objnums)
 
   while (i < objnums.size())
   {
-    object_class&& o = getobject(objnums[i]); // get the node object
-    if (o.getDict().hasRefs("/Kids"))         // if it has Kids, its not a leaf
+    object_class* o = getobject(objnums[i]); // get the node object
+    if (o->getDict().hasRefs("/Kids"))       // if it has Kids, its not a leaf
     {
-      vector<int> newnodes = o.getDict().getRefs("/Kids"); // store kids
+      vector<int> newnodes = o->getDict().getRefs("/Kids"); // store kids
       objnums.erase(objnums.begin() + i);                  // delete parent node
       // inset kids to replace deleted parent node
       objnums.insert(objnums.begin() + i, newnodes.begin(), newnodes.end());
@@ -177,11 +177,11 @@ vector <int> document::expandKids(vector<int> objnums)
 void document::getPageHeaders()
 {
   // Ensure /Pages has /kids entry
-  if (!pagedir.getDict().hasRefs("/Kids"))
+  if (!pagedir.hasRefs("/Kids"))
     throw runtime_error("No /Kids entry in /Pages dictionary.");
 
     // use expandKids() to get page header object numbers
-    std::vector<int> kids = expandKids(pagedir.getDict().getRefs("/Kids"));
+    std::vector<int> kids = expandKids(pagedir.getRefs("/Kids"));
 
     // ensure we have enough room for the page headers in our vector
     pageheaders.reserve(kids.size());

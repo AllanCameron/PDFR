@@ -99,7 +99,7 @@ void Encoding::mapUnicode(dictionary& fontref, document* d)
 {
   if (!fontref.hasRefs("/ToUnicode")) return;
   int unirefint = fontref.getRefs("/ToUnicode")[0];
-  string x = d->getobject(unirefint).getStream();
+  string x = d->getobject(unirefint)->getStream();
   vector<string> Char =  multicarve(x, "beginbfchar", "endbfchar");
   vector<string> Range = multicarve(x, "beginbfrange", "endbfrange");
   if (Char.size() > 0)  processUnicodeChars(Char);
@@ -159,8 +159,8 @@ void Encoding::getEncoding(dictionary& fontref, document* d)
   if(fontref.hasRefs("/Encoding"))
   {
     int a = fontref.getRefs("/Encoding").at(0);
-    object_class myobj = d->getobject(a);
-    encref = myobj.getDict();
+    object_class* myobj = d->getobject(a);
+    encref = myobj->getDict();
     if(encref.has("/BaseEncoding"))
       encname = encref.get("/BaseEncoding");
   }

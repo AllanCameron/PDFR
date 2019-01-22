@@ -129,8 +129,8 @@ Rcpp::List get_object(const std::string& filename, int object)
 {
   document&& doc = document(filename);
   return Rcpp::List::create(
-    Rcpp::Named("header") = doc.getobject(object).getDict().R_out(),
-    Rcpp::Named("stream") = doc.getobject(object).getStream());
+    Rcpp::Named("header") = doc.getobject(object)->getDict().R_out(),
+    Rcpp::Named("stream") = doc.getobject(object)->getStream());
 }
 
 //---------------------------------------------------------------------------//
@@ -139,8 +139,8 @@ Rcpp::List get_objectraw(const std::vector<uint8_t>& rawfile, int object)
 {
   document&& mydoc = document(rawfile);
   return Rcpp::List::create(
-    Rcpp::Named("header") = mydoc.getobject(object).getDict().R_out(),
-    Rcpp::Named("stream") = mydoc.getobject(object).getStream());
+    Rcpp::Named("header") = mydoc.getobject(object)->getDict().R_out(),
+    Rcpp::Named("stream") = mydoc.getobject(object)->getStream());
 }
 
 //---------------------------------------------------------------------------//
