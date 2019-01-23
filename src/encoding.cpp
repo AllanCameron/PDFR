@@ -32,9 +32,9 @@ using namespace std;
 /*---------------------------------------------------------------------------*/
 // Lexer / parser for Differences entry of encoding dictionary. Takes the
 // entry as a string and reads ints as input code points. These are mapped to
-// the following glyph name's unicode value. If more than one name follows an
+// the subsequent glyph name's Unicode value. If more than one name follows an
 // int, then sequential code points are mapped to each successive name's
-// unicode value
+// Unicode value
 
 void Encoding::Differences(const string& enc)
 {
@@ -153,19 +153,44 @@ void Encoding::processUnicodeRange(vector<string>& Range)
 {
   for(auto i : Range)
   {
+    // uses multicarve() from utilities.h to get ascii-endoded byte strings
     vector<string> allentries = multicarve(i, "<", ">");
+
+    // sanity check - there should be at least three entries for a valid range
     if(allentries.size() < 3) throw runtime_error("No entries in range");
 
-    RawChar first, last, start;
-    first = last = start = 0;
+    // The bfrange comprises three numbers: the first code point to be
+    // translated in a range of code points, the last code point to be
+    // translated in the range, and the Unicode point from which to start the
+    // translation - hence { 1; 4; 10 } would generate {1,10; 2,11; 3,12; 4,13}
+
+    RawChar first, last;        // temporary holders for first two columns
+    Unicode start;              // temporary holder for third column entry
+    first = last = start = 0;   // initialize to prevent compiler complaints
+
+    // loop to calculate entries and fill encoding map
     for(size_t j = 0; j < allentries.size(); j++)
     {
+      // first column == first code point
       if(j % 3 == 0) first = HexstringToRawChar(allentries[j]).at(0);
-      if(j % 3 == 1) last = HexstringToRawChar(allentries[j]).at(0);
+
+      // second column == last code point
+      if(j % 3 == 1)
+        last = HexstringToRawChar(allentries[j]).at(0);
+
+      // third column == Unicode point at which to start
       if(j % 3 == 2)
       {
-        start = HexstringToRawChar(allentries[j]).at(0);
+        // We call the HexstringtoRawChar function as it outputs a uint16
+        // However, the 'start' variable is Unicode and we make this explicit
+        start = (Unicode) HexstringToRawChar(allentries[j]).at(0);
+
+        // Calculate the number of map entries needed. Since the first two
+        // columns show characters to be mapped inclusive of both, we add 1
+        // to their difference to get the number of mapped chars we need
         int nchar = (last - first) + 1;
+
+        // Now we can fill the encoding map from the data in the row
         for(int k = 0; k < nchar; k++)
           EncodingMap[first + k] = start + k;
       }
@@ -197,7 +222,7 @@ void Encoding::getEncoding(dictionary& fontref, document* d)
     EncodingMap = Encoding::macRomanEncodingToUnicode;// the appropriate base
   else if(encname == "/PDFDocEncoding")               // encoding. If none
     EncodingMap = Encoding::pdfDocEncodingToUnicode;  // specified, fill map
-  else                                                // with 1:1 raw:unicode
+  else                                                // with 1:1 Raw : Unicode
     for(RawChar i = 0; i < 256; i++)                  //
       EncodingMap[i] = (Unicode) i;             //---------------------------//
 
@@ -210,6 +235,10 @@ void Encoding::getEncoding(dictionary& fontref, document* d)
 }
 
 /*---------------------------------------------------------------------------*/
+// The constructor function needs to do three things - get the encoding
+// dictionary, get the base encoding, parse any /Differences entry, and parse
+// any /ToUnicode entry. The first three are co-ordinated by getEncoding()
+// and the last is co-ordinated by mapUnicode
 
 Encoding::Encoding(const dictionary& fontdict, document* doc):
   fontref(fontdict), d(doc)
@@ -219,6 +248,9 @@ Encoding::Encoding(const dictionary& fontdict, document* doc):
 }
 
 /*---------------------------------------------------------------------------*/
+// This is a simple public interface to the underlying map data. It provides
+// a range-checked lookup of a given RawChar. If it finds no Unicode entry
+// in the map it returns the original RawChar
 
 Unicode Encoding::Interpret(RawChar raw)
 {
@@ -229,6 +261,8 @@ Unicode Encoding::Interpret(RawChar raw)
 }
 
 /*---------------------------------------------------------------------------*/
+// Public function to return a vector that enumerates all the keys in the main
+// Rawchar - Unicode map
 
 vector<RawChar> Encoding::encKeys()
 {

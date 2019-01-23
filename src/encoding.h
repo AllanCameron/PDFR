@@ -69,7 +69,7 @@
  * produce a mapping for each font so that each code point encountered has a
  * Unicode interpretation. It keeps the implementation private and returns
  * only its main data member - an unordered map of input characters (represented
- * as 2-byte unsigned integers or uint16_t) to unicode characters (also
+ * as 2-byte unsigned integers or uint16_t) to Unicode characters (also
  * represented as uint16_t).
  *
  * To make the code clearer, both RawChar and Unicode are typedef'd as synonyms
