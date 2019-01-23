@@ -216,7 +216,7 @@ std::unordered_map<Unicode, int> glyphwidths::helveticaboldwidths =
 
 //---------------------------------------------------------------------------//
 
-std::unordered_map<Unicode, int> glyphwidths::helveticaboldobliquewidths =
+std::unordered_map<Unicode, int> glyphwidths::helveticabold_ob_widths =
 {
   {0x0020, 0x0116}, {0x0021, 0x014d}, {0x0022, 0x01da}, {0x0023, 0x022c},
   {0x0024, 0x022c}, {0x0025, 0x0379}, {0x0026, 0x02d2}, {0x0027, 0x0116},

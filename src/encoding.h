@@ -31,7 +31,7 @@
 
 #define PDFR_ENCODING
 
-/* This is the 6th in a series of daisy-chained headers that build up the
+/* This is the joint 6th in a series of daisy-chained headers that build up the
  * tools to read and parse pdfs. It is logically paired with glyphwidths.h
  * in that they both come after document.h and together form the basis for the
  * next step, which is font creation.

@@ -31,7 +31,12 @@
 
 #define PDFR_WIDTH
 
-/* Calculating the width of each glyph is necessary for working out the spacing
+/* This is the joint 6th in a series of daisy-chained headers that build up the
+ * tools to read and parse pdfs. It is logically paired with encoding.h
+ * in that they both come after document.h and together form the basis for the
+ * next step, which is font creation.
+ *
+ * Calculating the width of each glyph is necessary for working out the spacing
  * between letters, words, paragraphs and other text elements. The glyph widths
  * in pdf are given in units of text space, where 1000 = 1 point = 1/72 inch in
  * 1-point font size.
@@ -111,7 +116,7 @@ private:
   static std::unordered_map<Unicode, int> courierobliquewidths;         //
   static std::unordered_map<Unicode, int> helveticawidths;              //
   static std::unordered_map<Unicode, int> helveticaboldwidths;          //
-  static std::unordered_map<Unicode, int> helveticaboldobliquewidths;   //
+  static std::unordered_map<Unicode, int> helveticabold_ob_widths;      //
   static std::unordered_map<Unicode, int> helveticaobliquewidths;       //
   static std::unordered_map<Unicode, int> symbolwidths;                 //
   static std::unordered_map<Unicode, int> timesboldwidths;              //
