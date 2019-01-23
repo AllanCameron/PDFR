@@ -33,6 +33,7 @@
 
 #include <Rcpp.h> // This is the first header file to require Rcpp-specific fx
 #include "tokenizer.h"
+#include "page.h"
 
 //---------------------------------------------------------------------------//
 

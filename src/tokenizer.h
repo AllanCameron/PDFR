@@ -28,7 +28,7 @@
 #ifndef PDFR_TOKEN
 #define PDFR_TOKEN
 
-#include "page.h"
+#include "utilities.h"
 
 namespace Token
 {

@@ -1,45 +1,58 @@
 An overview of the structure of the program, showing the chain of #includes and
 the logical order in which to read and understand the files here. An arrow means
-the pointed from file is #included by the pointed to file.
+the pointed from header file is #included by the pointed to header file.
+
+The files in {curly brackets} underneath each header file are the .cpp files on
+which the header relies for implementation as there is not a strict 1:1
+correspondence between the two: some headers have no implementation and others
+have their implementation split across compilation units
 
 
-                               (  debugtools.h ) - optional
+                                [debugtools.h] - optional
                                        |
                                        v
-                                  utilities.h
-                                       |
-                                       v
-                          ------- dictionary.h -------
-                          |            |             |
-                          v            |             v
-   miniz.h (ext) --->  streams.h       |          crypto.h
-                          |            v             |
-                          ---------> xref.h <--------
-                                       |
-                                       v
-                                 object_class.h
-                                       |
-                                       v
-                            -----  document.h  -----
-                            |                      |
-     adobetounicode.cpp     v                      v
-               | ------> encoding.h          glyphwidths.h <--- corefonts.cpp
-     chartounicode.cpp      |                      |
-                            ------> fonts.h  <------
-                                       |
-                                       v
-                                     page.h
-                                       |
-                                       v
-                                   tokenizer.h
-                                       |
-                                       v
-                                 GraphicsState.h
+ ,------------------------------  utilities.h
+ |                              {utilities.cpp}
+ |                                     |
+ |                                     v
+ |                        ,------ dictionary.h ------,
+ |                        |     {dictionary.cpp}     |
+ |                        |            |             |
+ |                        v            |             v
+ |      miniz.h ---->  streams.h       |          crypto.h
+ |    {miniz.cpp}    {streams.cpp}     |        {crypto.cpp}
+ |    **external*         |            |             |
+ |                        |            v             |
+ |                        '--------> xref.h <--------'
+ |                                 {xref.cpp}
+ |                                     |
+ |                                     v
+ |                               object_class.h
+ |                              {object_class.cpp}
+ |                                     |
+ |                                     v
+ |                          ,----  document.h  ----,
+ |                          |    {document.cpp}    |
+ |                          |                      |
+ |                          v                      v
+ |                      encoding.h          glyphwidths.h
+ |                    {encoding.cpp}      {glyphwidths.cpp}
+ |                  {chartounicode.cpp}    {corefonts.cpp}
+ |                  {adobetounicode.cpp}           |
+ |                          |                      |
+ |                          '-----> fonts.h  <-----'
+ |                                {fonts.cpp}
+ |                                     |
+ |                                     v
+ |                                   page.h
+ |                                 {page.cpp}
+ |                                     |
+ |                                     v
+ '---> tokenizer.h ----------->  GraphicsState.h
+                               {GraphicsState.cpp}
                                        |
                                        v
                                      pdfr.h
-                                       |
-                                       v
-                                  RcppExports
-                            (exports interface to R)
+                                   {pdfr.cpp}
+
 
