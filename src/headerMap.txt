@@ -28,17 +28,17 @@ have their implementation split across compilation units
  |                                     |
  |                                     v
  |                               object_class.h
- |                              {object_class.cpp}
+ |                             {object_class.cpp}
  |                                     |
  |                                     v
  |                          ,----  document.h  ----,
  |                          |    {document.cpp}    |
  |                          |                      |
  |                          v                      v
- |                      encoding.h          glyphwidths.h
- |                    {encoding.cpp}      {glyphwidths.cpp}
- |                  {chartounicode.cpp}    {corefonts.cpp}
- |                  {adobetounicode.cpp}           |
+ |                      encoding.h           glyphwidths.h
+ |                    {encoding.cpp}       {glyphwidths.cpp}
+ |                 {charstounicode.cpp}     {corefonts.cpp}
+ |                 {adobetounicode.cpp}            |
  |                          |                      |
  |                          '-----> fonts.h  <-----'
  |                                {fonts.cpp}

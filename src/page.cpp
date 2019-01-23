@@ -79,7 +79,7 @@ void page::getResources()
 {
   if (!header.hasDictionary("/Resources"))
   {
-    resourceobjs = header.getRefs("/Resources");
+    vector<int> resourceobjs = header.getRefs("/Resources");
     for (auto q : resourceobjs)
       resources = d->getobject(q)->getDict();
   }

@@ -25,29 +25,73 @@
 //                                                                           //
 //---------------------------------------------------------------------------//
 
-
 #ifndef PDFR_PAGE
+
+//---------------------------------------------------------------------------//
+
 #define PDFR_PAGE
 
+/* This is the eighth in a sequence of daisy-chained headers that build up the
+ * tools needed to read and parse the text content of pdfs. It comes after
+ * font.h in the sequence and is the last step of constructing the logical
+ * structure of pdf files.
+ *
+ * Each page object represents a page in the pdf document, taking as its
+ * construction parameters just a document pointer and a page number.
+ *
+ * The page object acts as a container and organiser of the data required to
+ * build a representation of the page. This includes the page dimensions,
+ * the font objects used on the page, any xobjects, and the contents of the
+ * page (as a page description program).
+ *
+ * The document and pagenumber are used to find the appropriate page header
+ * dictionary. This gives the page dimensions, contents and resources (such
+ * as fonts and xobjects). These items are pulled in from the relevant
+ * pdf objects and processed to get the data members.
+ *
+ * The public interface needs to be able to extract data from the page as
+ * required, and in particular the Tokenizer and GraphicsState classes need to
+ * access the contents and fonts, respectively.
+ */
+
 #include "font.h"
+
+//---------------------------------------------------------------------------//
 
 class page
 {
 public:
+
+  // constructor function
   page(document* pdfdoc, int pagenum);
-  document* d;
-  int pagenumber, objectnumber, parent;
-  dictionary header, resources, fonts, realfonts;
-  std::string contentstring, xobjstring;
+
+  // public data members
+  std::string contentstring;
   std::unordered_map<std::string, std::string> XObjects;
-  std::vector<int> resourceobjs, contents;
-  std::vector<float> bleedbox, cropbox, mediabox, trimbox, artbox, minbox;
-  double rotate;
+  std::vector<int> contents;
+  std::vector<float> minbox;
   std::vector<std::string> fontnames;
-  std::vector<dictionary> UnicodeMaps, fontrefs;
   std::unordered_map<std::string, font> fontmap;
 
 private:
+
+  // private data members
+
+  document*           d;
+  int                 pagenumber;
+  dictionary          header,
+                      resources,
+                      fonts;
+  std::vector<float>  bleedbox,
+                      cropbox,
+                      mediabox,
+                      trimbox,
+                      artbox;
+  std::string         xobjstring;
+  double              rotate;
+
+  // private methods
+
   void parseXObjStream();
   void boxes();
   void getHeader();
@@ -55,6 +99,9 @@ private:
   void getFonts();
   void getContents();
   std::vector<int> expandContents(std::vector<int> objnums);
+
 };
+
+//---------------------------------------------------------------------------//
 
 #endif
