@@ -31,14 +31,17 @@ using namespace std;
 using namespace Token;
 
 /*---------------------------------------------------------------------------*/
+// constructor of tokenizer - initializes members and starts main
+// lexer function
 
 tokenizer::tokenizer(string& input) : i(0), s(input),  state(NEWSYMBOL)
 {
-  s.push_back(' ');
-  tokenize();
+  s.push_back(' '); // easier to do this than handle full buffer at EOF
+  tokenize();       // instigate lexer
 }
 
 /*---------------------------------------------------------------------------*/
+// Simple getter which returns main private data member
 
 vector<pair<string, TState>> tokenizer::result()
 {
@@ -46,22 +49,30 @@ vector<pair<string, TState>> tokenizer::result()
 }
 
 /*---------------------------------------------------------------------------*/
+// This pattern, of switching state, creating a token / type pair, pushing it
+// to the instruction set, and clearing the buffer is very common in the
+// lexer. This function acts as a shorthand to prevent boilerplate
 
 void tokenizer::pushbuf(TState type, TState statename)
 {
-  state = statename;
-  output.push_back(make_pair(buf, type));
-  buf.clear();
+  state = statename; // switch state
+  output.push_back(make_pair(buf, type)); // make pair and push to result
+  buf.clear(); // clear buffer
 }
 
 /*---------------------------------------------------------------------------*/
+// This function co-ordinates the lexer by calling a subroutine depending on
+// the state. Each subroutine handles specific characters in a different but
+// well-specified way
 
 void tokenizer::tokenize()
 {
-  while(i < s.length())
+  while(i < s.length()) // ensure the iterator doesn't exceed string length
   {
     switch(state)
     {
+      // Each state has its own handler subroutine - self explanatory
+
       case NEWSYMBOL:   newsymbolState();         break;
       case RESOURCE:    resourceState();          break;
       case IDENTIFIER:  identifierState();        break;
@@ -73,16 +84,17 @@ void tokenizer::tokenize()
       case WAIT:        waitState();              break;
       case OPERATOR:                              break;
     }
-    ++i;
+    ++i; // move to next character in the string
   }
 }
 
 /*---------------------------------------------------------------------------*/
+// Lexer is reading a resource (a /PdfName)
 
 void tokenizer::resourceState()
 {
-  char m = s[i];
-  char n = symbol_type(m);
+  char m = s[i];            // simplifies code
+  char n = symbol_type(m);  // get symbol_type of current char
   switch(n)
   {
     case 'L':   buf += m;                         break;
@@ -100,11 +112,12 @@ void tokenizer::resourceState()
 }
 
 /*---------------------------------------------------------------------------*/
+// Lexer is receptive for next token
 
 void tokenizer::newsymbolState()
 {
-  char m = s[i];
-  char n = symbol_type(m);
+  char m = s[i];            // simplifies code
+  char n = symbol_type(m);  // get symbol_type of current char
   switch(n)
   {
     case 'L':   buf += m;    state = IDENTIFIER;  break;
@@ -123,16 +136,17 @@ void tokenizer::newsymbolState()
 }
 
 /*---------------------------------------------------------------------------*/
+// Lexer is reading an identifier (instruction or keyword)
 
 void tokenizer::identifierState()
 {
-  char m = s[i];
-  char n = symbol_type(m);
+  char m = s[i];            // simplifies code
+  char n = symbol_type(m);  // get symbol_type of current char
   switch(n)
   {
     case '/':   pushbuf(IDENTIFIER, RESOURCE);
                 buf = "/";                        break;
-    case ' ':   if (buf == "BI") state = WAIT;    else
+    case ' ':   if (buf == "BI") state = WAIT;    else // BI == inline image
                 pushbuf(IDENTIFIER, NEWSYMBOL);   break;
     case '[':   pushbuf(IDENTIFIER, ARRAY);       break;
     case '(':   pushbuf(IDENTIFIER, STRING);      break;
@@ -147,11 +161,12 @@ void tokenizer::identifierState()
 }
 
 /*---------------------------------------------------------------------------*/
+// lexer is reading a number
 
 void tokenizer::numberState()
 {
-  char m = s[i];
-  char n = symbol_type(m);
+  char m = s[i];            // simplifies code
+  char n = symbol_type(m);  // get symbol_type of current char
   switch(n)
   {
     case 'L':   buf += m;                         break;
@@ -172,11 +187,12 @@ void tokenizer::numberState()
 }
 
 /*---------------------------------------------------------------------------*/
+// lexer is reading a (bracketed) string
 
 void tokenizer::stringState()
 {
-  char m = s[i];
-  char n = symbol_type(m);
+  char m = s[i];            // simplifies code
+  char n = symbol_type(m);  // get symbol_type of current char
   switch(n)
   {
     case ')':   pushbuf(STRING, NEWSYMBOL);       break;
@@ -186,14 +202,15 @@ void tokenizer::stringState()
 }
 
 /*---------------------------------------------------------------------------*/
+// lexer is in an array
 
 void tokenizer::arrayState()
 {
-  char m = s[i];
-  char n = symbol_type(m);
+  char m = s[i];            // simplifies code
+  char n = symbol_type(m);  // get symbol_type of current char
   switch(n)
   {
-    case ']':   subtokenizer(buf);
+    case ']':   subtokenizer(buf); // at end of array, tokenize its contents
                 state = NEWSYMBOL; buf = "";      break;
     case '\\':  buf += s[i++]; buf += s[i];       break;
     default:    buf += m;                         break;
@@ -201,11 +218,12 @@ void tokenizer::arrayState()
 }
 
 /*---------------------------------------------------------------------------*/
+// lexer is reading a hexstring of format <11FA>
 
 void tokenizer::hexstringState()
 {
-  char m = s[i];
-  char n = symbol_type(m);
+  char m = s[i];            // simplifies code
+  char n = symbol_type(m);  // get symbol_type of current char
   switch(n)
   {
     case '>':   if (!buf.empty())
@@ -218,11 +236,13 @@ void tokenizer::hexstringState()
 }
 
 /*---------------------------------------------------------------------------*/
+// lexer is reading a dictionary and will keep writing until it comes across
+// a pair of closing angle brackets
 
 void tokenizer::dictState()
 {
-  char m = s[i];
-  char n = symbol_type(m);
+  char m = s[i];            // simplifies code
+  char n = symbol_type(m);  // get symbol_type of current char
   switch(n)
   {
     case '\\':  buf += m + s[++i];                break;
@@ -232,46 +252,52 @@ void tokenizer::dictState()
 }
 
 /*---------------------------------------------------------------------------*/
+// lexer has come across a backslash which indicates an escape character
 
 void tokenizer::escapeState()
 {
-  char n = symbol_type(s[++i]);
-  if (n == 'D')
+  char n = symbol_type(s[++i]); // read the next char
+  if (n == 'D')                 // if it's a digit it's likely an octal
   {
     int octcount = 0;
     pushbuf(STRING, STRING);
-    while(n == 'D' && octcount < 3)
+    while(n == 'D' && octcount < 3) // add consecutive chars to octal (up to 3)
     {
       buf += s[i++];
       octcount++;
       n = symbol_type(s[i]);
     }
-    int newint = stoi(buf, nullptr, 8);
+    int newint = stoi(buf, nullptr, 8); // convert octal string to int
     buf = intToHexstring(newint);
     pushbuf(HEXSTRING, STRING);
-    i--;
+    i--;                                // decrement to await next char
   }
   else
-    buf += s[i];
+    buf += s[i];                  // if not a digit, get escaped char
 }
 
 /*---------------------------------------------------------------------------*/
+// The lexer has reached an inline image, which indicates it should ignore the
+// string until it reaches the keyword "EI" at the end of the image
 
 void tokenizer::waitState()
 {
+  // the lexer
   buf =  s[i] + s[i + 1];
   buf += symbol_type(s[i + 2]);
-  if(buf == "EI ")
+  if(buf == "EI ") // look for EI with any whitespace char following
   {
     buf.clear();
-    state = NEWSYMBOL;
+    state = NEWSYMBOL; // only break out of wait state by finding EI (or EOF)
   }
 }
 
 /*---------------------------------------------------------------------------*/
+// when tokenizer is called recursively on an array within the string, we
+// want its instructions to be added to the same stack as the parent string
 
 void tokenizer::subtokenizer(string &str)
 {
   state = NEWSYMBOL;
-  concat(output, tokenizer(str).result());
+  concat(output, tokenizer(str).result()); // concatenates results + subresults
 }
