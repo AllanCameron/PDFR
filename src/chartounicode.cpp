@@ -35,7 +35,7 @@
  *
  * There are actually two base encodings which are not defined here -
  * standardEncoding, which for these purposes is just defined as a straight
- * widechar to Unicode mapping, and /identity-H. The latter means that the
+ * RawChar to Unicode mapping, and /identity-H. The latter means that the
  * encoding is described in a seperate CMap stream. This requires special
  * consideration and is dealt with elsewhere in the Encoding class.
  *

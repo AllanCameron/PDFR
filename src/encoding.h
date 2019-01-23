@@ -31,10 +31,10 @@
 
 #define PDFR_ENCODING
 
-/* This is the 6th in a series of daisy - chained headers that build up the
- * tools to read and parse pdfs. In fact, it is paired with glyphwidths.h
- * in that they both come logically after document.h and together form the
- * basis for the next step, which is font creation.
+/* This is the 6th in a series of daisy-chained headers that build up the
+ * tools to read and parse pdfs. It is logically paired with glyphwidths.h
+ * in that they both come after document.h and together form the basis for the
+ * next step, which is font creation.
  *
  * The reason that font creation comes before page creation is that pages
  * include a list of their fonts in the page description header, and the
@@ -42,13 +42,13 @@
  *
  * There are three main parts of font creation pertinent to the task of text
  * extraction: identifying the font's name, working out the width of the glyphs,
- * and working out the correspondence between code points in a pdf string and
- * the intended Unicode code points. The latter of these tasks is called
- * encoding, and is fairly complex.
+ * and working out the correspondence between the characters in a pdf string and
+ * the intended glyphs as Unicode code points. The latter of these tasks is
+ * called encoding, and is fairly complex.
  *
  * The complexity arises because there are several different methods for
- * encoding fonts in pdf. A base encoding scheme can be declared, such as
- * WinAnsi Encoding or MacRoman Encoding. These encodings are stored as static
+ * encoding fonts in pdf. First, a base encoding scheme can be declared, such as
+ * WinAnsiEncoding or MacRomanEncoding. These encodings are stored as static
  * private data members of the class in the form of an unordered_map, though
  * they are defined in the chartounicode.cpp file rather than encoding.cpp to
  * improve code readability.
@@ -57,24 +57,29 @@
  * be modified, for example to include Unicode characters that are not
  * available in the base encoding's character set (a common example is the
  * glyph for the ligatures ff, fi or fl). This is done using an explicit
- * mapping of input code points to standard glyph names. That means the
- * program needs to know all these glyph names and how to convert them to
- * Unicode. This is a very large mapping, and again is declared here as a
- * static member and defined in a seperate source file (adobetounicode.h)
+ * mapping of input characters ("code points") to standard glyph names. That
+ * means the program needs to know all these glyph names and how to convert
+ * them to Unicode. This is a very large mapping, and again is declared here as
+ * a static member but defined in a seperate source file (adobetounicode.h)
  *
  * The encoding may instead be specified in a CMap, which is a type of
- * mapping table that usually appears in a compressed stream.
+ * raw char to Unicode mapping table that usually appears in a (compressed)
+ * pdf object stream.
  *
- * The idea behind the encoding class is to use whichever method is required to
+ * The idea behind the encoding class is to use these methods as required to
  * produce a mapping for each font so that each code point encountered has a
- * Unicode interpretation. It keeps the implementation private and returns
- * only its main data member - an unordered map of input characters (represented
- * as 2-byte unsigned integers or uint16_t) to Unicode characters (also
- * represented as uint16_t).
+ * Unicode interpretation. It keeps the implementation private and its interface
+ * is limited to querying its main data member - an unordered map of input
+ * characters (represented as 2-byte unsigned integers or uint16_t) to Unicode
+ * characters (also represented as uint16_t). Since in most cases the input
+ * characters are given as single bytes, these have to be recast as two-byte
+ * uints for consistency to handle the odd cases when two-byte characters are
+ * supplied in the strings (as is the case with "hexstrings" or ascii-encoded
+ * multi-byte character strings).
  *
  * To make the code clearer, both RawChar and Unicode are typedef'd as synonyms
- * of uint16_t so we know at any time whether we are referring to input
- * characters or output characters.
+ * of uint16_t so we know at any time whether we are referring to input ("raw")
+ * code points or output (Unicode) characters.
  */
 
 #include "document.h"

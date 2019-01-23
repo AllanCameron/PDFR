@@ -30,7 +30,7 @@
 /* This file defines characteristics of the 14 core or built-in pdf fonts as
  * described in the comments of corefonts.h. These are necessary for backwards-
  * compatability with earlier versions of the pdf standard which did not
- * mandate specifying all character widths.
+ * mandate specifying all character widths in a pdf file.
  *
  * The following data by their nature are not really human-readable and can
  * only be checked by testing their output
@@ -38,7 +38,7 @@
 
 //---------------------------------------------------------------------------//
 // The pdf font files include a 4-point vector for each font defining a
-// bouding-box in text space. At present bounding boxes are not used in the
+// bounding-box in text space. At present bounding boxes are not used in the
 // program. However, the vectors are included here in case they are required
 // for future feature development. The names are self-explanatory
 
@@ -64,7 +64,7 @@ static std::vector<float> dingbatsbox             = {-1,   -143, 981,   820};
 // points are not all contiguous so a simple loop would require further coding
 // to make it an accurate and memory-minimal map. I thought it simplest to just
 // define the whole map for Courier and copy that map to the Courier variants
-// which are all also of the same width and have the same code points.
+// which are all also of the same width and map the same code points.
 
 std::unordered_map<Unicode, int> glyphwidths::courierwidths =
 {
@@ -125,8 +125,8 @@ std::unordered_map<Unicode, int> glyphwidths::courierobliquewidths =
 // by character (this was obviously automated and the numbers lifted directly
 // from the font description files then translated to 0xffff format)
 //
-// The data themselves are not really human-readable, so any problems found
-// will be done by testing the output.
+// The data themselves are not really human-readable, so any problems will only
+// be found by testing the output.
 
 std::unordered_map<Unicode, int> glyphwidths::helveticawidths =
 {

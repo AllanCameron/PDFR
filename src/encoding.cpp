@@ -31,10 +31,10 @@ using namespace std;
 
 /*---------------------------------------------------------------------------*/
 // Lexer / parser for Differences entry of encoding dictionary. Takes the
-// entry as a string and reads ints as input code points. These are mapped to
-// the subsequent glyph name's Unicode value. If more than one name follows an
-// int, then sequential code points are mapped to each successive name's
-// Unicode value
+// /Differences entry as a string and reads its ints as input code points. These
+// are mapped to the subsequent glyph name's Unicode value. If more than one
+// name follows an int, then sequential code points are mapped to each
+// successive name's Unicode value. This requires the static adobetounicode map.
 
 void Encoding::Differences(const string& enc)
 {
@@ -92,12 +92,17 @@ void Encoding::Differences(const string& enc)
     }
     if(state == STOP) break;
   }
+
   RawChar k = 0; // k represents the code point to be mapped to Unicode
+
   // This loop writes the results vector to EncodingMap
   for(auto i : entries)
     if(i.first == NUM)  // If the vector entry is a number, convert to RawChar
       k = (RawChar) stoi(i.second);
-    else // otherwise it's a name - write to EncodingMap and post-increment k
+    else
+    // otherwise it's a name - convert it to Unicode, write it to the
+    // EncodingMap and post-increment the mapping rawchar in case the next
+    // entry is also a name (it will be over-written if it is an int)
       EncodingMap[k++] = Encoding::AdobeToUnicode[i.second];
 }
 
@@ -109,18 +114,19 @@ void Encoding::mapUnicode(dictionary& fontref, document* d)
 {
   if (!fontref.hasRefs("/ToUnicode")) return; // no entry, nothing to be done
   int unirefint = fontref.getRefs("/ToUnicode")[0]; // else get reference
-  string x = d->getobject(unirefint)->getStream(); // stream from reference
+  string x = d->getobject(unirefint)->getStream(); // get stream from reference
 
-  // multicarve gets all strings between the bookending strings
+  // multicarve gets all strings between the bookending strings. These are
+  // stored in a vector and are substrates for the processing methods below
   vector<string> Char =  multicarve(x, "beginbfchar", "endbfchar");
   vector<string> Range = multicarve(x, "beginbfrange", "endbfrange");
 
-  if (Char.size() > 0)  processUnicodeChars(Char); // if chars, process
-  if (Range.size() > 0) processUnicodeRange(Range); // if ranges, procexs
+  if (Char.size() > 0)  processUnicodeChars(Char); // if chars, processChar
+  if (Range.size() > 0) processUnicodeRange(Range); // if ranges, processRange
 }
 
 /*---------------------------------------------------------------------------*/
-// This function parses the "bfchar" entries in the CMap and adds them to the
+// This method parses the "bfchar" entries in the CMap and adds them to the
 // encoding map
 
 void Encoding::processUnicodeChars(vector<string>& Char)
@@ -134,7 +140,7 @@ void Encoding::processUnicodeChars(vector<string>& Char)
     // This loop takes the ascii-encoded bytes in the first column and
     // converts them to rawchar. It stores this number as 'key', then
     // converts the ascii-encoded bytes in the second column, converts them
-    // to Unicode and makes them the value for 'key' in the encoding map
+    // to Unicode and makes them the raw key's mapped value in the encoding map
     for(size_t i = 0; i < allentries.size(); i++)
     {
       if(i % 2 == 0) // even index == first column
@@ -218,15 +224,15 @@ void Encoding::getEncoding(dictionary& fontref, document* d)
 
   if( encname == "/WinAnsiEncoding")            //---------------------------//
     EncodingMap = Encoding::winAnsiEncodingToUnicode; //
-  else if(encname == "/MacRomanEncoding")             // fill encoding map with
+  else if(encname == "/MacRomanEncoding")             // Fill encoding map with
     EncodingMap = Encoding::macRomanEncodingToUnicode;// the appropriate base
-  else if(encname == "/PDFDocEncoding")               // encoding. If none
+  else if(encname == "/PDFDocEncoding")               // encoding. If none is
     EncodingMap = Encoding::pdfDocEncodingToUnicode;  // specified, fill map
   else                                                // with 1:1 Raw : Unicode
     for(RawChar i = 0; i < 256; i++)                  //
       EncodingMap[i] = (Unicode) i;             //---------------------------//
 
-  // call Differences() if entry found to modify base encoding
+  // call Differences() if a /Differences entry is found to modify base encoding
   if(encref.has("/Differences"))
   {
     BaseEncoding = encref.get("/Differences");
@@ -238,7 +244,7 @@ void Encoding::getEncoding(dictionary& fontref, document* d)
 // The constructor function needs to do three things - get the encoding
 // dictionary, get the base encoding, parse any /Differences entry, and parse
 // any /ToUnicode entry. The first three are co-ordinated by getEncoding()
-// and the last is co-ordinated by mapUnicode
+// and the last is co-ordinated by mapUnicode()
 
 Encoding::Encoding(const dictionary& fontdict, document* doc):
   fontref(fontdict), d(doc)
@@ -254,10 +260,10 @@ Encoding::Encoding(const dictionary& fontdict, document* doc):
 
 Unicode Encoding::Interpret(RawChar raw)
 {
-  if(EncodingMap.find(raw) != EncodingMap.end())
-    return EncodingMap[raw];
+  if(EncodingMap.find(raw) != EncodingMap.end()) // non-inserting lookup
+    return EncodingMap[raw];  // found entry
   else
-    return raw;
+    return raw;               // no entry - have your char back untranslated
 }
 
 /*---------------------------------------------------------------------------*/
@@ -266,5 +272,5 @@ Unicode Encoding::Interpret(RawChar raw)
 
 vector<RawChar> Encoding::encKeys()
 {
-  return getKeys(this->EncodingMap);
+  return getKeys(this->EncodingMap); // getKeys is a template function in utils
 }

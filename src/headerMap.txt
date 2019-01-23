@@ -1,0 +1,45 @@
+An overview of the structure of the program, showing the chain of #includes and
+the logical order in which to read and understand the files here. An arrow means
+the pointed from file is #included by the pointed to file.
+
+
+                               (  debugtools.h ) - optional
+                                       |
+                                       v
+                                  utilities.h
+                                       |
+                                       v
+                          ------- dictionary.h -------
+                          |            |             |
+                          v            |             v
+   miniz.h (ext) --->  streams.h       |          crypto.h
+                          |            v             |
+                          ---------> xref.h <--------
+                                       |
+                                       v
+                                 object_class.h
+                                       |
+                                       v
+                            -----  document.h  -----
+                            |                      |
+     adobetounicode.cpp     v                      v
+               | ------> encoding.h          glyphwidths.h <--- corefonts.cpp
+     chartounicode.cpp      |                      |
+                            ------> fonts.h  <------
+                                       |
+                                       v
+                                     page.h
+                                       |
+                                       v
+                                   tokenizer.h
+                                       |
+                                       v
+                                 GraphicsState.h
+                                       |
+                                       v
+                                     pdfr.h
+                                       |
+                                       v
+                                  RcppExports
+                            (exports interface to R)
+

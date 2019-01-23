@@ -46,7 +46,7 @@
  * It uses strings as keys rather than enums because the names to be
  * interpreted are extracted as strings from the pdf and can be read off
  * directly. Any saving in memory of switching to enum would therefore be
- * at the cose of processing time for the translation step from string to enum.
+ * at the cost of processing time for the translation step from string to enum.
  */
 
 std::unordered_map<std::string, Unicode> Encoding::AdobeToUnicode =
