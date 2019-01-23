@@ -119,7 +119,7 @@ private:
   // private member functions
 
   // uses lexer to parse /Differences entry
-  void Differences(const std::string&, std::unordered_map<RawChar, Unicode>&);
+  void Differences(const std::string&);
 
   // finds encoding dictionary, gets /basencoding and /Differences entries
   void getEncoding(dictionary&, document*);
