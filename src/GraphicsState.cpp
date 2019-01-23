@@ -251,7 +251,7 @@ void GraphicsState::processRawChar(vector<RawChar>& raw, float& scale,
     widths.emplace_back(scale * stw/1000 * Th/100);
     stringres.emplace_back(j.first);
     fontsize.emplace_back(scale);
-    fontname.emplace_back(wfont->FontName);
+    fontname.emplace_back(wfont->fontname());
   }
 }
 

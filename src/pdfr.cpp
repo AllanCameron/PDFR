@@ -58,12 +58,12 @@ Rcpp::DataFrame getglyphmap(const std::string& s, int pagenum)
   std::vector<std::string> FontName;
   std::vector<uint16_t> codepoint, unicode, width;
   for(auto i : p.fontnames)
-    for(auto b : getKeys(p.fontmap[i].glyphmap))
+    for(auto b : p.fontmap[i].getGlyphKeys())
     {
       FontName.push_back(i);
       codepoint.push_back(b);
-      unicode.push_back(p.fontmap[i].glyphmap[b].first);
-      width.push_back(p.fontmap[i].glyphmap[b].second);
+      unicode.push_back(p.fontmap[i].mapRawChar({b}).at(0).first);
+      width.push_back(p.fontmap[i].mapRawChar({b}).at(0).second);
     }
   return Rcpp::DataFrame::create(Rcpp::Named("Font") = FontName,
                           Rcpp::Named("Codepoint") = codepoint,

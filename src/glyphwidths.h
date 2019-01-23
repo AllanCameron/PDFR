@@ -102,6 +102,7 @@ private:
   dictionary fontref;                             // the font dictionary
   document* d;                                    // pointer to document
   std::string basefont;                           // the base font (if any)
+  bool widthFromCharCodes;                        // are widths for code points?
   void parsewidtharray(std::string);              // lexer
   void getCoreFont();                             // corefont getter
   void parseDescendants();                        // read descendant dictionary
@@ -131,8 +132,7 @@ public:
   glyphwidths(dictionary& dic, document* doc); // Creator
   int getwidth(RawChar);                       // Main data lookup
   std::vector<RawChar> widthKeys();            // Returns all map keys
-  bool widthFromCharCodes;        // Are code points used in width description
-                                  // pre or post conversion to Unicode?
+  bool widthsAreForRaw();                      // returns widthfromcharcodes
 };
 
 //---------------------------------------------------------------------------//

@@ -296,4 +296,12 @@ void glyphwidths::parsewidtharray(string s)
           Width[(RawChar) resultint[i] + j] = (int) resultvec[i][j];
 }
 
+/*---------------------------------------------------------------------------*/
+// The font class needs to know whether to build the glyphmap based on RawChar
+// code points or Unicode code points. If the following returns true, the map
+// should be built using the raw character values
 
+bool glyphwidths::widthsAreForRaw()
+{
+  return widthFromCharCodes;
+}
