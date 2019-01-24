@@ -41,7 +41,7 @@ void createpdf(const std::string& filename)
 
 //---------------------------------------------------------------------------//
 
-std::string getpagestring(page p){return p.contentstring;}
+std::string getpagestring(page p){return p.pageContents();}
 
 //---------------------------------------------------------------------------//
 
@@ -57,7 +57,7 @@ Rcpp::DataFrame getglyphmap(const std::string& s, int pagenum)
   page p = page(&d, pagenum);
   std::vector<std::string> FontName;
   std::vector<uint16_t> codepoint, unicode, width;
-  for(auto i : p.fontnames)
+  for(auto i : p.getFontNames())
     for(auto b : p.fontmap[i].getGlyphKeys())
     {
       FontName.push_back(i);
@@ -76,8 +76,8 @@ Rcpp::DataFrame getglyphmap(const std::string& s, int pagenum)
 Rcpp::List PDFpage(document mypdf, page pg)
 {
   return Rcpp::List::create(
-    Rcpp::Named("Box")        =  pg.minbox,
-    Rcpp::Named("PageString") =  pg.contentstring,
+    Rcpp::Named("Box")        =  pg.getminbox(),
+    Rcpp::Named("PageString") =  pg.pageContents(),
     Rcpp::Named("Elements")   =  GraphicsState(&pg).db
   );
 }

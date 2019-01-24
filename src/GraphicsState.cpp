@@ -33,7 +33,7 @@ using namespace Token;
 GraphicsState::GraphicsState(page* pag) : p(pag),
   PRstate(0), Tl(1), Tw(0), Th(100), Tc(0), currfontsize(0), currentfont("")
 {
-  Instructions  = tokenizer(p->contentstring).result();
+  Instructions  = tokenizer(p->pageContents()).result();
   initstate = {1,0,0,0,1,0,0,0,1};
   fontstack.emplace_back(currentfont);
   Tmstate = Tdstate = initstate;

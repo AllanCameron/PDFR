@@ -34,7 +34,7 @@ using namespace Token;
 // constructor of tokenizer - initializes members and starts main
 // lexer function
 
-tokenizer::tokenizer(string& input) : i(0), s(input),  state(NEWSYMBOL)
+tokenizer::tokenizer(const string& input) : i(0), s(input),  state(NEWSYMBOL)
 {
   s.push_back(' '); // easier to do this than handle full buffer at EOF
   tokenize();       // instigate lexer
@@ -296,7 +296,7 @@ void tokenizer::waitState()
 // when tokenizer is called recursively on an array within the string, we
 // want its instructions to be added to the same stack as the parent string
 
-void tokenizer::subtokenizer(string &str)
+void tokenizer::subtokenizer(const string &str)
 {
   state = NEWSYMBOL;
   concat(output, tokenizer(str).result()); // concatenates results + subresults

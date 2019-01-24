@@ -65,13 +65,15 @@ public:
   // constructor function
   page(document* pdfdoc, int pagenum);
 
+  // public methods
+  std::vector<std::string> getFontNames();
+  std::string pageContents();
+  std::vector<float> getminbox();
+
   // public data members
-  std::string contentstring;
   std::unordered_map<std::string, std::string> XObjects;
-  std::vector<int> contents;
-  std::vector<float> minbox;
-  std::vector<std::string> fontnames;
   std::unordered_map<std::string, font> fontmap;
+
 
 private:
 
@@ -86,8 +88,10 @@ private:
                       cropbox,
                       mediabox,
                       trimbox,
-                      artbox;
-  std::string         xobjstring;
+                      artbox,
+                      minbox;
+  std::string         xobjstring,
+                      contentstring;
   double              rotate;
 
   // private methods

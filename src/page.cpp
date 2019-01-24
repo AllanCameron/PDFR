@@ -105,8 +105,7 @@ void page::getFonts()
     string fontdict = resources.get("/Font");
     fonts = dictionary(&fontdict);
   }
-  fontnames = fonts.getDictKeys();
-  for(auto h : fontnames)
+  for(auto h : getFontNames())
     for(auto hh : fonts.getRefs(h))
       fontmap[h] = font(d, d->getobject(hh)->getDict(), h);
 }
@@ -118,7 +117,7 @@ void page::getContents()
   std::vector<int> cts = header.getRefs("/Contents");
   if (!cts.empty())
   {
-    contents = expandContents(cts);
+    vector<int> contents = expandContents(cts);
     for (auto m : contents)
       contentstring += d->getobject(m)->getStream() + std::string("\n");
   }
@@ -176,4 +175,25 @@ page::page(document* doc, int pagenum) : d(doc), pagenumber(pagenum), rotate(0)
   getFonts();
   getContents();
   boxes();
+}
+
+/*--------------------------------------------------------------------------*/
+
+vector<string> page::getFontNames()
+{
+  return this->fonts.getDictKeys();
+}
+
+/*--------------------------------------------------------------------------*/
+
+string page::pageContents()
+{
+  return this->contentstring;
+}
+
+/*--------------------------------------------------------------------------*/
+
+vector<float> page::getminbox()
+{
+  return this->minbox;
 }

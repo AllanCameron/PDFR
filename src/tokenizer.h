@@ -91,7 +91,7 @@ class tokenizer
 public:
 
   // constructor
-  tokenizer(std::string& s);
+  tokenizer(const std::string& s);
 
   // get results from tokenizer
   std::vector<std::pair<std::string, Token::TState>> result();
@@ -111,7 +111,7 @@ private:
 
   // private methods
   void tokenize();                  // chooses state subroutine based on state
-  void subtokenizer(std::string&);  // uses recursion to deal with sub-strings
+  void subtokenizer(const std::string&);  // uses recursion for sub-strings
 
   void pushbuf(Token::TState, Token::TState); // Avoids boilerplate by carrying
                                               // out the common lexer task of
