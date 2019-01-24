@@ -166,45 +166,79 @@ void page::getContents()
 }
 
 /*---------------------------------------------------------------------------*/
+// XObjects are components that can be called from a page description program.
+// Most often, these are images, but they can be of many different types. Some
+// contain textual components and form an integral part of the page. Any
+// xobjects in the resources dictionary therefore needs to be examined for
+// textual components and its uncompressed contents stored for later use
 
 void page::parseXObjStream()
 {
   string xobjstring;
-  if (resources.has("/XObject"))
-    xobjstring = resources.get("/XObject");
-  if(xobjstring.length() > 0)
+
+  // first find any xobject entries in the resource dictionary
+  if (resources.has("/XObject")) xobjstring = resources.get("/XObject");
+
+  // Sanity check - the entry shouldn't be empty
+  if(xobjstring.empty()) return;
+
+  dictionary objdict; // declare xobject dictionary to be filled when found
+
+  // Look to see if the /xobject entry is a dictionary
+  if(xobjstring.find("<<") != string::npos)
   {
-    if(xobjstring.find("<<") != string::npos)
-    {
-      dictionary objdict = dictionary(&xobjstring);
-      std::vector<std::string> dictkeys = objdict.getDictKeys();
-      for(auto i : dictkeys)
-      {
-        std::vector<int> refints = objdict.getRefs(i);
-        if(!refints.empty())
-          XObjects[i] = d->getobject(refints.at(0))->getStream();
-      }
-    }
+    objdict = dictionary(&xobjstring);
+  }
+  else
+  {
+    // If the /XObject string is a reference, follow the reference and get dict
+    std::vector<int> xos = resources.getRefs("/XObject");
+    if (xos.size() == 1)
+      objdict = d->getobject(xos.at(0))->getDict();
+  }
+
+  // Now we can get the dictionary's keys ...
+  std::vector<std::string> dictkeys = objdict.getDictKeys();
+
+  // ...and get the stream contents of all the references pointed to
+  for(auto i : dictkeys)
+  {
+    std::vector<int> refints = objdict.getRefs(i);
+    if(!refints.empty())
+      // map xobject strings to the xobject names
+      XObjects[i] = d->getobject(refints.at(0))->getStream();
   }
 }
 
 /*---------------------------------------------------------------------------*/
+// This is similar to the expandKids() method in document class, in that it
+// starts with a vector of references to objects which act as nodes of a tree
+// structure. Most of the time these point straight to the content object,
+// but it is possible to have nested content trees. In any case we only want
+// the leaves of the content tree, which are found by this algorithm
 
 vector <int> page::expandContents(vector<int> objnums)
 {
-  if(objnums.empty()) return objnums;
+  if(objnums.empty()) return objnums; // no contents - nothing to do!
   size_t i = 0;
-  vector<int> res;
+  vector<int> res; // container for results
   while (i < objnums.size())
   {
     object_class* o = d->getobject(objnums[i]);
     if (o->getDict().hasRefs("/Contents"))
-      concat(objnums, o->getDict().getRefs("/Contents"));
-    else
+    {
+      vector<int> newnodes = o->getDict().getRefs("/Contents"); // store refs
+      objnums.erase(objnums.begin() + i); // delete parent node
+      // write new nodes
+      objnums.insert(objnums.begin() + i, newnodes.begin(), newnodes.end());
+    }
+    else // this is a leaf node - store it and move to next node
+    {
       res.push_back(objnums[i]);
-    i++;
+      i++;
+    }
   }
-  return objnums;
+  return res;
 }
 
 /*--------------------------------------------------------------------------*/
