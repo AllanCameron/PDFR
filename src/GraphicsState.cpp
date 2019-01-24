@@ -30,6 +30,8 @@
 using namespace std;
 using namespace Token;
 
+//---------------------------------------------------------------------------//
+
 GraphicsState::GraphicsState(page* pag) : p(pag),
   PRstate(0), Tl(1), Tw(0), Th(100), Tc(0), currfontsize(0), currentfont("")
 {
@@ -41,17 +43,23 @@ GraphicsState::GraphicsState(page* pag) : p(pag),
   fontsizestack.emplace_back(currfontsize);
   parser(Instructions, "");
   MakeGS();
-  db =  Rcpp::DataFrame::create(
-              Rcpp::Named("text") = text,
-              Rcpp::Named("left") = left,
-              Rcpp::Named("bottom") = bottom,
-              Rcpp::Named("right") = right,
-              Rcpp::Named("font") = fonts,
-              Rcpp::Named("size") = size,
-              Rcpp::Named("width") = width,
-              Rcpp::Named("stringsAsFactors") = false
-              );
 }
+
+//---------------------------------------------------------------------------//
+
+GSoutput GraphicsState::output()
+{
+  GSoutput db;
+  db.text   = this->text;
+  db.left   = this->left;
+  db.bottom = this->bottom;
+  db.right  = this->right;
+  db.fonts  = this->fonts;
+  db.size   = this->size;
+  db.width  = this->width;
+  return db;
+}
+
 
 /*---------------------------------------------------------------------------*/
 
@@ -66,12 +74,12 @@ void GraphicsState::q(vector<string>& Operands)
 
 void GraphicsState::Do(string& a)
 {
-  if (p->XObjects.find(a) != p->XObjects.end())
-    if(IsAscii(p->XObjects[a]))
-    {
-      auto ins = tokenizer(p->XObjects[a]).result();
-      parser(ins, a);
-    }
+  string xo = p->getXobject(a);
+  if(IsAscii(xo))
+  {
+    auto ins = tokenizer(xo).result();
+    parser(ins, a);
+  }
 }
 
 /*---------------------------------------------------------------------------*/
@@ -87,8 +95,7 @@ void GraphicsState::Q(vector<string>& Operands)
     currentfont = fontstack.back();
     currfontsize = fontsizestack.back();
   }
-  if (p->fontmap.find(currentfont) != p->fontmap.end())
-    wfont = &(p->fontmap[currentfont]);
+  wfont = p->getFont(currentfont);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -139,10 +146,7 @@ void GraphicsState::Tf(vector<string>& Operands)
   if(Operands.size() > 1)
   {
     currentfont = Operands[0];
-    if (p->fontmap.find(currentfont) != p->fontmap.end())
-      wfont = &(p->fontmap[currentfont]);
-    else
-      throw runtime_error(string("Couldn't find font") + currentfont);
+    wfont = p->getFont(currentfont);
     currfontsize = stof(Operands[1]);
   }
 }
@@ -305,13 +309,9 @@ void GraphicsState::MakeGS()
   }
   size_t wsize = widths.size();
   for (size_t i = 0; i < wsize; i++)
-  {
     R.emplace_back(widths[i] + xvals[i]);
-    leftmatch.push_back(-1);
-  }
-  rightmatch = leftmatch;
   for (size_t i = 0; i < wsize; i++)
-    if (leftmatch[i] == -1 && stringres[i] != 0x0020)
+    if (stringres[i] != 0x0020)
     {
       text.emplace_back(stringres[i]);
       left.emplace_back(xvals[i]);

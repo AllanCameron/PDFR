@@ -82,6 +82,7 @@ vector<string> multicarve(const string& s, const string& a, const string& b)
 
 bool IsAscii(const string& s)
 {
+  if(s.length() == 0) return false;
   char minchar = *min_element(s.begin(), s.end()); // minimum char in s
   char maxchar = *max_element(s.begin(), s.end()); // maximum char in s
   // if at least one character is outside the ASCII range, return false

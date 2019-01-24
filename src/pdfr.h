@@ -26,8 +26,14 @@
 //---------------------------------------------------------------------------//
 
 #ifndef PDFR_H
+
+//---------------------------------------------------------------------------//
+
 #define PDFR_H
 
+
+
+#include<Rcpp.h>
 #include "GraphicsState.h"
 
 //---------------------------------------------------------------------------//
@@ -35,10 +41,10 @@
 void createpdf(const std::string& filename);
 std::string getpagestring(page p);
 std::string getPageString(const std::string& filename, int pagenum);
+Rcpp::DataFrame GStoR(GSoutput G);
+Rcpp::List PDFpage(document mypdf, page pg, int clump);
 
 //---------------------------------------------------------------------------//
-
-Rcpp::List PDFpage(document mypdf, page pg, int clump);
 
 // [[Rcpp::export(.get_xref)]]
 Rcpp::DataFrame get_xref(const std::string& filename);

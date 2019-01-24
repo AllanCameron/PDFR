@@ -58,13 +58,16 @@ Rcpp::DataFrame getglyphmap(const std::string& s, int pagenum)
   std::vector<std::string> FontName;
   std::vector<uint16_t> codepoint, unicode, width;
   for(auto i : p.getFontNames())
-    for(auto b : p.fontmap[i].getGlyphKeys())
+  {
+    font* loopfont = p.getFont(i);
+    for(auto b : loopfont->getGlyphKeys())
     {
       FontName.push_back(i);
       codepoint.push_back(b);
-      unicode.push_back(p.fontmap[i].mapRawChar({b}).at(0).first);
-      width.push_back(p.fontmap[i].mapRawChar({b}).at(0).second);
+      unicode.push_back(loopfont->mapRawChar({b}).at(0).first);
+      width.push_back(loopfont->mapRawChar({b}).at(0).second);
     }
+  }
   return Rcpp::DataFrame::create(Rcpp::Named("Font") = FontName,
                           Rcpp::Named("Codepoint") = codepoint,
                           Rcpp::Named("Unicode") = unicode,
@@ -78,7 +81,7 @@ Rcpp::List PDFpage(document mypdf, page pg)
   return Rcpp::List::create(
     Rcpp::Named("Box")        =  pg.getminbox(),
     Rcpp::Named("PageString") =  pg.pageContents(),
-    Rcpp::Named("Elements")   =  GraphicsState(&pg).db
+    Rcpp::Named("Elements")   =  GStoR(GraphicsState(&pg).output())
   );
 }
 
@@ -177,4 +180,19 @@ Rcpp::List pdfpageraw(const std::vector<uint8_t>& rawfile, int pagenum)
   document doc = document(rawfile);
   page p = page(&doc, pagenum - 1);
   return PDFpage(doc, p);
+}
+
+//---------------------------------------------------------------------------//
+
+Rcpp::DataFrame GStoR(GSoutput G)
+{
+  return  Rcpp::DataFrame::create(
+          Rcpp::Named("text") = G.text,
+          Rcpp::Named("left") = G.left,
+          Rcpp::Named("bottom") = G.bottom,
+          Rcpp::Named("right") = G.right,
+          Rcpp::Named("font") = G.fonts,
+          Rcpp::Named("size") = G.size,
+          Rcpp::Named("width") = G.width,
+          Rcpp::Named("stringsAsFactors") = false);
 }

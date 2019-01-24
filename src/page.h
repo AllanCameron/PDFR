@@ -49,9 +49,12 @@
  * as fonts and xobjects). These items are pulled in from the relevant
  * pdf objects and processed to get the data members.
  *
- * The public interface needs to be able to extract data from the page as
- * required, and in particular the Tokenizer and GraphicsState classes need to
- * access the contents and fonts, respectively.
+ * The public interface is more substantial with the page class than with other
+ * classes. The reason for this is that some of the data held by the page class
+ * may be useful to the end user rather than just being abstractions accessed
+ * by other classes. Some of the downstream classes will also needs members of
+ * the interface however - the GraphicsState class needs to access the fonts,
+ * page contents and Xobjects for example.
  */
 
 #include "font.h"
@@ -60,48 +63,51 @@
 
 class page
 {
+
 public:
 
   // constructor function
-  page(document* pdfdoc, int pagenum);
+  page(document* a_pointer_to_the_document, int this_is_the_page_number);
 
   // public methods
-  std::vector<std::string> getFontNames();
-  std::string pageContents();
-  std::vector<float> getminbox();
-
-  // public data members
-  std::unordered_map<std::string, std::string> XObjects;
-  std::unordered_map<std::string, font> fontmap;
-
+  std::vector<std::string> getFontNames();  // Returns PostScript font names
+  std::string pageContents(); // Returns page description program as string
+  std::vector<float> getminbox(); // Get co-ordinates of smallest bounding box
+  std::string getXobject(const std::string&); // Return specified XObject string
+  font* getFont(const std::string&);  // Returns a pointer to specified string
 
 private:
 
   // private data members
+  document*           d;              // Pointer to containing document
+  int                 pagenumber;     // [Zero-indexed] page number
+  dictionary          header,         // The page's header dictionary
+                      resources,      // Resource sub-dictionary
+                      fonts;          // Font sub-dictionary
+  std::vector<float>  bleedbox,       //----//
+                      cropbox,              //
+                      mediabox,             //--> Various page bounding boxes
+                      trimbox,              //
+                      artbox,         //----//
+                      minbox;         // The smallest bounding box around text
+  std::string         contentstring;  // The page description program as string
+  double              rotate;         // Intended page rotation in degrees
 
-  document*           d;
-  int                 pagenumber;
-  dictionary          header,
-                      resources,
-                      fonts;
-  std::vector<float>  bleedbox,
-                      cropbox,
-                      mediabox,
-                      trimbox,
-                      artbox,
-                      minbox;
-  std::string         xobjstring,
-                      contentstring;
-  double              rotate;
+  // A map of Xobject strings, which are fragments of page description programs
+  std::unordered_map<std::string, std::string> XObjects;
+
+  // The actual storage container for fonts, mapped to their pdf names
+  std::unordered_map<std::string, font> fontmap;
 
   // private methods
+  void parseXObjStream(); // Write form XObjects to the xobject map
+  void boxes();           // Store bounding boxes and calculate the smallest
+  void getHeader();       // Find the correct page header dictionary in document
+  void getResources();    // Obtain the resource dictionary
+  void getFonts();        // Get font dictionary and build fontmap
+  void getContents();     // find content objects to Write contentstring
 
-  void parseXObjStream();
-  void boxes();
-  void getHeader();
-  void getResources();
-  void getFonts();
-  void getContents();
+  // Gets the leaf nodes of a content tree
   std::vector<int> expandContents(std::vector<int> objnums);
 
 };
