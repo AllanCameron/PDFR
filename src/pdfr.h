@@ -36,13 +36,6 @@
 #include<Rcpp.h>
 #include "GraphicsState.h"
 
-//---------------------------------------------------------------------------//
-
-void createpdf(const std::string& filename);
-std::string getpagestring(page p);
-std::string getPageString(const std::string& filename, int pagenum);
-Rcpp::DataFrame GStoR(GSoutput G);
-Rcpp::List PDFpage(document mypdf, page pg, int clump);
 
 //---------------------------------------------------------------------------//
 
@@ -57,12 +50,6 @@ Rcpp::List get_object(const std::string& filename, int o);
 
 // [[Rcpp::export(.get_objraw)]]
 Rcpp::List get_objectraw(const std::vector<uint8_t>& rawfile, int o);
-
-// [[Rcpp::export(.pdfdoc)]]
-Rcpp::List pdfdoc(const std::string & filepath);
-
-// [[Rcpp::export(.pdfdocraw)]]
-Rcpp::List pdfdocraw(const std::vector<uint8_t>& rawfile);
 
 // [[Rcpp::export(.pdfpage)]]
 Rcpp::List pdfpage(const std::string& filename, int pagenum);

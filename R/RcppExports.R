@@ -17,14 +17,6 @@
     .Call('_PDFR_get_objectraw', PACKAGE = 'PDFR', rawfile, o)
 }
 
-.pdfdoc <- function(filepath) {
-    .Call('_PDFR_pdfdoc', PACKAGE = 'PDFR', filepath)
-}
-
-.pdfdocraw <- function(rawfile) {
-    .Call('_PDFR_pdfdocraw', PACKAGE = 'PDFR', rawfile)
-}
-
 .pdfpage <- function(filename, pagenum) {
     .Call('_PDFR_pdfpage', PACKAGE = 'PDFR', filename, pagenum)
 }

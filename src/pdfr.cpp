@@ -34,23 +34,6 @@
 
 //---------------------------------------------------------------------------//
 
-void createpdf(const std::string& filename)
-{
-  document res = document(filename);
-}
-
-//---------------------------------------------------------------------------//
-
-std::string getpagestring(page p){return p.pageContents();}
-
-//---------------------------------------------------------------------------//
-
-std::string getPageString(const std::string& filename, int pagenum)
-{
-  document d = document(filename);
-  return getpagestring(page(&d, pagenum - 1));
-}
-
 Rcpp::DataFrame getglyphmap(const std::string& s, int pagenum)
 {
   document d = document(s);
@@ -75,22 +58,34 @@ Rcpp::DataFrame getglyphmap(const std::string& s, int pagenum)
 }
 
 //---------------------------------------------------------------------------//
+// This is the function that actually creates the R list containing the
+// necessary components to create a rendition of the page
 
-Rcpp::List PDFpage(document mypdf, page pg)
+Rcpp::List PDFpage(page* pg)
 {
+  GSoutput G = GraphicsState(pg).output();
+  Rcpp::DataFrame db =  Rcpp::DataFrame::create(
+                        Rcpp::Named("text") = G.text,
+                        Rcpp::Named("left") = G.left,
+                        Rcpp::Named("bottom") = G.bottom,
+                        Rcpp::Named("right") = G.right,
+                        Rcpp::Named("font") = G.fonts,
+                        Rcpp::Named("size") = G.size,
+                        Rcpp::Named("width") = G.width,
+                        Rcpp::Named("stringsAsFactors") = false);
+
   return Rcpp::List::create(
-    Rcpp::Named("Box")        =  pg.getminbox(),
-    Rcpp::Named("PageString") =  pg.pageContents(),
-    Rcpp::Named("Elements")   =  GStoR(GraphicsState(&pg).output())
+    Rcpp::Named("Box")        =  pg->getminbox(),
+    Rcpp::Named("PageString") =  pg->pageContents(),
+    Rcpp::Named("Elements")   =  db
   );
 }
 
-/*---------------------------------------------------------------------------*/
+//---------------------------------------------------------------------------//
 
-Rcpp::DataFrame get_xref(const std::string& filename)
+Rcpp::DataFrame xrefcreator(std::string* fs)
 {
-  std::string fs = get_file(filename);
-  xref Xref = xref(&fs);
+  xref Xref = xref(fs);
   std::vector<int> ob, startb, inob;
   if(!Xref.getObjects().empty())
   {
@@ -107,23 +102,20 @@ Rcpp::DataFrame get_xref(const std::string& filename)
                                  Rcpp::Named("InObject") = inob);
 }
 
+/*---------------------------------------------------------------------------*/
+
+Rcpp::DataFrame get_xref(const std::string& filename)
+{
+  std::string fs = get_file(filename);
+  return xrefcreator(&fs);
+}
+
 //---------------------------------------------------------------------------//
 
 Rcpp::DataFrame get_xrefraw(const std::vector<uint8_t>& rawfile)
 {
   std::string fs = bytestostring(rawfile);
-  xref Xref = xref(&fs);
-  std::vector<int> ob, startb, inob;
-  if(!Xref.getObjects().empty())
-    for(int j : Xref.getObjects())
-    {
-      ob.push_back(j);
-      startb.push_back(Xref.getStart(j));
-      inob.push_back(Xref.inObject(j));
-    }
-  return Rcpp::DataFrame::create(Rcpp::Named("Object") = ob,
-                                 Rcpp::Named("StartByte") = startb,
-                                 Rcpp::Named("InObject") = inob);
+  return xrefcreator(&fs);
 }
 
 //---------------------------------------------------------------------------//
@@ -148,29 +140,11 @@ Rcpp::List get_objectraw(const std::vector<uint8_t>& rawfile, int object)
 
 //---------------------------------------------------------------------------//
 
-Rcpp::List pdfdoc(const std::string & filepath)
-{
-  document&& myfile = document(filepath);
-  Rcpp::CharacterVector filename = Rcpp::wrap(filepath);
-  return Rcpp::List::create(Rcpp::Named("file") = filename);
-}
-
-//---------------------------------------------------------------------------//
-
-Rcpp::List pdfdocraw(const std::vector<uint8_t> & rawfile)
-{
-  document&& myfile = document(rawfile);
-  Rcpp::CharacterVector filename = Rcpp::wrap({"From raw data"});
-  return Rcpp::List::create(Rcpp::Named("file") = filename);
-}
-
-//---------------------------------------------------------------------------//
-
 Rcpp::List pdfpage(const std::string& filename, int pagenum)
 {
   document myfile = document(filename);
   page p = page(&myfile, pagenum - 1);
-  return PDFpage(myfile, p);
+  return PDFpage(&p);
 }
 
 //---------------------------------------------------------------------------//
@@ -179,20 +153,6 @@ Rcpp::List pdfpageraw(const std::vector<uint8_t>& rawfile, int pagenum)
 {
   document doc = document(rawfile);
   page p = page(&doc, pagenum - 1);
-  return PDFpage(doc, p);
+  return PDFpage(&p);
 }
 
-//---------------------------------------------------------------------------//
-
-Rcpp::DataFrame GStoR(GSoutput G)
-{
-  return  Rcpp::DataFrame::create(
-          Rcpp::Named("text") = G.text,
-          Rcpp::Named("left") = G.left,
-          Rcpp::Named("bottom") = G.bottom,
-          Rcpp::Named("right") = G.right,
-          Rcpp::Named("font") = G.fonts,
-          Rcpp::Named("size") = G.size,
-          Rcpp::Named("width") = G.width,
-          Rcpp::Named("stringsAsFactors") = false);
-}

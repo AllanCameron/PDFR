@@ -82,13 +82,13 @@
 
 struct GSoutput
 {
-  std::vector<Unicode> text;
-  std::vector<float> left;
-  std::vector<float> bottom;
-  std::vector<float> right;
-  std::vector<std::string> fonts;
-  std::vector<float> size;
-  std::vector<float> width;
+  std::vector<Unicode> text;      // vector of unicode code points
+  std::vector<float> left;        // vector of glyphs' left edges
+  std::vector<float> bottom;      // vector of glyphs' bottom edges
+  std::vector<float> right;       // vector of glyphs' right edges
+  std::vector<std::string> fonts; // vector of glyphs' font names
+  std::vector<float> size;        // vector of glyphs' point size
+  std::vector<float> width;       // vector of glyphs' widths in text space
 };
 
 //---------------------------------------------------------------------------//
@@ -110,26 +110,16 @@ private:
   float                           currfontsize;   // Current font size
   std::vector<float>              initstate,      // Identity 3x3 matrix as vec9
                                   fontsizestack,  // stack of current font size
-                                  xvals,          // x positions of glyphs
-                                  yvals,          // y positions of glyphs
                                   fontsize,       // size of glyph in points
                                   widths,         // width of glyph in textspace
                                   Tmstate,        // Text matrix state
-                                  Tdstate,        // Temp modification to Tm
-                                  R,              // xval @ right edge of glyphs
-                                  left,           // final xvals
-                                  right,          // final Rs
-                                  bottom,         // final yvals
-                                  size,           // final fontsize in points
-                                  width;          // final widths
+                                  Tdstate;        // Temp modification to Tm
   std::vector<std::vector<float>> gs,             // stack of graphics state
                                   statehx;        // history of graphics state
   std::string                     currentfont;    // Name of current font
   std::vector<std::string>        fontname,       // vector of font names
-                                  fonts,          // final fontnames
                                   fontstack;      // stack of font history
-  std::vector<Unicode>            stringres,      // working Unicode vector
-                                  text;           // final Unicode vector
+  std::vector<Unicode>            stringres;      // working Unicode vector
   int                             PRstate;        // current kerning state
   float                           Tl,             // Leading (line spacing)
                                   Tw,             // Word spacing
@@ -139,6 +129,10 @@ private:
 
   // The instruction set returned by tokenizer and read by parser
   std::vector<std::pair<std::string, Token::TState>> Instructions;
+
+  // The main output struct
+
+  GSoutput db;
 
   // Private methods
 

@@ -41,250 +41,307 @@ using namespace Token;
 // finally calls the MakeGS() method to make the data suitable for export
 
 GraphicsState::GraphicsState(page* pag) : // very long initializer list...
-  p(pag),
-  currfontsize(0),
-  initstate({1, 0, 0, 0, 1, 0, 0, 0, 1}),
-  fontsizestack({currfontsize}),
-  Tmstate(initstate),
-  Tdstate(initstate),
-  gs({initstate}),
-  currentfont(""),
-  fontstack({currentfont}),
-  PRstate(0),
-  Tl(1),
-  Tw(0),
-  Th(100),
-  Tc(0)
+  p(pag), // pointer to page of interest
+  currfontsize(0), // pointsize specified by page program
+  initstate({1, 0, 0, 0, 1, 0, 0, 0, 1}), // 3x3 identity matrix
+  fontsizestack({currfontsize}), // history of pointsize
+  Tmstate(initstate), // text transformation matrix
+  Tdstate(initstate), // Tm modifier
+  gs({initstate}), // graphics state history
+  currentfont(""), // name of current font
+  fontstack({currentfont}), // font history
+  PRstate(0), // kerning
+  Tl(1), // leading
+  Tw(0), // word spacing
+  Th(100), // horizontal scaling
+  Tc(0) // character spacing
 {
-  Instructions  = tokenizer(p->pageContents()).result();
-  parser(Instructions, "");
-  MakeGS();
+  Instructions  = tokenizer(p->pageContents()).result(); // get instructions
+  parser(Instructions, ""); //parse instructions
+  MakeGS(); // compose results
 }
 
 //---------------------------------------------------------------------------//
+// The only public method is a getter of the main data member
 
 GSoutput GraphicsState::output()
 {
-  GSoutput db;
-  db.text   = this->text;
-  db.left   = this->left;
-  db.bottom = this->bottom;
-  db.right  = this->right;
-  db.fonts  = this->fonts;
-  db.size   = this->size;
-  db.width  = this->width;
   return db;
 }
 
-
 /*---------------------------------------------------------------------------*/
+// q operator - pushes a copy of the current graphics state to the stack
 
 void GraphicsState::q(vector<string>& Operands)
 {
-  gs.emplace_back(gs.back());
-  fontstack.emplace_back(currentfont);
-  fontsizestack.emplace_back(currfontsize);
+  gs.emplace_back(gs.back());               // push transformation matrix
+  fontstack.emplace_back(currentfont);      // push font name
+  fontsizestack.emplace_back(currfontsize); // push pointsize
 }
 
 /*---------------------------------------------------------------------------*/
+// Do operator - reads an xobject and recursively calls the tokenizer and
+// parser so its results are enacted on the current graphics state
 
 void GraphicsState::Do(string& a)
 {
-  string xo = p->getXobject(a);
-  if(IsAscii(xo))
+  string xo = p->getXobject(a); // get xobject
+  if(IsAscii(xo)) // don't try to parse binary objects like images etc
   {
-    auto ins = tokenizer(xo).result();
+    auto ins = tokenizer(xo).result(); // tokenize and parse "inline"
     parser(ins, a);
   }
 }
 
 /*---------------------------------------------------------------------------*/
+// Q operator - pop the graphics state stack
 
 void GraphicsState::Q(vector<string>& Operands)
 {
-  if (gs.size() > 1)
+  if (gs.size() > 1) // Empty graphics state is undefined but gs[0] is identity
     gs.pop_back();
-  if (fontstack.size() > 1)
+  if (fontstack.size() > 1) // Empty fontstack is undefined
   {
     fontstack.pop_back();
-    fontsizestack.pop_back();
+    fontsizestack.pop_back();         // pop the font & fontsize stacks
     currentfont = fontstack.back();
-    currfontsize = fontsizestack.back();
+    currfontsize = fontsizestack.back(); // read the top font & size from stack
   }
-  wfont = p->getFont(currentfont);
+  wfont = p->getFont(currentfont); // the top of stack is now working font
 }
 
 /*---------------------------------------------------------------------------*/
+// Td operator - applies tranlational changes only to text matrix (Tm)
 
 void GraphicsState::Td(vector<string>& Operands)
 {
-  vector<float> Tds = initstate;
-  vector<float> tmpvec = stringtofloat(Operands);
-  Tds.at(6) = tmpvec[0]; Tds[7] = tmpvec[1];
-  Tdstate = matmul(Tds, Tdstate);
-  PRstate = 0;
+  vector<float> Tds = initstate;                    //------------------------
+  vector<float> tmpvec = stringtofloat(Operands);       //  create translation
+  Tds.at(6) = tmpvec[0];                                //  matrix (3x3)
+  Tds[7] = tmpvec[1];                               //------------------------
+  Tdstate = matmul(Tds, Tdstate); // multiply translation and text matrices
+  PRstate = 0; // Td resets kerning
 }
 
 /*---------------------------------------------------------------------------*/
+// TD operator - same as Td except it also sets the 'leading' (Tl) operator
 
 void GraphicsState::TD(vector<string>& Operands)
 {
-  vector<float> Tds = initstate;
-  vector<float> tmpvec = stringtofloat(Operands);
-  Tds.at(6) = tmpvec[0]; Tds[7] = tmpvec[1];
-  Tl = -Tds[7];
-  Tdstate = matmul(Tds, Tdstate);
-  PRstate = 0;
+  vector<float> Tds = initstate;                    //------------------------
+  vector<float> tmpvec = stringtofloat(Operands);       //  create translation
+  Tds.at(6) = tmpvec[0];                                //  matrix (3x3)
+  Tds[7] = tmpvec[1];                               //------------------------
+  Tdstate = matmul(Tds, Tdstate); // multiply translation and text matrices
+  PRstate = 0; // TD resets kerning
+  Tl = -Tds[7]; // set text leading to new value
 }
 
 /*---------------------------------------------------------------------------*/
+// BT operator - signifies start of text
 
 void GraphicsState::BT(vector<string>& Operands)
 {
-  Tmstate = Tdstate = initstate;
-  Tw = Tc = 0;
-  Th = 100;
+  Tmstate = Tdstate = initstate; // Reset text matrix to identity matrix
+  Tw = Tc = 0; // reset word spacing and character spacing
+  Th = 100; // reset horizontal spacing
 }
 
 /*---------------------------------------------------------------------------*/
+// ET operator - signifies end of text
 
 void GraphicsState::ET(vector<string>& Operands)
 {
-  Tmstate = Tdstate = initstate;
-  Tw = Tc = 0;
-  Th = 100;
+  Tmstate = Tdstate = initstate; // Reset text matrix to identity matrix
+  Tw = Tc = 0; // reset word spacing and character spacing
+  Th = 100; // reset horizontal spacing
 }
 
 /*---------------------------------------------------------------------------*/
-
+// Tf operator - specifies font and pointsize
 void GraphicsState::Tf(vector<string>& Operands)
 {
-  if(Operands.size() > 1)
+  if(Operands.size() > 1) // Should be 2 operators: 1 is not defined
   {
-    currentfont = Operands[0];
-    wfont = p->getFont(currentfont);
-    currfontsize = stof(Operands[1]);
+    currentfont = Operands[0];        // read fontID
+    wfont = p->getFont(currentfont);  // get font from fontID
+    currfontsize = stof(Operands[1]); // get font size
   }
 }
 
 /*---------------------------------------------------------------------------*/
+// TH - sets horizontal spacing
 
 void GraphicsState::TH(vector<string>& Operands)
 {
-  Th = stof(Operands.at(0));
+  Th = stof(Operands.at(0)); // simply reads operand as new Th value
 }
 
 /*---------------------------------------------------------------------------*/
+// Tc operator - sets character spacing
 
 void GraphicsState::TC(vector<string>& Operands)
 {
-  Tc = stof(Operands.at(0));
+  Tc = stof(Operands.at(0)); // simply reads operand as new Tc value
 }
 
 /*---------------------------------------------------------------------------*/
+// TW operator - sets word spacing
 
 void GraphicsState::TW(vector<string>& Operands)
 {
-  Tw = stof(Operands.at(0));
+  Tw = stof(Operands.at(0));  // simply reads operand as new Tw value
 }
 
 /*---------------------------------------------------------------------------*/
+// TL operator - sets leading (size of vertical jump to new line)
 
 void GraphicsState::TL(vector<string>& Operands)
 {
-  Tl = stof(Operands.at(0));
+  Tl = stof(Operands.at(0));  // simply reads operand as new Tl value
 }
 
 /*---------------------------------------------------------------------------*/
+// T* operator - moves to new line
 
 void GraphicsState::Tstar(vector<string>& Operands)
 {
-  Tdstate.at(7) = Tdstate.at(7) - Tl;
-  PRstate = 0;
+  Tdstate.at(7) = Tdstate.at(7) - Tl; // decrease y value of text matrix by Tl
+  PRstate = 0; // reset kerning
 }
 
 /*---------------------------------------------------------------------------*/
+// Tm operator - sets the text matrix (convolve text relative to graphics state)
 
 void GraphicsState::Tm(vector<string>& Operands)
 {
-  Tmstate = stringvectomat(Operands);
-  Tdstate = initstate;
-  PRstate = 0;
+  Tmstate = stringvectomat(Operands); // Reads the operands as a 3x3 matrix
+  Tdstate = initstate; // reset the Td modifier matrix
+  PRstate = 0; // reset kerning
 }
 
 /*---------------------------------------------------------------------------*/
+// cm operator - applies transformation matrix to graphics state
 
 void GraphicsState::cm(vector<string>& Operands)
 {
+  // read the operands as a matrix, multiply by top of graphics state stack
+  // and replace the top of the stack with the result
   gs.back() = matmul(stringvectomat(Operands), gs.back());
 }
 
 /*---------------------------------------------------------------------------*/
+// TJ operator - prints glyphs to the output. This is the crux of the reading
+// process, because it is where all the elements come together to get the
+// values needed for each character. Since there are actually 3 operators
+// that print text in largely overlapping ways, they are all handled here,
+// but that requires an extra parameter to be passed in to specify which
+// operation we are dealing with.
+//
+// This function is heavily commented as a little mistake here can screw
+// everything up. YOU HAVE BEEN WARNED!
 
 void GraphicsState::TJ(string Ins, vector<string>& Operands,
                        vector<TState>& OperandTypes)
 {
-  if (Ins == "'")
-    Tdstate[7] -= Tl;
+  // the "'" operator is the same as Tj except it moves to the next line first
+  if (Ins == "'") Tdstate[7] -= Tl;
+
+  // We create a text space that is the product of Tm and cm matrices
   vector<float> textspace = matmul(Tmstate, gs.back());
+
+  // we now use the translation-only Td matrix to get our final text space
   textspace = matmul(Tdstate, textspace);
+
+  // now we can set the starting x value of our string
   float txtspcinit = textspace[6];
+
+  // The overall size of text is the font size times the textspace scale
   float scale = currfontsize * textspace[0];
+
+  // We now iterate through our operands, paying attention to their types to
+  // perform the correct operations
   size_t otsize = OperandTypes.size();
   for (size_t z = 0; z < otsize; z++)
   {
-    if (OperandTypes[z] == NUMBER)
+    if (OperandTypes[z] == NUMBER) // Numbers represent kerning
     {
-      PRstate -= stof(Operands[z]);
-      float PRscaled = PRstate * scale / 1000;
-      textspace[6] = PRscaled + txtspcinit;
-      continue;
+      PRstate -= stof(Operands[z]); // PR (pushright) state is kerning * -1
+      float PRscaled = PRstate * scale / 1000; // scale to user space
+      textspace[6] = PRscaled + txtspcinit; // translate user space per PRstate
+      continue; // skip to the next operand - important!
     }
-    float PRscaled = PRstate * scale / 1000;
-    textspace[6] = PRscaled + txtspcinit;
-    if (Operands[z] == "")
-      continue;
-    vector<RawChar> raw;
-    if (OperandTypes[z] == HEXSTRING)
-      raw = HexstringToRawChar(Operands[z]);
-    if (OperandTypes[z] == STRING)
-      raw = StringToRawChar(Operands[z]);
+    float PRscaled = PRstate * scale / 1000; // scale kerning to user space
+    textspace[6] = PRscaled + txtspcinit; // translate user space per kerning
+    if (Operands[z] == "") continue; // empty string; ignore & get next operand
+
+    vector<RawChar> raw; // container for rawchar vector (cast from strings)
+    // cast "<001F00AA>" style hexstring to vector of RawChar (uint16_t)
+    if (OperandTypes[z] == HEXSTRING) raw = HexstringToRawChar(Operands[z]);
+    // cast "(cat on mat)" style string to vector of RawChar (uint16_t)
+    if (OperandTypes[z] == STRING) raw = StringToRawChar(Operands[z]);
+    // Now we can process the string given the current user space and font
     processRawChar(raw, scale, textspace, txtspcinit);
   }
 }
 
 /*---------------------------------------------------------------------------*/
+// This method is a helper of / extension of Tj which takes the RawChars
+// generated, the userspace and initial userspace to calculate the
+// glyphs, sizes and positions intended by the string in the page program
 
 void GraphicsState::processRawChar(vector<RawChar>& raw, float& scale,
                                    vector<float>& textspace, float& txtspcinit)
 {
-  vector<pair<Unicode, int>>&& kvs = wfont->mapRawChar(raw);
-  for (auto& j : kvs)
+  // look up the RawChars in the font to get their Unicode values and widths
+  vector<pair<Unicode, int>>&& glyphpairs = wfont->mapRawChar(raw);
+
+  for (auto& j : glyphpairs) // Now, for each character...
   {
-    float stw;
-    statehx.emplace_back(textspace);
-    if (j.first == 0x0020 || j.first == 0x00A0)
-      stw = j.second + (Tc + Tw) * 1000;
-    else stw = j.second + Tc * 1000;
-    PRstate += stw;
+    statehx.emplace_back(textspace); // each glyph has a whole matrix associated
+    float glyphwidth; // variable for the width we're about to calculate
+    if (j.first == 0x0020 || j.first == 0x00A0) // if this is a space or nbsp
+      glyphwidth = j.second + (Tc + Tw) * 1000; // factor in word & char spacing
+    else glyphwidth = j.second + Tc * 1000; // otherwise just char spacing
+    PRstate += glyphwidth; // adjust the pushright in text space by char width
+
+    // move user space right by the (converted to user space) width of the char
     textspace[6] =  PRstate * scale / 1000 + txtspcinit;
-    widths.emplace_back(scale * stw/1000 * Th/100);
+
+    // record width of char taking Th (horizontal scaling) into account
+    widths.emplace_back(scale * glyphwidth/1000 * Th/100);
+
+    // Store Unicode point
     stringres.emplace_back(j.first);
+
+    // store fontsize for glyph
     fontsize.emplace_back(scale);
+
+    // store font name of glyph
     fontname.emplace_back(wfont->fontname());
   }
 }
 
 /*---------------------------------------------------------------------------*/
+// The parser takes the instruction set generated by the lexer and enacts it.
+// It does this by reading each token and its type. If it comes across an
+// IDENTIFIER it calls the operator function for that symbol. Otherwise,
+// it assumes it is reading an operand and places it on the operand stack.
+// When an operator function is called, it takes the operands on the stack
+// as arguments. The "inloop" parameter is there to prevent infinite loops -
+// when the parser is called on an xobject it can get stuck if the xobject's
+// contents call itself (it does happen!). To prevent this, an xobject
+// identifies itself with "inloop" if it calls the parser, and the Do operator
+// will not be called if its operand stack contains the same string as inloop.
 
 void GraphicsState::parser(vector<pair<string, TState>>& tokens, string inloop)
 {
-  vector<string> Operands;
-  vector<TState> OperandTypes;
-  for (auto i : tokens)
+  vector<string> Operands;    // Set up operand stack
+  vector<TState> OperandTypes;// operand types for operand stack
+  for (auto i : tokens) // for each instruction...
   {
-    if (i.second == IDENTIFIER)
-    {
+    if (i.second == IDENTIFIER) // if it's an identifier, call the operator,
+    {                           // passing any stored operands on the stack
       if (i.first == "Q")  Q(Operands);
       else if (i.first == "q" ) q(Operands);
       else if (i.first == "BT") BT(Operands);
@@ -299,15 +356,17 @@ void GraphicsState::parser(vector<pair<string, TState>>& tokens, string inloop)
       else if (i.first == "Td") Td(Operands);
       else if (i.first == "TD") TD(Operands);
       else if (i.first == "Tf") Tf(Operands);
+      // don't allow an xobject to call itself recursively
       else if (i.first == "Do" && inloop != Operands.at(0)) Do(Operands.at(0));
+      // The TJ function handles three similar text-drawing operators
       else if (i.first == "Tj" || i.first == "'" || i.first == "TJ")
         TJ(i.first, Operands, OperandTypes);
-      OperandTypes.clear();
-      Operands.clear();
+      OperandTypes.clear(); // clear the stack since an operator has been called
+      Operands.clear(); // clear the stack since an operator has been called
     }
     else
     {
-      // push operands and their types on stack, awaiting instruction
+      // push operands and their types on stack, awaiting operator
       OperandTypes.push_back(i.second);
       Operands.push_back(i.first);
     }
@@ -315,28 +374,23 @@ void GraphicsState::parser(vector<pair<string, TState>>& tokens, string inloop)
 }
 
 /*---------------------------------------------------------------------------*/
+// Once parsing is finished, we write the results to the main data member -
+// a private struct containing vectors of the same length acting as a single
+// large table with a row for each glyph
 
 void GraphicsState::MakeGS()
 {
-  for (auto i : statehx)
+  size_t gsize = stringres.size();
+  for (size_t i = 0; i < gsize; i++) // for each glyph...
   {
-    xvals.emplace_back(i[6]);
-    yvals.emplace_back(i[7]);
+    db.text.emplace_back(stringres[i]);               //---//
+    db.left.emplace_back( statehx[i][6]);                  //
+    db.bottom.emplace_back( statehx[i][7]);                //
+    db.right.emplace_back(widths[i] + statehx[i][6]);      //--> store 'row'
+    db.fonts.emplace_back(fontname[i]);                    //
+    db.size.emplace_back(fontsize[i]);                     //
+    db.width.emplace_back(widths[i]);                 //---//
   }
-  size_t wsize = widths.size();
-  for (size_t i = 0; i < wsize; i++)
-    R.emplace_back(widths[i] + xvals[i]);
-  for (size_t i = 0; i < wsize; i++)
-    if (stringres[i] != 0x0020)
-    {
-      text.emplace_back(stringres[i]);
-      left.emplace_back(xvals[i]);
-      bottom.emplace_back(yvals[i]);
-      right.emplace_back(R[i]);
-      fonts.emplace_back(fontname[i]);
-      size.emplace_back(fontsize[i]);
-      width.emplace_back(R[i] - xvals[i]);
-    }
 }
 
 /*---------------------------------------------------------------------------*/
@@ -353,8 +407,8 @@ vector<float> GraphicsState::matmul(vector<float> b, vector<float> a)
   vector<float> newmat;
   for(size_t i = 0; i < 9; i++) //clever use of indices to allow fill by loop
     newmat.emplace_back(a[i % 3 + 0] * b[3 * (i / 3) + 0] +
-                     a[i % 3 + 3] * b[3 * (i / 3) + 1] +
-                     a[i % 3 + 6] * b[3 * (i / 3) + 2] );
+                        a[i % 3 + 3] * b[3 * (i / 3) + 1] +
+                        a[i % 3 + 6] * b[3 * (i / 3) + 2] );
   return newmat;
 }
 
