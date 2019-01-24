@@ -107,9 +107,10 @@ private:
 
   page*                           p;              // pointer to creating page
   font*                           wfont;          // pointer to "working" font
-  std::vector<std::vector<float>> gs,             // stack of graphics state
-                                  statehx;        // history of graphics state
-  std::vector<float>              xvals,          // x positions of glyphs
+  float                           currfontsize;   // Current font size
+  std::vector<float>              initstate,      // Identity 3x3 matrix as vec9
+                                  fontsizestack,  // stack of current font size
+                                  xvals,          // x positions of glyphs
                                   yvals,          // y positions of glyphs
                                   fontsize,       // size of glyph in points
                                   widths,         // width of glyph in textspace
@@ -120,9 +121,10 @@ private:
                                   right,          // final Rs
                                   bottom,         // final yvals
                                   size,           // final fontsize in points
-                                  width,          // final widths
-                                  fontsizestack,  // stack of current font size
-                                  initstate;      // Identity 3x3 matrix as vec9
+                                  width;          // final widths
+  std::vector<std::vector<float>> gs,             // stack of graphics state
+                                  statehx;        // history of graphics state
+  std::string                     currentfont;    // Name of current font
   std::vector<std::string>        fontname,       // vector of font names
                                   fonts,          // final fontnames
                                   fontstack;      // stack of font history
@@ -132,9 +134,8 @@ private:
   float                           Tl,             // Leading (line spacing)
                                   Tw,             // Word spacing
                                   Th,             // Horizontal scaling
-                                  Tc,             // Character spacing
-                                  currfontsize;   // Current font size
-  std::string                     currentfont;    // Name of current font
+                                  Tc;             // Character spacing
+
 
   // The instruction set returned by tokenizer and read by parser
   std::vector<std::pair<std::string, Token::TState>> Instructions;

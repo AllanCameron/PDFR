@@ -27,20 +27,36 @@
 
 #include "GraphicsState.h"
 
+//---------------------------------------------------------------------------//
+
 using namespace std;
 using namespace Token;
 
 //---------------------------------------------------------------------------//
+// The graphicsstate constructor has a lot of work to do. It needs to
+// initialize several private data members that will be passed around to
+// maintain state while parsing the contents page. It also does the job
+// of sending the page's contents to the tokenizer to get the instructions it
+// needs for parsing. It then calls the parser to interpret the page, and
+// finally calls the MakeGS() method to make the data suitable for export
 
-GraphicsState::GraphicsState(page* pag) : p(pag),
-  PRstate(0), Tl(1), Tw(0), Th(100), Tc(0), currfontsize(0), currentfont("")
+GraphicsState::GraphicsState(page* pag) : // very long initializer list...
+  p(pag),
+  currfontsize(0),
+  initstate({1, 0, 0, 0, 1, 0, 0, 0, 1}),
+  fontsizestack({currfontsize}),
+  Tmstate(initstate),
+  Tdstate(initstate),
+  gs({initstate}),
+  currentfont(""),
+  fontstack({currentfont}),
+  PRstate(0),
+  Tl(1),
+  Tw(0),
+  Th(100),
+  Tc(0)
 {
   Instructions  = tokenizer(p->pageContents()).result();
-  initstate = {1,0,0,0,1,0,0,0,1};
-  fontstack.emplace_back(currentfont);
-  Tmstate = Tdstate = initstate;
-  gs.push_back(initstate);
-  fontsizestack.emplace_back(currfontsize);
   parser(Instructions, "");
   MakeGS();
 }
