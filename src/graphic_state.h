@@ -1,6 +1,6 @@
 //---------------------------------------------------------------------------//
 //                                                                           //
-//  PDFR graphicsstate header file                                           //
+//  PDFR graphic_state header file                                           //
 //                                                                           //
 //  Copyright (C) 2018 by Allan Cameron                                      //
 //                                                                           //
@@ -31,14 +31,14 @@
 
 #define PDFR_GS
 
-/* The graphicsstate class represents the last of our dealings with the actual
+/* The graphic_state class represents the last of our dealings with the actual
  * pdf file. After this stage, we have a complete description of the text on
  * the page including the size and position of every correctly-encoded glyph.
  * The subsequent steps will use only this data to try to reconstruct useful
  * semantic information from the text position in an attempt to provide useable
  * data, and to output the result to a variety of formats.
  *
- * The job of the graphicsstate class is to parse the pdf page description
+ * The job of the graphic_state class is to parse the pdf page description
  * language into a table of glyphs, positions, sizes and fontnames - one row
  * for each character on the page. The instructions from the page description
  * language have already been "compiled" by the lexer into an instruction set,
@@ -50,7 +50,7 @@
  * the stack until an operator is reached. When the operator is reached, it
  * performs an action on the operands then clears the stack.
  *
- * In order that graphicsstate can interpret the operands, it needs to know
+ * In order that graphic_state can interpret the operands, it needs to know
  * about the fonts on the page, the content string, and any xobjects that
  * are called to be inserted on the page. It therefore needs to use the page's
  * public interface to get these data, and in fact is created by giving the
@@ -65,7 +65,7 @@
  * a number of private data members which maintain state between loops of the
  * instruction reader, and some which record the entire history of the state.
  *
- * The final output of graphicsstate is a collection of vectors, all of the same
+ * The final output of graphic_state is a collection of vectors, all of the same
  * length, comprising the Unicode symbol, width, font size, font name and x/y
  * position of every character on the page. This is output as a specific struct
  * to reduce the passing around of several parameters.
@@ -75,7 +75,7 @@
 #include "page.h"
 
 //---------------------------------------------------------------------------//
-// This struct is a container for the output of the graphicsstate class. All
+// This struct is a container for the output of the graphic_state class. All
 // of the vectors are the same length, so it can be thought of as a table with
 // one row for each glyph on the page. This makes it straightforward to output
 // to other formats if needed.
@@ -93,11 +93,11 @@ struct GSoutput
 
 //---------------------------------------------------------------------------//
 
-class graphicsstate
+class graphic_state
 {
 public:
   // constructor
-  graphicsstate(page*);
+  graphic_state(page*);
 
   // access results
   GSoutput output();

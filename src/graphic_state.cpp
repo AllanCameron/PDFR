@@ -1,6 +1,6 @@
 //---------------------------------------------------------------------------//
 //                                                                           //
-//  PDFR graphicsstate implementation file                                   //
+//  PDFR graphic_state implementation file                                   //
 //                                                                           //
 //  Copyright (C) 2018 by Allan Cameron                                      //
 //                                                                           //
@@ -26,7 +26,7 @@
 //---------------------------------------------------------------------------//
 
 #include<iostream>
-#include "graphicsstate.h"
+#include "graphic_state.h"
 
 //---------------------------------------------------------------------------//
 
@@ -34,14 +34,14 @@ using namespace std;
 using namespace Token;
 
 //---------------------------------------------------------------------------//
-// The graphicsstate constructor has a lot of work to do. It needs to
+// The graphic_state constructor has a lot of work to do. It needs to
 // initialize several private data members that will be passed around to
 // maintain state while parsing the contents page. It also does the job
 // of sending the page's contents to the tokenizer to get the instructions it
 // needs for parsing. It then calls the parser to interpret the page, and
 // finally calls the MakeGS() method to make the data suitable for export
 
-graphicsstate::graphicsstate(page* pag) : // very long initializer list...
+graphic_state::graphic_state(page* pag) : // very long initializer list...
   p(pag), // pointer to page of interest
   currfontsize(0), // pointsize specified by page program
   initstate({1, 0, 0, 0, 1, 0, 0, 0, 1}), // 3x3 identity matrix
@@ -65,7 +65,7 @@ graphicsstate::graphicsstate(page* pag) : // very long initializer list...
 //---------------------------------------------------------------------------//
 // The only public method is a getter of the main data member
 
-GSoutput graphicsstate::output()
+GSoutput graphic_state::output()
 {
   return db;
 }
@@ -73,7 +73,7 @@ GSoutput graphicsstate::output()
 /*---------------------------------------------------------------------------*/
 // q operator - pushes a copy of the current graphics state to the stack
 
-void graphicsstate::q(vector<string>& Operands)
+void graphic_state::q(vector<string>& Operands)
 {
   gs.emplace_back(gs.back());               // push transformation matrix
   fontstack.emplace_back(currentfont);      // push font name
@@ -84,7 +84,7 @@ void graphicsstate::q(vector<string>& Operands)
 // Do operator - reads an xobject and recursively calls the tokenizer and
 // parser so its results are enacted on the current graphics state
 
-void graphicsstate::Do(string& a)
+void graphic_state::Do(string& a)
 {
   string xo = p->getXobject(a); // get xobject
   if(IsAscii(xo)) // don't try to parse binary objects like images etc
@@ -97,7 +97,7 @@ void graphicsstate::Do(string& a)
 /*---------------------------------------------------------------------------*/
 // Q operator - pop the graphics state stack
 
-void graphicsstate::Q(vector<string>& Operands)
+void graphic_state::Q(vector<string>& Operands)
 {
   if (gs.size() > 1) // Empty graphics state is undefined but gs[0] is identity
     gs.pop_back();
@@ -114,7 +114,7 @@ void graphicsstate::Q(vector<string>& Operands)
 /*---------------------------------------------------------------------------*/
 // Td operator - applies tranlational changes only to text matrix (Tm)
 
-void graphicsstate::Td(vector<string>& Operands)
+void graphic_state::Td(vector<string>& Operands)
 {
   vector<float> Tds = initstate;                    //------------------------
   vector<float> tmpvec = stringtofloat(Operands);       //  create translation
@@ -127,7 +127,7 @@ void graphicsstate::Td(vector<string>& Operands)
 /*---------------------------------------------------------------------------*/
 // TD operator - same as Td except it also sets the 'leading' (Tl) operator
 
-void graphicsstate::TD(vector<string>& Operands)
+void graphic_state::TD(vector<string>& Operands)
 {
   vector<float> Tds = initstate;                    //------------------------
   vector<float> tmpvec = stringtofloat(Operands);       //  create translation
@@ -141,7 +141,7 @@ void graphicsstate::TD(vector<string>& Operands)
 /*---------------------------------------------------------------------------*/
 // BT operator - signifies start of text
 
-void graphicsstate::BT(vector<string>& Operands)
+void graphic_state::BT(vector<string>& Operands)
 {
   Tmstate = Tdstate = initstate; // Reset text matrix to identity matrix
   Tw = Tc = 0; // reset word spacing and character spacing
@@ -151,7 +151,7 @@ void graphicsstate::BT(vector<string>& Operands)
 /*---------------------------------------------------------------------------*/
 // ET operator - signifies end of text
 
-void graphicsstate::ET(vector<string>& Operands)
+void graphic_state::ET(vector<string>& Operands)
 {
   Tmstate = Tdstate = initstate; // Reset text matrix to identity matrix
   Tw = Tc = 0; // reset word spacing and character spacing
@@ -160,7 +160,7 @@ void graphicsstate::ET(vector<string>& Operands)
 
 /*---------------------------------------------------------------------------*/
 // Tf operator - specifies font and pointsize
-void graphicsstate::Tf(vector<string>& Operands)
+void graphic_state::Tf(vector<string>& Operands)
 {
   if(Operands.size() > 1) // Should be 2 operators: 1 is not defined
   {
@@ -173,7 +173,7 @@ void graphicsstate::Tf(vector<string>& Operands)
 /*---------------------------------------------------------------------------*/
 // TH - sets horizontal spacing
 
-void graphicsstate::TH(vector<string>& Operands)
+void graphic_state::TH(vector<string>& Operands)
 {
   Th = stof(Operands.at(0)); // simply reads operand as new Th value
 }
@@ -181,7 +181,7 @@ void graphicsstate::TH(vector<string>& Operands)
 /*---------------------------------------------------------------------------*/
 // Tc operator - sets character spacing
 
-void graphicsstate::TC(vector<string>& Operands)
+void graphic_state::TC(vector<string>& Operands)
 {
   Tc = stof(Operands.at(0)); // simply reads operand as new Tc value
 }
@@ -189,7 +189,7 @@ void graphicsstate::TC(vector<string>& Operands)
 /*---------------------------------------------------------------------------*/
 // TW operator - sets word spacing
 
-void graphicsstate::TW(vector<string>& Operands)
+void graphic_state::TW(vector<string>& Operands)
 {
   Tw = stof(Operands.at(0));  // simply reads operand as new Tw value
 }
@@ -197,7 +197,7 @@ void graphicsstate::TW(vector<string>& Operands)
 /*---------------------------------------------------------------------------*/
 // TL operator - sets leading (size of vertical jump to new line)
 
-void graphicsstate::TL(vector<string>& Operands)
+void graphic_state::TL(vector<string>& Operands)
 {
   Tl = stof(Operands.at(0));  // simply reads operand as new Tl value
 }
@@ -205,7 +205,7 @@ void graphicsstate::TL(vector<string>& Operands)
 /*---------------------------------------------------------------------------*/
 // T* operator - moves to new line
 
-void graphicsstate::Tstar(vector<string>& Operands)
+void graphic_state::Tstar(vector<string>& Operands)
 {
   Tdstate.at(7) = Tdstate.at(7) - Tl; // decrease y value of text matrix by Tl
   PRstate = 0; // reset kerning
@@ -214,7 +214,7 @@ void graphicsstate::Tstar(vector<string>& Operands)
 /*---------------------------------------------------------------------------*/
 // Tm operator - sets the text matrix (convolve text relative to graphics state)
 
-void graphicsstate::Tm(vector<string>& Operands)
+void graphic_state::Tm(vector<string>& Operands)
 {
   Tmstate = stringvectomat(Operands); // Reads the operands as a 3x3 matrix
   Tdstate = initstate; // reset the Td modifier matrix
@@ -224,7 +224,7 @@ void graphicsstate::Tm(vector<string>& Operands)
 /*---------------------------------------------------------------------------*/
 // cm operator - applies transformation matrix to graphics state
 
-void graphicsstate::cm(vector<string>& Operands)
+void graphic_state::cm(vector<string>& Operands)
 {
   // read the operands as a matrix, multiply by top of graphics state stack
   // and replace the top of the stack with the result
@@ -242,7 +242,7 @@ void graphicsstate::cm(vector<string>& Operands)
 // This function is heavily commented as a little mistake here can screw
 // everything up. YOU HAVE BEEN WARNED!
 
-void graphicsstate::TJ(string Ins, vector<string>& Operands,
+void graphic_state::TJ(string Ins, vector<string>& Operands,
                        vector<TState>& OperandTypes)
 {
   // the "'" operator is the same as Tj except it moves to the next line first
@@ -291,7 +291,7 @@ void graphicsstate::TJ(string Ins, vector<string>& Operands,
 // generated, the userspace and initial userspace to calculate the
 // glyphs, sizes and positions intended by the string in the page program
 
-void graphicsstate::processRawChar(vector<RawChar>& raw, float& scale,
+void graphic_state::processRawChar(vector<RawChar>& raw, float& scale,
                                    vector<float>& textspace, float& txtspcinit)
 {
   // look up the RawChars in the font to get their Unicode values and widths
@@ -335,7 +335,7 @@ void graphicsstate::processRawChar(vector<RawChar>& raw, float& scale,
 // identifies itself with "inloop" if it calls the parser, and the Do operator
 // will not be called if its operand stack contains the same string as inloop.
 
-void graphicsstate::parser(vector<pair<string, TState>>& tokens, string inloop)
+void graphic_state::parser(vector<pair<string, TState>>& tokens, string inloop)
 {
   vector<string> Operands;    // Set up operand stack
   vector<TState> OperandTypes;// operand types for operand stack
@@ -379,7 +379,7 @@ void graphicsstate::parser(vector<pair<string, TState>>& tokens, string inloop)
 // a private struct containing vectors of the same length acting as a single
 // large table with a row for each glyph
 
-void graphicsstate::MakeGS()
+void graphic_state::MakeGS()
 {
   size_t gsize = stringres.size();
   for (size_t i = 0; i < gsize; i++) // for each glyph...
@@ -399,7 +399,7 @@ void graphicsstate::MakeGS()
 // Note there is no matrix class - these are pseudo 3 x 3 matrices formed
 // from single length-9 vectors
 
-vector<float> graphicsstate::matmul(vector<float> b, vector<float> a)
+vector<float> graphic_state::matmul(vector<float> b, vector<float> a)
 {
   if(a.size() != b.size())
     throw std::runtime_error("matmul: Vectors must have same size.");
@@ -417,7 +417,7 @@ vector<float> graphicsstate::matmul(vector<float> b, vector<float> a)
 // Allows a length-6 vector of number strings to be converted to 3x3 matrix
 // (This is the way transformation matrices are represented in pdfs)
 
-vector<float> graphicsstate::stringvectomat(vector<string> b)
+vector<float> graphic_state::stringvectomat(vector<string> b)
 {
   if(b.size() != 6)
     throw std::runtime_error("stringvectomat: Vectors must be size 6.");

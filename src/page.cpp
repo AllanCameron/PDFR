@@ -290,7 +290,7 @@ string page::getXobject(const string& objID)
 }
 
 /*--------------------------------------------------------------------------*/
-// The graphicsstate class needs to use fonts stored in the fontmap. This getter
+// The graphic_state class needs to use fonts stored in the fontmap. This getter
 // will return a pointer to the requested font.
 
 font* page::getFont(const string& fontID)

@@ -83,7 +83,7 @@
  */
 
 #include<Rcpp.h>
-#include "graphicsstate.h"
+#include "graphic_state.h"
 
 //---------------------------------------------------------------------------//
 // Get xref. Returns a dataframe representing all of the cross-reference tables
