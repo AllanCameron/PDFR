@@ -399,7 +399,9 @@ xrefstream::xrefstream(xref* Xref, int starts) :
   XR(Xref), ncols(0), predictor(0), objstart(starts)
 {
   dict = dictionary(XR->fs, objstart);         // get the xrefstream dict
-  string decodestring = dict.get("/DecodeParms"); // string for subdict
+  string decodestring = "<<>>";
+  if(dict.has("/DecodeParms"))
+    decodestring = dict.get("/DecodeParms"); // string for subdict
   subdict = dictionary(&decodestring);            // get parameters (subdict)
   getIndex(); // read Index entry of dict so we know which objects are in stream
   getParms(); // read the PNG decoding parameters
