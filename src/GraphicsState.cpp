@@ -25,6 +25,7 @@
 //                                                                           //
 //---------------------------------------------------------------------------//
 
+#include<iostream>
 #include "graphicsstate.h"
 
 //---------------------------------------------------------------------------//
@@ -299,12 +300,12 @@ void graphicsstate::processRawChar(vector<RawChar>& raw, float& scale,
   for (auto& j : glyphpairs) // Now, for each character...
   {
     statehx.emplace_back(textspace); // each glyph has a whole matrix associated
-    float glyphwidth; // variable for the width we're about to calculate
-    if (j.first == 0x0020 || j.first == 0x00A0) // if this is a space or nbsp
-      glyphwidth = j.second + (Tc + Tw) * 1000; // factor in word & char spacing
-    else glyphwidth = j.second + Tc * 1000; // otherwise just char spacing
+    float glyphwidth = j.second;
     PRstate += glyphwidth; // adjust the pushright in text space by char width
-
+  if (j.first == 0x0020 || j.first == 0x00A0) // if this is a space or nbsp...
+    PRstate += 1000 * (Tc + Tw)/currfontsize; // factor in word & char spacing
+  else
+    PRstate += Tc * 1000/currfontsize; // otherwise just char spacing
     // move user space right by the (converted to user space) width of the char
     textspace[6] =  PRstate * scale / 1000 + txtspcinit;
 

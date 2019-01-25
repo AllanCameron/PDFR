@@ -33,24 +33,33 @@
 #include "pdfr.h"
 
 //---------------------------------------------------------------------------//
+// This exported function is used mainly for debugging the font reading
+// process in PDFR. It returns a single dataframe, with a row for every
+// Unicode mapping and glyph width for every font on the page (the font used is
+// also given its own column. This export may be removed in production or moved
+// to a debugging version
 
 Rcpp::DataFrame getglyphmap(const std::string& s, int pagenum)
 {
-  document d = document(s);
-  page p = page(&d, pagenum);
-  std::vector<std::string> FontName;
+  document d = document(s); // create the document from the given path string
+  page p = page(&d, pagenum); // create the page from the document and pagenum
+  std::vector<std::string> FontName;// container for the fonts used
+
+  // containers for the dataframe columns
   std::vector<uint16_t> codepoint, unicode, width;
-  for(auto i : p.getFontNames())
+
+  for(auto i : p.getFontNames()) // for each font on the page...
   {
-    font* loopfont = p.getFont(i);
-    for(auto b : loopfont->getGlyphKeys())
+    font* loopfont = p.getFont(i); // get a pointer to the font
+    for(auto b : loopfont->getGlyphKeys()) // for each code point in the font
     {
-      FontName.push_back(i);
-      codepoint.push_back(b);
-      unicode.push_back(loopfont->mapRawChar({b}).at(0).first);
-      width.push_back(loopfont->mapRawChar({b}).at(0).second);
+      FontName.push_back(i);    // copy the fontname
+      codepoint.push_back(b);   // copy the input codepoint
+      unicode.push_back(loopfont->mapRawChar({b}).at(0).first); // get Unicode
+      width.push_back(loopfont->mapRawChar({b}).at(0).second);  // get width
     }
   }
+  // put all the glyphs in a single dataframe and return
   return Rcpp::DataFrame::create(Rcpp::Named("Font") = FontName,
                           Rcpp::Named("Codepoint") = codepoint,
                           Rcpp::Named("Unicode") = unicode,
@@ -59,11 +68,15 @@ Rcpp::DataFrame getglyphmap(const std::string& s, int pagenum)
 
 //---------------------------------------------------------------------------//
 // This is the function that actually creates the R list containing the
-// necessary components to create a rendition of the page
+// necessary components to create a rendition of the page. It is not exported,
+// but rather used as a helper function and "final common pathway" for pdfpage's
+// raw and file path versions
 
 Rcpp::List PDFpage(page* pg)
 {
+  // get the graphical output for the page by calling graphicsstate()
   GSoutput G = graphicsstate(pg).output();
+  // fill a dataframe from the GSoutput
   Rcpp::DataFrame db =  Rcpp::DataFrame::create(
                         Rcpp::Named("text") = G.text,
                         Rcpp::Named("left") = G.left,
@@ -74,6 +87,9 @@ Rcpp::List PDFpage(page* pg)
                         Rcpp::Named("width") = G.width,
                         Rcpp::Named("stringsAsFactors") = false);
 
+  // Add the result to a Rcpp::List which also contains the content string and
+  // minimum text bounding box for the page
+
   return Rcpp::List::create(
     Rcpp::Named("Box")        =  pg->getminbox(),
     Rcpp::Named("PageString") =  pg->pageContents(),
@@ -82,77 +98,110 @@ Rcpp::List PDFpage(page* pg)
 }
 
 //---------------------------------------------------------------------------//
+// The xrefcreator function is not exported, but does most of the work of
+// get_xref. It acts as a helper function and common final pathway for the
+// raw and filepath versions of get_xref
 
 Rcpp::DataFrame xrefcreator(std::string* fs)
 {
-  xref Xref = xref(fs);
+  xref Xref = xref(fs); // create the xref from the given string pointer
+
+  // containers used to fill dataframe
   std::vector<int> ob, startb, inob;
-  if(!Xref.getObjects().empty())
+
+  if(!Xref.getObjects().empty()) // if the xref has entries...
   {
-    std::vector<int>&& allobs = Xref.getObjects();
-    for(int j : allobs)
+    std::vector<int>&& allobs = Xref.getObjects(); // get all of its object #s
+    for(int j : allobs) // then for each of them...
     {
-      ob.push_back(j);
-      startb.push_back(Xref.getStart(j));
-      inob.push_back(Xref.inObject(j));
+      ob.push_back(j);                    // store the object number
+      startb.push_back(Xref.getStart(j)); // store the byte offset
+      inob.push_back(Xref.inObject(j));   // store the containing object
     }
   }
+  // use the containers to fill the dataframe and return it to caller
   return Rcpp::DataFrame::create(Rcpp::Named("Object") = ob,
                                  Rcpp::Named("StartByte") = startb,
                                  Rcpp::Named("InObject") = inob);
 }
 
 /*---------------------------------------------------------------------------*/
+// Exported filepath version of get_xref. Gets the file string by loading
+// the file path into a single large string, a pointer to which is used to
+// call the xrefcreator
 
 Rcpp::DataFrame get_xref(const std::string& filename)
 {
-  std::string fs = get_file(filename);
-  return xrefcreator(&fs);
+  std::string fs = get_file(filename); // loads file from path name
+  return xrefcreator(&fs);             // returns the output of xrefcreator
 }
 
 //---------------------------------------------------------------------------//
+// Exported raw data version of get_xref. Gets the file string by casting the
+// raw data vector as a single large string, a pointer to which is used to
+// call the xrefcreator
 
 Rcpp::DataFrame get_xrefraw(const std::vector<uint8_t>& rawfile)
 {
-  std::string fs = bytestostring(rawfile);
-  return xrefcreator(&fs);
+  std::string fs = bytestostring(rawfile); // cast raw vector to string
+  return xrefcreator(&fs);  // return results of calling xrefcreator
 }
 
 //---------------------------------------------------------------------------//
+// The file string version of get_object. It takes a file path as a parameter,
+// from which it loads the entire file into a string to create a document.
+// The second parameter is the actual pdf object number, which is found by
+// the public getobject() method from document class. It returns a list
+// of two named values - the dictionary, as a named character vector, and the
+// decrypted / decompressed stream as a single string
 
 Rcpp::List get_object(const std::string& filename, int object)
 {
-  document&& doc = document(filename);
+  document&& doc = document(filename); // creates document from file path
+  // Fill an Rcpp::List with the requested object and return
   return Rcpp::List::create(
     Rcpp::Named("header") = doc.getobject(object)->getDict().R_out(),
     Rcpp::Named("stream") = doc.getobject(object)->getStream());
 }
 
 //---------------------------------------------------------------------------//
+// The raw data version of get_object. It takes a raw vector as a parameter,
+// which it recasts as a single large string to create a document.
+// The second parameter is the actual pdf object number, which is found by
+// the public getobject() method from document class. It returns a list
+// of two named values - the dictionary, as a named character vector, and the
+// decrypted / decompressed stream as a single string
 
 Rcpp::List get_objectraw(const std::vector<uint8_t>& rawfile, int object)
 {
-  document&& mydoc = document(rawfile);
+  document&& mydoc = document(rawfile); // create document from raw data
+    // Fill an Rcpp::List with the requested object and return
   return Rcpp::List::create(
     Rcpp::Named("header") = mydoc.getobject(object)->getDict().R_out(),
     Rcpp::Named("stream") = mydoc.getobject(object)->getStream());
 }
 
 //---------------------------------------------------------------------------//
+// The main output of the program is a dataframe of each glyph with its
+// position, size and font name. This is produced by the pdfpage function and
+// is returned in a list along with the bounding box (to aid plotting) and the
+// content string, or page description program, as a single string. This is
+// mostly used for debugging. These two versions take a file path or raw data
+// respectively, and both take a page number (one-indexed) as a second parameter
 
 Rcpp::List pdfpage(const std::string& filename, int pagenum)
 {
-  document myfile = document(filename);
-  page p = page(&myfile, pagenum - 1);
-  return PDFpage(&p);
+  document myfile = document(filename); // document from file string
+  page p = page(&myfile, pagenum - 1); // get page (convert to zero-indexed!)
+  return PDFpage(&p); // send pointer to PDFpage helper function for result
 }
 
 //---------------------------------------------------------------------------//
 
 Rcpp::List pdfpageraw(const std::vector<uint8_t>& rawfile, int pagenum)
 {
-  document doc = document(rawfile);
-  page p = page(&doc, pagenum - 1);
-  return PDFpage(&p);
+  document doc = document(rawfile); // document from raw data
+  page p = page(&doc, pagenum - 1); // get page (convert to zero-indexed!)
+  return PDFpage(&p);// send pointer to PDFpage helper function for result
 }
 

@@ -1,6 +1,10 @@
-An overview of the structure of the program, showing the chain of #includes and
-the logical order in which to read and understand the files here. An arrow means
-the pointed from header file is #included by the pointed to header file.
+                                headerMap.txt
+                                =============
+
+This file gives an overview of the structure of the program, showing the chain of
+#includes and the logical order in which to read and understand the files here.
+An arrow means the pointed-from header file is #included by the pointed-to
+header file.
 
 The files in {curly brackets} underneath each header file are the .cpp files on
 which the header relies for implementation as there is not a strict 1:1
