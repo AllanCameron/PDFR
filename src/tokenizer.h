@@ -62,7 +62,7 @@
 // The states of the lexer are defined by this enum. It is defined in its own
 // namespace rather than within the class because its states are also used
 // as type labels in the instruction set it produces. These therefore need
-// to be made available to the instruction reader in the GraphicsState class
+// to be made available to the instruction reader in the graphicsstate class
 
 namespace Token
 {

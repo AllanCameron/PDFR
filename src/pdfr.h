@@ -34,7 +34,7 @@
 
 
 #include<Rcpp.h>
-#include "GraphicsState.h"
+#include "graphicsstate.h"
 
 
 //---------------------------------------------------------------------------//

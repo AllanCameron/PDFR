@@ -63,7 +63,7 @@ Rcpp::DataFrame getglyphmap(const std::string& s, int pagenum)
 
 Rcpp::List PDFpage(page* pg)
 {
-  GSoutput G = GraphicsState(pg).output();
+  GSoutput G = graphicsstate(pg).output();
   Rcpp::DataFrame db =  Rcpp::DataFrame::create(
                         Rcpp::Named("text") = G.text,
                         Rcpp::Named("left") = G.left,
