@@ -71,28 +71,32 @@ void document::buildDoc()
 
 /*---------------------------------------------------------------------------*/
 // One of two public interface functions after document object creation. This
-// returns an object of object_class with the requested object number. It first
+// returns a pointer to an object of object_class with index n. It first
 // checks to see whether that object has been retrieved before. If so, it
-// returns it from the 'objects' vector. If not, it creates the object then
-// stores a copy in the 'objects' vector before returning the requested object.
+// returns a pointer to it from the 'objects' vector. If not, it creates the
+// object in the 'objects' vector before returning a pointer to it.
 
 object_class* document::getobject(int n)
 {
-  if(objects.find(n) == objects.end())           // check if object is stored
+  if(objects.find(n) == objects.end()) // if object not yet created
   {
-    int holder = Xref.inObject(n);
-    if(holder == 0)
-      objects[n] = object_class(&(this->Xref), n);
-    else
+    int holder = Xref.inObject(n);  // find the holding object, if any
+    if(holder == 0) // the object is not inside another one...
+      objects[n] = object_class(&(this->Xref), n); // ...so create it
+    else // the object is in an object stream
     {
-      if(objects.find(holder) == objects.end())
+      if(objects.find(holder) == objects.end()) // if object stream unopened
       {
+        // create the object containing the object stream
         objects[holder] = object_class(&(this->Xref), holder);
+        // make it index its contents
+        (objects[holder]).indexObjectStream();
       }
-      objects[n] = object_class(&(Xref), objects[holder].getStream(), n);
+      // get the requested object from holding object's stream
+      objects[n] = (objects[holder]).streamObject(n);
     }
   }
-  return &(objects[n]);                          // return a pointer to it
+  return &(objects[n]); // return a pointer to it
 }
 
 /*---------------------------------------------------------------------------*/

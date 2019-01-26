@@ -70,19 +70,23 @@ private:
       startpos;                   // The object knows its own starting position
   dictionary header;              // The object's dictionary
   std::string stream;             // The object's stream or contents
-  bool has_stream;                // Records whether stream is zero length
+  bool has_stream,                // Records whether stream is zero length
+       contains_objectstream;     // records whether an objectstream needs index
   std::vector<size_t> streampos;  // start/stop file offsets for stream position
+  std::unordered_map<int, std::pair<int, int>> objStreamIndex;
+  object_class(xref*, int objnum, const std::string&);  // get stream object
 
 
 public:
   // public member functions
   bool hasStream();               // returns has_stream boolean
+  void indexObjectStream();
   std::string getStream();        // returns stream as string
   dictionary getDict();           // returns header as dictionary object
+  object_class streamObject(int); // returns an object from this object's stream
 
   // creators
   object_class(xref*, int objnum);  // get direct object
-  object_class(xref*, const std::string&, int); // get object from objstream
   object_class(){}; // default constructor (needed for document class to
                     // initialize its vector of objects)
 

@@ -335,8 +335,8 @@ dictionary::dictionary(const string* str, size_t pos) :
 
 dictionary::dictionary()
 {
-  unordered_map<string, string> Empty;
-  DictionaryMap = Empty;
+  std::string Empty = "<<>>";
+  *this = dictionary(&Empty);
 }
 
 /*---------------------------------------------------------------------------*/
