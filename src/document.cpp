@@ -79,7 +79,19 @@ void document::buildDoc()
 object_class* document::getobject(int n)
 {
   if(objects.find(n) == objects.end())           // check if object is stored
-    objects[n] = object_class(&(this->Xref), n); // if not, create and store it
+  {
+    int holder = Xref.inObject(n);
+    if(holder == 0)
+      objects[n] = object_class(&(this->Xref), n);
+    else
+    {
+      if(objects.find(holder) == objects.end())
+      {
+        objects[holder] = object_class(&(this->Xref), holder);
+      }
+      objects[n] = object_class(&(Xref), objects[holder].getStream(), n);
+    }
+  }
   return &(objects[n]);                          // return a pointer to it
 }
 

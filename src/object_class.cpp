@@ -43,38 +43,26 @@ object_class::object_class(xref* Xref, int objnum) :
 
   if(objnum != 0) // Object 0 does not exist but can be specified in xref
   {
-    if(!XR->isInObject(objnum)) // This loop gets direct objects only
+    // We check to see if the object has a header dictionary by finding '<<'
+    if(XR->fs->substr(startbyte, 20).find("<<") == string::npos)
     {
-      // We check to see if the object has a header dictionary by finding '<<'
-      if(XR->fs->substr(startbyte, 20).find("<<") == string::npos)
-      {
-        // No dictionary found
-        header = dictionary(); // make blank dictionary for header
-        // find start of contents
-        streampos[0] = firstmatch(*(XR->fs), " obj", startbyte) + 4;
-        // find end of contents
-        streampos[1] = stopbyte - 1;
-        // ensure the resulting "stream" has positive length
-        // The scare quotes are there because it is not a true stream, but
-        // direct contents such as a string, array or just an int
-        has_stream = streampos[1] > streampos[0];
-      }
-      else
-      {
-        // The object has a header dictionary
-        header = dictionary(XR->fs, startbyte); // construct the dictionary
-        streampos = XR->getStreamLoc(startbyte);   // find the stream (if any)
-        has_stream = streampos[1] > streampos[0];  // record stream's existence
-      }
+      // No dictionary found
+      header = dictionary(); // make blank dictionary for header
+      // find start of contents
+      streampos[0] = firstmatch(*(XR->fs), " obj", startbyte) + 4;
+      // find end of contents
+      streampos[1] = stopbyte - 1;
+      // ensure the resulting "stream" has positive length
+      // The scare quotes are there because it is not a true stream, but
+      // direct contents such as a string, array or just an int
+      has_stream = streampos[1] > streampos[0];
     }
-    else // The object is insider another object
+    else
     {
-      int holder = XR->inObject(objnum); // find which object it is in
-      if(XR->objectExists(holder)) // Ensure that object exists
-      {
-        // get the holding object and call the constructor for in-stream objects
-        *this = object_class(XR, object_class(XR, holder).getStream(), objnum);
-      }
+      // The object has a header dictionary
+      header = dictionary(XR->fs, startbyte); // construct the dictionary
+      streampos = XR->getStreamLoc(startbyte);   // find the stream (if any)
+      has_stream = streampos[1] > streampos[0];  // record stream's existence
     }
   }
 }
@@ -84,7 +72,7 @@ object_class::object_class(xref* Xref, int objnum) :
 // main object constructor if the main object constructor determines that the
 // requested object lies inside the stream of another object
 
-object_class::object_class(xref* XRef, std::string str, int objnum)
+object_class::object_class(xref* XRef, const std::string& str, int objnum)
   :  XR(XRef), number(objnum), streampos({0, 0})
 {
   int startbyte = 0;
