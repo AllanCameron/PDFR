@@ -92,7 +92,7 @@ Rcpp::List PDFpage(page* pg)
 
   return Rcpp::List::create(
     Rcpp::Named("Box")        =  pg->getminbox(),
-    Rcpp::Named("PageString") =  pg->pageContents(),
+    Rcpp::Named("PageString") =  *(pg->pageContents()),
     Rcpp::Named("Elements")   =  db
   );
 }

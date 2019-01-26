@@ -136,7 +136,7 @@ public:
   bool objectExists(int);       // check for an object's existence
   std::vector<size_t> getStreamLoc(int); // finds start and stop of the first
                                          // stream after the given byte offset
-  std::string decrypt(std::string, int, int); // Interface for decryption object
+  void decrypt(std::string&, int, int); // Interface for decryption object
 
 };
 

@@ -71,7 +71,7 @@ public:
 
   // public methods
   std::vector<std::string> getFontNames();  // Returns PostScript font names
-  std::string pageContents(); // Returns page description program as string
+  const std::string* pageContents(); // Returns pointer to string of PosrScript
   std::vector<float> getminbox(); // Get co-ordinates of smallest bounding box
   std::string getXobject(const std::string&); // Return specified XObject string
   font* getFont(const std::string&);  // Returns a pointer to specified string

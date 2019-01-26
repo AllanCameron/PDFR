@@ -111,7 +111,7 @@ void dictionary::tokenize_dict()
 // flag is flipped. Although this code is short, it is efficient and used a lot
 // so needs its own function.
 
-void dictionary::sortkey(string b, DState st)
+void dictionary::sortkey(const string b, DState st)
 {
   if(!keyPending)
     pendingKey = buf; // If no key is awaiting a value, store the name as a key
@@ -126,7 +126,7 @@ void dictionary::sortkey(string b, DState st)
 // The pattern of assigning a value to a waiting key name crops up often
 // enough to warrant this function to reduce duplication and error
 
-void dictionary::assignValue(string b, DState st)
+void dictionary::assignValue(const string b, DState st)
 {
   DictionaryMap[pendingKey] = buf; // Contents of buffer assigned to key name
   keyPending = false;              // No key pending - ready for a new key
@@ -140,7 +140,7 @@ void dictionary::assignValue(string b, DState st)
 // of the name value and switches to the appropriate state depending on the
 // next character
 
-void dictionary::handleKey(char n)
+void dictionary::handleKey(const char n)
 {
   switch(n)
   {
@@ -163,7 +163,7 @@ void dictionary::handleKey(char n)
 // just come across a '<' and knows it has encountered a dictionary if the
 // next char is also a '<'. Otherwise it returns to a waiting state.
 
-void dictionary::handleMaybe(char n)
+void dictionary::handleMaybe(const char n)
 {
   switch(n)
   {
@@ -177,7 +177,7 @@ void dictionary::handleMaybe(char n)
 // indicated by a '/'. If not, it will wait until it finds one or finds the
 // end of the dictionary
 
-void dictionary::handleStart(char n)
+void dictionary::handleStart(const char n)
 {
   switch(n)
   {
@@ -190,7 +190,7 @@ void dictionary::handleStart(char n)
 /*---------------------------------------------------------------------------*/
 // The lexer has just read a key name and now expects a value
 
-void dictionary::handlePrevalue(char n)
+void dictionary::handlePrevalue(const char n)
 {
   switch(n)
   {
@@ -207,7 +207,7 @@ void dictionary::handlePrevalue(char n)
 // The lexer is now reading a value. It will do so until a special character
 // is reached representing a new data type
 
-void dictionary::handleValue(char n)
+void dictionary::handleValue(const char n)
 {
   switch(n)
   {
@@ -223,7 +223,7 @@ void dictionary::handleValue(char n)
 // The lexer is in an array. It will blindly copy the array until it gets
 // to the matching closing bracket
 
-void dictionary::handleArrayval(char n)
+void dictionary::handleArrayval(const char n)
 {
   buf += (*s)[i];
   if(n == ']')
@@ -234,7 +234,7 @@ void dictionary::handleArrayval(char n)
 // The lexer is now in a string; it blindly copies until finding a closing
 // bracket.
 
-void dictionary::handleDstring(char n)
+void dictionary::handleDstring(const char n)
 {
   buf += (*s)[i];
   if(n == ')')
@@ -245,7 +245,7 @@ void dictionary::handleDstring(char n)
 // The lexer has come across an angle bracket and needs to decide whether it
 // is now in a subdictionary
 
-void dictionary::handleQuerydict(char n)
+void dictionary::handleQuerydict(const char n)
 {
   if(n == '<') // now entering a subdictionary
   {
@@ -266,7 +266,7 @@ void dictionary::handleQuerydict(char n)
 // It does not otherwise process the subdictionary - the whole string can
 // be used as the basis for a further dictionary object if required
 
-void dictionary::handleSubdict(char n)
+void dictionary::handleSubdict(const char n)
 {
   switch(n)
   {
@@ -283,7 +283,7 @@ void dictionary::handleSubdict(char n)
 // present and if so records its position in the string used to create the
 // dictionary object
 
-void dictionary::handleClose(char n)
+void dictionary::handleClose(const char n)
 {
   switch(n)
   {
@@ -308,10 +308,11 @@ void dictionary::handleClose(char n)
 // Creator function. Takes a string pointer so big strings can be passed
 // cheaply. This version starts at the beginning of the given string
 
-dictionary::dictionary(string* str) :
+dictionary::dictionary(const string* str) :
   s(str), i(0), bracket(0), keyPending(false), state(PREENTRY) // initializers
 {
-  if(((*s).length() == 0)) *this = dictionary(); // empty string -> empty dict
+  std::string empty = "<<>>";
+  if(((*s).length() == 0)) *this = dictionary(&empty); // empty dictionary
   tokenize_dict();
 }
 
@@ -320,7 +321,7 @@ dictionary::dictionary(string* str) :
 // This allows dictionaries to be read starting from the object locations
 // given in the cross-reference (xref) table
 
-dictionary::dictionary(string* str, size_t pos) :
+dictionary::dictionary(const string* str, size_t pos) :
   s(str), i(pos), bracket(0), keyPending(false), state(PREENTRY)
 {
   // check string isn't empty or smaller than the starting position

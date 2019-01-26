@@ -95,7 +95,7 @@ void page::getHeader()
 
   // if the header is not of /type /page, throw an error
   if (!header.has("/Type")) throw runtime_error(E);
-  if(header.get("/Type") != "/Page") throw runtime_error(E);
+  if (header.get("/Type") != "/Page") throw runtime_error(E);
 }
 
 /*--------------------------------------------------------------------------*/
@@ -266,9 +266,9 @@ vector<string> page::getFontNames()
 /*--------------------------------------------------------------------------*/
 // Simple getter for the content string of a page
 
-string page::pageContents()
+const string* page::pageContents()
 {
-  return this->contentstring;
+  return &(this->contentstring);
 }
 
 /*--------------------------------------------------------------------------*/

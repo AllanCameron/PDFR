@@ -100,7 +100,7 @@ public:
   graphic_state(page*);
 
   // access results
-  GSoutput output();
+  GSoutput output() const;
 
 private:
   //private data members - used to maintain state between calls to parser
@@ -140,26 +140,27 @@ private:
   // to a "stack", or calls an operator method depending on the label given
   // to each token in the instruction set. It loops through the entire
   // instruction set, after which the data just needs tidied and wrapped.
-  void parser(std::vector<std::pair<std::string, Token::TState>>&, std::string);
+  void parser(const std::vector<std::pair<std::string, Token::TState>>&,
+              std::string);
 
   void Do(std::string&);                  //----------------------------------//
-  void Q(std::vector<std::string>& );           //  OPERATOR METHODS
-  void q(std::vector<std::string>& );           //
-  void TH(std::vector<std::string>& );          //  These functions do the
-  void TW(std::vector<std::string>& );          //  work of performing actions
-  void TC(std::vector<std::string>& );          //  on the graphics state and
-  void TL(std::vector<std::string>& );          //  writing the results. They
-  void Tstar(std::vector<std::string>& );       //  are called by the parser
-  void Tm(std::vector<std::string>& );          //  method according to the
-  void cm(std::vector<std::string>& );          //  operator it encounters, and
-  void Td(std::vector<std::string>& );          //  act on any operands sitting
-  void TD(std::vector<std::string>& );          //  on the stack. Each is named
-  void BT(std::vector<std::string>& );          //  for the operator it enacts.
-  void ET(std::vector<std::string>& );          //  These functions use private
-  void Tf(std::vector<std::string>& );          //  data members to maintain
-  void TJ(std::string,                          //  state in between calls.
-          std::vector<std::string>&,            //
-          std::vector<Token::TState>&);   //---------------------------------//
+  void Q(const std::vector<std::string>& );           //  OPERATOR METHODS
+  void q(const std::vector<std::string>& );           //
+  void TH(const std::vector<std::string>& );          //  These functions do the
+  void TW(const std::vector<std::string>& );          //  work of performing actions
+  void TC(const std::vector<std::string>& );          //  on the graphics state and
+  void TL(const std::vector<std::string>& );          //  writing the results. They
+  void Tstar(const std::vector<std::string>& );       //  are called by the parser
+  void Tm(const std::vector<std::string>& );          //  method according to the
+  void cm(const std::vector<std::string>& );          //  operator it encounters, and
+  void Td(const std::vector<std::string>& );          //  act on any operands sitting
+  void TD(const std::vector<std::string>& );          //  on the stack. Each is named
+  void BT(const std::vector<std::string>& );          //  for the operator it enacts.
+  void ET(const std::vector<std::string>& );          //  These functions use private
+  void Tf(const std::vector<std::string>& );          //  data members to maintain
+  void TJ(const std::string,                          //  state in between calls.
+          const std::vector<std::string>&,            //
+          const std::vector<Token::TState>&);   //---------------------------------//
 
   // This is a helper function for the TJ method which otherwise would become
   // a bit of a "hairball". It uses the font information and current graphics
