@@ -75,18 +75,6 @@
 #include "streams.h"
 #include "crypto.h"
 
-//---------------------------------------------------------------------------//
-// The main xref data member is an unordered map with the key being the object
-// number and the value being a struct of named ints as defined here
-
-struct xrefrow
-{
-  int object,     // The object number itself
-      startbyte,  // Its byte offset
-      stopbyte,   // The offset of the corresponding endobj marker
-      in_object;  // If this is a stream object, in which other object is it
-};                // located? Has a value of 0 if the object is not in a stream
-
 /*---------------------------------------------------------------------------*/
 // The main xref class definition. Since this is the main "skeleton" of the pdf
 // which is used by other classes to negotiate and parse the pdf, and because it
@@ -101,22 +89,27 @@ private:
 
 // private data members
 
+// The main xref data member is an unordered map with the key being the object
+// number and the value being a struct of named ints as defined here
+  struct xrefrow
+  {
+    int object,     // The object number itself
+        startbyte,  // Its byte offset
+        in_object;  // If this is a stream object, in which other object is it
+  };                // located? Has value of 0 if the object is not in a stream
+
+  std::unordered_map<int, xrefrow> xreftab;
+
   std::vector<int> Xreflocations,         // vector of offsets of xref starts
                    objenum;               // All object numbers found in xref
-  std::vector<std::string>  Xrefstrings;  // The actual strings of xref tables
-  std::vector<bool> XrefsAreStreams;      // records if each xref is stream
   dictionary TrailerDictionary;           // Canonical trailer dictionary
   bool encrypted;                         // Flag to indicate if encryption used
   crypto encryption;                      // crypto object for decrypting files
 
-  // This is the main data member used for accessing xref and negotiating pdf
-  std::unordered_map<int, xrefrow> xreftab;
 
 // private member functions
 
   void locateXrefs();                     // Finds xref locations
-  void xrefstrings();                     // Gets strings from xref locations
-  void xrefIsstream();                    // fills XrefsAreStreams vector
   void xrefFromStream(int);               // Uses xrefstream class to get xref
   void xrefFromString(std::string&);      // parses xref directly
   void buildXRtable();                    // constructs main data member
@@ -134,9 +127,9 @@ public:
   size_t inObject(int);         // The object whose stream a given object is in
   std::vector<int> getObjects();// A vector of all objects recorded in xref
   bool objectExists(int);       // check for an object's existence
+  void decrypt(std::string&, int, int);  // Interface for decryption object
   std::vector<size_t> getStreamLoc(int); // finds start and stop of the first
                                          // stream after the given byte offset
-  void decrypt(std::string&, int, int); // Interface for decryption object
 
 };
 

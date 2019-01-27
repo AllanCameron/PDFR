@@ -80,21 +80,18 @@ object_class::object_class(xref* Xref, int objnum) :
 
 void object_class::indexObjectStream()
 {
-    int startbyte = 0;
+  string pre = "";
   // object streams start with a group of integers representing the object
   // numbers and the byte offset of each object relative to the stream.
   // This loop tells us where the boundary between these registration numbers
   // and the objects proper begins using the symbol_type function declared in
-  // utilities.h
+  // utilities.h. We use this loop to get the numbers.
   for(const auto& i : stream)
   {
     char a = symbol_type(i);
     if(a != ' ' && a != 'D') break;
-    startbyte++;
+    pre += i;
   }
-
-  // ...and the substring with the registration numbers...
-  std::string pre(stream.begin(), stream.begin() + startbyte - 1);
 
   // .. from which we extract the numbers as a vector.
   std::vector<int> numarray = getints(pre);
@@ -116,10 +113,10 @@ void object_class::indexObjectStream()
     {
       bytenum = numarray[i]; // odd entries are byte offsets
       if(i == (numarray.size() - 1))
-        bytelen = stream.size() - startbyte - numarray[i];
+        bytelen = stream.size() - pre.size() - numarray[i];
       else
         bytelen = numarray[i + 2] - numarray[i];
-      objStreamIndex[objnum] = make_pair(bytenum + startbyte, bytelen);
+      objStreamIndex[objnum] = make_pair(bytenum + pre.size(), bytelen);
     }
   }
 }

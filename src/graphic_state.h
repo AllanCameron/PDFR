@@ -173,7 +173,7 @@ private:
   void MakeGS();
 
   // Multiplies to 3x3 matrices represented as length-9 vector floats
-  std::vector<float> matmul(std::vector<float>, std::vector<float>);
+  void matmul(std::vector<float>, std::vector<float>&);
 
   // Converts pdfs' 6-token string representation of matrices to a 3x3 matrix
   std::vector<float> stringvectomat(std::vector<std::string>);

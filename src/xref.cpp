@@ -78,14 +78,10 @@ class xrefstream
 
 xref::xref(string* s) : fs(s)
 {
-  locateXrefs();           // find all xrefs
-  xrefstrings();           // get the strings containing all xrefs
-  xrefIsstream();          // find which are streams
-  buildXRtable();          // create the xrefs from strings and / or streams
-  get_crypto();          // get the file key, needed for decryption of streams
-  Xreflocations.clear();   //-----//
-  Xrefstrings.clear();            //--> clear data used only in construction
-  XrefsAreStreams.clear(); //-----//
+  locateXrefs();          // find all xrefs
+  buildXRtable();         // create the xrefs from strings and / or streams
+  get_crypto();           // get the file key, needed for decryption of streams
+  Xreflocations.clear();  // clear data used only in construction
 }
 
 /*---------------------------------------------------------------------------*/
@@ -126,38 +122,6 @@ void xref::locateXrefs()
       tempdict = dictionary(fs, Xreflocations.back());
     }
     else break;
-}
-
-/*---------------------------------------------------------------------------*/
-// Whatever form the xrefs take (plain or xrefstream), we first get their
-// raw contents as strings from the xref locations
-
-void xref::xrefstrings()
-{
-  // get a string from each xref location or die
-  for(auto i : Xreflocations)
-  {
-    int len = fs->find("startxref", i) - i; // length of xref in chars
-
-    // Throw error if no xref found
-    if (len <= 0) throw std::runtime_error("No object found at location");
-
-    // extract the xref string from the file string
-    string fullxref = fs->substr(i, len);
-
-    // stick a trimmed version of the xref onto Xrefstrings
-    // Note the carveout should leave xrefstreams unaltered
-    Xrefstrings.emplace_back(carveout(fullxref, "xref", "trailer"));
-  }
-}
-
-/*---------------------------------------------------------------------------*/
-// Simple check of whether each xref string is a stream or a plaintext
-
-void xref::xrefIsstream()
-{
-  for(auto i : Xrefstrings) // If first 15 chars contains << it's a stream
-    XrefsAreStreams.emplace_back(i.substr(0, 15).find("<<", 0) != string::npos);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -236,12 +200,20 @@ void xref::xrefFromString(std::string& xstr)
 
 void xref::buildXRtable()
 {
-  for(size_t i = 0; i < Xreflocations.size(); i++) // for each location
+  for(auto i : Xreflocations) // for each location
   {
-    if(XrefsAreStreams[i])
-      xrefFromStream(Xreflocations[i]);   //----------------------------------//
-    else                                  // Parse string or stream as needed //
-      xrefFromString(Xrefstrings[i]);     //----------------------------------//
+    int len = fs->find("startxref", i) - i; // length of xref in chars
+
+    // Throw error if no xref found
+    if (len <= 0) throw std::runtime_error("No object found at location");
+
+    // extract the xref string from the file string
+    string fullxref = fs->substr(i, len);
+    string Xrefstring = carveout(fullxref, "xref", "trailer");
+    if(Xrefstring.substr(0, 15).find("<<", 0) != string::npos)
+      xrefFromStream(i);              //----------------------------------//
+    else                              // Parse string or stream as needed //
+      xrefFromString(Xrefstring);     //----------------------------------//
   }
 }
 

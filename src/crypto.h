@@ -31,7 +31,7 @@
 
 #define PDFR_CRYPTO
 
-/* This header file includes the declaration of a class which containes the
+/* This header file includes the declaration of a class which contains the
  * algorithms needed to decrypt protected pdfs.
  *
  * This only applies to situations in which a password is not required to
