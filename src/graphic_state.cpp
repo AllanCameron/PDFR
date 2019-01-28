@@ -57,7 +57,6 @@ graphic_state::graphic_state(page* pag) : // very long initializer list...
   Th(100), // horizontal scaling
   Tc(0) // character spacing
 {
-
   Instructions  = tokenizer(p->pageContents()).result(); // get instructions
   parser(Instructions, ""); //parse instructions
   MakeGS(); // compose results
@@ -66,7 +65,7 @@ graphic_state::graphic_state(page* pag) : // very long initializer list...
 //---------------------------------------------------------------------------//
 // The only public method is a getter of the main data member
 
-GSoutput graphic_state::output() const
+GSoutput graphic_state::output()
 {
   return db;
 }
@@ -74,7 +73,7 @@ GSoutput graphic_state::output() const
 /*---------------------------------------------------------------------------*/
 // q operator - pushes a copy of the current graphics state to the stack
 
-void graphic_state::q(const vector<string>& Operands)
+void graphic_state::q(vector<string>& Operands)
 {
   gs.emplace_back(gs.back());               // push transformation matrix
   fontstack.emplace_back(currentfont);      // push font name
@@ -90,7 +89,7 @@ void graphic_state::Do(string& a)
   string xo = p->getXobject(a); // get xobject
   if(IsAscii(xo)) // don't try to parse binary objects like images etc
   {
-    auto ins = tokenizer(&xo).result(); // tokenize and parse "inline"
+    auto ins = tokenizer(xo).result(); // tokenize and parse "inline"
     parser(ins, a);
   }
 }
@@ -98,7 +97,7 @@ void graphic_state::Do(string& a)
 /*---------------------------------------------------------------------------*/
 // Q operator - pop the graphics state stack
 
-void graphic_state::Q(const vector<string>& Operands)
+void graphic_state::Q(vector<string>& Operands)
 {
   if (gs.size() > 1) // Empty graphics state is undefined but gs[0] is identity
     gs.pop_back();
@@ -115,7 +114,7 @@ void graphic_state::Q(const vector<string>& Operands)
 /*---------------------------------------------------------------------------*/
 // Td operator - applies tranlational changes only to text matrix (Tm)
 
-void graphic_state::Td(const vector<string>& Operands)
+void graphic_state::Td(vector<string>& Operands)
 {
   vector<float> Tds = initstate;                    //------------------------
   vector<float> tmpvec = stringtofloat(Operands);       //  create translation
@@ -128,7 +127,7 @@ void graphic_state::Td(const vector<string>& Operands)
 /*---------------------------------------------------------------------------*/
 // TD operator - same as Td except it also sets the 'leading' (Tl) operator
 
-void graphic_state::TD(const vector<string>& Operands)
+void graphic_state::TD(vector<string>& Operands)
 {
   vector<float> Tds = initstate;                    //------------------------
   vector<float> tmpvec = stringtofloat(Operands);       //  create translation
@@ -142,7 +141,7 @@ void graphic_state::TD(const vector<string>& Operands)
 /*---------------------------------------------------------------------------*/
 // BT operator - signifies start of text
 
-void graphic_state::BT(const vector<string>& Operands)
+void graphic_state::BT(vector<string>& Operands)
 {
   Tmstate = Tdstate = initstate; // Reset text matrix to identity matrix
   Tw = Tc = 0; // reset word spacing and character spacing
@@ -152,7 +151,7 @@ void graphic_state::BT(const vector<string>& Operands)
 /*---------------------------------------------------------------------------*/
 // ET operator - signifies end of text
 
-void graphic_state::ET(const vector<string>& Operands)
+void graphic_state::ET(vector<string>& Operands)
 {
   Tmstate = Tdstate = initstate; // Reset text matrix to identity matrix
   Tw = Tc = 0; // reset word spacing and character spacing
@@ -161,7 +160,7 @@ void graphic_state::ET(const vector<string>& Operands)
 
 /*---------------------------------------------------------------------------*/
 // Tf operator - specifies font and pointsize
-void graphic_state::Tf(const vector<string>& Operands)
+void graphic_state::Tf(vector<string>& Operands)
 {
   if(Operands.size() > 1) // Should be 2 operators: 1 is not defined
   {
@@ -174,7 +173,7 @@ void graphic_state::Tf(const vector<string>& Operands)
 /*---------------------------------------------------------------------------*/
 // TH - sets horizontal spacing
 
-void graphic_state::TH(const vector<string>& Operands)
+void graphic_state::TH(vector<string>& Operands)
 {
   Th = stof(Operands.at(0)); // simply reads operand as new Th value
 }
@@ -182,7 +181,7 @@ void graphic_state::TH(const vector<string>& Operands)
 /*---------------------------------------------------------------------------*/
 // Tc operator - sets character spacing
 
-void graphic_state::TC(const vector<string>& Operands)
+void graphic_state::TC(vector<string>& Operands)
 {
   Tc = stof(Operands.at(0)); // simply reads operand as new Tc value
 }
@@ -190,7 +189,7 @@ void graphic_state::TC(const vector<string>& Operands)
 /*---------------------------------------------------------------------------*/
 // TW operator - sets word spacing
 
-void graphic_state::TW(const vector<string>& Operands)
+void graphic_state::TW(vector<string>& Operands)
 {
   Tw = stof(Operands.at(0));  // simply reads operand as new Tw value
 }
@@ -198,7 +197,7 @@ void graphic_state::TW(const vector<string>& Operands)
 /*---------------------------------------------------------------------------*/
 // TL operator - sets leading (size of vertical jump to new line)
 
-void graphic_state::TL(const vector<string>& Operands)
+void graphic_state::TL(vector<string>& Operands)
 {
   Tl = stof(Operands.at(0));  // simply reads operand as new Tl value
 }
@@ -206,7 +205,7 @@ void graphic_state::TL(const vector<string>& Operands)
 /*---------------------------------------------------------------------------*/
 // T* operator - moves to new line
 
-void graphic_state::Tstar(const vector<string>& Operands)
+void graphic_state::Tstar(vector<string>& Operands)
 {
   Tdstate.at(7) = Tdstate.at(7) - Tl; // decrease y value of text matrix by Tl
   PRstate = 0; // reset kerning
@@ -215,7 +214,7 @@ void graphic_state::Tstar(const vector<string>& Operands)
 /*---------------------------------------------------------------------------*/
 // Tm operator - sets the text matrix (convolve text relative to graphics state)
 
-void graphic_state::Tm(const vector<string>& Operands)
+void graphic_state::Tm(vector<string>& Operands)
 {
   Tmstate = stringvectomat(Operands); // Reads the operands as a 3x3 matrix
   Tdstate = initstate; // reset the Td modifier matrix
@@ -225,7 +224,7 @@ void graphic_state::Tm(const vector<string>& Operands)
 /*---------------------------------------------------------------------------*/
 // cm operator - applies transformation matrix to graphics state
 
-void graphic_state::cm(const vector<string>& Operands)
+void graphic_state::cm(vector<string>& Operands)
 {
   // read the operands as a matrix, multiply by top of graphics state stack
   // and replace the top of the stack with the result
@@ -243,8 +242,8 @@ void graphic_state::cm(const vector<string>& Operands)
 // This function is heavily commented as a little mistake here can screw
 // everything up. YOU HAVE BEEN WARNED!
 
-void graphic_state::TJ(const string Ins, const vector<string>& Operands,
-                       const vector<TState>& OperandTypes)
+void graphic_state::TJ(string Ins, vector<string>& Operands,
+                       vector<TState>& OperandTypes)
 {
   // the "'" operator is the same as Tj except it moves to the next line first
   if (Ins == "'") Tdstate[7] -= Tl;
@@ -336,8 +335,7 @@ void graphic_state::processRawChar(vector<RawChar>& raw, float& scale,
 // identifies itself with "inloop" if it calls the parser, and the Do operator
 // will not be called if its operand stack contains the same string as inloop.
 
-void
-graphic_state::parser(const vector<pair<string, TState>>& tokens, string inloop)
+void graphic_state::parser(vector<pair<string, TState>>& tokens, string inloop)
 {
   vector<string> Operands;    // Set up operand stack
   vector<TState> OperandTypes;// operand types for operand stack

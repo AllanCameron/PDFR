@@ -71,12 +71,12 @@ typedef uint16_t Unicode;
 // the map to the console
 
 template< typename Mt, typename T >
-std::vector<Mt> getKeys(const std::unordered_map<Mt, T>& Map)
+std::vector<Mt> getKeys(std::unordered_map<Mt, T>& Map)
 {
   std::vector<Mt> keyvec; // vector to store results
   keyvec.reserve(Map.size()); // Ensure it is big enough
   // the following loop iterates through the map, gets the key and stores it
-  for(typename std::unordered_map<Mt, T>::const_iterator i = Map.begin();
+  for(typename std::unordered_map<Mt, T>::iterator i = Map.begin();
       i != Map.end(); i++)
     keyvec.push_back(i->first);
   return keyvec;
@@ -112,7 +112,7 @@ std::vector<int> order(const std::vector<T>& data)
 }
 
 /*---------------------------------------------------------------------------*/
-// Sort one vector by another's order. Modifies supplied vector
+// Sort one vector by another's order. Modified supplied vector
 
 template <typename Ta, typename Tb>
 void sortby(std::vector<Ta>& vec, const std::vector<Tb>& data)
@@ -146,23 +146,23 @@ std::vector<unsigned char> bytesFromArray(const std::string&);
 
 std::string bytestostring(const std::vector<uint8_t>&);
 
-std::vector<float> stringtofloat(const std::vector<std::string>&);
+std::vector<float> stringtofloat(std::vector<std::string>);
 
 std::string intToHexstring(int);
 
-std::vector<std::string> splitfours(const std::string&);
+std::vector<std::string> splitfours(std::string);
 
 std::vector<int> getObjRefs(const std::string&);
 
-const char symbol_type(const char);
+char symbol_type(const char);
 
 void trimRight(std::string&);
 
-size_t firstmatch(const std::string&, std::string, int);
+size_t firstmatch(std::string&, std::string, int);
 
-std::vector<RawChar> HexstringToRawChar(const std::string&);
+std::vector<RawChar> HexstringToRawChar(std::string&);
 
-std::vector<RawChar> StringToRawChar(const std::string&);
+std::vector<RawChar> StringToRawChar(std::string&);
 
 std::vector<std::string> multicarve(const std::string&,
                                     const std::string&,

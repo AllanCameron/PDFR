@@ -127,10 +127,10 @@ string bytestostring(const vector<uint8_t>& v)
 // Transforms a vector of strings to a vector of floats
 // (vectorised version of stof)
 
-vector<float> stringtofloat(const vector<string>& b)
+vector<float> stringtofloat(vector<string> b)
 {
   vector<float> r;
-  for(auto i : b) r.emplace_back(stof(i));
+  for(auto i : b) r.push_back(stof(i));
   return r;
 }
 
@@ -154,11 +154,13 @@ string intToHexstring(int i)
 // Splits a string into a vector of length-4 elements. Useful for Ascii-
 // encoded strings e.g. "00FF00AA1234" -> {"00FF", "00AA", "1234"}
 
-vector<string> splitfours(const string& s)
+vector<string> splitfours(string s)
 {
   vector<string> res; // vector to hold results
   // if string empty, return empty vector
   if(s.empty()) return res;
+  // if length of s not divisible by 4, prepend zeros until it is
+  while(s.size() % 4 != 0) s = '0' + s;
   // push back sequential substrings of length 4
   for(unsigned i = 0; i < s.length()/4; i++)
     res.emplace_back(s.substr(i * 4, 4));
@@ -172,7 +174,7 @@ vector<string> splitfours(const string& s)
 // For cases where the lexer needs to find a specific symbol, this function
 // returns the original character if it is not a digit, a letter or whitespace
 
-const char symbol_type(const char c)
+char symbol_type(const char c)
 {
   if(c > 0x40 && c < 0x5b) return 'L'; // character is UPPERCASE
   if(c > 0x60 && c < 0x7b) return 'L'; // character is lowercase
@@ -197,7 +199,7 @@ void trimRight(string& s)
 /*--------------------------------------------------------------------------*/
 // Similar to string.find()
 
-size_t firstmatch(const std::string& s, std::string m, int startpos)
+size_t firstmatch(std::string& s, std::string m, int startpos)
 {
   size_t ssize = s.size();
   size_t msize = m.size();
@@ -234,7 +236,7 @@ size_t firstmatch(const std::string& s, std::string m, int startpos)
 // Returns the data represented by an Ascii encoded hex string as a vector
 // of two-byte numbers
 
-vector<RawChar> HexstringToRawChar(const string& s)
+vector<RawChar> HexstringToRawChar(string& s)
 {
   // first split the string into length 4 blocks to represent two-byte uints
   vector<string>&& string_vector = splitfours(s);
@@ -252,7 +254,7 @@ vector<RawChar> HexstringToRawChar(const string& s)
 // This requires sequential conversion from char to uint8_t to uint16_t
 // (RawChar is just a synonym for uint16_t)
 
-vector<RawChar> StringToRawChar(const string& s)
+vector<RawChar> StringToRawChar(string& s)
 {
   vector<RawChar> result; // vector to hold results
   if(s.size() == 0) return result; // string s is empty - nothing to do.

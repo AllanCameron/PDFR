@@ -87,7 +87,7 @@ public:
 
   // public member functions
 
-  object_class* getobject(int objnum); // creates object & returns pointer
+  object_class* getobject(int objnum); // creates object and returns pointer
   dictionary pageHeader(int p);       // returns header dictionary for page p
 
 private:

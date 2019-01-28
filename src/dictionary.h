@@ -85,7 +85,7 @@ class dictionary
 private:
   // Private data members
 
-  const std::string* s;   // pointer to the string being read
+  std::string* s;   // pointer to the string being read
   size_t i;         // the string's iterator which is passed between functions
   int bracket;      // integer to store the nesting level of angle brackets
   bool keyPending;  // flag that indicates a key name has been read
@@ -98,24 +98,24 @@ private:
 
   void tokenize_dict(); // co-ordinates the lexer
 
-  void sortkey(const std::string, DState);//----//
-  void assignValue(const std::string, DState);  //
-  void handleMaybe(const char);                 //
-  void handleStart(const char);                 //
-  void handleKey(const char);                   //
-  void handlePrevalue(const char);              //--> handle lexer states
-  void handleValue(const char);                 //
-  void handleArrayval(const char);              //
-  void handleDstring(const char);               //
-  void handleQuerydict(const char);             //
-  void handleSubdict(const char);               //
-  void handleClose(const char);           //----//
+  void sortkey(std::string, DState);//----//
+  void assignValue(std::string, DState);  //
+  void handleMaybe(char);                 //
+  void handleStart(char);                 //
+  void handleKey(char);                   //
+  void handlePrevalue(char);              //--> functions to handle lexer states
+  void handleValue(char);                 //
+  void handleArrayval(char);              //
+  void handleDstring(char);               //
+  void handleQuerydict(char);             //
+  void handleSubdict(char);               //
+  void handleClose(char);           //----//
 
 public:
   // Creator functions
 
-  dictionary(const std::string*); // make dictionary from string
-  dictionary(const std::string*, size_t p); // make dictionary from position p
+  dictionary(std::string*); // make dictionary from string
+  dictionary(std::string*, size_t); // make dictionary from position in string
   dictionary(std::unordered_map<std::string, std::string>); // create from map
   dictionary(); // empty dictionary
 

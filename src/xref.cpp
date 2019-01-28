@@ -343,9 +343,9 @@ vector<size_t> xref::getStreamLoc(int objstart)
 /*---------------------------------------------------------------------------*/
 // Wrapper for Encryption object so that xref is the only class that uses it
 
-void xref::decrypt(std::string& s, int obj, int gen)
+std::string xref::decrypt(std::string s, int obj, int gen)
 {
-  encryption.decryptStream(s, obj, gen);
+  return encryption.decryptStream(s, obj, gen);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -396,7 +396,7 @@ std::vector<std::vector<int>> xrefstream::table()
 // hairball function being created that is difficult to debug.
 
 xrefstream::xrefstream(xref* Xref, int starts) :
-  XR(Xref), ncols(0), predictor(1), objstart(starts)
+  XR(Xref), ncols(0), predictor(0), objstart(starts)
 {
   dict = dictionary(XR->fs, objstart);         // get the xrefstream dict
   string decodestring = "<<>>";
@@ -411,11 +411,6 @@ xrefstream::xrefstream(xref* Xref, int starts) :
 
   getRawMatrix(); // arrange the raw data in the stream into correct table form
   if(predictor == 12) diffup(); // Undiff the raw data
-  // throw an error with unimplemented predictors - this will serve as
-  // a reminder to use the document that throws the error to build the
-  // correct diff algorithm - pointless doing this if we can't test it yet
-  if(predictor != 1 && predictor != 12)
-    throw std::runtime_error("predictors other than 1 and 12 not implemented");
   modulotranspose(); // transposes table which ensuring all numbers are <256
   expandbytes(); // multiply numbers to intended size based on their position
   mergecolumns(); // add up adjacent columns that represent large numbers

@@ -34,8 +34,9 @@ using namespace Token;
 // constructor of tokenizer - initializes members and starts main
 // lexer function
 
-tokenizer::tokenizer(const string* input) : i(0), s(input),  state(NEWSYMBOL)
+tokenizer::tokenizer(const string& input) : i(0), s(input),  state(NEWSYMBOL)
 {
+  s.push_back(' '); // easier to do this than handle full buffer at EOF
   tokenize();       // instigate lexer
 }
 
@@ -66,14 +67,8 @@ void tokenizer::pushbuf(TState type, TState statename)
 
 void tokenizer::tokenize()
 {
-  size_t ssize = s->length();
-  while(i <= ssize) // ensure the iterator doesn't exceed string length
+  while(i < s.length()) // ensure the iterator doesn't exceed string length
   {
-    if(i == ssize)
-    {
-      pushbuf(state, NEWSYMBOL);
-      break;
-    }
     switch(state)
     {
       // Each state has its own handler subroutine - self explanatory
@@ -98,8 +93,8 @@ void tokenizer::tokenize()
 
 void tokenizer::resourceState()
 {
-  const char m = (*s)[i];            // simplifies code
-  const char n = symbol_type(m);  // get symbol_type of current char
+  char m = s[i];            // simplifies code
+  char n = symbol_type(m);  // get symbol_type of current char
   switch(n)
   {
     case 'L':   buf += m;                         break;
@@ -121,8 +116,8 @@ void tokenizer::resourceState()
 
 void tokenizer::newsymbolState()
 {
-  const char m = (*s)[i];            // simplifies code
-  const char n = symbol_type(m);  // get symbol_type of current char
+  char m = s[i];            // simplifies code
+  char n = symbol_type(m);  // get symbol_type of current char
   switch(n)
   {
     case 'L':   buf += m;    state = IDENTIFIER;  break;
@@ -145,8 +140,8 @@ void tokenizer::newsymbolState()
 
 void tokenizer::identifierState()
 {
-  const char m = (*s)[i];            // simplifies code
-  const char n = symbol_type(m);  // get symbol_type of current char
+  char m = s[i];            // simplifies code
+  char n = symbol_type(m);  // get symbol_type of current char
   switch(n)
   {
     case '/':   pushbuf(IDENTIFIER, RESOURCE);
@@ -170,8 +165,8 @@ void tokenizer::identifierState()
 
 void tokenizer::numberState()
 {
-  const char m = (*s)[i];            // simplifies code
-  const char n = symbol_type(m);  // get symbol_type of current char
+  char m = s[i];            // simplifies code
+  char n = symbol_type(m);  // get symbol_type of current char
   switch(n)
   {
     case 'L':   buf += m;                         break;
@@ -196,13 +191,13 @@ void tokenizer::numberState()
 
 void tokenizer::stringState()
 {
-  const char m = (*s)[i];            // simplifies code
-  const char n = symbol_type(m);  // get symbol_type of current char
+  char m = s[i];            // simplifies code
+  char n = symbol_type(m);  // get symbol_type of current char
   switch(n)
   {
     case ')':   pushbuf(STRING, NEWSYMBOL);       break;
     case '\\':  escapeState();                    break;
-    default:    buf += m;                         break;
+    default:    buf += s[i];                      break;
   }
 }
 
@@ -211,13 +206,13 @@ void tokenizer::stringState()
 
 void tokenizer::arrayState()
 {
-  const char m = (*s)[i];            // simplifies code
-  const char n = symbol_type(m);  // get symbol_type of current char
+  char m = s[i];            // simplifies code
+  char n = symbol_type(m);  // get symbol_type of current char
   switch(n)
   {
-    case ']':   subtokenizer(&buf); // at end of array, tokenize its contents
+    case ']':   subtokenizer(buf); // at end of array, tokenize its contents
                 state = NEWSYMBOL; buf = "";      break;
-    case '\\':  buf +=(*s)[i++]; buf += (*s)[i];       break;
+    case '\\':  buf += s[i++]; buf += s[i];       break;
     default:    buf += m;                         break;
   }
 }
@@ -227,15 +222,15 @@ void tokenizer::arrayState()
 
 void tokenizer::hexstringState()
 {
-  const char m = (*s)[i];            // simplifies code
-  const char n = symbol_type(m);  // get symbol_type of current char
+  char m = s[i];            // simplifies code
+  char n = symbol_type(m);  // get symbol_type of current char
   switch(n)
   {
     case '>':   if (!buf.empty())
                   pushbuf(HEXSTRING, NEWSYMBOL);
                 state = NEWSYMBOL;                break;
     case '<':   buf = ""; state = DICT;           break;
-    case '\\':  buf += m +(*s)[++i];                break;
+    case '\\':  buf += m + s[++i];                break;
     default:    buf += m;                         break;
   }
 }
@@ -246,11 +241,11 @@ void tokenizer::hexstringState()
 
 void tokenizer::dictState()
 {
-  const char m = (*s)[i];            // simplifies code
-  const char n = symbol_type(m);  // get symbol_type of current char
+  char m = s[i];            // simplifies code
+  char n = symbol_type(m);  // get symbol_type of current char
   switch(n)
   {
-    case '\\':  buf += m +(*s)[++i];                break;
+    case '\\':  buf += m + s[++i];                break;
     case '>':   pushbuf(DICT, HEXSTRING);         break;
     default:    buf += m;                         break;
   }
@@ -261,16 +256,16 @@ void tokenizer::dictState()
 
 void tokenizer::escapeState()
 {
-  char n = symbol_type((*s)[++i]); // read the next char
+  char n = symbol_type(s[++i]); // read the next char
   if (n == 'D')                 // if it's a digit it's likely an octal
   {
     int octcount = 0;
     pushbuf(STRING, STRING);
     while(n == 'D' && octcount < 3) // add consecutive chars to octal (up to 3)
     {
-      buf +=(*s)[i++];
+      buf += s[i++];
       octcount++;
-      n = symbol_type((*s)[i]);
+      n = symbol_type(s[i]);
     }
     int newint = stoi(buf, nullptr, 8); // convert octal string to int
     buf = intToHexstring(newint);
@@ -278,7 +273,7 @@ void tokenizer::escapeState()
     i--;                                // decrement to await next char
   }
   else
-    buf += (*s)[i];                  // if not a digit, get escaped char
+    buf += s[i];                  // if not a digit, get escaped char
 }
 
 /*---------------------------------------------------------------------------*/
@@ -288,8 +283,8 @@ void tokenizer::escapeState()
 void tokenizer::waitState()
 {
   // the lexer
-  buf =  (*s)[i] +(*s)[i + 1];
-  buf += symbol_type((*s)[i + 2]);
+  buf =  s[i] + s[i + 1];
+  buf += symbol_type(s[i + 2]);
   if(buf == "EI ") // look for EI with any whitespace char following
   {
     buf.clear();
@@ -301,7 +296,7 @@ void tokenizer::waitState()
 // when tokenizer is called recursively on an array within the string, we
 // want its instructions to be added to the same stack as the parent string
 
-void tokenizer::subtokenizer(const string* str)
+void tokenizer::subtokenizer(const string &str)
 {
   state = NEWSYMBOL;
   concat(output, tokenizer(str).result()); // concatenates results + subresults

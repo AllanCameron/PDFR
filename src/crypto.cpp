@@ -262,7 +262,7 @@ bytes crypto::md5(std::string input)
 // directly back into the original message using exactly the same key.
 // The algorithm is now in the public domain
 
-void crypto::rc4(string& msg, bytes key)
+bytes crypto::rc4(bytes msg, bytes key)
   {
     int keyLen = key.size();
     int msgLen = msg.size();
@@ -271,7 +271,7 @@ void crypto::rc4(string& msg, bytes key)
     bytes state;
     for (i = 0; i <= 0xff; ++i) state.push_back(i); // fill state with 0 - 0xff
     if (keyLen == 0)
-      return;
+      return state;
     a = b = x = y = 0;
     for (auto& i : state)
       {
@@ -282,6 +282,7 @@ void crypto::rc4(string& msg, bytes key)
         a = (a + 1) % keyLen;
       }
 
+    bytes res = msg;
     for(int k = 0; k < msgLen; k++)
       {
         uint8_t x1, y1, tx, ty;
@@ -291,8 +292,9 @@ void crypto::rc4(string& msg, bytes key)
         ty = state[y1];
         state[x1] = ty;
         state[y1] = tx;
-        msg[k] = msg[k] ^ state[(tx + ty) % 256];
+        res[k] = res[k] ^ state[(tx + ty) % 256];
       }
+    return res;
   }
 
 /*---------------------------------------------------------------------------*/
@@ -307,7 +309,7 @@ void crypto::rc4(string& msg, bytes key)
 // key length plus 5, is then used as the key with which to decrypt the
 // stream using the rc4 algorithm.
 
-void crypto::decryptStream(std::string& streamstr, int objNum, int objGen)
+std::string crypto::decryptStream(std::string streamstr, int objNum, int objGen)
   {
     bytes streambytes(streamstr.begin(), streamstr.end()); // stream as bytes
     bytes objkey = filekey; // Start building the object key with the file key
@@ -320,7 +322,11 @@ void crypto::decryptStream(std::string& streamstr, int objNum, int objGen)
     while(objkey.size() > objkeysize) objkey.pop_back(); // then trim to fit
 
     // Now we use this key to decrypt the stream using rc4
-    rc4(streamstr, objkey);
+    bytes bytevec = rc4(streambytes, objkey);
+
+    // finally we convert the resultant bytes to a string
+    std::string restring =  bytestostring(bytevec);
+    return restring;
   }
 
 /*---------------------------------------------------------------------------*/
@@ -374,10 +380,8 @@ void crypto::getFilekey()
 void crypto::checkKeyR2()
 {
   bytes ubytes = getPassword("/U"); // user password cipher
-  string ustring(ubytes.begin(), ubytes.end());
-  string upwstring(UPW.begin(), UPW.end());
-  rc4(upwstring, filekey); // rc4 of default user password
-  if(ustring == upwstring) return;
+  bytes checkans = rc4(UPW, filekey); // rc4 of default user password
+  if(checkans.size() == 32 && checkans == ubytes) return;
   throw runtime_error("Incorrect cryptkey");
 }
 
