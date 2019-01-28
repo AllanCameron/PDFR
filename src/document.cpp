@@ -40,10 +40,10 @@ using namespace std;
 // then uses the get_file() function from utilities.h to read in the filestring
 // from which buildDoc() then creates the object
 
-document::document(const string& filename) : file(filename)
+document::document(const string& filename) :
+  file(filename), filestring(get_file(file))
 {
-  filestring = get_file(file);  // Load file to memory as string
-  buildDoc();                   // Call constructor helper to build document
+  buildDoc(); // Call constructor helper to build document
 }
 
 /*---------------------------------------------------------------------------*/
@@ -51,9 +51,9 @@ document::document(const string& filename) : file(filename)
 // of bytes and converts it to the filestring before calling the helper function
 // to construct the document object
 
-document::document(const vector<uint8_t>& bytevector)
+document::document(const vector<uint8_t>& bytevector) :
+  filestring(bytestostring(bytevector))
 {
-  filestring = bytestostring(bytevector); // convert bytes to string
   buildDoc(); // Call constructor helper to build document
 }
 

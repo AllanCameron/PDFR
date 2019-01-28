@@ -308,7 +308,7 @@ void dictionary::handleClose(char n)
 // Creator function. Takes a string pointer so big strings can be passed
 // cheaply. This version starts at the beginning of the given string
 
-dictionary::dictionary(string* str) :
+dictionary::dictionary(const string* str) :
   s(str), i(0), bracket(0), keyPending(false), state(PREENTRY) // initializers
 {
   if(((*s).length() == 0)) *this = dictionary(); // empty string -> empty dict
@@ -320,7 +320,7 @@ dictionary::dictionary(string* str) :
 // This allows dictionaries to be read starting from the object locations
 // given in the cross-reference (xref) table
 
-dictionary::dictionary(string* str, size_t pos) :
+dictionary::dictionary(const string* str, size_t pos) :
   s(str), i(pos), bracket(0), keyPending(false), state(PREENTRY)
 {
   // check string isn't empty or smaller than the starting position

@@ -91,7 +91,7 @@ public:
   // constructors
 
   xref(){};                     // Default creator
-  xref(std::string*);           // The creator called during document creation
+  xref(const std::string*);     // The creator called during document creation
 
   // public methods
 
@@ -106,16 +106,17 @@ public:
   std::vector<size_t> getStreamLoc(int); // finds start and stop of the first
                                          // stream after the given byte offset
   std::string decrypt(std::string, int, int); // Interface for decryption object
-  std::string* docpointer();
+  const std::string* docpointer();
 
 private:
 
 // private data
 
-  std::string* fs;  // a pointer to the creating file string
+  const std::string* fs;  // a pointer to the creating file string
 
   // The main xref data member is an unordered map with the key being the object
   // number and the value being a struct of named ints as defined here
+
   struct xrefrow
   {
     int object,     // The object number itself

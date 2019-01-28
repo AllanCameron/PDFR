@@ -76,7 +76,7 @@ class xrefstream
 // the xref creator function. It takes the entire file contents as a string
 // then sequentially runs the steps in creation of an xref master map
 
-xref::xref(string* s) :  fs(s), encrypted(false)
+xref::xref(const string* s) :  fs(s), encrypted(false)
 {
   locateXrefs();           // find all xrefs
   xrefstrings();           // get the strings containing all xrefs
@@ -392,7 +392,7 @@ std::vector<std::vector<int>> xrefstream::table()
 /*---------------------------------------------------------------------------*/
 // get a pointer to the original document
 
-std::string* xref::docpointer()
+const std::string* xref::docpointer()
 {
   return this->fs;
 }

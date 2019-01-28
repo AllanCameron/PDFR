@@ -95,7 +95,7 @@ private:
   // private data members
 
   std::string file;                   // Path used to create file (if used)
-  std::string filestring;             // Full contents of file
+  const std::string filestring;       // Full contents of file
   xref Xref;                          // Contains the xref object for navigation
   dictionary pagedir;                 // dict containing pointers to pages
   dictionary catalog;                 // The pdf catalog dictionary
