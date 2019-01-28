@@ -73,6 +73,8 @@ private:
   bool has_stream;                // Records whether stream is zero length
   std::vector<size_t> streampos;  // start/stop file offsets for stream position
 
+  // this private constructor is only called if required by the public one
+  object_class(xref*, std::string str, int objnum);
 
 public:
   // public member functions
@@ -82,7 +84,6 @@ public:
 
   // creators
   object_class(xref*, int objnum);  // get direct object
-  object_class(xref*, const std::string&, int); // get object from objstream
   object_class(){}; // default constructor (needed for document class to
                     // initialize its vector of objects)
 
