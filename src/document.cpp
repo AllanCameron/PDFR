@@ -26,6 +26,7 @@
 //---------------------------------------------------------------------------//
 
 #include "document.h"
+#include <iostream>
 
 //---------------------------------------------------------------------------//
 // See the document.h file for comments regarding the rationale and use of this
@@ -78,9 +79,19 @@ void document::buildDoc()
 
 object_class* document::getobject(int n)
 {
-  if(objects.find(n) == objects.end())           // check if object is stored
+  if(objects.find(n) == objects.end())    // check if object is stored
+  {
+    size_t holder = Xref.inObject(n); // ensure no holding object
+    if(holder != 0) // if object is in an object stream
+    {
+      if(objects.find(holder) == objects.end()) // Get holding object if needed
+        objects[holder] = object_class(&(this->Xref), holder);
+      objects[n] = object_class(&(objects[holder]), n);
+    }
+    else
     objects[n] = object_class(&(this->Xref), n); // if not, create and store it
-  return &(objects[n]);                          // return a pointer to it
+  }
+  return &(objects[n]); // return a pointer to requested object
 }
 
 /*---------------------------------------------------------------------------*/

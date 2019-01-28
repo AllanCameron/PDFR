@@ -197,42 +197,6 @@ void trimRight(string& s)
 }
 
 /*--------------------------------------------------------------------------*/
-// Similar to string.find()
-
-size_t firstmatch(std::string& s, std::string m, int startpos)
-{
-  size_t ssize = s.size();
-  size_t msize = m.size();
-  if(startpos < 0 || startpos > (int) ssize || msize > ssize)
-    return -1; // negative value indicates no match; same as string.find();
-  size_t state = 0; // this variable records how many consecutive chars match
-  size_t j = startpos;
-  while(j < ssize)
-  {
-    /* This loop iterates through string s until it finds a character that
-     * matches the first character in m. It then increments 'state' to record
-     * that it has macthed one character. If the next character in s matches
-     * the second character in m, s increments again. If 'state' increments up
-     * to the value of m's length then a complete match has been found.
-     * If at any stage the next character of s does not match the next
-     * character of m, the increment state is reset to 0 (or 1 if the first
-     * character of m appears in s to stop the increment)
-     */
-    if(s[j] == m[state])
-      state++;                      // found a match - increment
-    else if(s[j] == m[0])
-      state = 1;                    // match broken but character matches m[0]
-    else
-      state = 0;                    // match broken, start again
-    if (state == msize)
-      break;                        // full match found
-    if (ssize - j == 1) return -1;  // insufficient string left for match
-    j++;
-  }
-  return j + 1 - msize; // returns the first position of the match
-}
-
-/*--------------------------------------------------------------------------*/
 // Returns the data represented by an Ascii encoded hex string as a vector
 // of two-byte numbers
 

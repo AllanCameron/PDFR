@@ -76,7 +76,7 @@ class xrefstream
 // the xref creator function. It takes the entire file contents as a string
 // then sequentially runs the steps in creation of an xref master map
 
-xref::xref(string* s) : fs(s)
+xref::xref(string* s) : encrypted(false), fs(s)
 {
   locateXrefs();           // find all xrefs
   xrefstrings();           // get the strings containing all xrefs
@@ -137,7 +137,7 @@ void xref::xrefstrings()
   // get a string from each xref location or die
   for(auto i : Xreflocations)
   {
-    int len = firstmatch(*fs, "startxref", i) - i; // length of xref in chars
+    int len = fs->find("startxref", i) - i; // length of xref in chars
 
     // Throw error if no xref found
     if (len <= 0) throw std::runtime_error("No object found at location");
@@ -275,7 +275,7 @@ size_t xref::getEnd(int objnum)
   if(xreftab[objnum].in_object) return 0;
 
   // else find the first match of "endobj" and return
-  return (int) firstmatch(*fs, "endobj", xreftab[objnum].startbyte);
+  return (int) fs->find("endobj", xreftab[objnum].startbyte);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -320,7 +320,7 @@ vector<size_t> xref::getStreamLoc(int objstart)
       {
         int lengthob = dict.getRefs("/Length")[0]; // finds reference
         size_t firstpos = getStart(lengthob);      // gets start of length obj
-        size_t lastpos = firstmatch(*fs, "endobj", firstpos); // and end of it
+        size_t lastpos = fs->find("endobj", firstpos); // and end of it
         size_t len = lastpos - firstpos;  // from which we can get its length
         string objstr = fs->substr(firstpos, len); // from which we get a string
         streamlen = getints(objstr).back(); // from which we get the number

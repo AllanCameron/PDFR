@@ -65,6 +65,7 @@ class object_class
 {
 private:
   // private data members
+
   xref* XR;                       // Pointer to xref allows data to be found
   int number,                     // The object knows its own number
       startpos;                   // The object knows its own starting position
@@ -73,17 +74,27 @@ private:
   bool has_stream;                // Records whether stream is zero length
   std::vector<size_t> streampos;  // start/stop file offsets for stream position
 
-  // this private constructor is only called if required by the public one
-  object_class(xref*, std::string str, int objnum);
+  // index for object stream holders
+  std::unordered_map<int, std::pair<int, int>> objstmIndex;
+
+  // private methods
+
+  void indexObjectStream();       // gets index of objects held by a stream
+
 
 public:
+
   // public member functions
+
   bool hasStream();               // returns has_stream boolean
   std::string getStream();        // returns stream as string
   dictionary getDict();           // returns header as dictionary object
+  std::string objFromStream(int); // returns object from this object's stream
 
   // creators
+
   object_class(xref*, int objnum);  // get direct object
+  object_class(object_class*, int objnum);
   object_class(){}; // default constructor (needed for document class to
                     // initialize its vector of objects)
 
