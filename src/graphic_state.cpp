@@ -121,7 +121,7 @@ void graphic_state::Td(const vector<string>& Operands)
   vector<float> tmpvec = stringtofloat(Operands);       //  create translation
   Tds.at(6) = tmpvec[0];                                //  matrix (3x3)
   Tds[7] = tmpvec[1];                               //------------------------
-  matmul(Tds, Tdstate); // multiply translation and text matrices
+  Tdstate = matmul(Tds, Tdstate); // multiply translation and text matrices
   PRstate = 0; // Td resets kerning
 }
 
@@ -134,7 +134,7 @@ void graphic_state::TD(const vector<string>& Operands)
   vector<float> tmpvec = stringtofloat(Operands);       //  create translation
   Tds.at(6) = tmpvec[0];                                //  matrix (3x3)
   Tds[7] = tmpvec[1];                               //------------------------
-  matmul(Tds, Tdstate); // multiply translation and text matrices
+  Tdstate = matmul(Tds, Tdstate); // multiply translation and text matrices
   PRstate = 0; // TD resets kerning
   Tl = -Tds[7]; // set text leading to new value
 }
@@ -229,7 +229,7 @@ void graphic_state::cm(const vector<string>& Operands)
 {
   // read the operands as a matrix, multiply by top of graphics state stack
   // and replace the top of the stack with the result
-  matmul(stringvectomat(Operands), gs.back());
+  gs.back() = matmul(stringvectomat(Operands), gs.back());
 }
 
 /*---------------------------------------------------------------------------*/
@@ -250,11 +250,10 @@ void graphic_state::TJ(const string Ins, const vector<string>& Operands,
   if (Ins == "'") Tdstate[7] -= Tl;
 
   // We create a text space that is the product of Tm and cm matrices
-  vector<float> textspace = gs.back();
-  matmul(Tmstate, textspace);
+  vector<float> textspace = matmul(Tmstate, gs.back());
 
   // we now use the translation-only Td matrix to get our final text space
-  matmul(Tdstate, textspace);
+  textspace = matmul(Tdstate, textspace);
 
   // now we can set the starting x value of our string
   float txtspcinit = textspace[6];
@@ -402,7 +401,7 @@ void graphic_state::MakeGS()
 // Note there is no matrix class - these are pseudo 3 x 3 matrices formed
 // from single length-9 vectors
 
-void graphic_state::matmul(vector<float> b, vector<float>& a)
+vector<float> graphic_state::matmul(vector<float> b, vector<float> a)
 {
   if(a.size() != b.size())
     throw std::runtime_error("matmul: Vectors must have same size.");
@@ -413,7 +412,7 @@ void graphic_state::matmul(vector<float> b, vector<float>& a)
     newmat.emplace_back(a[i % 3 + 0] * b[3 * (i / 3) + 0] +
                         a[i % 3 + 3] * b[3 * (i / 3) + 1] +
                         a[i % 3 + 6] * b[3 * (i / 3) + 2] );
-  a.swap(newmat);
+  return newmat;
 }
 
 /*---------------------------------------------------------------------------*/

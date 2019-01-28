@@ -31,11 +31,7 @@
 
 #define PDFR_DICT
 
-/* This header is the second in a "daisy chain" of headers which build up the
- * tools needed to read pdfs. It comes straight after utilities.h, and is
- * required by most of the other source files here.
- *
- * The dictionary is an important part of a pdf's data structure. It consists
+/* The dictionary is an important part of a pdf's data structure. It consists
  * of a variable number of name-value pairs. The names are designated by a
  * preceding forward slash, eg /PDFName. The values in the name:value pair can
  * be of four different basic types: boolean, number, object reference and
@@ -48,12 +44,16 @@
  * necessary to define a dictionary class early on as it is a prerequisite
  * of navigating and interpreting a pdf.
  *
- * This class is created by providing a pointer to a std::string containing a
- * pdf dictionary. The string is fed to a lexer which parses the name:value
- * pairs into a std::unordered_map. The values are all stored as strings and
+ * This class is created by providing a std::string containing a pdf dictionary.
+ * This string is passed through a lexer which parses the name:value pairs
+ * into a std::unordered_map. The values are all stored as strings and
  * processed as required. Mostly this processing is done by the class itself
  * from public member functions which can return numbers, references, strings
  * and dictionaries on request.
+ *
+ * This header is the second in a "daisy chain" of headers which build up the
+ * tools needed to read pdfs. It comes straight after utilities.h, and is
+ * required by most of the other source files here.
  */
 
 #include "utilities.h"

@@ -309,6 +309,7 @@ void crypto::rc4(string& msg, bytes key)
 
 void crypto::decryptStream(std::string& streamstr, int objNum, int objGen)
   {
+    bytes streambytes(streamstr.begin(), streamstr.end()); // stream as bytes
     bytes objkey = filekey; // Start building the object key with the file key
     concat(objkey, chopLong(objNum)); // append the bytes of the object number
     objkey.pop_back(); // we only wanted the three lowest order bytes; pop last
