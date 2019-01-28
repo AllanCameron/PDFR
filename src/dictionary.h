@@ -31,7 +31,11 @@
 
 #define PDFR_DICT
 
-/* The dictionary is an important part of a pdf's data structure. It consists
+/* This header is the second in a "daisy chain" of headers which build up the
+ * tools needed to read pdfs. It comes straight after utilities.h, and is
+ * required by most of the other source files here. (see headerMap.txt)
+ *
+ * The dictionary is an important part of a pdf's data structure. It consists
  * of a variable number of name-value pairs. The names are designated by a
  * preceding forward slash, eg /PDFName. The values in the name:value pair can
  * be of four different basic types: boolean, number, object reference and
@@ -44,26 +48,53 @@
  * necessary to define a dictionary class early on as it is a prerequisite
  * of navigating and interpreting a pdf.
  *
- * This class is created by providing a std::string containing a pdf dictionary.
- * This string is passed through a lexer which parses the name:value pairs
+ * This class is created by providing a pointer to a std::string containing a
+ * pdf dictionary. It is overloaded to allow a starting position to be
+ * specified, though not stopping point is needed as the dictionary lexer
+ * will stop reading automatically when it comes to the end if the dictionary.
+ *
+ * This string is passed through the lexer which parses the name:value pairs
  * into a std::unordered_map. The values are all stored as strings and
  * processed as required. Mostly this processing is done by the class itself
  * from public member functions which can return numbers, references, strings
- * and dictionaries on request.
- *
- * This header is the second in a "daisy chain" of headers which build up the
- * tools needed to read pdfs. It comes straight after utilities.h, and is
- * required by most of the other source files here.
+ * and dictionaries on request. The interface is therefore large but read-only.
  */
 
 #include "utilities.h"
 
 //---------------------------------------------------------------------------//
+
+class dictionary
+{
+  public:
+
+  // Constructors
+
+  dictionary(std::string*); // make dictionary from string pointer
+  dictionary(std::string*, size_t); // make dictionary from position in string
+  dictionary(std::unordered_map<std::string, std::string>); // create from map
+  dictionary(); // empty dictionary
+
+  // Public member functions
+
+  std::string get(const std::string&);  // get value as string given name
+  bool has(const std::string&);         // confirms a key is present
+  bool hasRefs(const std::string&);     // tests if given key has references
+  bool hasInts(const std::string&);     // tests if given key has ints
+  bool hasDictionary(const std::string&); // tests if key has dictionary
+  std::vector<int> getRefs(const std::string&); // gets references from key
+  std::vector<int> getInts(const std::string&); // gets ints from key
+  std::vector<float> getNums(const std::string&); // gets floats from key
+  std::vector<std::string> getDictKeys(); // gets all keys from dictionary
+  dictionary getDictionary(const std::string&); // gets sub-dictionary from key
+  std::unordered_map<std::string, std::string> R_out(); // returns full map
+
+private:
+
 // The lexer which constructs the dictionary is a finite state machine, which
 // behaves in different ways to parse the string depending on its state.
 // The state in turn may be changed by the character read by the lexer.
 // The following enum lists the possible states of the finite state machine.
-
 enum DState     {PREENTRY,
                  QUERYCLOSE,
                  VALUE,
@@ -78,11 +109,6 @@ enum DState     {PREENTRY,
                  CLOSE,
                  THE_END};
 
-//---------------------------------------------------------------------------//
-
-class dictionary
-{
-private:
   // Private data members
 
   std::string* s;   // pointer to the string being read
@@ -111,26 +137,6 @@ private:
   void handleSubdict(char);               //
   void handleClose(char);           //----//
 
-public:
-  // Creator functions
-
-  dictionary(std::string*); // make dictionary from string
-  dictionary(std::string*, size_t); // make dictionary from position in string
-  dictionary(std::unordered_map<std::string, std::string>); // create from map
-  dictionary(); // empty dictionary
-
-  // Public member functions
-  std::string get(const std::string&);  // get value as string given name
-  bool has(const std::string&);         // confirms a key is present
-  bool hasRefs(const std::string&);     // tests if given key has references
-  bool hasInts(const std::string&);     // tests if given key has ints
-  bool hasDictionary(const std::string&); // tests if key has dictionary
-  std::vector<int> getRefs(const std::string&); // gets references from key
-  std::vector<int> getInts(const std::string&); // gets ints from key
-  std::vector<float> getNums(const std::string&); // gets floats from key
-  std::vector<std::string> getDictKeys(); // gets all keys from dictionary
-  dictionary getDictionary(const std::string&); // gets sub-dictionary from key
-  std::unordered_map<std::string, std::string> R_out(); // returns full map
 };
 
 //---------------------------------------------------------------------------//

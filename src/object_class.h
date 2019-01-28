@@ -63,6 +63,24 @@
 
 class object_class
 {
+
+public:
+
+  // constructors
+
+  object_class(xref*, int objnum);  // get direct object
+  object_class(object_class*, int objnum);
+  object_class(){}; // default constructor (needed for document class to
+                    // initialize its vector of objects)
+
+  // public member functions
+
+  bool hasStream();               // returns has_stream boolean
+  std::string getStream();        // returns stream as string
+  dictionary getDict();           // returns header as dictionary object
+  std::string objFromStream(int); // returns object from this object's stream
+
+
 private:
   // private data members
 
@@ -80,23 +98,6 @@ private:
   // private methods
 
   void indexObjectStream();       // gets index of objects held by a stream
-
-
-public:
-
-  // public member functions
-
-  bool hasStream();               // returns has_stream boolean
-  std::string getStream();        // returns stream as string
-  dictionary getDict();           // returns header as dictionary object
-  std::string objFromStream(int); // returns object from this object's stream
-
-  // creators
-
-  object_class(xref*, int objnum);  // get direct object
-  object_class(object_class*, int objnum);
-  object_class(){}; // default constructor (needed for document class to
-                    // initialize its vector of objects)
 
 };
 

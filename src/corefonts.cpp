@@ -27,10 +27,10 @@
 
 #include "glyphwidths.h"
 
-/* This file defines characteristics of the 14 core or built-in pdf fonts as
- * described in the comments of corefonts.h. These are necessary for backwards-
- * compatability with earlier versions of the pdf standard which did not
- * mandate specifying all character widths in a pdf file.
+/* This file defines characteristics of the 14 core or built-in pdf fonts.
+ * These are necessary for backwards-compatability with earlier versions of the
+ * pdf standard which did not mandate specifying all character widths in a pdf
+ * file.
  *
  * The following data by their nature are not really human-readable and can
  * only be checked by testing their output
