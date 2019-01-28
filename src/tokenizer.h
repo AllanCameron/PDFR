@@ -91,9 +91,11 @@ class tokenizer
 public:
 
   // constructor
+
   tokenizer(const std::string& s);
 
   // get results from tokenizer
+
   std::vector<std::pair<std::string, Token::TState>> result();
 
 private:
@@ -110,6 +112,7 @@ private:
 
 
   // private methods
+
   void tokenize();                  // chooses state subroutine based on state
   void subtokenizer(const std::string&);  // uses recursion for sub-strings
 
@@ -128,7 +131,6 @@ private:
   void hexstringState();              //
   void dictState();                   //
   void waitState();         //--------//---------------------------------------
-
 
 };
 

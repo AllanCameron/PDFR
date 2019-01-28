@@ -66,19 +66,23 @@ class page
 
 public:
 
-  // constructor function
+  // constructor
+
   page(document* a_pointer_to_the_document, int this_is_the_page_number);
 
   // public methods
+
   std::vector<std::string> getFontNames();  // Returns PostScript font names
   std::string pageContents(); // Returns page description program as string
   std::vector<float> getminbox(); // Get co-ordinates of smallest bounding box
   std::string getXobject(const std::string&); // Return specified XObject string
   font* getFont(const std::string&);  // Returns a pointer to specified string
 
+
 private:
 
   // private data members
+
   document*           d;              // Pointer to containing document
   int                 pagenumber;     // [Zero-indexed] page number
   dictionary          header,         // The page's header dictionary

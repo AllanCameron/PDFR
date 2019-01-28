@@ -75,7 +75,6 @@
 #include "streams.h"
 #include "crypto.h"
 
-
 /*---------------------------------------------------------------------------*/
 // The main xref class definition. Since this is the main "skeleton" of the pdf
 // which is used by other classes to negotiate and parse the pdf, and because it
@@ -86,9 +85,34 @@
 
 class xref
 {
+
+public:
+
+  // constructors
+
+  xref(){};                     // Default creator
+  xref(std::string*);           // The creator called during document creation
+
+  // public methods
+
+  bool isEncrypted();           // returns encryption state
+  dictionary trailer() ;        // Public access for the trailer dictionary
+  size_t getStart(int);         // Returns byte offset of a given object
+  size_t getEnd(int);           // Returns byte offset of end of given object
+  bool isInObject(int);         // Test whether given object is part of a stream
+  size_t inObject(int);         // The object whose stream a given object is in
+  std::vector<int> getObjects();// A vector of all objects recorded in xref
+  bool objectExists(int);       // check for an object's existence
+  std::vector<size_t> getStreamLoc(int); // finds start and stop of the first
+                                         // stream after the given byte offset
+  std::string decrypt(std::string, int, int); // Interface for decryption object
+  std::string* docpointer();
+
 private:
 
-// private data members
+// private data
+
+  std::string* fs;  // a pointer to the creating file string
 
   // The main xref data member is an unordered map with the key being the object
   // number and the value being a struct of named ints as defined here
@@ -112,7 +136,7 @@ private:
   crypto encryption;                      // crypto object for decrypting files
 
 
-// private member functions
+// private methods
 
   void locateXrefs();                     // Finds xref locations
   void xrefstrings();                     // Gets strings from xref locations
@@ -121,23 +145,6 @@ private:
   void xrefFromString(std::string&);      // parses xref directly
   void buildXRtable();                    // constructs main data member
   void get_crypto();                      // Allows decryption of encrypted docs
-
-public:
-  xref(){};                     // Default creator
-  xref(std::string*);           // The creator called during document creation
-  std::string* fs;              // a pointer to the creating file string
-  bool isEncrypted();           // returns encryption state
-  dictionary trailer() ;        // Public access for the trailer dictionary
-  size_t getStart(int);         // Returns byte offset of a given object
-  size_t getEnd(int);           // Returns byte offset of end of given object
-  bool isInObject(int);         // Test whether given object is part of a stream
-  size_t inObject(int);         // The object whose stream a given object is in
-  std::vector<int> getObjects();// A vector of all objects recorded in xref
-  bool objectExists(int);       // check for an object's existence
-  std::vector<size_t> getStreamLoc(int); // finds start and stop of the first
-                                         // stream after the given byte offset
-  std::string decrypt(std::string, int, int); // Interface for decryption object
-
 };
 
 

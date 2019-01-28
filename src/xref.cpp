@@ -65,7 +65,7 @@ class xrefstream
   void mergecolumns();      // add adjacent colums as guided by parameters
   void numberRows();        // merge object numbers with data table
 
-  // private creator function
+  // private constructor
   xrefstream(xref*, int objstart);
 
   // getter of final result
@@ -76,7 +76,7 @@ class xrefstream
 // the xref creator function. It takes the entire file contents as a string
 // then sequentially runs the steps in creation of an xref master map
 
-xref::xref(string* s) : encrypted(false), fs(s)
+xref::xref(string* s) :  fs(s), encrypted(false)
 {
   locateXrefs();           // find all xrefs
   xrefstrings();           // get the strings containing all xrefs
@@ -390,6 +390,14 @@ std::vector<std::vector<int>> xrefstream::table()
 }
 
 /*---------------------------------------------------------------------------*/
+// get a pointer to the original document
+
+std::string* xref::docpointer()
+{
+  return this->fs;
+}
+
+/*---------------------------------------------------------------------------*/
 // xrefstream constructor. Note that encryption does not apply to xrefstreams.
 // The constructor calls several functions which together comprise the
 // PNG decompression algorithm. They are seperated out to prevent one large
@@ -398,7 +406,7 @@ std::vector<std::vector<int>> xrefstream::table()
 xrefstream::xrefstream(xref* Xref, int starts) :
   XR(Xref), ncols(0), predictor(0), objstart(starts)
 {
-  dict = dictionary(XR->fs, objstart);         // get the xrefstream dict
+  dict = dictionary(XR->docpointer(), objstart);    // get the xrefstream dict
   string decodestring = "<<>>";
   if(dict.has("/DecodeParms"))
     decodestring = dict.get("/DecodeParms"); // string for subdict
@@ -480,10 +488,10 @@ void xrefstream::getRawMatrix()
   std::vector<size_t> sl = XR->getStreamLoc(objstart);
 
   // extracts stream from file
-  std::string SS = XR->fs->substr(sl[0], sl[1] - sl[0]);
+  std::string SS = XR->docpointer()->substr(sl[0], sl[1] - sl[0]);
 
   // gets the containing object's dictionary
-  dictionary dict = dictionary(XR->fs, objstart);
+  dictionary dict = dictionary(XR->docpointer(), objstart);
 
   // applies decompression to stream if needed
   if(dict.get("/Filter").find("/FlateDecode", 0) != string::npos)
