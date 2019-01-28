@@ -158,6 +158,8 @@ const char symbol_type(const char);
 
 void trimRight(std::string&);
 
+size_t firstmatch(const std::string&, std::string, int);
+
 std::vector<RawChar> HexstringToRawChar(const std::string&);
 
 std::vector<RawChar> StringToRawChar(const std::string&);
