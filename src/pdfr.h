@@ -83,7 +83,7 @@
  */
 
 #include<Rcpp.h>
-#include "graphic_state.h"
+#include "grid.h"
 
 //---------------------------------------------------------------------------//
 // Get xref. Returns a dataframe representing all of the cross-reference tables
@@ -140,4 +140,9 @@ Rcpp::List pdfpageraw(const std::vector<uint8_t>& rawfile, int pagenum);
 // [[Rcpp::export(.getglyphmap)]]
 Rcpp::DataFrame getglyphmap(const std::string& s, int pagenum);
 
+//---------------------------------------------------------------------------//
+// [[Rcpp::export(.getgrid)]]
+Rcpp::List getgrid(const std::string& s, int pagenum);
+
+//---------------------------------------------------------------------------//
 #endif

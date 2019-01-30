@@ -205,3 +205,45 @@ Rcpp::List pdfpageraw(const std::vector<uint8_t>& rawfile, int pagenum)
   return PDFpage(&p);// send pointer to PDFpage helper function for result
 }
 
+//---------------------------------------------------------------------------//
+Rcpp::List getgrid(const std::string& s, int pagenum)
+{
+  document myfile = document(s); // document from file string
+  page p = page(&myfile, pagenum - 1); // get page (convert to zero-indexed!)
+  graphic_state GS = graphic_state(&p);
+  std::unordered_map<uint8_t, std::vector<GSrow>> gridout = grid(GS).output();
+  std::vector<float> left;
+  std::vector<float> right;
+  std::vector<float> size;
+  std::vector<float> bottom;
+  std::vector<std::vector<uint16_t>> glyph;
+  std::vector<std::string> font;
+  std::vector<uint8_t> gridpoint;
+  std::vector<std::string> blanktext(GS.output().left.size());
+  for(uint8_t i = 0; i < 256; i++)
+  {
+    for(auto j : gridout[i])
+    {
+      left.push_back(j.left);
+      right.push_back(j.right);
+      size.push_back(j.size);
+      bottom.push_back(j.bottom);
+      font.push_back(j.font);
+      glyph.push_back(j.glyph);
+      gridpoint.push_back(i);
+    }
+    if(i == 255) break; // prevent overflow back to 0 and endless loop
+  }
+  Rcpp::List glyphlist = Rcpp::List::create(Rcpp::Named("glyphvecs") = glyph);
+  Rcpp::DataFrame db =  Rcpp::DataFrame::create(
+                        Rcpp::Named("text") = blanktext,
+                        Rcpp::Named("left") = left,
+                        Rcpp::Named("bottom") = bottom,
+                        Rcpp::Named("right") = right,
+                        Rcpp::Named("font") = font,
+                        Rcpp::Named("size") = size,
+                        Rcpp::Named("gridpoint") = gridpoint,
+                        Rcpp::Named("stringsAsFactors") = false);
+  return Rcpp::List::create(Rcpp::Named("glyphs") = glyphlist,
+                            Rcpp::Named("Elements") = db);
+}

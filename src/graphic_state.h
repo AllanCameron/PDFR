@@ -101,6 +101,7 @@ public:
 
   // access results
   GSoutput output();
+  std::vector<float> getminbox();
 
 private:
   //private data members - used to maintain state between calls to parser

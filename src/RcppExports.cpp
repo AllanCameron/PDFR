@@ -87,6 +87,18 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// getgrid
+Rcpp::List getgrid(const std::string& s, int pagenum);
+RcppExport SEXP _PDFR_getgrid(SEXP sSEXP, SEXP pagenumSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const std::string& >::type s(sSEXP);
+    Rcpp::traits::input_parameter< int >::type pagenum(pagenumSEXP);
+    rcpp_result_gen = Rcpp::wrap(getgrid(s, pagenum));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_PDFR_get_xref", (DL_FUNC) &_PDFR_get_xref, 1},
@@ -96,6 +108,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_PDFR_pdfpage", (DL_FUNC) &_PDFR_pdfpage, 2},
     {"_PDFR_pdfpageraw", (DL_FUNC) &_PDFR_pdfpageraw, 2},
     {"_PDFR_getglyphmap", (DL_FUNC) &_PDFR_getglyphmap, 2},
+    {"_PDFR_getgrid", (DL_FUNC) &_PDFR_getgrid, 2},
     {NULL, NULL, 0}
 };
 

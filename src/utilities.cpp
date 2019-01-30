@@ -493,3 +493,5 @@ std::string get_file(const std::string& file)
   fileCon->close(); // Ensure the connection is closed before proceeding
   return filestring;
 }
+
+/*--------------------------------------------------------------------------*/

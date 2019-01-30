@@ -426,3 +426,11 @@ vector<float> graphic_state::stringvectomat(vector<string> b)
   vector<float> newmat {a[0], a[1], 0, a[2], a[3], 0, a[4], a[5], 1};
   return newmat;
 }
+
+/*---------------------------------------------------------------------------*/
+// Retrieve the minbox around the graphic_state
+
+std::vector<float> graphic_state::getminbox()
+{
+  return p->getminbox();
+}

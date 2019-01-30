@@ -29,3 +29,7 @@
     .Call('_PDFR_getglyphmap', PACKAGE = 'PDFR', s, pagenum)
 }
 
+.getgrid <- function(s, pagenum) {
+    .Call('_PDFR_getgrid', PACKAGE = 'PDFR', s, pagenum)
+}
+

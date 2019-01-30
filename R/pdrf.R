@@ -172,7 +172,8 @@ pdfplot <- function(pdf, page = 1, textsize = 1)
                   fill = "white", colour="black", size=0.2
     ) + ggplot2::geom_text(ggplot2::aes(label = y$text), hjust = 0, vjust = 0
     ) + ggplot2::coord_equal(
-    ) + ggplot2::scale_size_identity();
+    ) + ggplot2::scale_size_identity(
+    );
 }
 
 ##---------------------------------------------------------------------------##
@@ -195,3 +196,84 @@ getglyphmap <- function(pdf, page = 1)
   return(.getglyphmap(pdf, page))
 }
 
+##---------------------------------------------------------------------------##
+#' Show ggplot of page with segmentation lines
+#'
+#' A way to assess the segmentation algorithm visually
+#'
+#' @param pdf a valid pdf file location
+#' @param page the page number from which to extract glyphs
+#' @param textsize the size of the text to be shown on the plot
+#'
+#' @return no return - prints a ggplot
+#' @export
+#'
+#' @examples segplot(testfiles$leeds, 1)
+##---------------------------------------------------------------------------##
+segplot <- function(pdf, page = 1, textsize = 1)
+{
+  pdfpage(pdf, page) -> x;
+  x$Elements -> y;
+  y$top <- y$bottom + y$size;
+  ycounts <- numeric(1000);
+  xcounts <- numeric(1000);
+  ylines <- numeric();
+  xlines <- numeric();
+  x$Box[3] -> xmax;
+  x$Box[1] -> xmin;
+  x$Box[4] -> ymax;
+  x$Box[2] -> ymin;
+  ybins <- ymin + 1:1000 * ((ymax - ymin)/1000)
+  xbins <- xmin + 1:1000 * ((xmax - xmin)/1000)
+  for(i in 1:1000)
+  {
+    ycounts[i] <- length(which(y$bottom < ybins[i])) -
+                  length(which(y$top < ybins[i]));
+    xcounts[i] <- length(which(y$left < xbins[i])) -
+                  length(which(y$right < xbins[i]));
+    if( i > 1)
+    {
+      if(abs(ycounts[i]- ycounts[i-1]) > 3)
+      {
+        ylines <- c(ylines, ybins[i])
+      }
+      if(abs(xcounts[i] - xcounts[i-1]) > 3)
+      {
+        xlines <- c(xlines, xbins[i])
+      }
+    }
+  }
+  ggplot2::ggplot(data = y, ggplot2::aes(x = y$left, y = y$bottom,
+                  size = I(textsize*170 * y$size / (x$Box[4] - x$Box[2]))),
+                  lims = x$Box ) -> G;
+    G + ggplot2::geom_rect(ggplot2::aes(xmin = x$Box[1], ymin = x$Box[2],
+                      xmax = x$Box[3], ymax = x$Box[4]),
+                  fill = "white", colour="black", size=0.2
+    ) + ggplot2::geom_text(ggplot2::aes(label = y$text), hjust = 0, vjust = 0
+    ) + ggplot2::coord_equal(
+    ) + ggplot2::scale_size_identity(
+    ) + ggplot2::geom_hline(yintercept = ylines, colour = "red"
+    ) + ggplot2::geom_vline(xintercept = xlines, colour = "red");
+}
+
+
+##---------------------------------------------------------------------------##
+#' getgrid
+#'
+#' Returns contents of a pdf page with 16x16 grid locations as bytes
+#'
+#' @param pdf a valid pdf file location
+#' @param page the page number to be extracted
+#'
+#' @return a data frame of the page elements
+#' @export
+#'
+#' @examples getgrid(testfiles$leeds, 1)
+##---------------------------------------------------------------------------##
+getgrid <- function(pdf, page){
+
+  y <- .getgrid(pdf, page);
+  unlist(lapply(y$glyphs, function(x) intToUtf8(x, multiple=TRUE))) ->
+    y$Elements$text
+  return(y$Elements)
+}
