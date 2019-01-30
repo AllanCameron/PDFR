@@ -26,7 +26,6 @@
 //---------------------------------------------------------------------------//
 
 #include "document.h"
-#include <iostream>
 
 //---------------------------------------------------------------------------//
 // See the document.h file for comments regarding the rationale and use of this

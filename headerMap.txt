@@ -1,62 +1,93 @@
                                 headerMap.txt
                                 =============
 
-This file gives an overview of the structure of the program, showing the chain of
-#includes and the logical order in which to read and understand the files here.
-An arrow means the pointed-from header file is #included by the pointed-to
+This file gives an overview of the structure of the program, showing the chain
+of #includes and the logical order in which to read and understand the files
+here. An arrow means the pointed-from header file is #included by the pointed-to
 header file.
 
 The files in {curly brackets} underneath each header file are the .cpp files on
 which the header relies for implementation as there is not a strict 1:1
-correspondence between the two: some headers have no implementation and others
-have their implementation split across compilation units
+correspondence between the two: some headers are template / inline only so have
+no implementation, while others have their implementation split across
+compilation units to seperate out runtime code from the large static data
+structures required for encoding etc.
 
+The library consists of a C++ program which takes a pdf file as input and gives
+a complex data structure as output. This data structure can be passed to
+a wrapper to generate the desired output. This project outputs to R, but a
+wrapper could be written for any other output target.
 
-                                [debugtools.h] - optional
-                                       |
-                                       v
- ,------------------------------  utilities.h
- |                              {utilities.cpp}
- |                                     |
+--------------------------------------------------------------------------------
+
+                                  C++ program
+                                  ===========
+                 std::
+                <vector>
+                <string>
+                <chrono> -----> ["debugtools.h"]  (optional)
+               <iostream>              |
+                                       |                   std::
+                                       v                  <string>
+ ,-----------------------------< "utilities.h" <--------  <vector>
+ |               std::      --> {utilities.cpp}        <unordered_map>
+ |             <fstream> --'           |
+ |            <algorithm>              |
  |                                     v
- |                        ,------ dictionary.h ------,
+ |                        ,----- "dictionary.h" -----,
  |                        |     {dictionary.cpp}     |
  |                        |            |             |
- |                        v            |             v
- |      miniz.h ---->  streams.h       |          crypto.h
- |    {miniz.cpp}    {streams.cpp}     |        {crypto.cpp}
- |    **external*         |            |             |
+ | "external/miniz.h"     v            |             v
+ |    {miniz.cpp} '-> "streams.h"      |         "crypto.h"
+ |                   {streams.cpp}     |        {crypto.cpp}
+ |                        |            |             |
  |                        |            v             |
- |                        '--------> xref.h <--------'
+ |                        '-------> "xref.h" <-------'
  |                                 {xref.cpp}
  |                                     |
  |                                     v
- |                               object_class.h
+ |                              "object_class.h"
  |                             {object_class.cpp}
  |                                     |
  |                                     v
- |                          ,----  document.h  ----,
+ |                          ,---- "document.h" ----,
  |                          |    {document.cpp}    |
  |                          |                      |
  |                          v                      v
- |                      encoding.h           glyphwidths.h
+ |                     "encoding.h"         "glyphwidths.h"
  |                    {encoding.cpp}       {glyphwidths.cpp}
  |                 {charstounicode.cpp}     {corefonts.cpp}
  |                 {adobetounicode.cpp}            |
  |                          |                      |
- |                          '-----> fonts.h  <-----'
- |                                {fonts.cpp}
+ |                          '-----> "font.h" <-----'
+ |                                 {font.cpp}
  |                                     |
  |                                     v
- |                                   page.h
+ |                                  "page.h"
  |                                 {page.cpp}
  |                                     |
  |                                     v
- '---> tokenizer.h ----------->  GraphicsState.h
-                               {GraphicsState.cpp}
+ '---> "tokenizer.h" ---------> "graphic_state.h"
+                               {graphic_state.cpp}
                                        |
                                        v
-                                     pdfr.h
-                                   {pdfr.cpp}
+                                    "grid.h"             std::
+                                   {grid.cpp}  <------ <numeric>
+                                       |              <algorithm>
+                                       v
 
+                       [Just #include "grid.h" in wrapper]
 
+--------------------------------------------------------------------------------
+
+                                   R wrapper
+                                   =========
+
+                                    "grid.h"
+                                       |
+                                       v
+                 <Rcpp.h> ------->   pdfr.h       ( + automatically generated
+                *external*         {pdfr.cpp}         RcppExports.cpp from the
+                                                      R package Rcpp )
+
+--------------------------------------------------------------------------------

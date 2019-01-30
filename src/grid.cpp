@@ -26,7 +26,7 @@
 //---------------------------------------------------------------------------//
 
 #include "grid.h"
-#include<numeric>
+#include <numeric>
 #include <algorithm>
 
 using namespace std;
