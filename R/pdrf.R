@@ -272,3 +272,35 @@ segplot <- function(pdf, page = 1, textsize = 1)
     ) + ggplot2::geom_vline(xintercept = xlines, colour = "red");
 }
 
+##---------------------------------------------------------------------------##
+#' pagestring
+#'
+#' Returns contents of a pdf page description program
+#'
+#' @param pdf a valid pdf file location
+#' @param page the page number to be extracted
+#'
+#' @return a single string containing the page description program
+#' @export
+#'
+#' @examples getpagestring(testfiles$leeds, 1)
+##---------------------------------------------------------------------------##
+getpagestring <- function(pdf, page)
+{
+  if(class(pdf) == "raw")
+  {
+  .pagestringraw(pdf, page) -> x;
+  }
+  if(class(pdf) == "character" & length(pdf) == 1 & grepl("[.]pdf$", pdf))
+  {
+    .pagestring(pdf, page) -> x;
+  }
+  if((class(pdf) != "raw" & class(pdf) != "character") |
+     (class(pdf) == "character" & length(pdf) > 1) |
+     (class(pdf) == "character" & !grepl("[.]pdf$", pdf)))
+  {
+    stop("pdfpage requires a single path to a valid pdf or a raw vector.")
+  }
+  return(x)
+}
+

@@ -213,3 +213,25 @@ Rcpp::List pdfpageraw(const std::vector<uint8_t>& rawfile, int pagenum)
   page p = page(&myfile, pagenum - 1); // get page (convert to zero-indexed!)
   return getgrid(p);
 }
+
+//---------------------------------------------------------------------------//
+
+std::string pagestring(const std::string& s, int pagenum)
+{
+  if(pagenum < 1) Rcpp::stop("Invalid page number");
+  document myfile = document(s); // document from file string
+  page p = page(&myfile, pagenum - 1); // get page (convert to zero-indexed!)
+  std::string res = p.pageContents();
+  return res;
+}
+
+//---------------------------------------------------------------------------//
+
+std::string pagestringraw(const std::vector<uint8_t>& rawfile, int pagenum)
+{
+  if(pagenum < 1) Rcpp::stop("Invalid page number");
+  document myfile = document(rawfile); // document from file string
+  page p = page(&myfile, pagenum - 1); // get page (convert to zero-indexed!)
+  std::string s = p.pageContents();
+  return s;
+}

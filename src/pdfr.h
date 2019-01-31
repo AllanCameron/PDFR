@@ -142,4 +142,14 @@ Rcpp::DataFrame getglyphmap(const std::string& s, int pagenum);
 
 //---------------------------------------------------------------------------//
 
+// [[Rcpp::export(.pagestring)]]
+std::string pagestring(const std::string& s, int pagenum);
+
+
+//---------------------------------------------------------------------------//
+
+// [[Rcpp::export(.pagestringraw)]]
+std::string pagestringraw(const std::vector<uint8_t>& rawfile, int pagenum);
+
+
 #endif

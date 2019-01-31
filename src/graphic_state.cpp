@@ -100,14 +100,6 @@ void graphic_state::Q(vector<string>& Operands)
 {
   if (gs.size() > 1) // Empty graphics state is undefined but gs[0] is identity
     gs.pop_back();
-  if (fontstack.size() > 1) // Empty fontstack is undefined
-  {
-    fontstack.pop_back();
-    fontsizestack.pop_back();         // pop the font & fontsize stacks
-    currentfont = fontstack.back();
-    currfontsize = fontsizestack.back(); // read the top font & size from stack
-  }
-  wfont = p->getFont(currentfont); // the top of stack is now working font
 }
 
 /*---------------------------------------------------------------------------*/

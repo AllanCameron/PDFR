@@ -29,3 +29,11 @@
     .Call('_PDFR_getglyphmap', PACKAGE = 'PDFR', s, pagenum)
 }
 
+.pagestring <- function(s, pagenum) {
+    .Call('_PDFR_pagestring', PACKAGE = 'PDFR', s, pagenum)
+}
+
+.pagestringraw <- function(rawfile, pagenum) {
+    .Call('_PDFR_pagestringraw', PACKAGE = 'PDFR', rawfile, pagenum)
+}
+

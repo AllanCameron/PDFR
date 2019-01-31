@@ -91,8 +91,13 @@ wrapper could be written for any other output target.
               <Rcpp.h>  /              |
              *external* \              |
                          \             v
-                          ---> {RcppExports.cpp}  [automatically generated from
-                                       |           export tags in pdfr.h]
+                          ---> {RcppExports.cpp}<--
+                                       |           \ [automatically generated
+                                       v           / from export tags in pdfr.h]
+                                 RcppExports.R  <--
+                               (makes functions
+                                accessible to R)
+                                       |
                                        v
                                      pdfr.R
                             (wraps exported functions
