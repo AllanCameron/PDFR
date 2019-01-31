@@ -141,8 +141,5 @@ Rcpp::List pdfpageraw(const std::vector<uint8_t>& rawfile, int pagenum);
 Rcpp::DataFrame getglyphmap(const std::string& s, int pagenum);
 
 //---------------------------------------------------------------------------//
-// [[Rcpp::export(.getgrid)]]
-Rcpp::List getgrid(const std::string& s, int pagenum);
 
-//---------------------------------------------------------------------------//
 #endif

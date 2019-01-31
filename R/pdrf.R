@@ -93,14 +93,30 @@ else cat("file saved to ", path.expand("~/"), filename, "\n", collapse = "")
 #'
 #' @examples pdfpage(testfiles$leeds, 1)
 ##---------------------------------------------------------------------------##
-pdfpage <- function(pdf, page){
-  if(class(pdf) == "raw") {
-    a <- .pdfpageraw(pdf, page);
-    } else {
-    a <- .pdfpage(pdf, page);
+pdfpage <- function(pdf, page)
+{
+  if(class(pdf) == "raw")
+  {
+  .pdfpageraw(pdf, page) -> x;
+  }
+  if(class(pdf) == "character" & length(pdf) == 1 & grepl("[.]pdf$", pdf))
+  {
+    .pdfpage(pdf, page) -> x;
+  }
+  if((class(pdf) != "raw" & class(pdf) != "character") |
+     (class(pdf) == "character" & length(pdf) > 1) |
+     (class(pdf) == "character" & !grepl("[.]pdf$", pdf)))
+  {
+    stop("pdfpage requires a single path to a valid pdf or a raw vector.")
+  }
+  unlist(lapply(x$glyphs, function(z)
+    {
+      paste(intToUtf8(z, multiple = TRUE), collapse = "")
     }
-  intToUtf8(a$Elements$text, multiple = TRUE) -> a$Elements$text
-  return(a)
+    )) ->
+   x$Elements$text
+  x$glyphs <- NULL
+  return(x)
 }
 
 ##---------------------------------------------------------------------------##
@@ -163,7 +179,7 @@ get_object <- function(pdf, number){
 pdfplot <- function(pdf, page = 1, textsize = 1)
 {
   pdfpage(pdf, page) -> x;
-  x$Elements -> y;
+  x$Elements -> y
   ggplot2::ggplot(data = y, ggplot2::aes(x = y$left, y = y$bottom,
                   size = I(textsize*170 * y$size / (x$Box[4] - x$Box[2]))),
                   lims = x$Box ) -> G;
@@ -256,24 +272,3 @@ segplot <- function(pdf, page = 1, textsize = 1)
     ) + ggplot2::geom_vline(xintercept = xlines, colour = "red");
 }
 
-
-##---------------------------------------------------------------------------##
-#' getgrid
-#'
-#' Returns contents of a pdf page with 16x16 grid locations as bytes
-#'
-#' @param pdf a valid pdf file location
-#' @param page the page number to be extracted
-#'
-#' @return a data frame of the page elements
-#' @export
-#'
-#' @examples getgrid(testfiles$leeds, 1)
-##---------------------------------------------------------------------------##
-getgrid <- function(pdf, page){
-
-  y <- .getgrid(pdf, page);
-  unlist(lapply(y$glyphs, function(x) intToUtf8(x, multiple=TRUE))) ->
-    y$Elements$text
-  return(y$Elements)
-}

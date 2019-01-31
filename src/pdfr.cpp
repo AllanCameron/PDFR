@@ -67,37 +67,6 @@ Rcpp::DataFrame getglyphmap(const std::string& s, int pagenum)
 }
 
 //---------------------------------------------------------------------------//
-// This is the function that actually creates the R list containing the
-// necessary components to create a rendition of the page. It is not exported,
-// but rather used as a helper function and "final common pathway" for pdfpage's
-// raw and file path versions
-
-Rcpp::List PDFpage(page* pg)
-{
-  // get the graphical output for the page by calling graphicsstate()
-  GSoutput G = graphic_state(pg).output();
-  // fill a dataframe from the GSoutput
-  Rcpp::DataFrame db =  Rcpp::DataFrame::create(
-                        Rcpp::Named("text") = G.text,
-                        Rcpp::Named("left") = G.left,
-                        Rcpp::Named("bottom") = G.bottom,
-                        Rcpp::Named("right") = G.right,
-                        Rcpp::Named("font") = G.fonts,
-                        Rcpp::Named("size") = G.size,
-                        Rcpp::Named("width") = G.width,
-                        Rcpp::Named("stringsAsFactors") = false);
-
-  // Add the result to a Rcpp::List which also contains the content string and
-  // minimum text bounding box for the page
-
-  return Rcpp::List::create(
-    Rcpp::Named("Box")        =  pg->getminbox(),
-    Rcpp::Named("PageString") =  pg->pageContents(),
-    Rcpp::Named("Elements")   =  db
-  );
-}
-
-//---------------------------------------------------------------------------//
 // The xrefcreator function is not exported, but does most of the work of
 // get_xref. It acts as a helper function and common final pathway for the
 // raw and filepath versions of get_xref
@@ -182,59 +151,36 @@ Rcpp::List get_objectraw(const std::vector<uint8_t>& rawfile, int object)
 }
 
 //---------------------------------------------------------------------------//
-// The main output of the program is a dataframe of each glyph with its
-// position, size and font name. This is produced by the pdfpage function and
-// is returned in a list along with the bounding box (to aid plotting) and the
-// content string, or page description program, as a single string. This is
-// mostly used for debugging. These two versions take a file path or raw data
-// respectively, and both take a page number (one-indexed) as a second parameter
 
-Rcpp::List pdfpage(const std::string& filename, int pagenum)
+Rcpp::List getgrid(page& p)
 {
-  document myfile = document(filename); // document from file string
-  page p = page(&myfile, pagenum - 1); // get page (convert to zero-indexed!)
-  return PDFpage(&p); // send pointer to PDFpage helper function for result
-}
-
-//---------------------------------------------------------------------------//
-
-Rcpp::List pdfpageraw(const std::vector<uint8_t>& rawfile, int pagenum)
-{
-  document doc = document(rawfile); // document from raw data
-  page p = page(&doc, pagenum - 1); // get page (convert to zero-indexed!)
-  return PDFpage(&p);// send pointer to PDFpage helper function for result
-}
-
-//---------------------------------------------------------------------------//
-Rcpp::List getgrid(const std::string& s, int pagenum)
-{
-  document myfile = document(s); // document from file string
-  page p = page(&myfile, pagenum - 1); // get page (convert to zero-indexed!)
   graphic_state GS = graphic_state(&p);
-  std::unordered_map<uint8_t, std::vector<GSrow>> gridout = grid(GS).output();
+  grid Grid = grid(GS);
+  std::unordered_map<uint8_t, std::vector<GSrow>> gridout = Grid.output();
   std::vector<float> left;
   std::vector<float> right;
   std::vector<float> size;
   std::vector<float> bottom;
   std::vector<std::vector<uint16_t>> glyph;
   std::vector<std::string> font;
-  std::vector<uint8_t> gridpoint;
-  std::vector<std::string> blanktext(GS.output().left.size());
+  std::vector<std::string> blanktext;
   for(uint8_t i = 0; i < 256; i++)
   {
     for(auto j : gridout[i])
     {
-      left.push_back(j.left);
-      right.push_back(j.right);
-      size.push_back(j.size);
-      bottom.push_back(j.bottom);
-      font.push_back(j.font);
-      glyph.push_back(j.glyph);
-      gridpoint.push_back(i);
+      if(!j.consumed)
+      {
+        blanktext.push_back("");
+        left.push_back(j.left);
+        right.push_back(j.right);
+        size.push_back(j.size);
+        bottom.push_back(j.bottom);
+        font.push_back(j.font);
+        glyph.push_back(j.glyph);
+      }
     }
     if(i == 255) break; // prevent overflow back to 0 and endless loop
   }
-  Rcpp::List glyphlist = Rcpp::List::create(Rcpp::Named("glyphvecs") = glyph);
   Rcpp::DataFrame db =  Rcpp::DataFrame::create(
                         Rcpp::Named("text") = blanktext,
                         Rcpp::Named("left") = left,
@@ -242,8 +188,28 @@ Rcpp::List getgrid(const std::string& s, int pagenum)
                         Rcpp::Named("right") = right,
                         Rcpp::Named("font") = font,
                         Rcpp::Named("size") = size,
-                        Rcpp::Named("gridpoint") = gridpoint,
                         Rcpp::Named("stringsAsFactors") = false);
-  return Rcpp::List::create(Rcpp::Named("glyphs") = glyphlist,
+  return Rcpp::List::create(Rcpp::Named("Box") = Grid.getBox(),
+                            Rcpp::Named("glyphs") = glyph,
                             Rcpp::Named("Elements") = db);
+}
+
+//---------------------------------------------------------------------------//
+
+Rcpp::List pdfpage(const std::string& s, int pagenum)
+{
+  if(pagenum < 1) Rcpp::stop("Invalid page number");
+  document myfile = document(s); // document from file string
+  page p = page(&myfile, pagenum - 1); // get page (convert to zero-indexed!)
+  return getgrid(p);
+}
+
+//---------------------------------------------------------------------------//
+
+Rcpp::List pdfpageraw(const std::vector<uint8_t>& rawfile, int pagenum)
+{
+  if(pagenum < 1) Rcpp::stop("Invalid page number");
+  document myfile = document(rawfile); // document from file string
+  page p = page(&myfile, pagenum - 1); // get page (convert to zero-indexed!)
+  return getgrid(p);
 }

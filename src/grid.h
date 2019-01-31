@@ -45,7 +45,10 @@ struct GSrow
   std::string font;
   std::vector<Unicode> glyph;
   bool        consumed;
+  std::pair<int, int> rightjoin;
 };
+
+//---------------------------------------------------------------------------//
 
 struct sort_left_right
 {
@@ -62,6 +65,7 @@ class grid
 public:
   grid(const graphic_state&);
   std::unordered_map<uint8_t, std::vector<GSrow>> output();
+  std::vector<float> getBox();
 
 
 private:
@@ -70,6 +74,9 @@ private:
   std::vector<uint8_t> gridpoints;
   std::unordered_map<uint8_t, std::vector<GSrow>> gridmap;
   void makegrid();
+  void compareCells();
+  void matchRight(GSrow&, uint8_t);
+  void merge();
 };
 
 //---------------------------------------------------------------------------//

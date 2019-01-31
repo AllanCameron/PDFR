@@ -86,8 +86,18 @@ wrapper could be written for any other output target.
                                     "grid.h"
                                        |
                                        v
-                 <Rcpp.h> ------->   pdfr.h       ( + automatically generated
-                *external*         {pdfr.cpp}         RcppExports.cpp from the
-                                                      R package Rcpp )
+                          ------>    pdfr.h
+                         /         {pdfr.cpp}
+              <Rcpp.h>  /              |
+             *external* \              |
+                         \             v
+                          ---> {RcppExports.cpp}  [automatically generated from
+                                       |           export tags in pdfr.h]
+                                       v
+                                     pdfr.R
+                            (wraps exported functions
+                        to expand and make R user-friendly)
+                                       |
+                                       v
 
---------------------------------------------------------------------------------
+                            [functions available in R]
