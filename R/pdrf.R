@@ -116,6 +116,7 @@ pdfpage <- function(pdf, page)
     )) ->
    x$Elements$text
   x$glyphs <- NULL
+  x$Elements <- x$Elements[order(-x$Elements$bottom, x$Elements$left),]
   return(x)
 }
 
