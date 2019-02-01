@@ -26,7 +26,6 @@
 //---------------------------------------------------------------------------//
 
 #include "graphic_state.h"
-
 //---------------------------------------------------------------------------//
 
 using namespace std;
@@ -100,6 +99,14 @@ void graphic_state::Q(vector<string>& Operands)
 {
   if (gs.size() > 1) // Empty graphics state is undefined but gs[0] is identity
     gs.pop_back();
+  if (fontstack.size() > 1) // Empty fontstack is undefined
+  {
+    fontstack.pop_back();
+    fontsizestack.pop_back();         // pop the font & fontsize stacks
+    currentfont = fontstack.back();
+    currfontsize = fontsizestack.back(); // read the top font & size from stack
+  }
+  wfont = p->getFont(currentfont); // the top of stack is now working font
 }
 
 /*---------------------------------------------------------------------------*/
@@ -158,6 +165,8 @@ void graphic_state::Tf(vector<string>& Operands)
     currentfont = Operands[0];        // read fontID
     wfont = p->getFont(currentfont);  // get font from fontID
     currfontsize = stof(Operands[1]); // get font size
+    fontsizestack.back() = currfontsize; // remember changes to current state
+    fontstack.back() = currentfont;
   }
 }
 
