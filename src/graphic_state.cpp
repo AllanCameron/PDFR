@@ -388,7 +388,14 @@ void graphic_state::MakeGS()
 /*---------------------------------------------------------------------------*/
 // Matrix mulitplication on two 3 x 3 matrices
 // Note there is no matrix class - these are pseudo 3 x 3 matrices formed
-// from single length-9 vectors
+// from single length-9 vectors in the format:
+//
+//                      | x[0]  x[1]  x[2] |
+//                      |                  |
+//                      | x[3]  x[4]  x[5] |
+//                      |                  |
+//                      | x[6]  x[7]  x[8] |
+//
 
 vector<float> graphic_state::matmul(vector<float> b, vector<float> a)
 {
@@ -406,7 +413,18 @@ vector<float> graphic_state::matmul(vector<float> b, vector<float> a)
 
 /*---------------------------------------------------------------------------*/
 // Allows a length-6 vector of number strings to be converted to 3x3 matrix
-// (This is the way transformation matrices are represented in pdfs)
+// (This is the way transformation matrices are represented in pdfs), since
+// the 3rd column of any matrix is fixed at [0, 0, 1]
+//
+// For example, the entry "11 12 13 14 15 16 Tm" represents the following
+// 3x3 matrix:
+//
+//                      |   11    12    0  |
+//                      |                  |
+//                      |   13    14    0  |
+//                      |                  |
+//                      |   15    16    1  |
+//
 
 vector<float> graphic_state::stringvectomat(vector<string> b)
 {
