@@ -89,6 +89,7 @@ public:
 
   object_class* getobject(int objnum); // creates object and returns pointer
   dictionary pageHeader(int p);       // returns header dictionary for page p
+  size_t pagecount();
 
 private:
 

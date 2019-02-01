@@ -31,6 +31,8 @@
 
 using namespace std;
 
+std::unordered_map<std::string, font> page::fontmap;
+
 /*---------------------------------------------------------------------------*/
 // The various "boxes" in a page header file define the maximum extent of the
 // graphical contents of a page in different technical ways. For our purposes,
@@ -141,7 +143,8 @@ void page::getFonts()
   // each font in turn and store it in the fontmap
   for(auto h : getFontNames())
     for(auto hh : fonts.getRefs(h)) // find the ref for each font name
-      fontmap[h] = font(d, d->getobject(hh)->getDict(), h); // create/store font
+      if(fontmap.find(h) == fontmap.end()) // fontmap is static
+        fontmap[h] = font(d, d->getobject(hh)->getDict(), h); // create font
 }
 
 /*--------------------------------------------------------------------------*/

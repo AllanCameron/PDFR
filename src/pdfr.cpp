@@ -31,6 +31,7 @@
 //---------------------------------------------------------------------------//
 
 #include "pdfr.h"
+#include<list>
 
 //---------------------------------------------------------------------------//
 // This exported function is used mainly for debugging the font reading
@@ -214,6 +215,71 @@ Rcpp::List pdfpageraw(const std::vector<uint8_t>& rawfile, int pagenum)
   return getgrid(p);
 }
 
+Rcpp::List pdfdoc_common(document& myfile)
+{
+  size_t npages = myfile.pagecount();
+  std::vector<float> left;
+  std::vector<float> right;
+  std::vector<float> size;
+  std::vector<float> bottom;
+  std::vector<std::vector<uint16_t>> glyph;
+  std::vector<std::string> font;
+  std::vector<std::string> blanktext;
+  std::vector<int> pagenums;
+  for(size_t pagenum = 0; pagenum < npages; pagenum++)
+  {
+    page p = page(&myfile, pagenum); // get page (convert to zero-indexed!)
+    graphic_state GS = graphic_state(&p);
+    grid Grid = grid(GS);
+    std::unordered_map<uint8_t, std::vector<GSrow>> gridout = Grid.output();
+    for(uint8_t i = 0; i < 256; i++)
+    {
+      for(auto j : gridout[i])
+      {
+        if(!j.consumed)
+        {
+          blanktext.push_back("");
+          left.push_back(j.left);
+          right.push_back(j.right);
+          size.push_back(j.size);
+          bottom.push_back(j.bottom);
+          font.push_back(j.font);
+          glyph.push_back(j.glyph);
+          pagenums.push_back(pagenum + 1);
+        }
+      }
+      if(i == 255) break; // prevent overflow back to 0 and endless loop
+    }
+  }
+
+  Rcpp::DataFrame res = Rcpp::DataFrame::create(
+                        Rcpp::Named("text") = blanktext,
+                        Rcpp::Named("left") = left,
+                        Rcpp::Named("right") = right,
+                        Rcpp::Named("bottom") = bottom,
+                        Rcpp::Named("font") = font,
+                        Rcpp::Named("size") = size,
+                        Rcpp::Named("page") = pagenums,
+                        Rcpp::Named("stringsAsFactors") = false);
+  return Rcpp::List::create(Rcpp::Named("glyphs") = glyph,
+                            Rcpp::Named("Elements") = res);
+}
+
+
+Rcpp::List pdfdoc(const std::string& s)
+{
+  document myfile = document(s); // document from file string
+  return pdfdoc_common(myfile);
+}
+
+Rcpp::List pdfdocraw(const std::vector<uint8_t>& s)
+{
+  document myfile = document(s); // document from raw
+  return pdfdoc_common(myfile);
+}
+
+
+
 //---------------------------------------------------------------------------//
 
 std::string pagestring(const std::string& s, int pagenum)
@@ -235,3 +301,5 @@ std::string pagestringraw(const std::vector<uint8_t>& rawfile, int pagenum)
   std::string s = p.pageContents();
   return s;
 }
+
+

@@ -69,15 +69,28 @@ testfiles <- list(
 internetFile <- function(x, filename = NULL)
 {
   xloc <- tempfile();
-  if (!is.null(filename)) xloc <-  filename
+  if (!is.null(filename))
+  {
+    xloc <-  filename
+  }
   writeBin(httr::GET(x)[[6]], xloc)
-  res <- readBin (xloc, "raw", file.size(xloc))
+  res <- readBin(xloc, "raw", file.size(xloc))
   if (is.null(filename))
   {
     file.remove(xloc);
-    if (!any(res == 0)) return(rawToChar(res)) else return(res)
+    if (!any(res == 0))
+    {
+      return(rawToChar(res))
+    }
+    else
+    {
+      return(res)
+    }
   }
-else cat("file saved to ", path.expand("~/"), filename, "\n", collapse = "")
+  else
+  {
+    cat("file saved to ", path.expand("~/"), filename, "\n", collapse = "")
+  }
 }
 
 ##---------------------------------------------------------------------------##
@@ -97,26 +110,32 @@ pdfpage <- function(pdf, page)
 {
   if(class(pdf) == "raw")
   {
-  .pdfpageraw(pdf, page) -> x;
+    x <- .pdfpageraw(pdf, page)
   }
   if(class(pdf) == "character" & length(pdf) == 1 & grepl("[.]pdf$", pdf))
   {
-    .pdfpage(pdf, page) -> x;
+    x <- .pdfpage(pdf, page)
   }
-  if((class(pdf) != "raw" & class(pdf) != "character") |
-     (class(pdf) == "character" & length(pdf) > 1) |
-     (class(pdf) == "character" & !grepl("[.]pdf$", pdf)))
+  if((class(pdf) != "raw"       & class(pdf) != "character") |
+     (class(pdf) == "character" & length(pdf) > 1)           |
+     (class(pdf) == "character" & !grepl("[.]pdf$", pdf))    )
   {
     stop("pdfpage requires a single path to a valid pdf or a raw vector.")
   }
-  unlist(lapply(x$glyphs, function(z)
+  x$Elements$text <- unlist(lapply(x$glyphs,
+    function(z)
     {
       paste(intToUtf8(z, multiple = TRUE), collapse = "")
     }
-    )) ->
-   x$Elements$text
+  ))
   x$glyphs <- NULL
   x$Elements <- x$Elements[order(-x$Elements$bottom, x$Elements$left),]
+  x$Elements$left <- round(x$Elements$left, 1)
+  x$Elements$right <- round(x$Elements$right, 1)
+  x$Elements$bottom <- round(x$Elements$bottom, 1)
+  x$Elements$size <- round(x$Elements$size, 1)
+  rownames(x$Elements) <- seq_along(x$Elements[[1]])
+
   return(x)
 }
 
@@ -130,12 +149,16 @@ pdfpage <- function(pdf, page)
 #'
 #' @examples get_xref(testfiles$leeds)
 ##---------------------------------------------------------------------------##
-get_xref <- function(pdf){
-  if(class(pdf) == "raw") {
+get_xref <- function(pdf)
+{
+  if(class(pdf) == "raw")
+  {
     return(.get_xrefraw(pdf));
-    } else {
+  }
+  else
+  {
     return(.get_xref(pdf));
-    }
+  }
 }
 
 ##---------------------------------------------------------------------------##
@@ -153,12 +176,16 @@ get_xref <- function(pdf){
 #'
 #' @examples get_object(testfiles$leeds, 1)
 ##---------------------------------------------------------------------------##
-get_object <- function(pdf, number){
-  if(class(pdf) == "raw") {
-    return(.get_objraw(pdf, number));
-    } else {
-    return(.get_obj(pdf, number));
-    }
+get_object <- function(pdf, number)
+{
+  if(class(pdf) == "raw")
+  {
+    return(.get_objraw(pdf, number))
+  }
+  else
+  {
+    return(.get_obj(pdf, number))
+  }
 }
 
 ##---------------------------------------------------------------------------##
@@ -179,18 +206,18 @@ get_object <- function(pdf, number){
 ##---------------------------------------------------------------------------##
 pdfplot <- function(pdf, page = 1, textsize = 1)
 {
-  pdfpage(pdf, page) -> x;
-  x$Elements -> y
-  ggplot2::ggplot(data = y, ggplot2::aes(x = y$left, y = y$bottom,
-                  size = I(textsize*170 * y$size / (x$Box[4] - x$Box[2]))),
-                  lims = x$Box ) -> G;
-    G + ggplot2::geom_rect(ggplot2::aes(xmin = x$Box[1], ymin = x$Box[2],
-                      xmax = x$Box[3], ymax = x$Box[4]),
-                  fill = "white", colour="black", size=0.2
-    ) + ggplot2::geom_text(ggplot2::aes(label = y$text), hjust = 0, vjust = 0
-    ) + ggplot2::coord_equal(
-    ) + ggplot2::scale_size_identity(
-    );
+  x <- pdfpage(pdf, page)
+  y <- x$Elements
+  G <- ggplot2::ggplot(data = y, ggplot2::aes(x = y$left, y = y$bottom,
+                       size = I(textsize*170 * y$size / (x$Box[4] - x$Box[2]))),
+                       lims = x$Box )
+  G + ggplot2::geom_rect(ggplot2::aes(xmin = x$Box[1], ymin = x$Box[2],
+                                      xmax = x$Box[3], ymax = x$Box[4]),
+                         fill = "white", colour = "black", size = 0.2
+  ) + ggplot2::geom_text(ggplot2::aes(label = y$text), hjust = 0, vjust = 0
+  ) + ggplot2::coord_equal(
+  ) + ggplot2::scale_size_identity(
+  )
 }
 
 ##---------------------------------------------------------------------------##
@@ -229,24 +256,25 @@ getglyphmap <- function(pdf, page = 1)
 ##---------------------------------------------------------------------------##
 segplot <- function(pdf, page = 1, textsize = 1)
 {
-  pdfpage(pdf, page) -> x;
-  x$Elements -> y;
-  y$top <- y$bottom + y$size;
+  x       <- pdfpage(pdf, page)
+  y       <- x$Elements
+  y$top   <- y$bottom + y$size;
   ycounts <- numeric(1000);
   xcounts <- numeric(1000);
-  ylines <- numeric();
-  xlines <- numeric();
-  x$Box[3] -> xmax;
-  x$Box[1] -> xmin;
-  x$Box[4] -> ymax;
-  x$Box[2] -> ymin;
-  ybins <- ymin + 1:1000 * ((ymax - ymin)/1000)
-  xbins <- xmin + 1:1000 * ((xmax - xmin)/1000)
+  ylines  <- numeric();
+  xlines  <- numeric();
+  xmax    <- x$Box[3]
+  xmin    <- x$Box[1]
+  ymax    <- x$Box[4]
+  ymin    <- x$Box[2]
+  ybins   <- ymin + 1:1000 * ((ymax - ymin)/1000)
+  xbins   <- xmin + 1:1000 * ((xmax - xmin)/1000)
+
   for(i in 1:1000)
   {
     ycounts[i] <- length(which(y$bottom < ybins[i])) -
                   length(which(y$top < ybins[i]));
-    xcounts[i] <- length(which(y$left < xbins[i])) -
+    xcounts[i] <- length(which(y$left < xbins[i]))   -
                   length(which(y$right < xbins[i]));
     if( i > 1)
     {
@@ -260,17 +288,18 @@ segplot <- function(pdf, page = 1, textsize = 1)
       }
     }
   }
-  ggplot2::ggplot(data = y, ggplot2::aes(x = y$left, y = y$bottom,
+
+  G <-  ggplot2::ggplot(data = y, ggplot2::aes(x = y$left, y = y$bottom,
                   size = I(textsize*170 * y$size / (x$Box[4] - x$Box[2]))),
-                  lims = x$Box ) -> G;
-    G + ggplot2::geom_rect(ggplot2::aes(xmin = x$Box[1], ymin = x$Box[2],
-                      xmax = x$Box[3], ymax = x$Box[4]),
-                  fill = "white", colour="black", size=0.2
-    ) + ggplot2::geom_text(ggplot2::aes(label = y$text), hjust = 0, vjust = 0
-    ) + ggplot2::coord_equal(
-    ) + ggplot2::scale_size_identity(
-    ) + ggplot2::geom_hline(yintercept = ylines, colour = "red"
-    ) + ggplot2::geom_vline(xintercept = xlines, colour = "red");
+                  lims = x$Box )
+  G + ggplot2::geom_rect(ggplot2::aes(xmin = x$Box[1], ymin = x$Box[2],
+                    xmax = x$Box[3], ymax = x$Box[4]),
+                fill = "white", colour="black", size=0.2
+  ) + ggplot2::geom_text(ggplot2::aes(label = y$text), hjust = 0, vjust = 0
+  ) + ggplot2::coord_equal(
+  ) + ggplot2::scale_size_identity(
+  ) + ggplot2::geom_hline(yintercept = ylines, colour = "red"
+  ) + ggplot2::geom_vline(xintercept = xlines, colour = "red")
 }
 
 ##---------------------------------------------------------------------------##
@@ -290,18 +319,64 @@ getpagestring <- function(pdf, page)
 {
   if(class(pdf) == "raw")
   {
-  .pagestringraw(pdf, page) -> x;
+    x <- .pagestringraw(pdf, page)
   }
   if(class(pdf) == "character" & length(pdf) == 1 & grepl("[.]pdf$", pdf))
   {
-    .pagestring(pdf, page) -> x;
+    x <- .pagestring(pdf, page)
   }
-  if((class(pdf) != "raw" & class(pdf) != "character") |
-     (class(pdf) == "character" & length(pdf) > 1) |
-     (class(pdf) == "character" & !grepl("[.]pdf$", pdf)))
+  if((class(pdf) != "raw"       & class(pdf) != "character") |
+     (class(pdf) == "character" & length(pdf) > 1)           |
+     (class(pdf) == "character" & !grepl("[.]pdf$", pdf))    )
   {
     stop("pdfpage requires a single path to a valid pdf or a raw vector.")
   }
+  return(x)
+}
+
+
+##---------------------------------------------------------------------------##
+#' pdfdoc
+#'
+#' Returns contents of all pdf pages
+#'
+#' @param pdf a valid pdf file location
+#'
+#' @return a data frame of all text elements in a document
+#' @export
+#'
+#' @examples pdfdoc(testfiles$leeds)
+##---------------------------------------------------------------------------##
+pdfdoc <- function(pdf)
+{
+  if(class(pdf) == "raw")
+  {
+    x <- .pdfdocraw(pdf)
+  }
+  if(class(pdf) == "character" & length(pdf) == 1 & grepl("[.]pdf$", pdf))
+  {
+    x <- .pdfdoc(pdf)
+  }
+  if((class(pdf) != "raw"       & class(pdf) != "character") |
+     (class(pdf) == "character" & length(pdf) > 1)           |
+     (class(pdf) == "character" & !grepl("[.]pdf$", pdf))    )
+  {
+    stop("pdfdoc requires a single path to a valid pdf or a raw vector.")
+  }
+  x$Elements$text <- unlist(lapply(x$glyphs,
+    function(z)
+    {
+      paste(intToUtf8(z, multiple = TRUE), collapse = "")
+    }
+  ))
+  x <- x$Elements
+  x <- x[order(x$page, -x$bottom, x$left),]
+  x$left <- round(x$left, 1)
+  x$right <- round(x$right, 1)
+  x$bottom <- round(x$bottom, 1)
+  x$size <- round(x$size, 1)
+  rownames(x) <- seq_along(x[[1]])
+
   return(x)
 }
 

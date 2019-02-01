@@ -37,3 +37,11 @@
     .Call('_PDFR_pagestringraw', PACKAGE = 'PDFR', rawfile, pagenum)
 }
 
+.pdfdoc <- function(s) {
+    .Call('_PDFR_pdfdoc', PACKAGE = 'PDFR', s)
+}
+
+.pdfdocraw <- function(s) {
+    .Call('_PDFR_pdfdocraw', PACKAGE = 'PDFR', s)
+}
+

@@ -111,6 +111,28 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// pdfdoc
+Rcpp::List pdfdoc(const std::string& s);
+RcppExport SEXP _PDFR_pdfdoc(SEXP sSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const std::string& >::type s(sSEXP);
+    rcpp_result_gen = Rcpp::wrap(pdfdoc(s));
+    return rcpp_result_gen;
+END_RCPP
+}
+// pdfdocraw
+Rcpp::List pdfdocraw(const std::vector<uint8_t>& s);
+RcppExport SEXP _PDFR_pdfdocraw(SEXP sSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const std::vector<uint8_t>& >::type s(sSEXP);
+    rcpp_result_gen = Rcpp::wrap(pdfdocraw(s));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_PDFR_get_xref", (DL_FUNC) &_PDFR_get_xref, 1},
@@ -122,6 +144,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_PDFR_getglyphmap", (DL_FUNC) &_PDFR_getglyphmap, 2},
     {"_PDFR_pagestring", (DL_FUNC) &_PDFR_pagestring, 2},
     {"_PDFR_pagestringraw", (DL_FUNC) &_PDFR_pagestringraw, 2},
+    {"_PDFR_pdfdoc", (DL_FUNC) &_PDFR_pdfdoc, 1},
+    {"_PDFR_pdfdocraw", (DL_FUNC) &_PDFR_pdfdocraw, 1},
     {NULL, NULL, 0}
 };
 

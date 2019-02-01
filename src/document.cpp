@@ -211,3 +211,11 @@ dictionary document::pageHeader(int pagenumber)
   // All good - return the requested header
   return pageheaders.at(pagenumber);
 }
+
+/*---------------------------------------------------------------------------*/
+// Public function that gets the number of pages in a document
+
+size_t document::pagecount()
+{
+  return pageheaders.size();
+}

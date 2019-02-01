@@ -151,5 +151,10 @@ std::string pagestring(const std::string& s, int pagenum);
 // [[Rcpp::export(.pagestringraw)]]
 std::string pagestringraw(const std::vector<uint8_t>& rawfile, int pagenum);
 
+// [[Rcpp::export(.pdfdoc)]]
+Rcpp::List pdfdoc(const std::string& s);
+
+// [[Rcpp::export(.pdfdocraw)]]
+Rcpp::List pdfdocraw(const std::vector<uint8_t>& s);
 
 #endif
