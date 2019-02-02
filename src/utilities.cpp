@@ -495,3 +495,26 @@ std::string get_file(const std::string& file)
 }
 
 /*--------------------------------------------------------------------------*/
+// converts unicode points to multibyte utf-8 encoding
+
+std::string utf(std::vector<Unicode> u)
+{
+  std::vector<uint8_t> res;
+  for(auto x : u)
+  {
+    if(x < 0x0080) res.push_back(x & 0x007f);
+    if(x > 0x007f && x < 0x0800)
+    {
+      res.push_back((0x00c0 | ((x >> 6) & 0x001f)));
+      res.push_back(0x0080 | (x & 0x003f));
+    }
+    if(x > 2047)
+    {
+      res.push_back(0x00e0 | ((x >> 12) & 0x000f));
+      res.push_back(0x0080 | ((x >> 6) & 0x003f));
+      res.push_back(0x0080 | ((x) & 0x003f));
+    }
+  }
+  std::string resstring(res.begin(), res.end());
+  return resstring;
+}

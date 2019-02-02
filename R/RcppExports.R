@@ -45,3 +45,7 @@
     .Call('_PDFR_pdfdocraw', PACKAGE = 'PDFR', s)
 }
 
+utf <- function(u) {
+    .Call('_PDFR_utf', PACKAGE = 'PDFR', u)
+}
+

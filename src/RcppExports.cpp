@@ -112,7 +112,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // pdfdoc
-Rcpp::List pdfdoc(const std::string& s);
+Rcpp::DataFrame pdfdoc(const std::string& s);
 RcppExport SEXP _PDFR_pdfdoc(SEXP sSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
@@ -123,13 +123,24 @@ BEGIN_RCPP
 END_RCPP
 }
 // pdfdocraw
-Rcpp::List pdfdocraw(const std::vector<uint8_t>& s);
+Rcpp::DataFrame pdfdocraw(const std::vector<uint8_t>& s);
 RcppExport SEXP _PDFR_pdfdocraw(SEXP sSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const std::vector<uint8_t>& >::type s(sSEXP);
     rcpp_result_gen = Rcpp::wrap(pdfdocraw(s));
+    return rcpp_result_gen;
+END_RCPP
+}
+// utf
+std::string utf(std::vector<uint16_t> u);
+RcppExport SEXP _PDFR_utf(SEXP uSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< std::vector<uint16_t> >::type u(uSEXP);
+    rcpp_result_gen = Rcpp::wrap(utf(u));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -146,6 +157,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_PDFR_pagestringraw", (DL_FUNC) &_PDFR_pagestringraw, 2},
     {"_PDFR_pdfdoc", (DL_FUNC) &_PDFR_pdfdoc, 1},
     {"_PDFR_pdfdocraw", (DL_FUNC) &_PDFR_pdfdocraw, 1},
+    {"_PDFR_utf", (DL_FUNC) &_PDFR_utf, 1},
     {NULL, NULL, 0}
 };
 

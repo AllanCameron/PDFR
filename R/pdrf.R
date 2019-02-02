@@ -122,13 +122,7 @@ pdfpage <- function(pdf, page)
   {
     stop("pdfpage requires a single path to a valid pdf or a raw vector.")
   }
-  x$Elements$text <- unlist(lapply(x$glyphs,
-    function(z)
-    {
-      paste(intToUtf8(z, multiple = TRUE), collapse = "")
-    }
-  ))
-  x$glyphs <- NULL
+  Encoding(x$Elements$text) <- "UTF-8"
   x$Elements <- x$Elements[order(-x$Elements$bottom, x$Elements$left),]
   x$Elements$left <- round(x$Elements$left, 1)
   x$Elements$right <- round(x$Elements$right, 1)
@@ -363,19 +357,13 @@ pdfdoc <- function(pdf)
   {
     stop("pdfdoc requires a single path to a valid pdf or a raw vector.")
   }
-  x$Elements$text <- unlist(lapply(x$glyphs,
-    function(z)
-    {
-      paste(intToUtf8(z, multiple = TRUE), collapse = "")
-    }
-  ))
-  x <- x$Elements
   x <- x[order(x$page, -x$bottom, x$left),]
   x$left <- round(x$left, 1)
   x$right <- round(x$right, 1)
   x$bottom <- round(x$bottom, 1)
   x$size <- round(x$size, 1)
   rownames(x) <- seq_along(x[[1]])
+  Encoding(x$text) <- "UTF-8"
 
   return(x)
 }

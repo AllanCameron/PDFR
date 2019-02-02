@@ -162,28 +162,26 @@ Rcpp::List getgrid(page& p)
   std::vector<float> right;
   std::vector<float> size;
   std::vector<float> bottom;
-  std::vector<std::vector<uint16_t>> glyph;
+  std::vector<std::string> glyph;
   std::vector<std::string> font;
-  std::vector<std::string> blanktext;
   for(uint8_t i = 0; i < 256; i++)
   {
     for(auto j : gridout[i])
     {
       if(!j.consumed)
       {
-        blanktext.push_back("");
+        glyph.push_back(utf(j.glyph));
         left.push_back(j.left);
         right.push_back(j.right);
         size.push_back(j.size);
         bottom.push_back(j.bottom);
         font.push_back(j.font);
-        glyph.push_back(j.glyph);
       }
     }
     if(i == 255) break; // prevent overflow back to 0 and endless loop
   }
   Rcpp::DataFrame db =  Rcpp::DataFrame::create(
-                        Rcpp::Named("text") = blanktext,
+                        Rcpp::Named("text") = glyph,
                         Rcpp::Named("left") = left,
                         Rcpp::Named("bottom") = bottom,
                         Rcpp::Named("right") = right,
@@ -191,7 +189,6 @@ Rcpp::List getgrid(page& p)
                         Rcpp::Named("size") = size,
                         Rcpp::Named("stringsAsFactors") = false);
   return Rcpp::List::create(Rcpp::Named("Box") = Grid.getBox(),
-                            Rcpp::Named("glyphs") = glyph,
                             Rcpp::Named("Elements") = db);
 }
 
@@ -215,16 +212,17 @@ Rcpp::List pdfpageraw(const std::vector<uint8_t>& rawfile, int pagenum)
   return getgrid(p);
 }
 
-Rcpp::List pdfdoc_common(document& myfile)
+//---------------------------------------------------------------------------//
+
+Rcpp::DataFrame pdfdoc_common(document& myfile)
 {
   size_t npages = myfile.pagecount();
   std::vector<float> left;
   std::vector<float> right;
   std::vector<float> size;
   std::vector<float> bottom;
-  std::vector<std::vector<uint16_t>> glyph;
+  std::vector<std::string> glyph;
   std::vector<std::string> font;
-  std::vector<std::string> blanktext;
   std::vector<int> pagenums;
   for(size_t pagenum = 0; pagenum < npages; pagenum++)
   {
@@ -238,13 +236,12 @@ Rcpp::List pdfdoc_common(document& myfile)
       {
         if(!j.consumed)
         {
-          blanktext.push_back("");
+          glyph.push_back(utf(j.glyph));
           left.push_back(j.left);
           right.push_back(j.right);
           size.push_back(j.size);
           bottom.push_back(j.bottom);
           font.push_back(j.font);
-          glyph.push_back(j.glyph);
           pagenums.push_back(pagenum + 1);
         }
       }
@@ -252,8 +249,8 @@ Rcpp::List pdfdoc_common(document& myfile)
     }
   }
 
-  Rcpp::DataFrame res = Rcpp::DataFrame::create(
-                        Rcpp::Named("text") = blanktext,
+  return Rcpp::DataFrame::create(
+                        Rcpp::Named("text") = glyph,
                         Rcpp::Named("left") = left,
                         Rcpp::Named("right") = right,
                         Rcpp::Named("bottom") = bottom,
@@ -261,18 +258,16 @@ Rcpp::List pdfdoc_common(document& myfile)
                         Rcpp::Named("size") = size,
                         Rcpp::Named("page") = pagenums,
                         Rcpp::Named("stringsAsFactors") = false);
-  return Rcpp::List::create(Rcpp::Named("glyphs") = glyph,
-                            Rcpp::Named("Elements") = res);
 }
 
 
-Rcpp::List pdfdoc(const std::string& s)
+Rcpp::DataFrame pdfdoc(const std::string& s)
 {
   document myfile = document(s); // document from file string
   return pdfdoc_common(myfile);
 }
 
-Rcpp::List pdfdocraw(const std::vector<uint8_t>& s)
+Rcpp::DataFrame pdfdocraw(const std::vector<uint8_t>& s)
 {
   document myfile = document(s); // document from raw
   return pdfdoc_common(myfile);
