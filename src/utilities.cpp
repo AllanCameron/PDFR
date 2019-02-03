@@ -495,26 +495,48 @@ std::string get_file(const std::string& file)
 }
 
 /*--------------------------------------------------------------------------*/
-// converts unicode points to multibyte utf-8 encoding
+// converts (16-bit) Unicode code points to multibyte utf-8 encoding.
 
-std::string utf(std::vector<Unicode> u)
+std::string utf(std::vector<uint16_t> Unicode_points)
 {
-  std::vector<uint8_t> res;
-  for(auto x : u)
+  std::string result_string = ""; // empty string for results
+  for(auto point : Unicode_points) // for each uint16_t in the input vector...
   {
-    if(x < 0x0080) res.push_back(x & 0x007f);
-    if(x > 0x007f && x < 0x0800)
+    // values less than 128 are just single-byte ASCII
+    if(point < 0x0080) result_string.push_back(point & 0x007f);
+
+    // values of 128 - 2047 are two bytes. The first byte starts 110xxxxx
+    // and the second starts 10xxxxxx. The remaining 11 x's are filled with the
+    // 11 bits representing a number between 128 and 2047. e.g. Unicode point
+    // U+061f (decimal 1567) is 11000011111 in 11 bits of binary, which we split
+    // into length-5 and length-6 pieces 11000 and 011111. These are appended on
+    // to 110 and 10 respectively to give the 16-bit number 110 11000 10 011111,
+    // which as two bytes is 11011000 10011111 or d8 9f. Thus the UTF-8
+    // encoding for character U+061f is the two-byte sequence d8 9f.
+    if(point > 0x007f && point < 0x0800)
     {
-      res.push_back((0x00c0 | ((x >> 6) & 0x001f)));
-      res.push_back(0x0080 | (x & 0x003f));
+      // construct byte with bits 110 and first 5 bits of unicode point number
+      result_string.push_back((0x00c0 | ((point >> 6) & 0x001f)));
+      // construct byte with bits 10 and final 6 bits of unicode point number
+      result_string.push_back(0x0080 | (point & 0x003f));
     }
-    if(x > 2047)
+
+    // Unicode values between 2048 (0x0800) and the maximum uint16_t value
+    // (65535 or 0xffff) are given by 16 bits split over three bytes in the
+    // following format: 1110xxxx 10xxxxxx 10xxxxxx. Each x here takes one of
+    // the 16 bits representing 2048 - 65535.
+    if(point > 0x07ff)
     {
-      res.push_back(0x00e0 | ((x >> 12) & 0x000f));
-      res.push_back(0x0080 | ((x >> 6) & 0x003f));
-      res.push_back(0x0080 | ((x) & 0x003f));
+      // construct byte with 1110 and first 4 bits of unicode point number
+      result_string.push_back(0x00e0 | ((point >> 12) & 0x000f));
+      // construct byte with 10 and bits 5-10 of unicode point number
+      result_string.push_back(0x0080 | ((point >> 6) & 0x003f));
+      // construct byte with bits 10 and final 6 bits of unicode point number
+      result_string.push_back(0x0080 | ((point) & 0x003f));
     }
+    // Although higher Unicode points are defined and can be encoded in utf8,
+    // the hex-strings in pdf seem to be two bytes wide at most. These are
+    // therefore not supported at present.
   }
-  std::string resstring(res.begin(), res.end());
-  return resstring;
+  return result_string;
 }

@@ -60,20 +60,20 @@ grid::grid(const graphic_state& GS) : gs(GS)
 void grid::makegrid()
 {
   minbox = gs.getminbox();  // gets the minbox found on page creation
-  GSoutput gslist = gs.output(); // Take the output of graphic_state
+  GSoutput* gslist = gs.output(); // Take the output of graphic_state
   float dx = (minbox[2] - minbox[0])/16; // calculate width of cells
   float dy = (minbox[3] - minbox[1])/16; // calculate height of cells
-  for(unsigned i = 0; i < gslist.width.size(); i++) // for each glyph...
+  for(unsigned i = 0; i < gslist->width.size(); i++) // for each glyph...
   {
-    GSrow newrow = {  gslist.left[i],   //------//
-                      gslist.right[i],          //
-                      gslist.width[i],          //
-                      gslist.bottom[i],         //    create a struct with all
-                      gslist.size[i],           //--> pertinent size & position
-                      gslist.fonts[i],          //    information
-                     {gslist.text[i]},          //
-                      false,                    //
-                      make_pair(-1, -1) //------//
+    GSrow newrow = {  gslist->left[i],   //------//
+                      gslist->right[i],          //
+                      gslist->width[i],          //
+                      gslist->bottom[i],         //    create a struct with all
+                      gslist->size[i],           //--> pertinent size & position
+                      gslist->fonts[i],          //    information
+                     {gslist->text[i]},          //
+                      false,                     //
+                      make_pair(-1, -1)  //------//
                     };
     // push the struct to the vector in the cell
     gridmap[((uint8_t)(newrow.left / dx))  |

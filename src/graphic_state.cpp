@@ -55,17 +55,16 @@ graphic_state::graphic_state(page* pag) : // very long initializer list...
   Th(100), // horizontal scaling
   Tc(0) // character spacing
 {
-  Instructions  = tokenizer(p->pageContents()).result(); // get instructions
-  parser(Instructions, ""); //parse instructions
+  parser(tokenizer(p->pageContents()).result(), ""); //parse instructions
   MakeGS(); // compose results
 }
 
 //---------------------------------------------------------------------------//
 // The only public method is a getter of the main data member
 
-GSoutput graphic_state::output()
+GSoutput* graphic_state::output()
 {
-  return db;
+  return &db;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -335,7 +334,8 @@ void graphic_state::processRawChar(vector<RawChar>& raw, float& scale,
 // identifies itself with "inloop" if it calls the parser, and the Do operator
 // will not be called if its operand stack contains the same string as inloop.
 
-void graphic_state::parser(vector<pair<string, TState>>& tokens, string inloop)
+void
+graphic_state::parser(const vector<pair<string, TState>>& tokens, string inloop)
 {
   vector<string> Operands;    // Set up operand stack
   vector<TState> OperandTypes;// operand types for operand stack

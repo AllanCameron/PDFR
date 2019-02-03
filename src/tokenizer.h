@@ -56,7 +56,7 @@
  * around, rather than one huge hairball function.
  */
 
-#include "utilities.h"
+#include "page.h"
 
 //---------------------------------------------------------------------------//
 // The states of the lexer are defined by this enum. It is defined in its own

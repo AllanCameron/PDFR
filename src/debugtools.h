@@ -78,10 +78,9 @@ inline void timeSince(std::string message,
 {
   std::chrono::high_resolution_clock::time_point end =
     std::chrono::high_resolution_clock::now(); // gets current time
-  auto diff = end - start; // diff now contains time since clock was started
   std::cout << message << ": "
-            << std::chrono::duration <double, std::milli> (diff).count()
-            << " ms" << std::endl; //prints time in milliseconds to console
+            << std::chrono::duration_cast<std::chrono::microseconds>(end - start).count()
+            << " us" << std::endl; //prints time in milliseconds to console
   start = std::chrono::high_resolution_clock::now(); // resets clock
 }
 
