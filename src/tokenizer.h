@@ -103,8 +103,8 @@ private:
   // private data members
 
   size_t i;            // The iterator that moves through the string
-  std::string s,       // the input string itself
-              buf;     // a string buffer to hold chars until pushed to result
+  const std::string& s;// the input string itself
+  std::string buf;     // a string buffer to hold chars until pushed to result
   Token::TState state; // The current state of the finite state machine
 
   // The main output of the lexer
@@ -116,7 +116,7 @@ private:
   void tokenize();                  // chooses state subroutine based on state
   void subtokenizer(const std::string&);  // uses recursion for sub-strings
 
-  void pushbuf(Token::TState, Token::TState); // Avoids boilerplate by carrying
+  void pushbuf(const Token::TState, const Token::TState); // Avoids boilerplate by carrying
                                               // out the common lexer task of
                                               // pushing and clearing the
                                               // buffer then switching state

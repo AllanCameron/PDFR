@@ -141,8 +141,8 @@ private:
   // to a "stack", or calls an operator method depending on the label given
   // to each token in the instruction set. It loops through the entire
   // instruction set, after which the data just needs tidied and wrapped.
-  void
-  parser(const std::vector<std::pair<std::string, Token::TState>>&, std::string);
+  void parser(const std::vector<std::pair<std::string, Token::TState>>&,
+              std::string);
 
   void Do(std::string&);                  //----------------------------------//
   void Q(std::vector<std::string>& );           //  OPERATOR METHODS

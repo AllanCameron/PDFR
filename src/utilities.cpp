@@ -127,10 +127,10 @@ string bytestostring(const vector<uint8_t>& v)
 // Transforms a vector of strings to a vector of floats
 // (vectorised version of stof)
 
-vector<float> stringtofloat(vector<string> b)
+vector<float> stringtofloat(const vector<string>& b)
 {
   vector<float> r;
-  for(auto i : b) r.push_back(stof(i));
+  for(const auto& i : b) r.push_back(stof(i));
   return r;
 }
 
@@ -154,13 +154,12 @@ string intToHexstring(int i)
 // Splits a string into a vector of length-4 elements. Useful for Ascii-
 // encoded strings e.g. "00FF00AA1234" -> {"00FF", "00AA", "1234"}
 
-vector<string> splitfours(string s)
+vector<string> splitfours(const string& s)
 {
   vector<string> res; // vector to hold results
   // if string empty, return empty vector
   if(s.empty()) return res;
-  // if length of s not divisible by 4, prepend zeros until it is
-  while(s.size() % 4 != 0) s = '0' + s;
+  res.reserve(s.size() / 4);
   // push back sequential substrings of length 4
   for(unsigned i = 0; i < s.length()/4; i++)
     res.emplace_back(s.substr(i * 4, 4));
@@ -200,15 +199,16 @@ void trimRight(string& s)
 // Returns the data represented by an Ascii encoded hex string as a vector
 // of two-byte numbers
 
-vector<RawChar> HexstringToRawChar(string& s)
+vector<RawChar> HexstringToRawChar(const string& s)
 {
   // first split the string into length 4 blocks to represent two-byte uints
   vector<string>&& string_vector = splitfours(s);
   vector<RawChar> raw_vector; // vector to store results
+  raw_vector.reserve(string_vector.size());
   for(auto& i : string_vector)
   {
     i = "0x" + i; // prepend "0x" to string to ensure it is converted properly
-    raw_vector.push_back((RawChar) stoul(i, nullptr, 0)); // push uint16_t
+    raw_vector.emplace_back((RawChar) stoul(i, nullptr, 0)); // push uint16_t
   }
   return raw_vector;
 }
@@ -218,15 +218,13 @@ vector<RawChar> HexstringToRawChar(string& s)
 // This requires sequential conversion from char to uint8_t to uint16_t
 // (RawChar is just a synonym for uint16_t)
 
-vector<RawChar> StringToRawChar(string& s)
+vector<RawChar> StringToRawChar(const string& s)
 {
   vector<RawChar> result; // vector to hold results
   if(s.size() == 0) return result; // string s is empty - nothing to do.
-  for(auto i : s)
-  {
-    uint8_t a = (uint8_t) i; // char to uint8
-    result.push_back((uint16_t) a); // convert uint8 to uint16 and store result
-  }
+  result.reserve(s.size());
+  for(const auto& i : s)
+    result.push_back(0x00ff & i); // convert uint8 to uint16 and store result
   return result;
 }
 
@@ -249,7 +247,7 @@ vector<int> getObjRefs(const string& s)
   std::vector<int> res; // vector to hold result
   std::string buf; // a buffer to hold characters until stored or discarded
   RefState state = WAIT_FOR_START; // the current state of the fsm
-  for(auto i : s)
+  for(const auto& i : s)
   {
     char m = symbol_type(i); // finds out if current char is digit, letter, ws
     if(state == WAIT_FOR_START)
@@ -399,7 +397,7 @@ std::vector<float> getnums(const std::string& s)
     POST    // Have read integer and found point, now reading fractional number
   };
   FloatState state = WAITING; // current state of fsm
-  for(auto i : s)
+  for(const auto& i : s)
   {
     char m = symbol_type(i);
     if(state == WAITING)
