@@ -181,12 +181,6 @@ std::vector<float> stringtofloat(const std::vector<std::string>&);
 std::string intToHexstring(int);
 
 //---------------------------------------------------------------------------//
-// Splits a string into a vector of length-4 elements. Useful for Ascii-
-// encoded strings e.g. "00FF00AA1234" -> {"00FF", "00AA", "1234"}
-
-std::vector<std::string> splitfours(const std::string&);
-
-//---------------------------------------------------------------------------//
 // Classify characters for use in lexers. This allows the use of switch
 // statements that depend on whether a letter is a character, digit or
 // whitespace but is indifferent to which specific instance of each it finds.
