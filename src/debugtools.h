@@ -64,5 +64,62 @@ void printvec(std::vector<T> x)
   if(s > 0) std::cout << x[s - 1] << std::endl;
 }
 
+<<<<<<< HEAD
 #endif
+||||||| merged common ancestors
+/*---------------------------------------------------------------------------*/
+// Simple inline function to start a timer from which subsequent time points
+// can be measured. Needed for profiling.
+
+inline std::chrono::high_resolution_clock::time_point startClock()
+{
+  return std::chrono::high_resolution_clock::now(); // returns current time
+}
+
+/*---------------------------------------------------------------------------*/
+// Measures and prints out the time in milliseconds since the timer was
+// started for use in profiling.
+
+inline void timeSince(std::string message,
+               std::chrono::high_resolution_clock::time_point& start)
+{
+  std::chrono::high_resolution_clock::time_point end =
+    std::chrono::high_resolution_clock::now(); // gets current time
+  auto diff = end - start; // diff now contains time since clock was started
+  std::cout << message << ": "
+            << std::chrono::duration <double, std::milli> (diff).count()
+            << " ms" << std::endl; //prints time in milliseconds to console
+  start = std::chrono::high_resolution_clock::now(); // resets clock
+}
+
+/*---------------------------------------------------------------------------*/
+
+=======
+/*---------------------------------------------------------------------------*/
+// Simple inline function to start a timer from which subsequent time points
+// can be measured. Needed for profiling.
+
+inline std::chrono::high_resolution_clock::time_point startClock()
+{
+  return std::chrono::high_resolution_clock::now(); // returns current time
+}
+
+/*---------------------------------------------------------------------------*/
+// Measures and prints out the time in milliseconds since the timer was
+// started for use in profiling.
+
+inline void timeSince(std::string message,
+               std::chrono::high_resolution_clock::time_point& start)
+{
+  std::chrono::high_resolution_clock::time_point end =
+    std::chrono::high_resolution_clock::now(); // gets current time
+  std::cout << message << ": "
+            << std::chrono::duration_cast<std::chrono::microseconds>(end - start).count()
+            << " us" << std::endl; //prints time in milliseconds to console
+  start = std::chrono::high_resolution_clock::now(); // resets clock
+}
+
+/*---------------------------------------------------------------------------*/
+
+>>>>>>> cf00719adfa5a0e482b027069829921e18fa1777
 #endif

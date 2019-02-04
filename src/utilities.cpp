@@ -134,10 +134,10 @@ string bytestostring(const vector<uint8_t>& v)
 // Transforms a vector of strings to a vector of floats
 // (vectorised version of stof)
 
-vector<float> stringtofloat(vector<string> b)
+vector<float> stringtofloat(const vector<string>& b)
 {
   vector<float> r;
-  for(auto i : b) r.push_back(stof(i));
+  for(const auto& i : b) r.push_back(stof(i));
   return r;
 }
 
@@ -161,13 +161,12 @@ string intToHexstring(int i)
 // Splits a string into a vector of length-4 elements. Useful for Ascii-
 // encoded strings e.g. "00FF00AA1234" -> {"00FF", "00AA", "1234"}
 
-vector<string> splitfours(string s)
+vector<string> splitfours(const string& s)
 {
   vector<string> res; // vector to hold results
   // if string empty, return empty vector
   if(s.empty()) return res;
-  // if length of s not divisible by 4, prepend zeros until it is
-  while(s.size() % 4 != 0) s = '0' + s;
+  res.reserve(s.size() / 4);
   // push back sequential substrings of length 4
   for(unsigned i = 0; i < s.length()/4; i++)
     res.emplace_back(s.substr(i * 4, 4));
@@ -207,17 +206,32 @@ void trimRight(string& s)
 // Returns the data represented by an Ascii encoded hex string as a vector
 // of two-byte numbers
 
-vector<RawChar> HexstringToRawChar(string& s)
+vector<RawChar> HexstringToRawChar(const string& s)
 {
   while(s.size() % 4 != 0) s += '0';
   vector<RawChar> raw_vector; // vector to store results
+<<<<<<< HEAD
   raw_vector.reserve(s.size() / 4);
   for(size_t i = 0; i < (s.size() - 3); i += 4)
+||||||| merged common ancestors
+  for(auto& i : string_vector)
+=======
+  raw_vector.reserve(string_vector.size());
+  for(auto& i : string_vector)
+>>>>>>> cf00719adfa5a0e482b027069829921e18fa1777
   {
+<<<<<<< HEAD
     raw_vector.emplace_back(hexmap[(uint8_t)(s[i])] * 4096 +
                             hexmap[(uint8_t)(s[i + 1])] * 256 +
                             hexmap[(uint8_t)(s[i + 2])] * 16 +
                             hexmap[(uint8_t)(s[i + 3])]);
+||||||| merged common ancestors
+    i = "0x" + i; // prepend "0x" to string to ensure it is converted properly
+    raw_vector.push_back((RawChar) stoul(i, nullptr, 0)); // push uint16_t
+=======
+    i = "0x" + i; // prepend "0x" to string to ensure it is converted properly
+    raw_vector.emplace_back((RawChar) stoul(i, nullptr, 0)); // push uint16_t
+>>>>>>> cf00719adfa5a0e482b027069829921e18fa1777
   }
   return raw_vector;
 }
@@ -227,14 +241,26 @@ vector<RawChar> HexstringToRawChar(string& s)
 // This requires sequential conversion from char to uint8_t to uint16_t
 // (RawChar is just a synonym for uint16_t)
 
-vector<RawChar> StringToRawChar(string& s)
+vector<RawChar> StringToRawChar(const string& s)
 {
   vector<RawChar> result; // vector to hold results
   result.reserve(s.size());
   if(s.size() == 0) return result; // string s is empty - nothing to do.
+<<<<<<< HEAD
   for(auto i : s)
     result.emplace_back(0x00ff & ((uint8_t) i)); // convert uint8 to uint16 and store result
 
+||||||| merged common ancestors
+  for(auto i : s)
+  {
+    uint8_t a = (uint8_t) i; // char to uint8
+    result.push_back((uint16_t) a); // convert uint8 to uint16 and store result
+  }
+=======
+  result.reserve(s.size());
+  for(const auto& i : s)
+    result.push_back(0x00ff & i); // convert uint8 to uint16 and store result
+>>>>>>> cf00719adfa5a0e482b027069829921e18fa1777
   return result;
 }
 
@@ -257,7 +283,7 @@ vector<int> getObjRefs(const string& s)
   std::vector<int> res; // vector to hold result
   std::string buf; // a buffer to hold characters until stored or discarded
   RefState state = WAIT_FOR_START; // the current state of the fsm
-  for(auto i : s)
+  for(const auto& i : s)
   {
     char m = symbol_type(i); // finds out if current char is digit, letter, ws
     if(state == WAIT_FOR_START)
@@ -407,7 +433,7 @@ std::vector<float> getnums(const std::string& s)
     POST    // Have read integer and found point, now reading fractional number
   };
   FloatState state = WAITING; // current state of fsm
-  for(auto i : s)
+  for(const auto& i : s)
   {
     char m = symbol_type(i);
     if(state == WAITING)
@@ -503,26 +529,48 @@ std::string get_file(const std::string& file)
 }
 
 /*--------------------------------------------------------------------------*/
-// converts unicode points to multibyte utf-8 encoding
+// converts (16-bit) Unicode code points to multibyte utf-8 encoding.
 
-std::string utf(std::vector<Unicode> u)
+std::string utf(std::vector<uint16_t> Unicode_points)
 {
-  std::vector<uint8_t> res;
-  for(auto x : u)
+  std::string result_string = ""; // empty string for results
+  for(auto point : Unicode_points) // for each uint16_t in the input vector...
   {
-    if(x < 0x0080) res.push_back(x & 0x007f);
-    if(x > 0x007f && x < 0x0800)
+    // values less than 128 are just single-byte ASCII
+    if(point < 0x0080) result_string.push_back(point & 0x007f);
+
+    // values of 128 - 2047 are two bytes. The first byte starts 110xxxxx
+    // and the second starts 10xxxxxx. The remaining 11 x's are filled with the
+    // 11 bits representing a number between 128 and 2047. e.g. Unicode point
+    // U+061f (decimal 1567) is 11000011111 in 11 bits of binary, which we split
+    // into length-5 and length-6 pieces 11000 and 011111. These are appended on
+    // to 110 and 10 respectively to give the 16-bit number 110 11000 10 011111,
+    // which as two bytes is 11011000 10011111 or d8 9f. Thus the UTF-8
+    // encoding for character U+061f is the two-byte sequence d8 9f.
+    if(point > 0x007f && point < 0x0800)
     {
-      res.push_back((0x00c0 | ((x >> 6) & 0x001f)));
-      res.push_back(0x0080 | (x & 0x003f));
+      // construct byte with bits 110 and first 5 bits of unicode point number
+      result_string.push_back((0x00c0 | ((point >> 6) & 0x001f)));
+      // construct byte with bits 10 and final 6 bits of unicode point number
+      result_string.push_back(0x0080 | (point & 0x003f));
     }
-    if(x > 2047)
+
+    // Unicode values between 2048 (0x0800) and the maximum uint16_t value
+    // (65535 or 0xffff) are given by 16 bits split over three bytes in the
+    // following format: 1110xxxx 10xxxxxx 10xxxxxx. Each x here takes one of
+    // the 16 bits representing 2048 - 65535.
+    if(point > 0x07ff)
     {
-      res.push_back(0x00e0 | ((x >> 12) & 0x000f));
-      res.push_back(0x0080 | ((x >> 6) & 0x003f));
-      res.push_back(0x0080 | ((x) & 0x003f));
+      // construct byte with 1110 and first 4 bits of unicode point number
+      result_string.push_back(0x00e0 | ((point >> 12) & 0x000f));
+      // construct byte with 10 and bits 5-10 of unicode point number
+      result_string.push_back(0x0080 | ((point >> 6) & 0x003f));
+      // construct byte with bits 10 and final 6 bits of unicode point number
+      result_string.push_back(0x0080 | ((point) & 0x003f));
     }
+    // Although higher Unicode points are defined and can be encoded in utf8,
+    // the hex-strings in pdf seem to be two bytes wide at most. These are
+    // therefore not supported at present.
   }
-  std::string resstring(res.begin(), res.end());
-  return resstring;
+  return result_string;
 }

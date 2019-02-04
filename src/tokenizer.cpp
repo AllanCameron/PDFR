@@ -36,7 +36,6 @@ using namespace Token;
 
 tokenizer::tokenizer(const string& input) : i(0), s(input),  state(NEWSYMBOL)
 {
-  s.push_back(' '); // easier to do this than handle full buffer at EOF
   tokenize();       // instigate lexer
 }
 
@@ -53,7 +52,7 @@ vector<pair<string, TState>> tokenizer::result()
 // to the instruction set, and clearing the buffer is very common in the
 // lexer. This function acts as a shorthand to prevent boilerplate
 
-void tokenizer::pushbuf(TState type, TState statename)
+void tokenizer::pushbuf(const TState type, const TState statename)
 {
   state = statename; // switch state
   output.push_back(make_pair(buf, type)); // make pair and push to result
@@ -93,12 +92,11 @@ void tokenizer::tokenize()
 
 void tokenizer::resourceState()
 {
-  char m = s[i];            // simplifies code
-  char n = symbol_type(m);  // get symbol_type of current char
+  char n = symbol_type(s[i]);  // get symbol_type of current char
   switch(n)
   {
-    case 'L':   buf += m;                         break;
-    case 'D':   buf += m;                         break;
+    case 'L':   buf += s[i];                         break;
+    case 'D':   buf += s[i];                         break;
     case '-':   buf += '-';                       break;
     case '+':   buf += '+';                       break;
     case '_':   buf += '_';                       break;
@@ -116,17 +114,16 @@ void tokenizer::resourceState()
 
 void tokenizer::newsymbolState()
 {
-  char m = s[i];            // simplifies code
-  char n = symbol_type(m);  // get symbol_type of current char
+  char n = symbol_type(s[i]);  // get symbol_type of current char
   switch(n)
   {
-    case 'L':   buf += m;    state = IDENTIFIER;  break;
-    case 'D':   buf += m;    state = NUMBER;      break;
-    case '-':   buf += m;    state = NUMBER;      break;
-    case '_':   buf += m;    state = IDENTIFIER;  break;
-    case '*':   buf += m;    state = IDENTIFIER;  break;
-    case '\'':  buf += m;    state = IDENTIFIER;  break;
-    case '/':   buf += m;    state = RESOURCE;    break;
+    case 'L':   buf += s[i];    state = IDENTIFIER;  break;
+    case 'D':   buf += s[i];    state = NUMBER;      break;
+    case '-':   buf += s[i];    state = NUMBER;      break;
+    case '_':   buf += s[i];    state = IDENTIFIER;  break;
+    case '*':   buf += s[i];    state = IDENTIFIER;  break;
+    case '\'':  buf += s[i];    state = IDENTIFIER;  break;
+    case '/':   buf += s[i];    state = RESOURCE;    break;
     case '.':   buf += "0."; state = NUMBER;      break;
     case '[':                state = ARRAY;       break;
     case '(':                state = STRING;      break;
@@ -140,8 +137,7 @@ void tokenizer::newsymbolState()
 
 void tokenizer::identifierState()
 {
-  char m = s[i];            // simplifies code
-  char n = symbol_type(m);  // get symbol_type of current char
+  char n = symbol_type(s[i]);  // get symbol_type of current char
   switch(n)
   {
     case '/':   pushbuf(IDENTIFIER, RESOURCE);
@@ -151,11 +147,11 @@ void tokenizer::identifierState()
     case '[':   pushbuf(IDENTIFIER, ARRAY);       break;
     case '(':   pushbuf(IDENTIFIER, STRING);      break;
     case '<':   pushbuf(IDENTIFIER, HEXSTRING);   break;
-    case 'L':   buf += m;                         break;
-    case 'D':   buf += m;                         break;
-    case '-':   buf += m;                         break;
-    case '_':   buf += m;                         break;
-    case '*':   buf += m;                         break;
+    case 'L':   buf += s[i];                         break;
+    case 'D':   buf += s[i];                         break;
+    case '-':   buf += s[i];                         break;
+    case '_':   buf += s[i];                         break;
+    case '*':   buf += s[i];                         break;
     default:                                      break;
   }
 }
@@ -165,19 +161,18 @@ void tokenizer::identifierState()
 
 void tokenizer::numberState()
 {
-  char m = s[i];            // simplifies code
-  char n = symbol_type(m);  // get symbol_type of current char
+  char n = symbol_type(s[i]);  // get symbol_type of current char
   switch(n)
   {
-    case 'L':   buf += m;                         break;
-    case 'D':   buf += m;                         break;
-    case '_':   buf += m;                         break;
-    case '.':   buf += m;                         break;
-    case '-':   pushbuf(NUMBER,     NUMBER);      buf=m;
+    case 'L':   buf += s[i];                         break;
+    case 'D':   buf += s[i];                         break;
+    case '_':   buf += s[i];                         break;
+    case '.':   buf += s[i];                         break;
+    case '-':   pushbuf(NUMBER,     NUMBER);      buf=s[i];
                 pushbuf(OPERATOR,   NUMBER);      break;
-    case '*':   pushbuf(NUMBER,     NUMBER);      buf=m;
+    case '*':   pushbuf(NUMBER,     NUMBER);      buf=s[i];
                 pushbuf(OPERATOR,   NUMBER);      break;
-    case '/':   pushbuf(NUMBER,     NUMBER);      buf=m;
+    case '/':   pushbuf(NUMBER,     NUMBER);      buf=s[i];
                 pushbuf(OPERATOR,   NUMBER);      break;
     case ' ':   pushbuf(NUMBER,     NEWSYMBOL);   break;
     case '[':   pushbuf(NUMBER,     ARRAY);       break;
@@ -191,8 +186,7 @@ void tokenizer::numberState()
 
 void tokenizer::stringState()
 {
-  char m = s[i];            // simplifies code
-  char n = symbol_type(m);  // get symbol_type of current char
+  char n = symbol_type(s[i]);  // get symbol_type of current char
   switch(n)
   {
     case ')':   pushbuf(STRING, NEWSYMBOL);       break;
@@ -206,14 +200,13 @@ void tokenizer::stringState()
 
 void tokenizer::arrayState()
 {
-  char m = s[i];            // simplifies code
-  char n = symbol_type(m);  // get symbol_type of current char
+  char n = symbol_type(s[i]);  // get symbol_type of current char
   switch(n)
   {
     case ']':   subtokenizer(buf); // at end of array, tokenize its contents
                 state = NEWSYMBOL; buf = "";      break;
     case '\\':  buf += s[i++]; buf += s[i];       break;
-    default:    buf += m;                         break;
+    default:    buf += s[i];                         break;
   }
 }
 
@@ -222,16 +215,15 @@ void tokenizer::arrayState()
 
 void tokenizer::hexstringState()
 {
-  char m = s[i];            // simplifies code
-  char n = symbol_type(m);  // get symbol_type of current char
+  char n = symbol_type(s[i]);  // get symbol_type of current char
   switch(n)
   {
     case '>':   if (!buf.empty())
                   pushbuf(HEXSTRING, NEWSYMBOL);
                 state = NEWSYMBOL;                break;
     case '<':   buf = ""; state = DICT;           break;
-    case '\\':  buf += m + s[++i];                break;
-    default:    buf += m;                         break;
+    case '\\':  buf += s[i] + s[++i];                break;
+    default:    buf += s[i];                         break;
   }
 }
 
@@ -241,13 +233,12 @@ void tokenizer::hexstringState()
 
 void tokenizer::dictState()
 {
-  char m = s[i];            // simplifies code
-  char n = symbol_type(m);  // get symbol_type of current char
+  char n = symbol_type(s[i]);  // get symbol_type of current char
   switch(n)
   {
-    case '\\':  buf += m + s[++i];                break;
+    case '\\':  buf += s[i] + s[++i];                break;
     case '>':   pushbuf(DICT, HEXSTRING);         break;
-    default:    buf += m;                         break;
+    default:    buf += s[i];                         break;
   }
 }
 

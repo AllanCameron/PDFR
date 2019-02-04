@@ -172,7 +172,7 @@ std::string bytestostring(const std::vector<uint8_t>&);
 // Transforms a vector of strings to a vector of floats
 // (vectorised version of stof)
 
-std::vector<float> stringtofloat(std::vector<std::string>);
+std::vector<float> stringtofloat(const std::vector<std::string>&);
 
 //---------------------------------------------------------------------------//
 //Converts an int to the relevant 2-byte ASCII hex (4 characters long)
@@ -184,7 +184,7 @@ std::string intToHexstring(int);
 // Splits a string into a vector of length-4 elements. Useful for Ascii-
 // encoded strings e.g. "00FF00AA1234" -> {"00FF", "00AA", "1234"}
 
-std::vector<std::string> splitfours(std::string);
+std::vector<std::string> splitfours(const std::string&);
 
 //---------------------------------------------------------------------------//
 // Classify characters for use in lexers. This allows the use of switch
@@ -204,14 +204,14 @@ void trimRight(std::string&);
 // Returns the data represented by an Ascii encoded hex string as a vector
 // of two-byte numbers
 
-std::vector<RawChar> HexstringToRawChar(std::string&);
+std::vector<RawChar> HexstringToRawChar(const std::string&);
 
 //---------------------------------------------------------------------------//
 // Converts normal string to a vector of 2-byte width numbers (RawChar)
 // This requires sequential conversion from char to uint8_t to uint16_t
 // (RawChar is just a synonym for uint16_t)
 
-std::vector<RawChar> StringToRawChar(std::string&);
+std::vector<RawChar> StringToRawChar(const std::string&);
 
 //---------------------------------------------------------------------------//
 // This is a simple lexer to find any object references in the given string,
