@@ -222,8 +222,8 @@ void tokenizer::hexstringState()
                   pushbuf(HEXSTRING, NEWSYMBOL);
                 state = NEWSYMBOL;                break;
     case '<':   buf = ""; state = DICT;           break;
-    case '\\':  buf += s[i] + s[++i];                break;
-    default:    buf += s[i];                         break;
+    case '\\':  buf += s[i]; i++; buf += s[i];    break;
+    default:    buf += s[i];                      break;
   }
 }
 
@@ -236,9 +236,9 @@ void tokenizer::dictState()
   char n = symbol_type(s[i]);  // get symbol_type of current char
   switch(n)
   {
-    case '\\':  buf += s[i] + s[++i];                break;
+    case '\\':  buf += s[i]; i++; buf += s[i];    break;
     case '>':   pushbuf(DICT, HEXSTRING);         break;
-    default:    buf += s[i];                         break;
+    default:    buf += s[i];                      break;
   }
 }
 

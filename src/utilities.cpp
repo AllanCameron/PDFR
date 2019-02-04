@@ -206,32 +206,17 @@ void trimRight(string& s)
 // Returns the data represented by an Ascii encoded hex string as a vector
 // of two-byte numbers
 
-vector<RawChar> HexstringToRawChar(const string& s)
+vector<RawChar> HexstringToRawChar(string& s)
 {
   while(s.size() % 4 != 0) s += '0';
   vector<RawChar> raw_vector; // vector to store results
-<<<<<<< HEAD
   raw_vector.reserve(s.size() / 4);
   for(size_t i = 0; i < (s.size() - 3); i += 4)
-||||||| merged common ancestors
-  for(auto& i : string_vector)
-=======
-  raw_vector.reserve(string_vector.size());
-  for(auto& i : string_vector)
->>>>>>> cf00719adfa5a0e482b027069829921e18fa1777
   {
-<<<<<<< HEAD
     raw_vector.emplace_back(hexmap[(uint8_t)(s[i])] * 4096 +
                             hexmap[(uint8_t)(s[i + 1])] * 256 +
                             hexmap[(uint8_t)(s[i + 2])] * 16 +
                             hexmap[(uint8_t)(s[i + 3])]);
-||||||| merged common ancestors
-    i = "0x" + i; // prepend "0x" to string to ensure it is converted properly
-    raw_vector.push_back((RawChar) stoul(i, nullptr, 0)); // push uint16_t
-=======
-    i = "0x" + i; // prepend "0x" to string to ensure it is converted properly
-    raw_vector.emplace_back((RawChar) stoul(i, nullptr, 0)); // push uint16_t
->>>>>>> cf00719adfa5a0e482b027069829921e18fa1777
   }
   return raw_vector;
 }
@@ -246,21 +231,8 @@ vector<RawChar> StringToRawChar(const string& s)
   vector<RawChar> result; // vector to hold results
   result.reserve(s.size());
   if(s.size() == 0) return result; // string s is empty - nothing to do.
-<<<<<<< HEAD
   for(auto i : s)
-    result.emplace_back(0x00ff & ((uint8_t) i)); // convert uint8 to uint16 and store result
-
-||||||| merged common ancestors
-  for(auto i : s)
-  {
-    uint8_t a = (uint8_t) i; // char to uint8
-    result.push_back((uint16_t) a); // convert uint8 to uint16 and store result
-  }
-=======
-  result.reserve(s.size());
-  for(const auto& i : s)
-    result.push_back(0x00ff & i); // convert uint8 to uint16 and store result
->>>>>>> cf00719adfa5a0e482b027069829921e18fa1777
+    result.emplace_back(0x00ff & ((uint8_t) i)); // convert to uint16
   return result;
 }
 

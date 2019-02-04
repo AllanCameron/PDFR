@@ -204,7 +204,7 @@ void trimRight(std::string&);
 // Returns the data represented by an Ascii encoded hex string as a vector
 // of two-byte numbers
 
-std::vector<RawChar> HexstringToRawChar(const std::string&);
+std::vector<RawChar> HexstringToRawChar(std::string&);
 
 //---------------------------------------------------------------------------//
 // Converts normal string to a vector of 2-byte width numbers (RawChar)
