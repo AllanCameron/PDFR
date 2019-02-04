@@ -48,9 +48,7 @@
 #include<string>
 #include<vector>
 #include<unordered_map>
-
-//Uncomment the following line if debug functions required in the program:
-//#include "debugtools.h"
+#include "debugtools.h"
 
 /* The characters in pdf strings are most portably interpreted as uint16_t.
  * They need to be translated to Unicode for rendition to the intended

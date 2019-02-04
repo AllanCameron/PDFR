@@ -73,6 +73,7 @@ GSoutput graphic_state::output()
 
 void graphic_state::q(vector<string>& Operands)
 {
+    PROFC_NODE("q");
   gs.emplace_back(gs.back());               // push transformation matrix
   fontstack.emplace_back(currentfont);      // push font name
   fontsizestack.emplace_back(currfontsize); // push pointsize
@@ -84,6 +85,7 @@ void graphic_state::q(vector<string>& Operands)
 
 void graphic_state::Do(string& a)
 {
+    PROFC_NODE("Do");
   string xo = p->getXobject(a); // get xobject
   if(IsAscii(xo)) // don't try to parse binary objects like images etc
   {
@@ -97,6 +99,7 @@ void graphic_state::Do(string& a)
 
 void graphic_state::Q(vector<string>& Operands)
 {
+    PROFC_NODE("Q");
   if (gs.size() > 1) // Empty graphics state is undefined but gs[0] is identity
     gs.pop_back();
   if (fontstack.size() > 1) // Empty fontstack is undefined
@@ -114,11 +117,12 @@ void graphic_state::Q(vector<string>& Operands)
 
 void graphic_state::Td(vector<string>& Operands)
 {
-  vector<float> Tds = initstate;                    //------------------------
+    PROFC_NODE("Td");
+  array<float, 9> Tds = initstate;                    //------------------------
   vector<float> tmpvec = stringtofloat(Operands);       //  create translation
-  Tds.at(6) = tmpvec[0];                                //  matrix (3x3)
+  Tds[6] = tmpvec[0];                                //  matrix (3x3)
   Tds[7] = tmpvec[1];                               //------------------------
-  Tdstate = matmul(Tds, Tdstate); // multiply translation and text matrices
+  matmul(Tds, Tdstate); // multiply translation and text matrices
   PRstate = 0; // Td resets kerning
 }
 
@@ -127,11 +131,12 @@ void graphic_state::Td(vector<string>& Operands)
 
 void graphic_state::TD(vector<string>& Operands)
 {
-  vector<float> Tds = initstate;                    //------------------------
+    PROFC_NODE("TD");
+  array<float, 9> Tds = initstate;                    //------------------------
   vector<float> tmpvec = stringtofloat(Operands);       //  create translation
-  Tds.at(6) = tmpvec[0];                                //  matrix (3x3)
+  Tds[6] = tmpvec[0];                                //  matrix (3x3)
   Tds[7] = tmpvec[1];                               //------------------------
-  Tdstate = matmul(Tds, Tdstate); // multiply translation and text matrices
+  matmul(Tds, Tdstate); // multiply translation and text matrices
   PRstate = 0; // TD resets kerning
   Tl = -Tds[7]; // set text leading to new value
 }
@@ -141,6 +146,7 @@ void graphic_state::TD(vector<string>& Operands)
 
 void graphic_state::BT(vector<string>& Operands)
 {
+    PROFC_NODE("BT");
   Tmstate = Tdstate = initstate; // Reset text matrix to identity matrix
   Tw = Tc = 0; // reset word spacing and character spacing
   Th = 100; // reset horizontal spacing
@@ -151,6 +157,7 @@ void graphic_state::BT(vector<string>& Operands)
 
 void graphic_state::ET(vector<string>& Operands)
 {
+    PROFC_NODE("ET");
   Tmstate = Tdstate = initstate; // Reset text matrix to identity matrix
   Tw = Tc = 0; // reset word spacing and character spacing
   Th = 100; // reset horizontal spacing
@@ -160,6 +167,7 @@ void graphic_state::ET(vector<string>& Operands)
 // Tf operator - specifies font and pointsize
 void graphic_state::Tf(vector<string>& Operands)
 {
+    PROFC_NODE("Tf");
   if(Operands.size() > 1) // Should be 2 operators: 1 is not defined
   {
     currentfont = Operands[0];        // read fontID
@@ -175,6 +183,7 @@ void graphic_state::Tf(vector<string>& Operands)
 
 void graphic_state::TH(vector<string>& Operands)
 {
+    PROFC_NODE("TH");
   Th = stof(Operands.at(0)); // simply reads operand as new Th value
 }
 
@@ -183,6 +192,7 @@ void graphic_state::TH(vector<string>& Operands)
 
 void graphic_state::TC(vector<string>& Operands)
 {
+    PROFC_NODE("TC");
   Tc = stof(Operands.at(0)); // simply reads operand as new Tc value
 }
 
@@ -199,6 +209,7 @@ void graphic_state::TW(vector<string>& Operands)
 
 void graphic_state::TL(vector<string>& Operands)
 {
+    PROFC_NODE("TL");
   Tl = stof(Operands.at(0));  // simply reads operand as new Tl value
 }
 
@@ -207,6 +218,7 @@ void graphic_state::TL(vector<string>& Operands)
 
 void graphic_state::Tstar(vector<string>& Operands)
 {
+    PROFC_NODE("T*");
   Tdstate.at(7) = Tdstate.at(7) - Tl; // decrease y value of text matrix by Tl
   PRstate = 0; // reset kerning
 }
@@ -216,6 +228,7 @@ void graphic_state::Tstar(vector<string>& Operands)
 
 void graphic_state::Tm(vector<string>& Operands)
 {
+    PROFC_NODE("Tm");
   Tmstate = stringvectomat(Operands); // Reads the operands as a 3x3 matrix
   Tdstate = initstate; // reset the Td modifier matrix
   PRstate = 0; // reset kerning
@@ -226,9 +239,10 @@ void graphic_state::Tm(vector<string>& Operands)
 
 void graphic_state::cm(vector<string>& Operands)
 {
+    PROFC_NODE("cm");
   // read the operands as a matrix, multiply by top of graphics state stack
   // and replace the top of the stack with the result
-  gs.back() = matmul(stringvectomat(Operands), gs.back());
+  matmul(stringvectomat(Operands), gs.back());
 }
 
 /*---------------------------------------------------------------------------*/
@@ -245,14 +259,16 @@ void graphic_state::cm(vector<string>& Operands)
 void graphic_state::TJ(string Ins, vector<string>& Operands,
                        vector<TState>& OperandTypes)
 {
+  PROFC_NODE("TJ");
   // the "'" operator is the same as Tj except it moves to the next line first
   if (Ins == "'") Tdstate[7] -= Tl;
 
   // We create a text space that is the product of Tm and cm matrices
-  vector<float> textspace = matmul(Tmstate, gs.back());
+  array<float, 9> textspace = gs.back();
+  matmul(Tmstate, textspace);
 
   // we now use the translation-only Td matrix to get our final text space
-  textspace = matmul(Tdstate, textspace);
+  matmul(Tdstate, textspace);
 
   // now we can set the starting x value of our string
   float txtspcinit = textspace[6];
@@ -292,14 +308,14 @@ void graphic_state::TJ(string Ins, vector<string>& Operands,
 // glyphs, sizes and positions intended by the string in the page program
 
 void graphic_state::processRawChar(vector<RawChar>& raw, float& scale,
-                                   vector<float>& textspace, float& txtspcinit)
+                                   array<float, 9>& textspace, float& txtspcinit)
 {
   // look up the RawChars in the font to get their Unicode values and widths
   vector<pair<Unicode, int>>&& glyphpairs = wfont->mapRawChar(raw);
 
   for (auto& j : glyphpairs) // Now, for each character...
   {
-    statehx.emplace_back(textspace); // each glyph has a whole matrix associated
+    statehx.push_back(textspace); // each glyph has a whole matrix associated
     float glyphwidth = j.second;
     PRstate += glyphwidth; // adjust the pushright in text space by char width
   if (j.first == 0x0020 || j.first == 0x00A0) // if this is a space or nbsp...
@@ -343,25 +359,24 @@ void graphic_state::parser(vector<pair<string, TState>>& tokens, string inloop)
   {
     if (i.second == IDENTIFIER) // if it's an identifier, call the operator,
     {                           // passing any stored operands on the stack
-      if (i.first == "Q")  Q(Operands);
+      if (i.first == "Tj" || i.first == "'" || i.first == "TJ")
+        TJ(i.first, Operands, OperandTypes);
+      else if (i.first == "Q")  Q(Operands);
       else if (i.first == "q" ) q(Operands);
       else if (i.first == "BT") BT(Operands);
       else if (i.first == "ET") ET(Operands);
       else if (i.first == "cm") cm(Operands);
       else if (i.first == "Tm") Tm(Operands);
+      else if (i.first == "Tf") Tf(Operands);
+      else if (i.first == "Td") Td(Operands);
       else if (i.first == "Th") TH(Operands);
       else if (i.first == "Tw") TW(Operands);
       else if (i.first == "Tc") TC(Operands);
       else if (i.first == "TL") TL(Operands);
       else if (i.first == "T*") Tstar(Operands);
-      else if (i.first == "Td") Td(Operands);
       else if (i.first == "TD") TD(Operands);
-      else if (i.first == "Tf") Tf(Operands);
       // don't allow an xobject to call itself recursively
       else if (i.first == "Do" && inloop != Operands.at(0)) Do(Operands.at(0));
-      // The TJ function handles three similar text-drawing operators
-      else if (i.first == "Tj" || i.first == "'" || i.first == "TJ")
-        TJ(i.first, Operands, OperandTypes);
       OperandTypes.clear(); // clear the stack since an operator has been called
       Operands.clear(); // clear the stack since an operator has been called
     }
@@ -406,18 +421,14 @@ void graphic_state::MakeGS()
 //                      | x[6]  x[7]  x[8] |
 //
 
-vector<float> graphic_state::matmul(vector<float> b, vector<float> a)
+void graphic_state::matmul(const array<float, 9>& b, array<float, 9>& a)
 {
-  if(a.size() != b.size())
-    throw std::runtime_error("matmul: Vectors must have same size.");
-  if(a.size() != 9)
-    throw std::runtime_error("matmul: Vectors must be size 9.");
-  vector<float> newmat;
+  array<float, 9> newmat;
   for(size_t i = 0; i < 9; i++) //clever use of indices to allow fill by loop
-    newmat.emplace_back(a[i % 3 + 0] * b[3 * (i / 3) + 0] +
-                        a[i % 3 + 3] * b[3 * (i / 3) + 1] +
-                        a[i % 3 + 6] * b[3 * (i / 3) + 2] );
-  return newmat;
+    newmat[i] = (a[i % 3 + 0] * b[3 * (i / 3) + 0] +
+                 a[i % 3 + 3] * b[3 * (i / 3) + 1] +
+                 a[i % 3 + 6] * b[3 * (i / 3) + 2] );
+  swap(a, newmat);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -435,13 +446,11 @@ vector<float> graphic_state::matmul(vector<float> b, vector<float> a)
 //                      |   15    16    1  |
 //
 
-vector<float> graphic_state::stringvectomat(vector<string> b)
+array<float, 9> graphic_state::stringvectomat(const vector<string>& a)
 {
-  if(b.size() != 6)
-    throw std::runtime_error("stringvectomat: Vectors must be size 6.");
-  vector<float> a;
-  for(auto i : b) a.emplace_back(stof(i));
-  vector<float> newmat {a[0], a[1], 0, a[2], a[3], 0, a[4], a[5], 1};
+  array<float, 9> newmat {stof(a[0]), stof(a[1]), 0,
+                          stof(a[2]), stof(a[3]), 0,
+                          stof(a[4]), stof(a[5]), 1};
   return newmat;
 }
 

@@ -31,6 +31,13 @@
 
 using namespace std;
 
+static std::unordered_map<uint8_t, uint8_t> hexmap = {
+  {'0', 0}, {'1', 1}, {'2', 2}, {'3', 3}, {'4', 4}, {'5', 5}, {'6', 6},
+  {'7', 7}, {'8', 8}, {'9', 9}, {'a', 10}, {'A', 10}, {'b', 11}, {'B', 11},
+  {'c', 12}, {'C', 12}, {'d', 13}, {'D', 13}, {'e', 14}, {'E', 14},
+  {'f', 15}, {'F', 15}
+};
+
 /*---------------------------------------------------------------------------*/
 // Return the first substring of s that lies between two strings.
 // This can be used e.g. to find the byte position that always sits between
@@ -202,13 +209,15 @@ void trimRight(string& s)
 
 vector<RawChar> HexstringToRawChar(string& s)
 {
-  // first split the string into length 4 blocks to represent two-byte uints
-  vector<string>&& string_vector = splitfours(s);
+  while(s.size() % 4 != 0) s += '0';
   vector<RawChar> raw_vector; // vector to store results
-  for(auto& i : string_vector)
+  raw_vector.reserve(s.size() / 4);
+  for(size_t i = 0; i < (s.size() - 3); i += 4)
   {
-    i = "0x" + i; // prepend "0x" to string to ensure it is converted properly
-    raw_vector.push_back((RawChar) stoul(i, nullptr, 0)); // push uint16_t
+    raw_vector.emplace_back(hexmap[(uint8_t)(s[i])] * 4096 +
+                            hexmap[(uint8_t)(s[i + 1])] * 256 +
+                            hexmap[(uint8_t)(s[i + 2])] * 16 +
+                            hexmap[(uint8_t)(s[i + 3])]);
   }
   return raw_vector;
 }
@@ -221,12 +230,11 @@ vector<RawChar> HexstringToRawChar(string& s)
 vector<RawChar> StringToRawChar(string& s)
 {
   vector<RawChar> result; // vector to hold results
+  result.reserve(s.size());
   if(s.size() == 0) return result; // string s is empty - nothing to do.
   for(auto i : s)
-  {
-    uint8_t a = (uint8_t) i; // char to uint8
-    result.push_back((uint16_t) a); // convert uint8 to uint16 and store result
-  }
+    result.emplace_back(0x00ff & ((uint8_t) i)); // convert uint8 to uint16 and store result
+
   return result;
 }
 

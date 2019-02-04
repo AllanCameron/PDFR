@@ -109,13 +109,13 @@ private:
   page*                           p;              // pointer to creating page
   font*                           wfont;          // pointer to "working" font
   float                           currfontsize;   // Current font size
-  std::vector<float>              initstate,      // Identity 3x3 matrix as vec9
-                                  fontsizestack,  // stack of current font size
+  std::array<float, 9>            initstate;      // Identity 3x3 matrix as vec9
+  std::vector<float>              fontsizestack,  // stack of current font size
                                   fontsize,       // size of glyph in points
-                                  widths,         // width of glyph in textspace
-                                  Tmstate,        // Text matrix state
+                                  widths;         // width of glyph in textspace
+  std::array<float, 9>            Tmstate,        // Text matrix state
                                   Tdstate;        // Temp modification to Tm
-  std::vector<std::vector<float>> gs,             // stack of graphics state
+  std::vector<std::array<float, 9>> gs,           // stack of graphics state
                                   statehx;        // history of graphics state
   std::string                     currentfont;    // Name of current font
   std::vector<std::string>        fontname,       // vector of font names
@@ -167,16 +167,16 @@ private:
   // state to identify the intended glyph, size and position from a character
   // in a pdf string object
   void processRawChar(std::vector<RawChar>&, float&,
-                      std::vector<float>&,   float&);
+                      std::array<float, 9>&,   float&);
 
   // This tidies and wraps the data
   void MakeGS();
 
   // Multiplies to 3x3 matrices represented as length-9 vector floats
-  std::vector<float> matmul(std::vector<float>, std::vector<float>);
+  void matmul(const std::array<float, 9>& , std::array<float, 9>&);
 
   // Converts pdfs' 6-token string representation of matrices to a 3x3 matrix
-  std::vector<float> stringvectomat(std::vector<std::string>);
+  std::array<float, 9> stringvectomat(const std::vector<std::string>&);
 };
 
 //---------------------------------------------------------------------------//

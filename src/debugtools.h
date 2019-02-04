@@ -24,8 +24,12 @@
 //  SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                   //
 //                                                                           //
 //---------------------------------------------------------------------------//
-
-#ifndef PDFR_DEBUG
+// uncomment these lines for debugger and profiler
+// #define PDFR_DEBUG
+// #define PROFILER_PDFR
+#include "external/Profiler.h"
+#ifdef PDFR_DEBUG
+#ifndef PDFR_DEBUGGER
 
 //---------------------------------------------------------------------------//
 
@@ -38,10 +42,10 @@
  * of the package
  */
 
+
 // Includes come from standard library only
 #include<string>
 #include<vector>
-#include<chrono> // for profiling
 #include<iostream> // for outputting to console
 
 /*---------------------------------------------------------------------------*/
@@ -60,31 +64,5 @@ void printvec(std::vector<T> x)
   if(s > 0) std::cout << x[s - 1] << std::endl;
 }
 
-/*---------------------------------------------------------------------------*/
-// Simple inline function to start a timer from which subsequent time points
-// can be measured. Needed for profiling.
-
-inline std::chrono::high_resolution_clock::time_point startClock()
-{
-  return std::chrono::high_resolution_clock::now(); // returns current time
-}
-
-/*---------------------------------------------------------------------------*/
-// Measures and prints out the time in milliseconds since the timer was
-// started for use in profiling.
-
-inline void timeSince(std::string message,
-               std::chrono::high_resolution_clock::time_point& start)
-{
-  std::chrono::high_resolution_clock::time_point end =
-    std::chrono::high_resolution_clock::now(); // gets current time
-  auto diff = end - start; // diff now contains time since clock was started
-  std::cout << message << ": "
-            << std::chrono::duration <double, std::milli> (diff).count()
-            << " ms" << std::endl; //prints time in milliseconds to console
-  start = std::chrono::high_resolution_clock::now(); // resets clock
-}
-
-/*---------------------------------------------------------------------------*/
-
+#endif
 #endif
