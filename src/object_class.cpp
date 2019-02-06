@@ -26,6 +26,7 @@
 //---------------------------------------------------------------------------//
 
 #include "object_class.h"
+#include <iostream>
 
 //---------------------------------------------------------------------------//
 
@@ -154,7 +155,16 @@ object_class::object_class(object_class* holder, int objnum)
     // be handled by recursively calling the main creator function
     if(stream.size() < 15 && stream.find(" R", 0) < 15)
     {
-      *this = object_class(XR, getObjRefs(stream)[0]);
+      size_t newobjnum = getObjRefs(stream)[0];
+      size_t newholder = XR->inObject(newobjnum); // ensure no holding object
+      if(newholder == 0) *this = object_class(XR, newobjnum);
+      else
+      {
+        size_t oldnumber = this->number;
+        object_class holding = object_class(XR, newholder);
+        *this = object_class(&holding, newobjnum);
+        this->number = oldnumber;
+      }
     }
   }
 }

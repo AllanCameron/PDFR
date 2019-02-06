@@ -52,26 +52,28 @@ BEGIN_RCPP
 END_RCPP
 }
 // pdfpage
-Rcpp::List pdfpage(const std::string& filename, int pagenum);
-RcppExport SEXP _PDFR_pdfpage(SEXP filenameSEXP, SEXP pagenumSEXP) {
+Rcpp::List pdfpage(const std::string& filename, int pagenum, bool g);
+RcppExport SEXP _PDFR_pdfpage(SEXP filenameSEXP, SEXP pagenumSEXP, SEXP gSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const std::string& >::type filename(filenameSEXP);
     Rcpp::traits::input_parameter< int >::type pagenum(pagenumSEXP);
-    rcpp_result_gen = Rcpp::wrap(pdfpage(filename, pagenum));
+    Rcpp::traits::input_parameter< bool >::type g(gSEXP);
+    rcpp_result_gen = Rcpp::wrap(pdfpage(filename, pagenum, g));
     return rcpp_result_gen;
 END_RCPP
 }
 // pdfpageraw
-Rcpp::List pdfpageraw(const std::vector<uint8_t>& rawfile, int pagenum);
-RcppExport SEXP _PDFR_pdfpageraw(SEXP rawfileSEXP, SEXP pagenumSEXP) {
+Rcpp::List pdfpageraw(const std::vector<uint8_t>& rawfile, int pagenum, bool g);
+RcppExport SEXP _PDFR_pdfpageraw(SEXP rawfileSEXP, SEXP pagenumSEXP, SEXP gSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const std::vector<uint8_t>& >::type rawfile(rawfileSEXP);
     Rcpp::traits::input_parameter< int >::type pagenum(pagenumSEXP);
-    rcpp_result_gen = Rcpp::wrap(pdfpageraw(rawfile, pagenum));
+    Rcpp::traits::input_parameter< bool >::type g(gSEXP);
+    rcpp_result_gen = Rcpp::wrap(pdfpageraw(rawfile, pagenum, g));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -150,8 +152,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_PDFR_get_xrefraw", (DL_FUNC) &_PDFR_get_xrefraw, 1},
     {"_PDFR_get_object", (DL_FUNC) &_PDFR_get_object, 2},
     {"_PDFR_get_objectraw", (DL_FUNC) &_PDFR_get_objectraw, 2},
-    {"_PDFR_pdfpage", (DL_FUNC) &_PDFR_pdfpage, 2},
-    {"_PDFR_pdfpageraw", (DL_FUNC) &_PDFR_pdfpageraw, 2},
+    {"_PDFR_pdfpage", (DL_FUNC) &_PDFR_pdfpage, 3},
+    {"_PDFR_pdfpageraw", (DL_FUNC) &_PDFR_pdfpageraw, 3},
     {"_PDFR_getglyphmap", (DL_FUNC) &_PDFR_getglyphmap, 2},
     {"_PDFR_pagestring", (DL_FUNC) &_PDFR_pagestring, 2},
     {"_PDFR_pagestringraw", (DL_FUNC) &_PDFR_pagestringraw, 2},

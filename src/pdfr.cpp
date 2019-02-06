@@ -147,7 +147,25 @@ Rcpp::List get_objectraw(const std::vector<uint8_t>& rawfile, int object)
 }
 
 //---------------------------------------------------------------------------//
+Rcpp::List getatomic(page& p)
+{
+  graphic_state G = graphic_state(&p);
+  auto GS = G.output();
+  std::vector<std::string> glyph;
+  for(auto i : GS->text) glyph.push_back(utf({i}));
+  Rcpp::DataFrame db =  Rcpp::DataFrame::create(
+                      Rcpp::Named("text") = glyph,
+                      Rcpp::Named("left") = GS->left,
+                      Rcpp::Named("bottom") = GS->bottom,
+                      Rcpp::Named("right") = GS->right,
+                      Rcpp::Named("font") = GS->fonts,
+                      Rcpp::Named("size") = GS->size,
+                      Rcpp::Named("stringsAsFactors") = false);
+  return Rcpp::List::create(Rcpp::Named("Box") = G.getminbox(),
+                            Rcpp::Named("Elements") = db);
+}
 
+//---------------------------------------------------------------------------//
 Rcpp::List getgrid(page& p)
 {
   graphic_state GS = graphic_state(&p);
@@ -189,22 +207,30 @@ Rcpp::List getgrid(page& p)
 
 //---------------------------------------------------------------------------//
 
-Rcpp::List pdfpage(const std::string& s, int pagenum)
+Rcpp::List pdfpage(const std::string& s, int pagenum, bool g)
 {
   if(pagenum < 1) Rcpp::stop("Invalid page number");
-  document myfile = document(s); // document from file string
-  page p = page(&myfile, pagenum - 1); // get page (convert to zero-indexed!)
-  return getgrid(p);
+  document* myfile = new document(s); // document from file string
+  page p = page(myfile, pagenum - 1); // get page (convert to zero-indexed!)
+  Rcpp::List res;
+  if(!g) res = getgrid(p);
+  else res = getatomic(p);
+  delete myfile;
+  return res;
 }
 
 //---------------------------------------------------------------------------//
 
-Rcpp::List pdfpageraw(const std::vector<uint8_t>& rawfile, int pagenum)
+Rcpp::List pdfpageraw(const std::vector<uint8_t>& rawfile, int pagenum, bool g)
 {
   if(pagenum < 1) Rcpp::stop("Invalid page number");
-  document myfile = document(rawfile); // document from file string
-  page p = page(&myfile, pagenum - 1); // get page (convert to zero-indexed!)
-  return getgrid(p);
+  document* myfile = new document(rawfile); // document from file string
+  page p = page(myfile, pagenum - 1); // get page (convert to zero-indexed!)
+  Rcpp::List res;
+  if(!g) res = getgrid(p);
+  else res = getatomic(p);
+  delete myfile;
+  return res;
 }
 
 //---------------------------------------------------------------------------//
@@ -275,9 +301,10 @@ Rcpp::DataFrame pdfdocraw(const std::vector<uint8_t>& s)
 std::string pagestring(const std::string& s, int pagenum)
 {
   if(pagenum < 1) Rcpp::stop("Invalid page number");
-  document myfile = document(s); // document from file string
-  page p = page(&myfile, pagenum - 1); // get page (convert to zero-indexed!)
+  document* myfile = new document(s); // document from file string
+  page p = page(myfile, pagenum - 1); // get page (convert to zero-indexed!)
   std::string res = p.pageContents();
+  delete myfile;
   return res;
 }
 
@@ -286,9 +313,10 @@ std::string pagestring(const std::string& s, int pagenum)
 std::string pagestringraw(const std::vector<uint8_t>& rawfile, int pagenum)
 {
   if(pagenum < 1) Rcpp::stop("Invalid page number");
-  document myfile = document(rawfile); // document from file string
-  page p = page(&myfile, pagenum - 1); // get page (convert to zero-indexed!)
+  document* myfile = new document(rawfile); // document from file string
+  page p = page(myfile, pagenum - 1); // get page (convert to zero-indexed!)
   std::string s = p.pageContents();
+  delete myfile;
   return s;
 }
 

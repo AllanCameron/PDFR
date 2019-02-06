@@ -125,10 +125,10 @@ Rcpp::List get_objectraw(const std::vector<uint8_t>& rawfile, int o);
 // respectively, and both take a page number (one-indexed) as a second parameter
 
 // [[Rcpp::export(.pdfpage)]]
-Rcpp::List pdfpage(const std::string& filename, int pagenum);
+Rcpp::List pdfpage(const std::string& filename, int pagenum, bool g);
 
 // [[Rcpp::export(.pdfpageraw)]]
-Rcpp::List pdfpageraw(const std::vector<uint8_t>& rawfile, int pagenum);
+Rcpp::List pdfpageraw(const std::vector<uint8_t>& rawfile, int pagenum, bool g);
 
 //---------------------------------------------------------------------------//
 // This function takes a file path and page number as parameters (note there is

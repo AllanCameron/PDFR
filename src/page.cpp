@@ -31,8 +31,6 @@
 
 using namespace std;
 
-std::unordered_map<std::string, font> page::fontmap;
-
 /*---------------------------------------------------------------------------*/
 // The various "boxes" in a page header file define the maximum extent of the
 // graphical contents of a page in different technical ways. For our purposes,

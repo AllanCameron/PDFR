@@ -22,10 +22,13 @@ wrapper could be written for any other output target.
 
                                   C++ program
                                   ===========
-                 std::
-                <vector>
-                <string>
-                <chrono> -----> ["debugtools.h"]  (optional)
+
+
+                              "external/Profiler.h"
+                 std::                 |
+                <vector>               |
+                <string>               v
+                <chrono> ----->  "debugtools.h"
                <iostream>              |
                                        |                   std::
                                        v                  <string>

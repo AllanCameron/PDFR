@@ -225,7 +225,7 @@ void trimRight(string& s)
 
 vector<RawChar> HexstringToRawChar(string& s)
 {
-  while(s.size() % 4 != 0) s += '0';
+  while(s.size() % 4 != 0) s = '0' + s;
   vector<RawChar> raw_vector; // vector to store results
   raw_vector.reserve(s.size() / 4);
   for(size_t i = 0; i < (s.size() - 3); i += 4)

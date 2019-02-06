@@ -106,15 +106,15 @@ internetFile <- function(x, filename = NULL)
 #'
 #' @examples pdfpage(testfiles$leeds, 1)
 ##---------------------------------------------------------------------------##
-pdfpage <- function(pdf, page)
+pdfpage <- function(pdf, page, atomic = FALSE)
 {
   if(class(pdf) == "raw")
   {
-    x <- .pdfpageraw(pdf, page)
+    x <- .pdfpageraw(pdf, page, atomic)
   }
   if(class(pdf) == "character" & length(pdf) == 1 & grepl("[.]pdf$", pdf))
   {
-    x <- .pdfpage(pdf, page)
+    x <- .pdfpage(pdf, page, atomic)
   }
   if((class(pdf) != "raw"       & class(pdf) != "character") |
      (class(pdf) == "character" & length(pdf) > 1)           |
@@ -198,9 +198,9 @@ get_object <- function(pdf, number)
 #'
 #' @examples pdfplot(testfiles$leeds, 1)
 ##---------------------------------------------------------------------------##
-pdfplot <- function(pdf, page = 1, textsize = 1)
+pdfplot <- function(pdf, page = 1, atomic = FALSE, textsize = 1)
 {
-  x <- pdfpage(pdf, page)
+  x <- pdfpage(pdf, page, atomic)
   y <- x$Elements
   G <- ggplot2::ggplot(data = y, ggplot2::aes(x = y$left, y = y$bottom,
                        size = I(textsize*170 * y$size / (x$Box[4] - x$Box[2]))),
@@ -248,9 +248,9 @@ getglyphmap <- function(pdf, page = 1)
 #'
 #' @examples segplot(testfiles$leeds, 1)
 ##---------------------------------------------------------------------------##
-segplot <- function(pdf, page = 1, textsize = 1)
+segplot <- function(pdf, page = 1, atomic = FALSE, textsize = 1)
 {
-  x       <- pdfpage(pdf, page)
+  x       <- pdfpage(pdf, page, atomic)
   y       <- x$Elements
   y$top   <- y$bottom + y$size;
   ycounts <- numeric(1000);

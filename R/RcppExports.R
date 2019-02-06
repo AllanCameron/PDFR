@@ -17,12 +17,12 @@
     .Call('_PDFR_get_objectraw', PACKAGE = 'PDFR', rawfile, o)
 }
 
-.pdfpage <- function(filename, pagenum) {
-    .Call('_PDFR_pdfpage', PACKAGE = 'PDFR', filename, pagenum)
+.pdfpage <- function(filename, pagenum, g) {
+    .Call('_PDFR_pdfpage', PACKAGE = 'PDFR', filename, pagenum, g)
 }
 
-.pdfpageraw <- function(rawfile, pagenum) {
-    .Call('_PDFR_pdfpageraw', PACKAGE = 'PDFR', rawfile, pagenum)
+.pdfpageraw <- function(rawfile, pagenum, g) {
+    .Call('_PDFR_pdfpageraw', PACKAGE = 'PDFR', rawfile, pagenum, g)
 }
 
 .getglyphmap <- function(s, pagenum) {

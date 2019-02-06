@@ -101,7 +101,7 @@ private:
   std::unordered_map<std::string, std::string> XObjects;
 
   // The actual storage container for fonts, mapped to their pdf names
-  static std::unordered_map<std::string, font> fontmap;
+  std::unordered_map<std::string, font> fontmap;
 
   // private methods
   void parseXObjStream(); // Write form XObjects to the xobject map

@@ -138,7 +138,8 @@ void grid::matchRight(GSrow& row, uint8_t key)
   for(uint16_t i = 0; i < cell.size(); i++) // for each glyph in the cell...
     if (cell[i].left > row.left &&
         abs(cell[i].bottom - row.bottom) < (CLUMP_V * row.size) &&
-        abs(cell[i].left  -  row.right ) < (CLUMP_H * row.size) &&
+        (abs(cell[i].left  -  row.right ) < (CLUMP_H * row.size) ||
+        (cell[i].left < row.right)) &&
         cell[i].size == row.size) // if in reasonable position to be next glyph
     {
       if(row.rightjoin.first == -1) // if no previous match found
@@ -177,6 +178,8 @@ void grid::merge()
         matcher.glyph = k.glyph;
         // make the right glyph now start where the left glyph started
         matcher.left = k.left;
+        // and ensure the width is correct
+        matcher.width = matcher.right - matcher.left;
         // Ensure bottom is the lowest value of the two glyphs
         if(k.bottom < matcher.bottom) matcher.bottom = k.bottom;
         // The checked glyph is now consumed - move to the next
