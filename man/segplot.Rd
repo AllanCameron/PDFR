@@ -4,12 +4,14 @@
 \alias{segplot}
 \title{Show ggplot of page with segmentation lines}
 \usage{
-segplot(pdf, page = 1, textsize = 1)
+segplot(pdf, page = 1, atomic = FALSE, textsize = 1)
 }
 \arguments{
 \item{pdf}{a valid pdf file location}
 
 \item{page}{the page number from which to extract glyphs}
+
+\item{atomic}{a boolean - should each letter treated individually?}
 
 \item{textsize}{the size of the text to be shown on the plot}
 }

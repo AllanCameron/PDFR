@@ -4,12 +4,14 @@
 \alias{pdfpage}
 \title{pdfpage}
 \usage{
-pdfpage(pdf, page)
+pdfpage(pdf, page, atomic = FALSE)
 }
 \arguments{
 \item{pdf}{a valid pdf file location}
 
 \item{page}{the page number to be extracted}
+
+\item{atomic}{a boolean - should each letter treated individually?}
 }
 \value{
 a list containing data frames
@@ -18,5 +20,5 @@ a list containing data frames
 Returns contents of a pdf page
 }
 \examples{
-pdfpage(testfiles$leeds, 1)
+pdfpage(testfiles$leeds, 1, FALSE)
 }

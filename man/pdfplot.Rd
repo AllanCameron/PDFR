@@ -4,12 +4,14 @@
 \alias{pdfplot}
 \title{pdfplot}
 \usage{
-pdfplot(pdf, page = 1, textsize = 1)
+pdfplot(pdf, page = 1, atomic = FALSE, textsize = 1)
 }
 \arguments{
 \item{pdf}{a valid pdf file location}
 
 \item{page}{the page number to be plotted}
+
+\item{atomic}{a boolean - should each letter treated individually?}
 
 \item{textsize}{the scale of the text to be shown}
 }

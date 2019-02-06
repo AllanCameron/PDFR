@@ -236,7 +236,7 @@ std::vector<float> getnums(const std::string&);
 std::string get_file(const std::string&);
 
 //---------------------------------------------------------------------------//
-// [[Rcpp::export]]
+
 std::string utf(std::vector<uint16_t> u);
 
 #endif

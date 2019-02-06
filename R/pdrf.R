@@ -100,11 +100,12 @@ internetFile <- function(x, filename = NULL)
 #'
 #' @param pdf a valid pdf file location
 #' @param page the page number to be extracted
+#' @param atomic a boolean - should each letter treated individually?
 #'
 #' @return a list containing data frames
 #' @export
 #'
-#' @examples pdfpage(testfiles$leeds, 1)
+#' @examples pdfpage(testfiles$leeds, 1, FALSE)
 ##---------------------------------------------------------------------------##
 pdfpage <- function(pdf, page, atomic = FALSE)
 {
@@ -191,6 +192,7 @@ get_object <- function(pdf, number)
 #'
 #' @param pdf a valid pdf file location
 #' @param page the page number to be plotted
+#' @param atomic a boolean - should each letter treated individually?
 #' @param textsize the scale of the text to be shown
 #'
 #' @return a ggplot
@@ -241,6 +243,7 @@ getglyphmap <- function(pdf, page = 1)
 #'
 #' @param pdf a valid pdf file location
 #' @param page the page number from which to extract glyphs
+#' @param atomic a boolean - should each letter treated individually?
 #' @param textsize the size of the text to be shown on the plot
 #'
 #' @return no return - prints a ggplot

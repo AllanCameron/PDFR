@@ -211,13 +211,6 @@ void Encoding::processUnicodeRange(vector<string>& Range)
 void Encoding::getEncoding(dictionary& fontref, document* d)
 {
   dictionary encref = fontref;                  // start with font dictionary
-  if(!encref.has("/Encoding"))
-  {
-    for(RawChar i = 0; i < 256; i++)
-    EncodingMap[i] = (Unicode) i;
-  }
-  else
-  {
   string encname = encref.get("/Encoding");     // read encoding entry
   if(fontref.hasRefs("/Encoding"))              //------//
   {                                                     // if an encoding
@@ -243,7 +236,6 @@ void Encoding::getEncoding(dictionary& fontref, document* d)
   {
     BaseEncoding = encref.get("/Differences");
     Differences(BaseEncoding);
-  }
   }
 }
 
