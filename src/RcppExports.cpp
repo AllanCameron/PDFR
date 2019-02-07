@@ -136,6 +136,8 @@ BEGIN_RCPP
 END_RCPP
 }
 
+RcppExport SEXP run_testthat_tests();
+
 static const R_CallMethodDef CallEntries[] = {
     {"_PDFR_get_xref", (DL_FUNC) &_PDFR_get_xref, 1},
     {"_PDFR_get_xrefraw", (DL_FUNC) &_PDFR_get_xrefraw, 1},
@@ -148,6 +150,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_PDFR_pagestringraw", (DL_FUNC) &_PDFR_pagestringraw, 2},
     {"_PDFR_pdfdoc", (DL_FUNC) &_PDFR_pdfdoc, 1},
     {"_PDFR_pdfdocraw", (DL_FUNC) &_PDFR_pdfdocraw, 1},
+    {"run_testthat_tests",  (DL_FUNC) &run_testthat_tests,  0},
     {NULL, NULL, 0}
 };
 

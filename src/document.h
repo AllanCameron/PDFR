@@ -68,11 +68,13 @@
  */
 
 #include "object_class.h"
+#include<memory>
 
 //---------------------------------------------------------------------------//
 // The public interface of the document class comprises constructors and two
 // member functions - one to return any object from the pdf and one to retrieve
 // a specific page header.
+class font;
 
 class document
 {

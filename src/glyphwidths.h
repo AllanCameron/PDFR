@@ -102,7 +102,7 @@ public:
 
   // Constructor
 
-  glyphwidths(dictionary& dic, document* doc);
+  glyphwidths(dictionary& dic, std::shared_ptr<document> doc);
 
   // public methods
 
@@ -116,7 +116,7 @@ private:
 
   std::unordered_map<RawChar, int> Width;         // The main data member
   dictionary fontref;                             // the font dictionary
-  document* d;                                    // pointer to document
+  std::shared_ptr<document> d;                // pointer to document
   std::string basefont;                           // the base font (if any)
   bool widthFromCharCodes;                        // are widths for code points?
 

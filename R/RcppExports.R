@@ -2,46 +2,46 @@
 # Generator token: 10BE3573-1514-4C36-9D1C-5A225CD40393
 
 .get_xref <- function(filename) {
-    .Call('_PDFR_get_xref', PACKAGE = 'PDFR', filename)
+    .Call(`_PDFR_get_xref`, filename)
 }
 
 .get_xrefraw <- function(rawfile) {
-    .Call('_PDFR_get_xrefraw', PACKAGE = 'PDFR', rawfile)
+    .Call(`_PDFR_get_xrefraw`, rawfile)
 }
 
 .get_obj <- function(filename, o) {
-    .Call('_PDFR_get_object', PACKAGE = 'PDFR', filename, o)
+    .Call(`_PDFR_get_object`, filename, o)
 }
 
 .get_objraw <- function(rawfile, o) {
-    .Call('_PDFR_get_objectraw', PACKAGE = 'PDFR', rawfile, o)
+    .Call(`_PDFR_get_objectraw`, rawfile, o)
 }
 
 .pdfpage <- function(filename, pagenum, g) {
-    .Call('_PDFR_pdfpage', PACKAGE = 'PDFR', filename, pagenum, g)
+    .Call(`_PDFR_pdfpage`, filename, pagenum, g)
 }
 
 .pdfpageraw <- function(rawfile, pagenum, g) {
-    .Call('_PDFR_pdfpageraw', PACKAGE = 'PDFR', rawfile, pagenum, g)
+    .Call(`_PDFR_pdfpageraw`, rawfile, pagenum, g)
 }
 
 .getglyphmap <- function(s, pagenum) {
-    .Call('_PDFR_getglyphmap', PACKAGE = 'PDFR', s, pagenum)
+    .Call(`_PDFR_getglyphmap`, s, pagenum)
 }
 
 .pagestring <- function(s, pagenum) {
-    .Call('_PDFR_pagestring', PACKAGE = 'PDFR', s, pagenum)
+    .Call(`_PDFR_pagestring`, s, pagenum)
 }
 
 .pagestringraw <- function(rawfile, pagenum) {
-    .Call('_PDFR_pagestringraw', PACKAGE = 'PDFR', rawfile, pagenum)
+    .Call(`_PDFR_pagestringraw`, rawfile, pagenum)
 }
 
 .pdfdoc <- function(s) {
-    .Call('_PDFR_pdfdoc', PACKAGE = 'PDFR', s)
+    .Call(`_PDFR_pdfdoc`, s)
 }
 
 .pdfdocraw <- function(s) {
-    .Call('_PDFR_pdfdocraw', PACKAGE = 'PDFR', s)
+    .Call(`_PDFR_pdfdocraw`, s)
 }
 

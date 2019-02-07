@@ -68,7 +68,7 @@ public:
 
   // constructor
 
-  page(document* a_pointer_to_the_document, int this_is_the_page_number);
+  page(std::shared_ptr<document>, int this_is_the_page_number);
 
   // public methods
 
@@ -76,14 +76,15 @@ public:
   std::string pageContents(); // Returns page description program as string
   std::vector<float> getminbox(); // Get co-ordinates of smallest bounding box
   std::string getXobject(const std::string&); // Return specified XObject string
-  font* getFont(const std::string&);  // Returns a pointer to specified string
+  std::shared_ptr<font> getFont(const std::string&);  // Get pointer to font
+  void clearFontMap();
 
 
 private:
 
   // private data members
 
-  document*           d;              // Pointer to containing document
+  std::shared_ptr<document> d;        // Pointer to containing document
   int                 pagenumber;     // [Zero-indexed] page number
   dictionary          header,         // The page's header dictionary
                       resources,      // Resource sub-dictionary
@@ -101,7 +102,7 @@ private:
   std::unordered_map<std::string, std::string> XObjects;
 
   // The actual storage container for fonts, mapped to their pdf names
-  std::unordered_map<std::string, font> fontmap;
+  static std::unordered_map<std::string, std::shared_ptr<font>> fontmap;
 
   // private methods
   void parseXObjStream(); // Write form XObjects to the xobject map

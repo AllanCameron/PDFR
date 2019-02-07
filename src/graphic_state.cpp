@@ -40,7 +40,7 @@ using namespace Token;
 // needs for parsing. It then calls the parser to interpret the page, and
 // finally calls the MakeGS() method to make the data suitable for export
 
-graphic_state::graphic_state(page* pag) : // very long initializer list...
+graphic_state::graphic_state(shared_ptr<page> pag) : // long initializer list...
   p(pag), // pointer to page of interest
   currfontsize(0), // pointsize specified by page program
   initstate({1, 0, 0, 0, 1, 0, 0, 0, 1}), // 3x3 identity matrix

@@ -96,7 +96,7 @@ class Encoding
 public:
 
   // constructor
-  Encoding(const dictionary&, document*);
+  Encoding(const dictionary&, std::shared_ptr<document>);
 
   // public member functions
   Unicode Interpret(RawChar);       // Maps given code point to Unicode
@@ -117,7 +117,7 @@ private:
 
   // private data members used as variables in creating encoding map
   dictionary fontref;       // the main font dictionary
-  document* d;              // pointer to the containing document
+  std::shared_ptr<document> d;  // pointer to the containing document
   std::string BaseEncoding; // value of /BaseEncoding entry
   enum DiffState { NEWSYMB, NUM, NAME, STOP }; // states for /Differences lexer
 
@@ -127,7 +127,7 @@ private:
   void Differences(const std::string&);
 
   // finds encoding dictionary, gets /basencoding and /Differences entries
-  void getEncoding(dictionary&, document*);
+  void getEncoding(dictionary&, std::shared_ptr<document>);
 
   // parses CMap encoding ranges
   void processUnicodeRange(std::vector<std::string>&);
@@ -136,7 +136,7 @@ private:
   void processUnicodeChars(std::vector<std::string>&);
 
   // finds CMap if any and co-ordinates parsers to create mapping
-  void mapUnicode(dictionary&, document*);
+  void mapUnicode(dictionary&, std::shared_ptr<document>);
 };
 
 //---------------------------------------------------------------------------//

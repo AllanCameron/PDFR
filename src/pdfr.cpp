@@ -37,16 +37,16 @@
 
 Rcpp::DataFrame getglyphmap(const std::string& s, int pagenum)
 {
-  document d = document(s); // create the document from the given path string
-  page p = page(&d, pagenum); // create the page from the document and pagenum
+  std::shared_ptr<document> d = std::make_shared<document>(s);
+  std::shared_ptr<page> p = std::make_shared<page>(d, pagenum - 1);
   std::vector<std::string> FontName;// container for the fonts used
 
   // containers for the dataframe columns
   std::vector<uint16_t> codepoint, unicode, width;
 
-  for(auto i : p.getFontNames()) // for each font on the page...
+  for(auto i : p->getFontNames()) // for each font on the page...
   {
-    font* loopfont = p.getFont(i); // get a pointer to the font
+    std::shared_ptr<font> loopfont = p->getFont(i); // get a pointer to the font
     for(auto b : loopfont->getGlyphKeys()) // for each code point in the font
     {
       FontName.push_back(i);    // copy the fontname
@@ -55,6 +55,7 @@ Rcpp::DataFrame getglyphmap(const std::string& s, int pagenum)
       width.push_back(loopfont->mapRawChar({b}).at(0).second);  // get width
     }
   }
+  p->clearFontMap();
   // put all the glyphs in a single dataframe and return
   return Rcpp::DataFrame::create(Rcpp::Named("Font") = FontName,
                           Rcpp::Named("Codepoint") = codepoint,
@@ -122,11 +123,11 @@ Rcpp::DataFrame get_xrefraw(const std::vector<uint8_t>& rawfile)
 
 Rcpp::List get_object(const std::string& filename, int object)
 {
-  document&& doc = document(filename); // creates document from file path
+  std::shared_ptr<document> doc = std::make_shared<document>(filename);
   // Fill an Rcpp::List with the requested object and return
   return Rcpp::List::create(
-    Rcpp::Named("header") = doc.getobject(object)->getDict().R_out(),
-    Rcpp::Named("stream") = doc.getobject(object)->getStream());
+    Rcpp::Named("header") = doc->getobject(object)->getDict().R_out(),
+    Rcpp::Named("stream") = doc->getobject(object)->getStream());
 }
 
 //---------------------------------------------------------------------------//
@@ -139,36 +140,38 @@ Rcpp::List get_object(const std::string& filename, int object)
 
 Rcpp::List get_objectraw(const std::vector<uint8_t>& rawfile, int object)
 {
-  document&& mydoc = document(rawfile); // create document from raw data
+  std::shared_ptr<document> mydoc = std::make_shared<document>(rawfile);
     // Fill an Rcpp::List with the requested object and return
   return Rcpp::List::create(
-    Rcpp::Named("header") = mydoc.getobject(object)->getDict().R_out(),
-    Rcpp::Named("stream") = mydoc.getobject(object)->getStream());
+    Rcpp::Named("header") = mydoc->getobject(object)->getDict().R_out(),
+    Rcpp::Named("stream") = mydoc->getobject(object)->getStream());
 }
 
 //---------------------------------------------------------------------------//
-Rcpp::List getatomic(page& p)
+
+Rcpp::List getatomic(std::shared_ptr<page> p)
 {
-  graphic_state G = graphic_state(&p);
+  graphic_state G = graphic_state(p);
   auto GS = G.output();
   std::vector<std::string> glyph;
   for(auto i : GS->text) glyph.push_back(utf({i}));
   Rcpp::DataFrame db =  Rcpp::DataFrame::create(
-                      Rcpp::Named("text") = glyph,
-                      Rcpp::Named("left") = GS->left,
-                      Rcpp::Named("bottom") = GS->bottom,
-                      Rcpp::Named("right") = GS->right,
-                      Rcpp::Named("font") = GS->fonts,
-                      Rcpp::Named("size") = GS->size,
-                      Rcpp::Named("stringsAsFactors") = false);
+                        Rcpp::Named("text") = glyph,
+                        Rcpp::Named("left") = GS->left,
+                        Rcpp::Named("bottom") = GS->bottom,
+                        Rcpp::Named("right") = GS->right,
+                        Rcpp::Named("font") = GS->fonts,
+                        Rcpp::Named("size") = GS->size,
+                        Rcpp::Named("stringsAsFactors") = false);
   return Rcpp::List::create(Rcpp::Named("Box") = G.getminbox(),
                             Rcpp::Named("Elements") = db);
 }
 
 //---------------------------------------------------------------------------//
-Rcpp::List getgrid(page& p)
+
+Rcpp::List getgrid(std::shared_ptr<page> p)
 {
-  graphic_state GS = graphic_state(&p);
+  graphic_state GS = graphic_state(p);
   grid Grid = grid(GS);
   std::unordered_map<uint8_t, std::vector<GSrow>> gridout = Grid.output();
   std::vector<float> left;
@@ -210,12 +213,12 @@ Rcpp::List getgrid(page& p)
 Rcpp::List pdfpage(const std::string& s, int pagenum, bool g)
 {
   if(pagenum < 1) Rcpp::stop("Invalid page number");
-  document* myfile = new document(s); // document from file string
-  page p = page(myfile, pagenum - 1); // get page (convert to zero-indexed!)
+  std::shared_ptr<document> myfile = std::make_shared<document>(s);
+  std::shared_ptr<page> p = std::make_shared<page>(myfile, pagenum - 1);
   Rcpp::List res;
   if(!g) res = getgrid(p);
   else res = getatomic(p);
-  delete myfile;
+  p->clearFontMap();
   return res;
 }
 
@@ -224,20 +227,20 @@ Rcpp::List pdfpage(const std::string& s, int pagenum, bool g)
 Rcpp::List pdfpageraw(const std::vector<uint8_t>& rawfile, int pagenum, bool g)
 {
   if(pagenum < 1) Rcpp::stop("Invalid page number");
-  document* myfile = new document(rawfile); // document from file string
-  page p = page(myfile, pagenum - 1); // get page (convert to zero-indexed!)
+  std::shared_ptr<document> myfile = std::make_shared<document>(rawfile);
+  std::shared_ptr<page> p = std::make_shared<page>(myfile, pagenum - 1);
   Rcpp::List res;
   if(!g) res = getgrid(p);
   else res = getatomic(p);
-  delete myfile;
+  p->clearFontMap();
   return res;
 }
 
 //---------------------------------------------------------------------------//
 
-Rcpp::DataFrame pdfdoc_common(document& myfile)
+Rcpp::DataFrame pdfdoc_common(std::shared_ptr<document> myfile)
 {
-  size_t npages = myfile.pagecount();
+  size_t npages = myfile->pagecount();
   std::vector<float> left;
   std::vector<float> right;
   std::vector<float> size;
@@ -247,8 +250,8 @@ Rcpp::DataFrame pdfdoc_common(document& myfile)
   std::vector<int> pagenums;
   for(size_t pagenum = 0; pagenum < npages; pagenum++)
   {
-    page p = page(&myfile, pagenum); // get page (convert to zero-indexed!)
-    graphic_state GS = graphic_state(&p);
+    std::shared_ptr<page> p = std::make_shared<page>(myfile, pagenum);
+    graphic_state GS = graphic_state(p);
     grid Grid = grid(GS);
     std::unordered_map<uint8_t, std::vector<GSrow>> gridout = Grid.output();
     for(uint8_t i = 0; i < 256; i++)
@@ -268,6 +271,7 @@ Rcpp::DataFrame pdfdoc_common(document& myfile)
       }
       if(i == 255) break; // prevent overflow back to 0 and endless loop
     }
+    if(pagenum == (npages - 1)) p->clearFontMap();
   }
 
   return Rcpp::DataFrame::create(
@@ -281,30 +285,31 @@ Rcpp::DataFrame pdfdoc_common(document& myfile)
                         Rcpp::Named("stringsAsFactors") = false);
 }
 
+//---------------------------------------------------------------------------//
 
 Rcpp::DataFrame pdfdoc(const std::string& s)
 {
-  document myfile = document(s); // document from file string
+  std::shared_ptr<document> myfile = std::make_shared<document>(s);
   return pdfdoc_common(myfile);
 }
+
+//---------------------------------------------------------------------------//
 
 Rcpp::DataFrame pdfdocraw(const std::vector<uint8_t>& s)
 {
-  document myfile = document(s); // document from raw
+  std::shared_ptr<document> myfile = std::make_shared<document>(s);
   return pdfdoc_common(myfile);
 }
-
-
 
 //---------------------------------------------------------------------------//
 
 std::string pagestring(const std::string& s, int pagenum)
 {
   if(pagenum < 1) Rcpp::stop("Invalid page number");
-  document* myfile = new document(s); // document from file string
-  page p = page(myfile, pagenum - 1); // get page (convert to zero-indexed!)
-  std::string res = p.pageContents();
-  delete myfile;
+  std::shared_ptr<document> myfile = std::make_shared<document>(s);
+  std::shared_ptr<page> p = std::make_shared<page>(myfile, pagenum - 1);
+  std::string res = p->pageContents();
+  p->clearFontMap();
   return res;
 }
 
@@ -313,10 +318,10 @@ std::string pagestring(const std::string& s, int pagenum)
 std::string pagestringraw(const std::vector<uint8_t>& rawfile, int pagenum)
 {
   if(pagenum < 1) Rcpp::stop("Invalid page number");
-  document* myfile = new document(rawfile); // document from file string
-  page p = page(myfile, pagenum - 1); // get page (convert to zero-indexed!)
-  std::string s = p.pageContents();
-  delete myfile;
+  std::shared_ptr<document> myfile = std::make_shared<document>(rawfile);
+  std::shared_ptr<page> p = std::make_shared<page>(myfile, pagenum - 1);
+  std::string s = p->pageContents();
+  p->clearFontMap();
   return s;
 }
 

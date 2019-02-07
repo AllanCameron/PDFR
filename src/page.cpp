@@ -31,6 +31,8 @@
 
 using namespace std;
 
+std::unordered_map<std::string, shared_ptr<font>> page::fontmap;
+
 /*---------------------------------------------------------------------------*/
 // The various "boxes" in a page header file define the maximum extent of the
 // graphical contents of a page in different technical ways. For our purposes,
@@ -142,7 +144,7 @@ void page::getFonts()
   for(auto h : getFontNames())
     for(auto hh : fonts.getRefs(h)) // find the ref for each font name
       if(fontmap.find(h) == fontmap.end()) // fontmap is static
-        fontmap[h] = font(d, d->getobject(hh)->getDict(), h); // create font
+        fontmap[h] = make_shared<font>(d, d->getobject(hh)->getDict(), h);
 }
 
 /*--------------------------------------------------------------------------*/
@@ -246,7 +248,8 @@ vector <int> page::expandContents(vector<int> objnums)
 // The page constructor calls private methods to build its data members after
 // its initializer list
 
-page::page(document* doc, int pagenum) : d(doc), pagenumber(pagenum), rotate(0)
+page::page(shared_ptr<document> doc, int pagenum) :
+  d(doc), pagenumber(pagenum), rotate(0)
 {
   getHeader();        // find the page header
   getResources();     // find the resource header
@@ -294,12 +297,18 @@ string page::getXobject(const string& objID)
 // The graphic_state class needs to use fonts stored in the fontmap. This getter
 // will return a pointer to the requested font.
 
-font* page::getFont(const string& fontID)
+shared_ptr<font> page::getFont(const string& fontID)
 {
   // If no fonts on the page, throw an error
   if(fontmap.size() == 0) throw runtime_error("No fonts available for page");
   // If we can't find a specified font, return the first font in the map
-  if(fontmap.find(fontID) == fontmap.end()) return &(fontmap.begin()->second);
+  if(fontmap.find(fontID) == fontmap.end()) return (fontmap.begin()->second);
   // Otherwise we're all good and return the requested font
-  return &(fontmap[fontID]);
+  return (fontmap[fontID]);
+}
+
+
+void page::clearFontMap()
+{
+  this->fontmap.clear();
 }

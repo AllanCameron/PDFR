@@ -110,7 +110,7 @@ void Encoding::Differences(const string& enc)
 // co-ordinates the reading of the /ToUnicode entry, which points to an
 // object whose stream contains a CMap
 
-void Encoding::mapUnicode(dictionary& fontref, document* d)
+void Encoding::mapUnicode(dictionary& fontref, shared_ptr<document> d)
 {
   if (!fontref.hasRefs("/ToUnicode")) return; // no entry, nothing to be done
   int unirefint = fontref.getRefs("/ToUnicode")[0]; // else get reference
@@ -208,7 +208,7 @@ void Encoding::processUnicodeRange(vector<string>& Range)
 // Extract the encoding dictionary and read off entries for base encoding.
 // Calls the Differences lexer if there is a dictionary entry for /Differences
 
-void Encoding::getEncoding(dictionary& fontref, document* d)
+void Encoding::getEncoding(dictionary& fontref, shared_ptr<document> d)
 {
   dictionary encref = fontref;                  // start with font dictionary
   string encname = encref.get("/Encoding");     // read encoding entry
@@ -245,7 +245,7 @@ void Encoding::getEncoding(dictionary& fontref, document* d)
 // any /ToUnicode entry. The first three are co-ordinated by getEncoding()
 // and the last is co-ordinated by mapUnicode()
 
-Encoding::Encoding(const dictionary& fontdict, document* doc):
+Encoding::Encoding(const dictionary& fontdict, shared_ptr<document> doc):
   fontref(fontdict), d(doc)
 {
   getEncoding(fontref, d);

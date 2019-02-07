@@ -76,7 +76,7 @@ public:
 
   // constructors
 
-  font(document*, dictionary, const std::string&);
+  font(std::shared_ptr<document>, dictionary, const std::string&);
   font(){};
 
   // public methods
@@ -94,7 +94,7 @@ private:
 
   // private data members
 
-  document* d;          // pointer to the containing document
+  std::shared_ptr<document> d;  // pointer to the containing document
   dictionary fontref;   // the font dictionary
   std::string FontID,   // The name the font is given in the PDF
               FontName; // The actual name of the font

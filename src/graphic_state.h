@@ -97,7 +97,7 @@ class graphic_state
 {
 public:
   // constructor
-  graphic_state(page*);
+  graphic_state(std::shared_ptr<page>);
 
   // access results
   GSoutput* output();
@@ -106,8 +106,8 @@ public:
 private:
   //private data members - used to maintain state between calls to parser
 
-  page*                           p;              // pointer to creating page
-  font*                           wfont;          // pointer to "working" font
+  std::shared_ptr<page>           p;              // pointer to creating page
+  std::shared_ptr<font>           wfont;          // pointer to "working" font
   float                           currfontsize;   // Current font size
   std::array<float, 9>            initstate;      // Identity 3x3 matrix as vec9
   std::vector<float>              fontsizestack,  // stack of current font size
