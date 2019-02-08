@@ -76,7 +76,7 @@ void document::buildDoc()
 // returns it from the 'objects' vector. If not, it creates the object then
 // stores a copy in the 'objects' vector before returning the requested object.
 
-object_class* document::getobject(int n)
+shared_ptr<object_class> document::getobject(int n)
 {
   if(objects.find(n) == objects.end())    // check if object is stored
   {
@@ -84,13 +84,13 @@ object_class* document::getobject(int n)
     if(holder != 0) // if object is in an object stream
     {
       if(objects.find(holder) == objects.end()) // Get holding object if needed
-        objects[holder] = object_class(&(this->Xref), holder);
-      objects[n] = object_class(&(objects[holder]), n);
+        objects[holder] = make_shared<object_class>(&(this->Xref), holder);
+      objects[n] = make_shared<object_class>(objects[holder], n);
     }
     else
-    objects[n] = object_class(&(this->Xref), n); // if not, create and store it
+    objects[n] = make_shared<object_class>(&(this->Xref), n); // if not, create and store it
   }
-  return &(objects[n]); // return a pointer to requested object
+  return objects[n]; // return a pointer to requested object
 }
 
 /*---------------------------------------------------------------------------*/
@@ -160,7 +160,7 @@ vector <int> document::expandKids(vector<int> objnums)
 
   while (i < objnums.size())
   {
-    object_class* o = getobject(objnums[i]); // get the node object
+    shared_ptr<object_class> o = getobject(objnums[i]); // get the node object
     if (o->getDict().hasRefs("/Kids"))       // if it has Kids, its not a leaf
     {
       vector<int> newnodes = o->getDict().getRefs("/Kids"); // store kids
@@ -197,7 +197,7 @@ void document::getPageHeaders()
     pageheaders.reserve(kids.size());
 
     // Now we can just fill up our pageheader vector
-    for (auto i : kids) pageheaders.emplace_back(objects.at(i).getDict());
+    for (auto i : kids) pageheaders.emplace_back(objects.at(i)->getDict());
 }
 
 /*---------------------------------------------------------------------------*/

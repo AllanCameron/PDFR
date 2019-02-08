@@ -89,7 +89,7 @@ public:
 
   // public member functions
 
-  object_class* getobject(int objnum); // creates object and returns pointer
+  std::shared_ptr<object_class> getobject(int objnum); // creates object and returns pointer
   dictionary pageHeader(int p);       // returns header dictionary for page p
   size_t pagecount();
 
@@ -108,7 +108,7 @@ private:
   // multiple times, it is best to store them when they are first created,
   // then return the stored object on request rather than creating a new
   // instance of the object every time it is requested.
-  std::unordered_map <int, object_class> objects;
+  std::unordered_map <int, std::shared_ptr<object_class>> objects;
 
 
   // private member functions used in construction only

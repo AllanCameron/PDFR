@@ -227,7 +227,7 @@ vector <int> page::expandContents(vector<int> objnums)
   vector<int> res; // container for results
   while (i < objnums.size())
   {
-    object_class* o = d->getobject(objnums[i]);
+    shared_ptr<object_class> o = d->getobject(objnums[i]);
     if (o->getDict().hasRefs("/Contents"))
     {
       vector<int> newnodes = o->getDict().getRefs("/Contents"); // store refs

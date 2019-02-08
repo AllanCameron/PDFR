@@ -69,7 +69,7 @@ public:
   // constructors
 
   object_class(xref*, int objnum);  // get direct object
-  object_class(object_class*, int objnum);
+  object_class(std::shared_ptr<object_class>, int objnum);
   object_class(){}; // default constructor (needed for document class to
                     // initialize its vector of objects)
 

@@ -135,7 +135,7 @@ string object_class::objFromStream(int objnum)
 // main object constructor if the main object constructor determines that the
 // requested object lies inside the stream of another object
 
-object_class::object_class(object_class* holder, int objnum)
+object_class::object_class(shared_ptr<object_class> holder, int objnum)
   :  XR(holder->XR), number(objnum), streampos({0, 0})
 {
   std::string H = holder->objFromStream(objnum);
@@ -161,8 +161,9 @@ object_class::object_class(object_class* holder, int objnum)
       else
       {
         size_t oldnumber = this->number;
-        object_class holding = object_class(XR, newholder);
-        *this = object_class(&holding, newobjnum);
+        shared_ptr<object_class> holding =
+          make_shared<object_class>(XR, newholder);
+        *this = object_class(holding, newobjnum);
         this->number = oldnumber;
       }
     }

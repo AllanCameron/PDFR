@@ -215,7 +215,7 @@ void Encoding::getEncoding(dictionary& fontref, shared_ptr<document> d)
   if(fontref.hasRefs("/Encoding"))              //------//
   {                                                     // if an encoding
     int a = fontref.getRefs("/Encoding").at(0);         // dictionary exists,
-    object_class* myobj = d->getobject(a);              // get it and read off
+    shared_ptr<object_class> myobj = d->getobject(a);   // get it and read off
     encref = myobj->getDict();                          // the baseencoding
     if(encref.has("/BaseEncoding"))                     // entry
       encname = encref.get("/BaseEncoding");            //
