@@ -63,7 +63,7 @@ document::document(const vector<uint8_t>& bytevector) :
 
 void document::buildDoc()
 {
-  Xref = xref(&filestring); // Creates the xref from a pointer to the filestring
+  Xref = make_shared<const xref>(&filestring); // Creates the xref
   getCatalog();             // Gets the catalog dictionary
   getPageDir();             // Gets the /Pages dictionary
   getPageHeaders();         // Finds all descendant leaf nodes of /Pages
@@ -80,15 +80,15 @@ shared_ptr<object_class> document::getobject(int n)
 {
   if(objects.find(n) == objects.end())    // check if object is stored
   {
-    size_t holder = Xref.inObject(n); // ensure no holding object
+    size_t holder = Xref->inObject(n); // ensure no holding object
     if(holder != 0) // if object is in an object stream
     {
       if(objects.find(holder) == objects.end()) // Get holding object if needed
-        objects[holder] = make_shared<object_class>(&(this->Xref), holder);
+        objects[holder] = make_shared<object_class>(Xref, holder);
       objects[n] = make_shared<object_class>(objects[holder], n);
     }
     else
-    objects[n] = make_shared<object_class>(&(this->Xref), n); // if not, create and store it
+    objects[n] = make_shared<object_class>(Xref, n); // if not, create and store it
   }
   return objects[n]; // return a pointer to requested object
 }
@@ -102,7 +102,7 @@ shared_ptr<object_class> document::getobject(int n)
 void document::getCatalog()
 {
   // The pointer to the catalog is given under /Root in the trailer dictionary
-  vector<int> rootnums = Xref.trailer().getRefs("/Root");
+  vector<int> rootnums = Xref->trailer().getRefs("/Root");
 
   // This is the only place we look for the catalog, so it better be here...
   if (rootnums.empty()) throw runtime_error("Couldn't find catalog dictionary");

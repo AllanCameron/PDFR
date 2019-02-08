@@ -36,7 +36,7 @@ using namespace std;
 // The main object creator class. It needs a pointer to the xref and a number
 // representing the object's number as set out in the xref table.
 
-object_class::object_class(xref* Xref, int objnum) :
+object_class::object_class(shared_ptr<const xref> Xref, int objnum) :
   XR(Xref), number(objnum), has_stream(false), streampos({0, 0})
 {
   size_t startbyte = XR->getStart(objnum);  // Finds start of obj

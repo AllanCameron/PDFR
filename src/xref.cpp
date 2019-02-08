@@ -248,7 +248,7 @@ void xref::buildXRtable()
 /*---------------------------------------------------------------------------*/
 // Simple determiner of whether an object is present in the built xref
 
-bool xref::objectExists(int objnum)
+bool xref::objectExists(int objnum) const
 {
   return xreftab.find(objnum) != xreftab.end();
 }
@@ -256,7 +256,7 @@ bool xref::objectExists(int objnum)
 /*---------------------------------------------------------------------------*/
 // Returns the byte offset for a pdf object
 
-size_t xref::getStart(int objnum)
+size_t xref::getStart(int objnum) const
 {
   if(!objectExists(objnum)) throw std::runtime_error("Object does not exist");
   return (size_t) xreftab.at(objnum).startbyte;
@@ -266,22 +266,22 @@ size_t xref::getStart(int objnum)
 // Returns the end byte of an object by finding the first example of the
 // word "endobj" after the start of the object
 
-size_t xref::getEnd(int objnum)
+size_t xref::getEnd(int objnum) const
 {
   // throw an error if objnum isn't a valid object
   if(!objectExists(objnum)) throw std::runtime_error("Object does not exist");
 
   // If the object is in an object stream, return 0;
-  if(xreftab[objnum].in_object) return 0;
+  if(xreftab.at(objnum).in_object) return 0;
 
   // else find the first match of "endobj" and return
-  return (int) fs->find("endobj", xreftab[objnum].startbyte);
+  return (int) fs->find("endobj", xreftab.at(objnum).startbyte);
 }
 
 /*---------------------------------------------------------------------------*/
 // Returns whether the requested object is located in another object's stream
 
-bool xref::isInObject(int objnum)
+bool xref::isInObject(int objnum) const
 {
   if(!objectExists(objnum)) throw std::runtime_error("Object does not exist");
   return xreftab.at(objnum).in_object != 0;
@@ -291,7 +291,7 @@ bool xref::isInObject(int objnum)
 // If an object is part of an objectstream, this tells us which object forms
 // the objectstream.
 
-size_t xref::inObject(int objnum)
+size_t xref::inObject(int objnum) const
 {
   if(!objectExists(objnum)) throw std::runtime_error("Object does not exist");
   return (size_t) xreftab.at(objnum).in_object;
@@ -300,7 +300,7 @@ size_t xref::inObject(int objnum)
 /*---------------------------------------------------------------------------*/
 // Returns vector of all objects listed in the xrefs
 
-std::vector<int> xref::getObjects()
+std::vector<int> xref::getObjects() const
 {
   return objenum;
 }
@@ -309,7 +309,7 @@ std::vector<int> xref::getObjects()
 // returns the offset of the start and stop locations relative to the file
 // start, of the stream belonging to the given object
 
-vector<size_t> xref::getStreamLoc(int objstart)
+vector<size_t> xref::getStreamLoc(int objstart) const
 {
   dictionary dict = dictionary(fs, objstart); // get the object dictionary
   if(dict.has("stream"))     // this is created automatically in dictionary
@@ -343,7 +343,7 @@ vector<size_t> xref::getStreamLoc(int objstart)
 /*---------------------------------------------------------------------------*/
 // Wrapper for Encryption object so that xref is the only class that uses it
 
-std::string xref::decrypt(std::string s, int obj, int gen)
+std::string xref::decrypt(std::string s, int obj, int gen) const
 {
   return encryption.decryptStream(s, obj, gen);
 }
@@ -351,7 +351,7 @@ std::string xref::decrypt(std::string s, int obj, int gen)
 /*---------------------------------------------------------------------------*/
 // Getter for encryption state
 
-bool xref::isEncrypted()
+bool xref::isEncrypted() const
 {
   return this->encrypted;
 }
@@ -359,7 +359,7 @@ bool xref::isEncrypted()
 /*---------------------------------------------------------------------------*/
 // getter function to access the trailer dictionary - a private data member
 
-dictionary xref::trailer()
+dictionary xref::trailer() const
 {
   return TrailerDictionary;
 }
@@ -392,7 +392,7 @@ std::vector<std::vector<int>> xrefstream::table()
 /*---------------------------------------------------------------------------*/
 // get a pointer to the original document
 
-const std::string* xref::docpointer()
+const std::string* xref::docpointer() const
 {
   return this->fs;
 }

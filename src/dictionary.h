@@ -77,17 +77,17 @@ class dictionary
 
   // Public member functions
 
-  std::string get(const std::string&);  // get value as string given name
-  bool has(const std::string&);         // confirms a key is present
-  bool hasRefs(const std::string&);     // tests if given key has references
-  bool hasInts(const std::string&);     // tests if given key has ints
-  bool hasDictionary(const std::string&); // tests if key has dictionary
-  std::vector<int> getRefs(const std::string&); // gets references from key
-  std::vector<int> getInts(const std::string&); // gets ints from key
-  std::vector<float> getNums(const std::string&); // gets floats from key
-  std::vector<std::string> getDictKeys(); // gets all keys from dictionary
-  dictionary getDictionary(const std::string&); // gets sub-dictionary from key
-  std::unordered_map<std::string, std::string> R_out(); // returns full map
+  std::string get(const std::string&) const;  // get value as string given name
+  bool has(const std::string&) const;         // confirms a key is present
+  bool hasRefs(const std::string&) const;     // tests if given key has references
+  bool hasInts(const std::string&) const;     // tests if given key has ints
+  bool hasDictionary(const std::string&) const; // tests if key has dictionary
+  std::vector<int> getRefs(const std::string&) const; // gets references from key
+  std::vector<int> getInts(const std::string&) const; // gets ints from key
+  std::vector<float> getNums(const std::string&) const; // gets floats from key
+  std::vector<std::string> getDictKeys() const; // gets all keys from dictionary
+  dictionary getDictionary(const std::string&) const; // gets sub-dictionary from key
+  std::unordered_map<std::string, std::string> R_out() const; // returns full map
 
 private:
 

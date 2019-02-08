@@ -68,7 +68,7 @@ public:
 
   // constructors
 
-  object_class(xref*, int objnum);  // get direct object
+  object_class(std::shared_ptr<const xref>, int objnum);  // get direct object
   object_class(std::shared_ptr<object_class>, int objnum);
   object_class(){}; // default constructor (needed for document class to
                     // initialize its vector of objects)
@@ -84,7 +84,7 @@ public:
 private:
   // private data members
 
-  xref* XR;                       // Pointer to xref allows data to be found
+  std::shared_ptr<const xref> XR; // Pointer to xref allows data to be found
   int number,                     // The object knows its own number
       startpos;                   // The object knows its own starting position
   dictionary header;              // The object's dictionary

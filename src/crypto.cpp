@@ -42,7 +42,7 @@ bytes crypto::UPW = { 0x28, 0xBF, 0x4E, 0x5E, 0x4E, 0x75, 0x8A, 0x41,
 // This simple function "chops" a four-byte int to a vector of four bytes.
 // The bytes are returned lowest-order first as this is the typical use.
 
-bytes crypto::chopLong(fourbytes longInt)
+bytes crypto::chopLong(fourbytes longInt) const
 {
   bytes result; //container for result
 
@@ -98,7 +98,7 @@ bytes crypto::perm(std::string str) // takes a string with the permissions int
 // of the main md5 algorithm. It can be considered a "shuffler" of bytes
 
 void crypto::md5mix(int n, fourbytes& a, fourbytes b, fourbytes c,
-                  fourbytes  d, fourbytes e, fourbytes f, fourbytes g)
+                  fourbytes  d, fourbytes e, fourbytes f, fourbytes g) const
 {
   fourbytes mixer; // temporary container for results
 
@@ -121,7 +121,7 @@ void crypto::md5mix(int n, fourbytes& a, fourbytes b, fourbytes c,
 // The main md5 algorithm. This version of if was modified from various
 // open source online implementations.
 
-bytes crypto::md5(bytes input)
+bytes crypto::md5(bytes input) const
 {
   int len = input.size();
   std::vector<fourbytes> x {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}; // 16 * fourbytes
@@ -248,7 +248,7 @@ bytes crypto::md5(bytes input)
 // conversion. It simply converts a string to bytes than puts it
 // into the "bytes" version of the function
 
-bytes crypto::md5(std::string input)
+bytes crypto::md5(std::string input) const
 {
     bytes res(input.begin(), input.end()); // simple conversion to bytes
     return md5(res); // run md5 on bytes
@@ -262,7 +262,7 @@ bytes crypto::md5(std::string input)
 // directly back into the original message using exactly the same key.
 // The algorithm is now in the public domain
 
-bytes crypto::rc4(bytes msg, bytes key)
+bytes crypto::rc4(bytes msg, bytes key) const
   {
     int keyLen = key.size();
     int msgLen = msg.size();
@@ -310,7 +310,7 @@ bytes crypto::rc4(bytes msg, bytes key)
 // stream using the rc4 algorithm.
 
 std::string crypto::decryptStream(std::string streamstr, int objNum, int objGen)
-  {
+const  {
     bytes streambytes(streamstr.begin(), streamstr.end()); // stream as bytes
     bytes objkey = filekey; // Start building the object key with the file key
     concat(objkey, chopLong(objNum)); // append the bytes of the object number

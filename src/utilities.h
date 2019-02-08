@@ -68,12 +68,12 @@ typedef uint16_t Unicode;
 // the map to the console
 
 template< typename Mt, typename T >
-std::vector<Mt> getKeys(std::unordered_map<Mt, T>& Map)
+std::vector<Mt> getKeys(const std::unordered_map<Mt, T>& Map)
 {
   std::vector<Mt> keyvec; // vector to store results
   keyvec.reserve(Map.size()); // Ensure it is big enough
   // the following loop iterates through the map, gets the key and stores it
-  for(typename std::unordered_map<Mt, T>::iterator i = Map.begin();
+  for(typename std::unordered_map<Mt, T>::const_iterator i = Map.begin();
       i != Map.end(); i++)
     keyvec.push_back(i->first);
   return keyvec;

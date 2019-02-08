@@ -81,7 +81,7 @@ public:
 // the class. It takes the raw stream, the object and generation numbers then
 // returns the decrypted stream.
 
-  std::string decryptStream(std::string, int obj, int gen);
+  std::string decryptStream(std::string, int obj, int gen) const;
 
 
 private:
@@ -96,7 +96,7 @@ private:
 
 // private member functions
 
-  bytes chopLong(fourbytes);    // Chops fourbytes into vector of 4 bytes lo-hi
+  bytes chopLong(fourbytes) const;    // Chops fourbytes into vector of 4 bytes lo-hi
   bytes perm(std::string);      // Return permission flags for file
   void md5mix(int,              //---------//
                     fourbytes&,            //
@@ -105,10 +105,10 @@ private:
                     fourbytes,             //
                     fourbytes,             //
                     fourbytes,             //
-                    fourbytes); //---------//
-  bytes md5(bytes input);       // Gives md5 hash of a vector of raw bytes
-  bytes md5(std::string input); // Gives md5 hash of a std::string (as bytes)
-  bytes rc4(bytes, bytes);      // Gives rc4 cipher of message:key pair, or the
+                    fourbytes) const; //---------//
+  bytes md5(bytes input) const;       // Gives md5 hash of a vector of raw bytes
+  bytes md5(std::string input) const; // Gives md5 hash of a std::string (as bytes)
+  bytes rc4(bytes, bytes) const;      // Gives rc4 cipher of message:key pair, or the
                                 // original message, given a key and the cipher
   bytes getPassword(const std::string&);   // gets /O and /U cipher
   void getFilekey();                       // constructs file key

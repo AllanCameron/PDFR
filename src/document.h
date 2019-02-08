@@ -99,7 +99,7 @@ private:
 
   std::string file;                   // Path used to create file (if used)
   const std::string filestring;       // Full contents of file
-  xref Xref;                          // Contains the xref object for navigation
+  std::shared_ptr<const xref> Xref;   // Contains the xref object for navigation
   dictionary pagedir;                 // dict containing pointers to pages
   dictionary catalog;                 // The pdf catalog dictionary
   std::vector<dictionary> pageheaders;// A vector containing page dictionaries

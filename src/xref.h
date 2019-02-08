@@ -95,18 +95,18 @@ public:
 
   // public methods
 
-  bool isEncrypted();           // returns encryption state
-  dictionary trailer() ;        // Public access for the trailer dictionary
-  size_t getStart(int);         // Returns byte offset of a given object
-  size_t getEnd(int);           // Returns byte offset of end of given object
-  bool isInObject(int);         // Test whether given object is part of a stream
-  size_t inObject(int);         // The object whose stream a given object is in
-  std::vector<int> getObjects();// A vector of all objects recorded in xref
-  bool objectExists(int);       // check for an object's existence
-  std::vector<size_t> getStreamLoc(int); // finds start and stop of the first
+  bool isEncrypted() const;           // returns encryption state
+  dictionary trailer() const;        // Public access for the trailer dictionary
+  size_t getStart(int) const;         // Returns byte offset of a given object
+  size_t getEnd(int) const;           // Returns byte offset of end of given object
+  bool isInObject(int) const;         // Test whether given object is part of a stream
+  size_t inObject(int) const;         // The object whose stream a given object is in
+  std::vector<int> getObjects() const;// A vector of all objects recorded in xref
+  bool objectExists(int) const;       // check for an object's existence
+  std::vector<size_t> getStreamLoc(int) const; // finds start and stop of the first
                                          // stream after the given byte offset
-  std::string decrypt(std::string, int, int); // Interface for decryption object
-  const std::string* docpointer();
+  std::string decrypt(std::string, int, int) const; // Interface for decryption object
+  const std::string* docpointer() const;
 
 private:
 

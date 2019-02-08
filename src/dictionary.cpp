@@ -350,11 +350,12 @@ dictionary::dictionary(std::unordered_map<string, string> dict)
 /*---------------------------------------------------------------------------*/
 // Simple getter of dictionary contents as a string from given key name
 
-string dictionary::get(const string& Key)
+string dictionary::get(const string& Key) const
 {
   // A simple map index lookup with square brackets adds the key to
   // DictionaryMap, which we don't want. Using find(key) leaves it unaltered
-  if(DictionaryMap.find(Key) != DictionaryMap.end()) return DictionaryMap[Key];
+  if(DictionaryMap.find(Key) != DictionaryMap.end())
+    return DictionaryMap.at(Key);
   // We want an empty string rather than an error if the key isn't found.
   // This allows functions that try to return references, ints, floats etc
   // to return an empty vector so a boolean test of their presence is
@@ -365,7 +366,7 @@ string dictionary::get(const string& Key)
 /*---------------------------------------------------------------------------*/
 // Sometimes we just need a boolean check for the presence of a key
 
-bool dictionary::has(const string& Key)
+bool dictionary::has(const string& Key) const
 {
   return DictionaryMap.find(Key) != DictionaryMap.end();
 }
@@ -375,7 +376,7 @@ bool dictionary::has(const string& Key)
 // This should return true if the key is present AND its value contains
 // at least one object reference, and should be false in all other cases
 
-bool dictionary::hasRefs(const string& Key)
+bool dictionary::hasRefs(const string& Key) const
 {
   return !this->getRefs(Key).empty();
 }
@@ -384,7 +385,7 @@ bool dictionary::hasRefs(const string& Key)
 // Check whether the key's values contains any integers. If a key is present
 // AND its value contains ints, return true. Otherwise false.
 
-bool dictionary::hasInts(const string& Key)
+bool dictionary::hasInts(const string& Key) const
 {
   return !this->getInts(Key).empty();
 }
@@ -393,7 +394,7 @@ bool dictionary::hasInts(const string& Key)
 // Returns a vector of the object numbers from references found in the
 // given key's value. Uses the getObjRefs() global function from utilities.h
 
-vector<int> dictionary::getRefs(const string& Key)
+vector<int> dictionary::getRefs(const string& Key) const
 {
   return getObjRefs(this->get(Key));
 }
@@ -402,7 +403,7 @@ vector<int> dictionary::getRefs(const string& Key)
 // Returns any integers present in the value string as read by the getInts()
 // global function defined in utilities.cpp
 
-vector<int> dictionary::getInts(const string& Key)
+vector<int> dictionary::getInts(const string& Key) const
 {
   return getints(this->get(Key));
 }
@@ -411,7 +412,7 @@ vector<int> dictionary::getInts(const string& Key)
 // Returns any floats present in the value string as read by the getNums()
 // global function defined in utilities.cpp
 
-vector<float> dictionary::getNums(const string& Key)
+vector<float> dictionary::getNums(const string& Key) const
 {
   return getnums(this->get(Key));
 }
@@ -420,7 +421,7 @@ vector<float> dictionary::getNums(const string& Key)
 // This creates a new dictionary object on request if the value string contains
 // a subdictionary.
 
-dictionary dictionary::getDictionary(const string& Key)
+dictionary dictionary::getDictionary(const string& Key) const
 {
   string dict = this->get(Key);       // Get the value string
   if(dict.find("<<") != string::npos) // Test that it is a dictionary
@@ -432,7 +433,7 @@ dictionary dictionary::getDictionary(const string& Key)
 // Checks whether a subdictionary is present in the value string by looking
 // for double angle brackets
 
-bool dictionary::hasDictionary(const string& Key)
+bool dictionary::hasDictionary(const string& Key) const
 {
   string dict = this->get(Key);
   return dict.find("<<") != string::npos;
@@ -442,7 +443,7 @@ bool dictionary::hasDictionary(const string& Key)
 // Returns all the keys present in the dictionary using the getKeys() template
 // defined in utilities.cpp
 
-vector<string> dictionary::getDictKeys()
+vector<string> dictionary::getDictKeys() const
 {
   return getKeys(this->DictionaryMap);
 }
@@ -451,7 +452,7 @@ vector<string> dictionary::getDictKeys()
 // Returns the entire map. This is useful for passing dictionaries out of
 // the program, for example in debugging
 
-std::unordered_map<string, string> dictionary::R_out()
+std::unordered_map<string, string> dictionary::R_out() const
 {
   return this->DictionaryMap;
 }
