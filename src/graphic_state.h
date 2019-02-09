@@ -73,6 +73,7 @@
 
 #include "tokenizer.h"
 #include "page.h"
+#include<functional>
 
 //---------------------------------------------------------------------------//
 // This struct is a container for the output of the graphic_state class. All
@@ -105,6 +106,7 @@ public:
 
 private:
   //private data members - used to maintain state between calls to parser
+  typedef void (graphic_state::*fptr)();
 
   std::shared_ptr<page>           p;              // pointer to creating page
   std::shared_ptr<font>           wfont;          // pointer to "working" font
@@ -117,9 +119,12 @@ private:
                                   Tdstate;        // Temp modification to Tm
   std::vector<std::array<float, 9>> gs,           // stack of graphics state
                                   statehx;        // history of graphics state
-  std::string                     currentfont;    // Name of current font
+  std::string                     inloop,
+                                  currentfont;    // Name of current font
   std::vector<std::string>        fontname,       // vector of font names
-                                  fontstack;      // stack of font history
+                                  fontstack,      // stack of font history
+                                  Operands;
+  std::vector<Token::TState>      OperandTypes;
   std::vector<Unicode>            stringres;      // working Unicode vector
   int                             PRstate;        // current kerning state
   float                           Tl,             // Leading (line spacing)
@@ -137,27 +142,25 @@ private:
   // to a "stack", or calls an operator method depending on the label given
   // to each token in the instruction set. It loops through the entire
   // instruction set, after which the data just needs tidied and wrapped.
-  void parser(std::vector<std::pair<std::string, Token::TState>>&&,
-              std::string);
+  void parser(std::vector<std::pair<std::string, Token::TState>>&&);
 
-  void Do(std::string&);                  //----------------------------------//
-  void Q(std::vector<std::string>& );           //  OPERATOR METHODS
-  void q(std::vector<std::string>& );           //
-  void TH(std::vector<std::string>& );          //  These functions do the
-  void TW(std::vector<std::string>& );          //  work of performing actions
-  void TC(std::vector<std::string>& );          //  on the graphics state and
-  void TL(std::vector<std::string>& );          //  writing the results. They
-  void Tstar(std::vector<std::string>& );       //  are called by the parser
-  void Tm(std::vector<std::string>& );          //  method according to the
-  void cm(std::vector<std::string>& );          //  operator it encounters, and
-  void Td(std::vector<std::string>& );          //  act on any operands sitting
-  void TD(std::vector<std::string>& );          //  on the stack. Each is named
-  void BT(std::vector<std::string>& );          //  for the operator it enacts.
-  void ET(std::vector<std::string>& );          //  These functions use private
-  void Tf(std::vector<std::string>& );          //  data members to maintain
-  void TJ(std::string,                          //  state in between calls.
-          std::vector<std::string>&,            //
-          std::vector<Token::TState>&);   //---------------------------------//
+  void Do();              //----------------------------------//
+  void Q();               //  OPERATOR METHODS
+  void q();               //
+  void TH();              //  These functions do the
+  void TW();              //  work of performing actions
+  void TC();              //  on the graphics state and
+  void TL();              //  writing the results. They
+  void T_();              //  are called by the parser
+  void Tm();              //  method according to the
+  void cm();              //  operator it encounters, and
+  void Td();              //  act on any operands sitting
+  void TD();              //  on the stack. Each is named
+  void BT();              //  for the operator it enacts.
+  void ET();              //  These functions use private
+  void Tf();              //  data members to maintain
+  void TJ();              //
+  void Ap();              //---------------------------------//
 
   // This is a helper function for the TJ method which otherwise would become
   // a bit of a "hairball". It uses the font information and current graphics
@@ -174,7 +177,11 @@ private:
 
   // Converts pdfs' 6-token string representation of matrices to a 3x3 matrix
   std::array<float, 9> stringvectomat(const std::vector<std::string>&);
+
+  static std::unordered_map<std::string, fptr> fmap;
 };
+
+
 
 //---------------------------------------------------------------------------//
 
