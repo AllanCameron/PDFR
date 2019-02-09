@@ -92,7 +92,7 @@ public:
 
   // constructor
 
-  tokenizer(const std::string& s);
+  tokenizer(std::string&& s);
 
   // get results from tokenizer
 

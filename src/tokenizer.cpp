@@ -35,7 +35,7 @@ using namespace Token;
 // constructor of tokenizer - initializes members and starts main
 // lexer function
 
-tokenizer::tokenizer(const string& input) :
+tokenizer::tokenizer(string&& input) :
  s(input), i(s.begin()), state(NEWSYMBOL)
 {
   tokenize();       // instigate lexer

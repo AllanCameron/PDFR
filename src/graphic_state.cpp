@@ -89,8 +89,7 @@ void graphic_state::Do(string& a)
   string xo = p->getXobject(a); // get xobject
   if(IsAscii(xo)) // don't try to parse binary objects like images etc
   {
-    auto ins = tokenizer(xo).result(); // tokenize and parse "inline"
-    parser(ins, a);
+    parser(tokenizer(p->getXobject(a)).result(), a);
   }
 }
 
@@ -352,7 +351,7 @@ void graphic_state::processRawChar(vector<RawChar>& raw, float& scale,
 // will not be called if its operand stack contains the same string as inloop.
 
 void
-graphic_state::parser(const vector<pair<string, TState>>& tokens, string inloop)
+graphic_state::parser(vector<pair<string, TState>>&& tokens, string inloop)
 {
 
   vector<string> Operands;    // Set up operand stack

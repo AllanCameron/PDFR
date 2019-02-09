@@ -196,31 +196,24 @@ vector<RawChar> glyphwidths::widthKeys()
 // code point. Hence the string "[3[100 200 150] 10[250 300]]" should be
 // interpreted as mapping {{3, 100}, {4, 200}, {5, 150}, {10, 250}, {11, 300}}
 
-void glyphwidths::parsewidtharray(string s)
+void glyphwidths::parsewidtharray(const string& s)
 {
-  s += " "; // we add an extra whitespace onto the end to ensure that the buffer
-            // is emptied and used after the last meaningful character
-
+  if(s.empty()) return;           // empty string == nothing to do
   enum Wstate {NEWSYMB, INARRAY, INSUBARRAY, END}; // possible states of lexer
   string buf = "";                                 // empty buffer for lexer
   Wstate state = NEWSYMB;                          // Initial state of lexer
   vector<int> vecbuf, resultint;                   // temporary variables
   vector<vector<int>> resultvec;  // container of results to write to width map
-  if(s.empty()) return;           // empty string == nothing to do
 
   // main loop - straight iteration through all the characters in s
-  for(auto i : s)
+  for(const auto& i : s)
   {
     char a = symbol_type(i); // determine symbol type from method in utilities.h
 
     // If opening of array not first character, simply wait for '['
     if(state == NEWSYMB)
     {
-      switch(a)
-      {
-        case '[': state = INARRAY; break; // found '[' - now in array
-        default : break;
-      }
+      if(a == '[') state = INARRAY;
       continue;
     }
     // In the main array. Either read a code character or find a subarray
@@ -277,10 +270,7 @@ void glyphwidths::parsewidtharray(string s)
       }
       continue;
     }
-    if(state == END)
-    {
-      break;
-    }
+    if(state == END) break;
   }
 
   // We now parse the results of the lexing procedure.

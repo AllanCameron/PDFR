@@ -95,11 +95,11 @@ void font::makeGlyphTable()
   // character codes or to the final Unicode translations
 
   if(Wid.widthsAreForRaw()) // The widths refer to RawChar code points
-    for(auto i : inkeys) // map every mapped RawChar to a width
+    for(auto& i : inkeys) // map every mapped RawChar to a width
       glyphmap[i] = make_pair(Enc.Interpret(i), Wid.getwidth(i));
 
   else // The widths refer to Unicode glyphs
-    for(auto i : inkeys) // map every mapped Unicode to a width
+    for(auto& i : inkeys) // map every mapped Unicode to a width
       glyphmap[i] = make_pair(Enc.Interpret(i), Wid.getwidth(Enc.Interpret(i)));
 }
 

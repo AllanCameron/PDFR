@@ -96,7 +96,7 @@ void Encoding::Differences(const string& enc)
   RawChar k = 0; // k represents the code point to be mapped to Unicode
 
   // This loop writes the results vector to EncodingMap
-  for(auto i : entries)
+  for(auto& i : entries)
     if(i.first == NUM)  // If the vector entry is a number, convert to RawChar
       k = (RawChar) stoi(i.second);
     else
@@ -177,28 +177,24 @@ void Encoding::processUnicodeRange(vector<string>& Range)
     // loop to calculate entries and fill encoding map
     for(size_t j = 0; j < allentries.size(); j++)
     {
-      // first column == first code point
-      if(j % 3 == 0) first = HexstringToRawChar(allentries[j]).at(0);
-
-      // second column == last code point
-      if(j % 3 == 1)
-        last = HexstringToRawChar(allentries[j]).at(0);
-
-      // third column == Unicode point at which to start
-      if(j % 3 == 2)
+      switch(j % 3)
       {
-        // We call the HexstringtoRawChar function as it outputs a uint16
-        // However, the 'start' variable is Unicode and we make this explicit
-        start = (Unicode) HexstringToRawChar(allentries[j]).at(0);
+      case 0 :  // first column == first code point
+                first = HexstringToRawChar(allentries[j]).at(0); break;
+      case 1 :  // second column == first code point
+                last = HexstringToRawChar(allentries[j]).at(0); break;
+      case 2 :  // We call the HexstringtoRawChar function as it outputs uint16
+                // However, 'start' is Unicode and we make this explicit
+                start = (Unicode) HexstringToRawChar(allentries[j]).at(0);
 
-        // Calculate the number of map entries needed. Since the first two
-        // columns show characters to be mapped inclusive of both, we add 1
-        // to their difference to get the number of mapped chars we need
-        int nchar = (last - first) + 1;
+                // Calculate the number of map entries needed. Since the first 2
+                // columns show glyphs to be mapped inclusive of both, we add 1
+                // to their difference to get the number of mapped chars we need
+                int nchar = (last - first) + 1;
 
-        // Now we can fill the encoding map from the data in the row
-        for(int k = 0; k < nchar; k++)
-          EncodingMap[first + k] = start + k;
+                // Now we can fill the encoding map from the data in the row
+                for(int k = 0; k < nchar; k++)
+                  EncodingMap[first + k] = start + k;
       }
     }
   }

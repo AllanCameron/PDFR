@@ -116,13 +116,13 @@ private:
 
   std::unordered_map<RawChar, int> Width;         // The main data member
   dictionary fontref;                             // the font dictionary
-  std::shared_ptr<document> d;                // pointer to document
+  std::shared_ptr<document> d;                    // pointer to document
   std::string basefont;                           // the base font (if any)
   bool widthFromCharCodes;                        // are widths for code points?
 
   // private methods
 
-  void parsewidtharray(std::string);              // lexer
+  void parsewidtharray(const std::string&);       // lexer
   void getCoreFont();                             // corefont getter
   void parseDescendants();                        // read descendant dictionary
   void parseWidths();                             // parse the width array
