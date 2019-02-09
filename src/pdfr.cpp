@@ -251,9 +251,8 @@ Rcpp::DataFrame pdfdoc_common(std::shared_ptr<document> myfile)
   for(size_t pagenum = 0; pagenum < npages; pagenum++)
   {
     std::shared_ptr<page> p = std::make_shared<page>(myfile, pagenum);
-    graphic_state GS = graphic_state(p);
-    grid Grid = grid(GS);
-    std::unordered_map<uint8_t, std::vector<GSrow>> gridout = Grid.output();
+    std::unordered_map<uint8_t, std::vector<GSrow>> gridout =
+      grid(graphic_state(p)).output();
     for(uint8_t i = 0; i < 256; i++)
     {
       for(auto& j : gridout[i])
