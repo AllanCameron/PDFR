@@ -73,7 +73,7 @@ GSoutput* graphic_state::output()
 
 void graphic_state::q(vector<string>& Operands)
 {
-    PROFC_NODE("q");
+    ////PROFC_NODE("q");
   gs.emplace_back(gs.back());               // push transformation matrix
   fontstack.emplace_back(currentfont);      // push font name
   fontsizestack.emplace_back(currfontsize); // push pointsize
@@ -85,7 +85,7 @@ void graphic_state::q(vector<string>& Operands)
 
 void graphic_state::Do(string& a)
 {
-    PROFC_NODE("Do");
+    //PROFC_NODE("Do");
   string xo = p->getXobject(a); // get xobject
   if(IsAscii(xo)) // don't try to parse binary objects like images etc
   {
@@ -99,7 +99,7 @@ void graphic_state::Do(string& a)
 
 void graphic_state::Q(vector<string>& Operands)
 {
-    PROFC_NODE("Q");
+    //PROFC_NODE("Q");
   if (gs.size() > 1) // Empty graphics state is undefined but gs[0] is identity
     gs.pop_back();
   if (fontstack.size() > 1) // Empty fontstack is undefined
@@ -117,7 +117,7 @@ void graphic_state::Q(vector<string>& Operands)
 
 void graphic_state::Td(vector<string>& Operands)
 {
-    PROFC_NODE("Td");
+    //PROFC_NODE("Td");
   array<float, 9> Tds = initstate;                    //------------------------
   vector<float> tmpvec = stringtofloat(Operands);       //  create translation
   Tds[6] = tmpvec[0];                                //  matrix (3x3)
@@ -131,7 +131,7 @@ void graphic_state::Td(vector<string>& Operands)
 
 void graphic_state::TD(vector<string>& Operands)
 {
-    PROFC_NODE("TD");
+    //PROFC_NODE("TD");
   array<float, 9> Tds = initstate;                    //------------------------
   vector<float> tmpvec = stringtofloat(Operands);       //  create translation
   Tds[6] = tmpvec[0];                                //  matrix (3x3)
@@ -146,7 +146,7 @@ void graphic_state::TD(vector<string>& Operands)
 
 void graphic_state::BT(vector<string>& Operands)
 {
-    PROFC_NODE("BT");
+    //PROFC_NODE("BT");
   Tmstate = Tdstate = initstate; // Reset text matrix to identity matrix
   Tw = Tc = 0; // reset word spacing and character spacing
   Th = 100; // reset horizontal spacing
@@ -157,7 +157,7 @@ void graphic_state::BT(vector<string>& Operands)
 
 void graphic_state::ET(vector<string>& Operands)
 {
-    PROFC_NODE("ET");
+    //PROFC_NODE("ET");
   Tmstate = Tdstate = initstate; // Reset text matrix to identity matrix
   Tw = Tc = 0; // reset word spacing and character spacing
   Th = 100; // reset horizontal spacing
@@ -167,7 +167,7 @@ void graphic_state::ET(vector<string>& Operands)
 // Tf operator - specifies font and pointsize
 void graphic_state::Tf(vector<string>& Operands)
 {
-    PROFC_NODE("Tf");
+    //PROFC_NODE("Tf");
   if(Operands.size() > 1) // Should be 2 operators: 1 is not defined
   {
     currentfont = Operands[0];        // read fontID
@@ -183,7 +183,7 @@ void graphic_state::Tf(vector<string>& Operands)
 
 void graphic_state::TH(vector<string>& Operands)
 {
-    PROFC_NODE("TH");
+    //PROFC_NODE("TH");
   Th = stof(Operands.at(0)); // simply reads operand as new Th value
 }
 
@@ -192,7 +192,7 @@ void graphic_state::TH(vector<string>& Operands)
 
 void graphic_state::TC(vector<string>& Operands)
 {
-    PROFC_NODE("TC");
+    //PROFC_NODE("TC");
   Tc = stof(Operands.at(0)); // simply reads operand as new Tc value
 }
 
@@ -209,7 +209,7 @@ void graphic_state::TW(vector<string>& Operands)
 
 void graphic_state::TL(vector<string>& Operands)
 {
-    PROFC_NODE("TL");
+    //PROFC_NODE("TL");
   Tl = stof(Operands.at(0));  // simply reads operand as new Tl value
 }
 
@@ -218,7 +218,7 @@ void graphic_state::TL(vector<string>& Operands)
 
 void graphic_state::Tstar(vector<string>& Operands)
 {
-    PROFC_NODE("T*");
+    //PROFC_NODE("T*");
   Tdstate.at(7) = Tdstate.at(7) - Tl; // decrease y value of text matrix by Tl
   PRstate = 0; // reset kerning
 }
@@ -228,7 +228,7 @@ void graphic_state::Tstar(vector<string>& Operands)
 
 void graphic_state::Tm(vector<string>& Operands)
 {
-    PROFC_NODE("Tm");
+    //PROFC_NODE("Tm");
   Tmstate = stringvectomat(Operands); // Reads the operands as a 3x3 matrix
   Tdstate = initstate; // reset the Td modifier matrix
   PRstate = 0; // reset kerning
@@ -239,7 +239,7 @@ void graphic_state::Tm(vector<string>& Operands)
 
 void graphic_state::cm(vector<string>& Operands)
 {
-    PROFC_NODE("cm");
+    //PROFC_NODE("cm");
   // read the operands as a matrix, multiply by top of graphics state stack
   // and replace the top of the stack with the result
   matmul(stringvectomat(Operands), gs.back());
@@ -259,7 +259,7 @@ void graphic_state::cm(vector<string>& Operands)
 void graphic_state::TJ(string Ins, vector<string>& Operands,
                        vector<TState>& OperandTypes)
 {
-  PROFC_NODE("TJ");
+  //PROFC_NODE("TJ");
   // the "'" operator is the same as Tj except it moves to the next line first
   if (Ins == "'") Tdstate[7] -= Tl;
 
@@ -354,6 +354,7 @@ void graphic_state::processRawChar(vector<RawChar>& raw, float& scale,
 void
 graphic_state::parser(const vector<pair<string, TState>>& tokens, string inloop)
 {
+
   vector<string> Operands;    // Set up operand stack
   vector<TState> OperandTypes;// operand types for operand stack
   for (auto i : tokens) // for each instruction...

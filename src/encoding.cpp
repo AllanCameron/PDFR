@@ -131,7 +131,7 @@ void Encoding::mapUnicode(dictionary& fontref, shared_ptr<document> d)
 
 void Encoding::processUnicodeChars(vector<string>& Char)
 {
-  for(auto j : Char)
+  for(auto& j : Char)
   {
     // use multicarve() to get ascii-encoded byte representations
     vector<string> allentries = multicarve(j, "<", ">");
@@ -157,7 +157,7 @@ void Encoding::processUnicodeChars(vector<string>& Char)
 
 void Encoding::processUnicodeRange(vector<string>& Range)
 {
-  for(auto i : Range)
+  for(auto& i : Range)
   {
     // uses multicarve() from utilities.h to get ascii-endoded byte strings
     vector<string> allentries = multicarve(i, "<", ">");

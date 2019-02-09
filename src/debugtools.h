@@ -26,7 +26,7 @@
 //---------------------------------------------------------------------------//
 // uncomment these lines for debugger and profiler
 // #define PDFR_DEBUG
-// #define PROFILER_PDFR
+//#define PROFILER_PDFR
 #include "external/Profiler.h"
 #ifdef PDFR_DEBUG
 #ifndef PDFR_DEBUGGER

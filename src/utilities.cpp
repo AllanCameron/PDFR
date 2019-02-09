@@ -520,10 +520,10 @@ std::string get_file(const std::string& file)
 /*--------------------------------------------------------------------------*/
 // converts (16-bit) Unicode code points to multibyte utf-8 encoding.
 
-std::string utf(std::vector<uint16_t> Unicode_points)
+std::string utf(const std::vector<uint16_t>& Unicode_points)
 {
   std::string result_string = ""; // empty string for results
-  for(auto point : Unicode_points) // for each uint16_t in the input vector...
+  for(auto& point : Unicode_points) // for each uint16_t in the input vector...
   {
     // values less than 128 are just single-byte ASCII
     if(point < 0x0080) result_string.push_back(point & 0x007f);

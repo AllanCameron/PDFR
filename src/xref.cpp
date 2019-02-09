@@ -147,7 +147,7 @@ void xref::xrefstrings()
 
     // stick a trimmed version of the xref onto Xrefstrings
     // Note the carveout should leave xrefstreams unaltered
-    Xrefstrings.emplace_back(carveout(fullxref, "xref", "trailer"));
+    Xrefstrings.emplace_back(carveout(move(fullxref), "xref", "trailer"));
   }
 }
 
@@ -156,7 +156,7 @@ void xref::xrefstrings()
 
 void xref::xrefIsstream()
 {
-  for(auto i : Xrefstrings) // If first 15 chars contains << it's a stream
+  for(auto& i : Xrefstrings) // If first 15 chars contains << it's a stream
     XrefsAreStreams.emplace_back(i.substr(0, 15).find("<<", 0) != string::npos);
 }
 
@@ -182,8 +182,8 @@ void xref::xrefFromStream(int xrefloc)
     txr.startbyte = txr.in_object = xreftable[1][j];// 2nd col of table == inobj
     if (xreftable[0][j] == 1) txr.in_object = 0;    // 1st col == isinobj
     if (xreftable[0][j] == 2) txr.startbyte = 0;    // if isinobj, no startbyte
-    xreftab[txr.object] = txr;                      // write to main map
     objenum.emplace_back(txr.object);               // write to vec of objnums
+    xreftab[txr.object] = move(txr);                // write to main map
   }                                                 //
 }
 
@@ -222,8 +222,8 @@ void xref::xrefFromString(std::string& xstr)
         txr.object = startingobj + (i / 2) - 1; // zero-indexed row + start
         txr.startbyte = bytestore; // use number from last loop
         txr.in_object = 0;         // not in an objectstream
-        xreftab[txr.object] = txr;     // write to main data map
         objenum.push_back(txr.object); // write to object enumerator
+        xreftab[txr.object] = move(txr);     // write to main data map
       }
     }
   }
@@ -323,7 +323,7 @@ vector<size_t> xref::getStreamLoc(int objstart) const
         size_t lastpos = fs->find("endobj", firstpos); // and end of it
         size_t len = lastpos - firstpos;  // from which we can get its length
         string objstr = fs->substr(firstpos, len); // from which we get a string
-        streamlen = getints(objstr).back(); // from which we get the number
+        streamlen = getints(move(objstr)).back(); // from which we get a number
       }
       // thankfully though most lengths are just direct ints
       else streamlen = dict.getInts("/Length")[0];
@@ -378,7 +378,7 @@ void xref::get_crypto()
   // mark the file as encrypted and read the encryption dictionary
   encrypted = true;
   dictionary encdict = dictionary(fs, getStart(encnum));
-  encryption = crypto(encdict, TrailerDictionary);
+  encryption = crypto(move(encdict), TrailerDictionary);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -495,7 +495,7 @@ void xrefstream::getRawMatrix()
 
   // applies decompression to stream if needed
   if(dict.get("/Filter").find("/FlateDecode", 0) != string::npos)
-    SS = FlateDecode(SS);
+    SS = FlateDecode(move(SS));
 
   // turn the string into an array of bytes
   std::vector<uint8_t> conv(SS.begin(), SS.end());

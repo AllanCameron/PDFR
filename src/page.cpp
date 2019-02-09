@@ -142,8 +142,8 @@ void page::getFonts()
   // We can now iterate through the font names using getFontNames(), create
   // each font in turn and store it in the fontmap
   for(auto h : getFontNames())
-    for(auto hh : fonts.getRefs(h)) // find the ref for each font name
-      if(fontmap.find(h) == fontmap.end()) // fontmap is static
+    if(fontmap.find(h) == fontmap.end()) // fontmap is static
+      for(auto hh : fonts.getRefs(h)) // find the ref for each font name
         fontmap[h] = make_shared<font>(d, d->getobject(hh)->getDict(), h);
 }
 
@@ -163,8 +163,13 @@ void page::getContents()
 
     // get the contents from each object stream and paste them at the bottom
     // of the pagestring with a line break after each one
+    contentstring.reserve(35000);
     for (auto m : contents)
-      contentstring += d->getobject(m)->getStream() + std::string("\n");
+    {
+      contentstring += d->getobject(m)->getStream();
+      contentstring += std::string("\n");
+    }
+    contentstring.shrink_to_fit();
   }
 }
 
@@ -204,7 +209,7 @@ void page::parseXObjStream()
   std::vector<std::string> dictkeys = objdict.getDictKeys();
 
   // ...and get the stream contents of all the references pointed to
-  for(auto i : dictkeys)
+  for(auto& i : dictkeys)
   {
     std::vector<int> refints = objdict.getRefs(i);
     if(!refints.empty())
@@ -251,6 +256,7 @@ vector <int> page::expandContents(vector<int> objnums)
 page::page(shared_ptr<document> doc, int pagenum) :
   d(doc), pagenumber(pagenum), rotate(0)
 {
+  PROFC_NODE("Page creation");
   getHeader();        // find the page header
   getResources();     // find the resource header
   parseXObjStream();  // identify, parse and store XObjects

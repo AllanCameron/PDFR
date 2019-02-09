@@ -42,6 +42,7 @@ using namespace std;
 document::document(const string& filename) :
   file(filename), filestring(get_file(file))
 {
+  PROFC_NODE("Document from string");
   buildDoc(); // Call constructor helper to build document
 }
 
@@ -53,6 +54,7 @@ document::document(const string& filename) :
 document::document(const vector<uint8_t>& bytevector) :
   filestring(bytestostring(bytevector))
 {
+  PROFC_NODE("Document from bytes");
   buildDoc(); // Call constructor helper to build document
 }
 

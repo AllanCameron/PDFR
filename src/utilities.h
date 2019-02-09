@@ -237,6 +237,6 @@ std::string get_file(const std::string&);
 
 //---------------------------------------------------------------------------//
 
-std::string utf(std::vector<uint16_t> u);
+std::string utf(const std::vector<uint16_t>& u);
 
 #endif

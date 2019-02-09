@@ -101,24 +101,20 @@ public:
 private:
 
   // private data members
-  bool In_Array;
-  size_t i;            // The iterator that moves through the string
   const std::string& s;// the input string itself
+  std::string::const_iterator i;// The iterator that moves through the string
   std::string buf;     // a string buffer to hold chars until pushed to result
   Token::TState state; // The current state of the finite state machine
 
   // The main output of the lexer
   std::vector<std::pair<std::string, Token::TState>> output;
-  std::vector<std::pair<std::string, Token::TState>> Array_output;
 
 
   // private methods
 
   void tokenize();                  // chooses state subroutine based on state
-  void subtokenizer(const std::string&);  // uses recursion for sub-strings
 
   void pushbuf(const Token::TState, const Token::TState);
-  void pushArray();
 
   void newsymbolState();    //--------//---------------------------------------
   void resourceState();               //

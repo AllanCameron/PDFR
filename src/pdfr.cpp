@@ -44,10 +44,10 @@ Rcpp::DataFrame getglyphmap(const std::string& s, int pagenum)
   // containers for the dataframe columns
   std::vector<uint16_t> codepoint, unicode, width;
 
-  for(auto i : p->getFontNames()) // for each font on the page...
+  for(auto& i : p->getFontNames()) // for each font on the page...
   {
     std::shared_ptr<font> loopfont = p->getFont(i); // get a pointer to the font
-    for(auto b : loopfont->getGlyphKeys()) // for each code point in the font
+    for(auto& b : loopfont->getGlyphKeys()) // for each code point in the font
     {
       FontName.push_back(i);    // copy the fontname
       codepoint.push_back(b);   // copy the input codepoint
@@ -154,7 +154,7 @@ Rcpp::List getatomic(std::shared_ptr<page> p)
   graphic_state G = graphic_state(p);
   auto GS = G.output();
   std::vector<std::string> glyph;
-  for(auto i : GS->text) glyph.push_back(utf({i}));
+  for(auto& i : GS->text) glyph.push_back(utf({i}));
   Rcpp::DataFrame db =  Rcpp::DataFrame::create(
                         Rcpp::Named("text") = glyph,
                         Rcpp::Named("left") = GS->left,
@@ -182,7 +182,7 @@ Rcpp::List getgrid(std::shared_ptr<page> p)
   std::vector<std::string> font;
   for(uint8_t i = 0; i < 256; i++)
   {
-    for(auto j : gridout[i])
+    for(auto& j : gridout[i])
     {
       if(!j.consumed)
       {
@@ -256,7 +256,7 @@ Rcpp::DataFrame pdfdoc_common(std::shared_ptr<document> myfile)
     std::unordered_map<uint8_t, std::vector<GSrow>> gridout = Grid.output();
     for(uint8_t i = 0; i < 256; i++)
     {
-      for(auto j : gridout[i])
+      for(auto& j : gridout[i])
       {
         if(!j.consumed)
         {

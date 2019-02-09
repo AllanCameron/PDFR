@@ -71,6 +71,7 @@
  * defined in this header file, but rather within xref.cpp
 */
 
+#include<utility>
 #include "dictionary.h"
 #include "streams.h"
 #include "crypto.h"
@@ -95,18 +96,19 @@ public:
 
   // public methods
 
-  bool isEncrypted() const;           // returns encryption state
-  dictionary trailer() const;        // Public access for the trailer dictionary
-  size_t getStart(int) const;         // Returns byte offset of a given object
-  size_t getEnd(int) const;           // Returns byte offset of end of given object
-  bool isInObject(int) const;         // Test whether given object is part of a stream
-  size_t inObject(int) const;         // The object whose stream a given object is in
-  std::vector<int> getObjects() const;// A vector of all objects recorded in xref
+  bool isEncrypted() const;           // Eeturns encryption state
+  dictionary trailer() const;         // Get the trailer dictionary
+  size_t getStart(int) const;         // Byyte offset of a given object
+  size_t getEnd(int) const;           // Byte offset of end of given object
+  bool isInObject(int) const;         // Is given object is part of a stream
+  size_t inObject(int) const;         // The object that the given object is in
+  std::vector<int> getObjects() const;// List all objects recorded in xref
   bool objectExists(int) const;       // check for an object's existence
-  std::vector<size_t> getStreamLoc(int) const; // finds start and stop of the first
-                                         // stream after the given byte offset
-  std::string decrypt(std::string, int, int) const; // Interface for decryption object
-  const std::string* docpointer() const;
+
+  // finds start and stop of the first stream after the given byte offset
+  std::vector<size_t> getStreamLoc(int) const;
+  std::string decrypt(std::string, int, int) const; // Decrypt a stream
+  const std::string* docpointer() const; // pointer to main file string
 
 private:
 
