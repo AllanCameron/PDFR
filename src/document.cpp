@@ -52,7 +52,7 @@ document::document(const string& filename) :
 // to construct the document object
 
 document::document(const vector<uint8_t>& bytevector) :
-  filestring(bytestostring(bytevector))
+  filestring(std::string(bytevector.begin(), bytevector.end()))
 {
   PROFC_NODE("Document from bytes");
   buildDoc(); // Call constructor helper to build document

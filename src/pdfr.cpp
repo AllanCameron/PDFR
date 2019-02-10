@@ -109,7 +109,7 @@ Rcpp::DataFrame get_xref(const std::string& filename)
 
 Rcpp::DataFrame get_xrefraw(const std::vector<uint8_t>& rawfile)
 {
-  std::string fs = bytestostring(rawfile); // cast raw vector to string
+  std::string fs(rawfile.begin(), rawfile.end()); // cast raw vector to string
   return xrefcreator(&fs);  // return results of calling xrefcreator
 }
 

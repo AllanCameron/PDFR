@@ -77,7 +77,7 @@ void dictionary::tokenize_dict()
   // set a limit on how far the lexer will read into a string
   size_t maxlen = i + 100000;
   // Main loop : read next char from string and pass to state handling function
-  while(i < (*s).length() && i < maxlen)
+  while(i < s->length() && i < maxlen)
   {
     char n = symbol_type((*s)[i]); // determine char type at start of each loop
     switch(state)
@@ -226,8 +226,7 @@ void dictionary::handleValue(char n)
 void dictionary::handleArrayval(char n)
 {
   buf += (*s)[i];
-  if(n == ']')
-    assignValue("", START);
+  if(n == ']') assignValue("", START);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -311,7 +310,7 @@ void dictionary::handleClose(char n)
 dictionary::dictionary(const string* str) :
   s(str), i(0), bracket(0), keyPending(false), state(PREENTRY) // initializers
 {
-  if(((*s).length() == 0)) *this = dictionary(); // empty string -> empty dict
+  if(s->empty()) *this = dictionary(); // empty string -> empty dict
   tokenize_dict();
 }
 
@@ -325,7 +324,7 @@ dictionary::dictionary(const string* str, size_t pos) :
 {
   // check string isn't empty or smaller than the starting position
   // if it is, return an empty dictionary
-  if(((*s).length() == 0) || (i >= (*s).length())) *this = dictionary();
+  if(s->empty() || (i >= s->length())) *this = dictionary();
   else tokenize_dict();
 }
 

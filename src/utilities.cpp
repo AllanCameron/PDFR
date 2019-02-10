@@ -27,16 +27,30 @@
 
 #include "utilities.h"
 #include <fstream>   // for get_file - uses ifstream
-#include <algorithm> // for min_element
 
 using namespace std;
 
-static std::unordered_map<uint8_t, uint8_t> hexmap = {
-  {'0', 0}, {'1', 1}, {'2', 2}, {'3', 3}, {'4', 4}, {'5', 5}, {'6', 6},
-  {'7', 7}, {'8', 8}, {'9', 9}, {'a', 10}, {'A', 10}, {'b', 11}, {'B', 11},
-  {'c', 12}, {'C', 12}, {'d', 13}, {'D', 13}, {'e', 14}, {'E', 14},
-  {'f', 15}, {'F', 15}
+/*---------------------------------------------------------------------------*/
+// A cheap way to get the value of Ascii - encoded bytes is to look up their
+// value in an unordered map. This can be done arithmetically, but that is
+// probably less efficient and definitely less transparent
+
+static std::unordered_map<char, uint8_t> hexmap =
+{
+  {'0',  0}, {'1',  1}, {'2',  2}, {'3',  3}, {'4',  4}, {'5',  5}, {'6',  6},
+  {'7',  7}, {'8',  8}, {'9',  9}, {'a', 10}, {'A', 10}, {'b', 11}, {'B', 11},
+  {'c', 12}, {'C', 12}, {'d', 13}, {'D', 13}, {'e', 14}, {'E', 14}, {'f', 15},
+  {'F', 15}
 };
+
+/*---------------------------------------------------------------------------*/
+// A fixed static array to allow quick lookup of characters for use in the
+// several lexers in this program. The position of each element represents an
+// input char. The value is 'L' for any letter, 'D' for any digit, ' ' for any
+// whitespace, and otherwise just the value of the char itself. This prevents
+// having to go through a bunch of 'if' statements every time we look up a
+// character in the lexer, since this may be done hundreds of thousands of times
+// for each document.
 
 static std::array<uint8_t, 256> sym_t =
 {
@@ -75,19 +89,19 @@ static std::array<uint8_t, 256> sym_t =
 };
 
 /*---------------------------------------------------------------------------*/
-// Return the first substring of s that lies between two strings.
+// Return the first substring of s that lies between two 'bookend' strings.
 // This can be used e.g. to find the byte position that always sits between
 // "startxref" and "%%EOF"
 
 string carveout(const string& s, const string& pre, const string& post)
 {
-  int start = s.find(pre);
-  if(start == -1) start++; // if pre not found in s, start at beginning of s
+  int start =  s.find(pre);
+  if (start == -1) start++; // if pre not found in s, start at beginning of s
   else start += pre.size(); // otherwise start at end of first pre
   string str = s.substr(start, s.size() - start); // trim start of s
-  int stop = str.find(post);
-  if(stop == -1) return str; // if post not found, finish at end of string
-  return str.substr(0, stop); // discard end of string starting at end of post
+  int stp = str.find(post);
+  if(stp == -1) return str; // if post not found, finish at end of string
+  return str.substr(0, stp); // discard end of string starting at end of post
 }
 
 /*---------------------------------------------------------------------------*/
@@ -139,31 +153,16 @@ bool IsAscii(const string& s)
 
 vector<uint8_t> bytesFromArray(const string& s)
 {
-  vector<uint8_t> resvec; // vector to store results
+  vector<uint8_t> resvec, tmpvec; // vectors to store results
   if(s.empty()) return resvec; // if string is empty, return empty vector;
-  vector<int> tmpvec; // temporary vector to hold results
-  for(auto a : s) // convert hex characters to numerical values
-  {
-    if(a > 47 && a < 58)  tmpvec.emplace_back(a - 48); //Digits 0-9
-    if(a > 64 && a < 71)  tmpvec.emplace_back(a - 55); //Uppercase A-F
-    if(a > 96 && a < 103) tmpvec.emplace_back(a - 87); //Lowercase a-f
-  }
-  size_t ts = tmpvec.size();
-  if(ts == 0) return resvec; // if no hex characters, return empty vector;
-  if(ts % 2 == 1)
-    tmpvec.push_back(0); // add an extra zero to the end of odd-length strings
-  for(size_t i = 0; i < ts; i += 2)
-    resvec.emplace_back((uint8_t) (16 * tmpvec.at(i) + tmpvec.at(i + 1)));
+  for(auto a : s) // convert hex characters to numerical values using hexmap
+    if(hexmap.find(a) != hexmap.end())
+      tmpvec.push_back(hexmap[a]);
+  if(tmpvec.empty()) return resvec; // No hex characters - return empty vector;
+  if(tmpvec.size() % 2 == 1) tmpvec.push_back(0); // No odd-length strings!
+  for(size_t i = 0; i < tmpvec.size(); i += 2)
+    resvec.emplace_back( (0xf0 & (tmpvec[i] << 4)) |(0x0f & tmpvec[i + 1]));
   return resvec;
-}
-
-/*---------------------------------------------------------------------------*/
-// reinterprets a vector of bytes as a string
-
-string bytestostring(const vector<uint8_t>& v)
-{
-  string res(v.begin(), v.end());
-  return res;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -207,19 +206,6 @@ char symbol_type(const char c)
 }
 
 /*--------------------------------------------------------------------------*/
-// Removes whitespace from right of a string
-
-void trimRight(string& s)
-{
-  if(s.length() == 0) return; // nothing to do if string is empty
-  for(int i = s.length() - 1; i >= 0; i--) // reverse iterator
-    if(s[i] == ' ' || s[i] == '\t' || s[i] == '\n' || s[i] == '\r') //whitespace
-      s.resize(i); // shrink string to before whitespace character
-    else
-      break;
-}
-
-/*--------------------------------------------------------------------------*/
 // Returns the data represented by an Ascii encoded hex string as a vector
 // of two-byte numbers
 
@@ -230,10 +216,10 @@ vector<RawChar> HexstringToRawChar(string& s)
   raw_vector.reserve(s.size() / 4);
   for(size_t i = 0; i < (s.size() - 3); i += 4)
   {
-    raw_vector.emplace_back(hexmap[(uint8_t)(s[i])] * 4096 +
-                            hexmap[(uint8_t)(s[i + 1])] * 256 +
-                            hexmap[(uint8_t)(s[i + 2])] * 16 +
-                            hexmap[(uint8_t)(s[i + 3])]);
+    raw_vector.emplace_back(hexmap[s[i]] * 4096 +
+                            hexmap[s[i + 1]] * 256 +
+                            hexmap[s[i + 2]] * 16 +
+                            hexmap[s[i + 3]]);
   }
   return raw_vector;
 }

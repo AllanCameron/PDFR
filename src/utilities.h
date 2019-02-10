@@ -32,8 +32,7 @@
 #define PDFR_UTILTIES
 
 /* This file is the first point in a daisy-chain of header files that
- * constitute the program. Although it #includes "debugtools.h", it can be
- * compiled without that file for production. Since every other header file
+ * constitute the program. Since every other header file
  * in the program ultimately #includes utilities.h, it acts as a single point
  * from which to propagate global definitions and #includes.
  *
@@ -48,6 +47,8 @@
 #include<string>
 #include<vector>
 #include<unordered_map>
+#include<numeric>
+#include<algorithm>
 #include "debugtools.h"
 
 /* The characters in pdf strings are most portably interpreted as uint16_t.
@@ -67,16 +68,16 @@ typedef uint16_t Unicode;
 // enumerate the keys for iterating through the map or as a method of printing
 // the map to the console
 
-template< typename Mt, typename T >
-std::vector<Mt> getKeys(const std::unordered_map<Mt, T>& Map)
+template< typename K, typename V > // K, V stand for key, value
+std::vector<K> getKeys(const std::unordered_map<K, V>& Map)
 {
-  std::vector<Mt> keyvec; // vector to store results
-  keyvec.reserve(Map.size()); // Ensure it is big enough
+  std::vector<K> result; // vector to store results
+  result.reserve(Map.size()); // Ensure it is big enough
+  typename std::unordered_map<K, V>::const_iterator i; // declare map iterator
   // the following loop iterates through the map, gets the key and stores it
-  for(typename std::unordered_map<Mt, T>::const_iterator i = Map.begin();
-      i != Map.end(); i++)
-    keyvec.push_back(i->first);
-  return keyvec;
+  for(i = Map.begin(); i != Map.end(); i++)
+    result.push_back(i->first);
+  return result;
 }
 
 //---------------------------------------------------------------------------//
@@ -98,8 +99,7 @@ template <typename T>
 std::vector<int> order(const std::vector<T>& data)
 {
   std::vector<int> index(data.size(), 0); // a new int vector to store results
-  int i = 0;
-  for (auto &j : index) j = i++; // fills the new vector with 0,1,2,3,..etc
+  std::iota(std::begin(index), std::end(index), 0); // fill with ascending ints
   // Use a lambda function to sort 'index' based on the order of 'data'
   sort(index.begin(), index.end(), [&](const T& a, const T& b)
   {
@@ -109,21 +109,18 @@ std::vector<int> order(const std::vector<T>& data)
 }
 
 //---------------------------------------------------------------------------//
-// Sort one vector by another's order. Modified supplied vector
+// Sort one vector by another's order. Modifies supplied vector
 
 template <typename Ta, typename Tb>
 void sortby(std::vector<Ta>& vec, const std::vector<Tb>& data)
 {
   if(vec.size() == 0) return; // Nothing to do!
-
   if(vec.size() != data.size()) // throw error if vector lengths don't match
     throw std::runtime_error("sortby requires equal-lengthed vectors");
   std::vector<Ta> res; // vector to store results
   // Use order(data) as defined above to sort vec
-  for(auto i : order(data))
-    res.emplace_back(vec[i]);
-  vec = res; // replace vec by the stored results
-  return;
+  for(auto i : order(data)) res.emplace_back(vec[i]);
+  std::swap(res, vec); // replace vec by the stored results
 }
 
 //---------------------------------------------------------------------------//
@@ -164,11 +161,6 @@ bool IsAscii(const std::string&);
 std::vector<unsigned char> bytesFromArray(const std::string&);
 
 //---------------------------------------------------------------------------//
-// reinterprets a vector of bytes as a string
-
-std::string bytestostring(const std::vector<uint8_t>&);
-
-//---------------------------------------------------------------------------//
 // Transforms a vector of strings to a vector of floats
 // (vectorised version of stof)
 
@@ -188,11 +180,6 @@ std::string intToHexstring(int);
 // returns the original character if it is not a digit, a letter or whitespace
 
 char symbol_type(const char);
-
-//---------------------------------------------------------------------------//
-// Removes whitespace from right of a string
-
-void trimRight(std::string&);
 
 //---------------------------------------------------------------------------//
 // Returns the data represented by an Ascii encoded hex string as a vector
@@ -226,7 +213,7 @@ std::vector<int> getints(const std::string&);
 // This lexer retrieves floats from a string. It searches through the entire
 // given string character by character and returns all instances where the
 // result can be interpreted as a decimally represented number. It will also
-// include ints but not hex, octal or scientific notation (eg 10e5)
+// consume and convert integers but not hex, octal or scientific notation
 
 std::vector<float> getnums(const std::string&);
 
@@ -236,6 +223,8 @@ std::vector<float> getnums(const std::string&);
 std::string get_file(const std::string&);
 
 //---------------------------------------------------------------------------//
+// Converts a sequence of Unicode code points (given as a vector of 16 bit
+// unsigned integers) as a utf-8 encoded string
 
 std::string utf(const std::vector<uint16_t>& u);
 

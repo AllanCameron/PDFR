@@ -322,10 +322,10 @@ const  {
     while(objkey.size() > objkeysize) objkey.pop_back(); // then trim to fit
 
     // Now we use this key to decrypt the stream using rc4
-    bytes bytevec = rc4(streambytes, objkey);
+    bytes bytevec = rc4(move(streambytes), objkey);
 
     // finally we convert the resultant bytes to a string
-    std::string restring =  bytestostring(bytevec);
+    std::string restring(bytevec.begin(), bytevec.end());
     return restring;
   }
 
