@@ -343,9 +343,9 @@ vector<size_t> xref::getStreamLoc(int objstart) const
 /*---------------------------------------------------------------------------*/
 // Wrapper for Encryption object so that xref is the only class that uses it
 
-std::string xref::decrypt(std::string s, int obj, int gen) const
+void xref::decrypt(std::string& s, int obj, int gen) const
 {
-  return encryption.decryptStream(s, obj, gen);
+  encryption.decryptStream(s, obj, gen);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -495,7 +495,7 @@ void xrefstream::getRawMatrix()
 
   // applies decompression to stream if needed
   if(dict.get("/Filter").find("/FlateDecode", 0) != string::npos)
-    SS = FlateDecode(move(SS));
+    SS = FlateDecode(SS);
 
   // turn the string into an array of bytes
   std::vector<uint8_t> conv(SS.begin(), SS.end());

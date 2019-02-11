@@ -130,7 +130,7 @@ pdfpage <- function(pdf, page, atomic = FALSE)
   x$Elements$bottom <- round(x$Elements$bottom, 1)
   x$Elements$size <- round(x$Elements$size, 1)
   rownames(x$Elements) <- seq_along(x$Elements[[1]])
-
+  .stopCpp()
   return(x)
 }
 
@@ -245,29 +245,30 @@ getglyphmap <- function(pdf, page = 1)
 #' @param page the page number from which to extract glyphs
 #' @param atomic a boolean - should each letter treated individually?
 #' @param textsize the size of the text to be shown on the plot
+#' @param slices number of pieces to cut page into
 #'
 #' @return no return - prints a ggplot
 #' @export
 #'
 #' @examples segplot(testfiles$leeds, 1)
 ##---------------------------------------------------------------------------##
-segplot <- function(pdf, page = 1, atomic = FALSE, textsize = 1)
+segplot <- function(pdf, page = 1, atomic = FALSE, textsize = 1, slices = 1000)
 {
   x       <- pdfpage(pdf, page, atomic)
   y       <- x$Elements
   y$top   <- y$bottom + y$size;
-  ycounts <- numeric(1000);
-  xcounts <- numeric(1000);
+  ycounts <- numeric(slices);
+  xcounts <- numeric(slices);
   ylines  <- numeric();
   xlines  <- numeric();
   xmax    <- x$Box[3]
   xmin    <- x$Box[1]
   ymax    <- x$Box[4]
   ymin    <- x$Box[2]
-  ybins   <- ymin + 1:1000 * ((ymax - ymin)/1000)
-  xbins   <- xmin + 1:1000 * ((xmax - xmin)/1000)
+  ybins   <- ymin + 1:slices * ((ymax - ymin)/slices)
+  xbins   <- xmin + 1:slices * ((xmax - xmin)/slices)
 
-  for(i in 1:1000)
+  for(i in 1:slices)
   {
     ycounts[i] <- length(which(y$bottom < ybins[i])) -
                   length(which(y$top < ybins[i]));
@@ -328,6 +329,7 @@ getpagestring <- function(pdf, page)
   {
     stop("pdfpage requires a single path to a valid pdf or a raw vector.")
   }
+  .stopCpp()
   return(x)
 }
 
@@ -367,7 +369,7 @@ pdfdoc <- function(pdf)
   x$size <- round(x$size, 1)
   rownames(x) <- seq_along(x[[1]])
   Encoding(x$text) <- "UTF-8"
-
+  .stopCpp()
   return(x)
 }
 

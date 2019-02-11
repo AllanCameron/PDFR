@@ -70,7 +70,7 @@ bytes crypto::chopLong(fourbytes longInt) const
 bytes crypto::perm(std::string str) // takes a string with the permissions int
 {
   // No string == no permissions. Can't decode pdf, so throw an error
-  if(str.length() == 0) throw std::runtime_error("No permission flags");
+  if(str.empty()) throw std::runtime_error("No permission flags");
 
   int flags = stoi(str); // Convert the string to a 4-byte int
 
@@ -97,24 +97,25 @@ bytes crypto::perm(std::string str) // takes a string with the permissions int
 // This function is called several times with different parameters as part
 // of the main md5 algorithm. It can be considered a "shuffler" of bytes
 
-void crypto::md5mix(int n, fourbytes& a, fourbytes b, fourbytes c,
-                  fourbytes  d, fourbytes e, fourbytes f, fourbytes g) const
+void crypto::md5mix(int n, deque<fourbytes>& m, fourbytes e, fourbytes f,
+                    fourbytes g) const
 {
   fourbytes mixer; // temporary container for results
 
   // chops and mangles bytes in various ways as per md5 algorithm
   switch(n)
   {
-    case 1  : mixer = (a + ((b & c) | (~b & d)) + e + f); break;
-    case 2  : mixer = (a + ((b & d) | (c & ~d)) + e + f); break;
-    case 3  : mixer = (a + (b ^ c ^ d) + e + f);          break;
-    case 4  : mixer = (a + (c ^ (b | ~d)) + e + f);       break;
+    case 1  : mixer = (m[0] + ((m[1] & m[2]) | (~m[1] & m[3])) + e + f); break;
+    case 2  : mixer = (m[0] + ((m[1] & m[3]) | (m[2] & ~m[3])) + e + f); break;
+    case 3  : mixer = (m[0] + (m[1] ^ m[2] ^ m[3]) + e + f);          break;
+    case 4  : mixer = (m[0] + (m[2] ^ (m[1] | ~m[3])) + e + f);       break;
     default : throw std::runtime_error("MD5 error"); // this function needs n!
   }
-  mixer &= 0xffffffff; // applies a four-byte mask
+  mixer &= 0xffffffff; // applies four-byte mask
 
-  a = b + (((mixer << g) | (mixer >> (32 - g))) & 0xffffffff);
-  return;
+  m[0] = m[1] + (((mixer << g) | (mixer >> (32 - g))) & 0xffffffff);
+  m.push_front(m.back());
+  m.pop_back();
 }
 
 /*---------------------------------------------------------------------------*/
@@ -123,13 +124,11 @@ void crypto::md5mix(int n, fourbytes& a, fourbytes b, fourbytes c,
 
 bytes crypto::md5(bytes input) const
 {
+  PROFC_NODE("md5");
   int len = input.size();
   std::vector<fourbytes> x {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}; // 16 * fourbytes
   int nblocks = (len + 72) / 64;
-  fourbytes a = 1732584193;  //----//--------------------------------//
-  fourbytes b = 4023233417;        //  Starting values for pseudo -  //
-  fourbytes c = 2562383102;        //    random number generator     //
-  fourbytes d = 271733878;   //----//--------------------------------//
+  deque<fourbytes> mixvars = {1732584193, 4023233417, 2562383102, 271733878};
 
   int i, j, k = 0;
   for (i = 0; i < nblocks; ++i)
@@ -155,91 +154,69 @@ bytes crypto::md5(bytes input) const
         x.at(j++) = 0;
       x.at(14) = len << 3;
     }
-
-    fourbytes astore = a; //------------------------------//
-    fourbytes bstore = b; //  Store the interim results   //
-    fourbytes cstore = c; //  to be added on again later  //
-    fourbytes dstore = d; //------------------------------//
-
+    deque<fourbytes> initvars = mixvars;
+    vector<fourbytes> rnums = {
+      3614090360,  3905402710,   606105819,  3250441966,  4118548399,
+      1200080426,  2821735955,  4249261313,  1770035416,  2336552879,
+      4294925233,  2304563134,  1804603682,  4254626195,  2792965006,
+      1236535329};
     // now shuffle the deck using the md5mix function
+    for(int n = 0; n < 16; n++)
+      md5mix(1, mixvars, x[n], rnums[n], (5 * n) % 20 + 7);
 
-    md5mix(1, a, b, c, d, x.at(0),  3614090360,  7);
-    md5mix(1, d, a, b, c, x.at(1),  3905402710, 12);
-    md5mix(1, c, d, a, b, x.at(2),  606105819,  17);
-    md5mix(1, b, c, d, a, x.at(3),  3250441966, 22);
-    md5mix(1, a, b, c, d, x.at(4),  4118548399,  7);
-    md5mix(1, d, a, b, c, x.at(5),  1200080426, 12);
-    md5mix(1, c, d, a, b, x.at(6),  2821735955, 17);
-    md5mix(1, b, c, d, a, x.at(7),  4249261313, 22);
-    md5mix(1, a, b, c, d, x.at(8),  1770035416,  7);
-    md5mix(1, d, a, b, c, x.at(9),  2336552879, 12);
-    md5mix(1, c, d, a, b, x.at(10), 4294925233, 17);
-    md5mix(1, b, c, d, a, x.at(11), 2304563134, 22);
-    md5mix(1, a, b, c, d, x.at(12), 1804603682,  7);
-    md5mix(1, d, a, b, c, x.at(13), 4254626195, 12);
-    md5mix(1, c, d, a, b, x.at(14), 2792965006, 17);
-    md5mix(1, b, c, d, a, x.at(15), 1236535329, 22);
-    md5mix(2, a, b, c, d, x.at(1),  4129170786,  5);
-    md5mix(2, d, a, b, c, x.at(6),  3225465664,  9);
-    md5mix(2, c, d, a, b, x.at(11), 643717713,  14);
-    md5mix(2, b, c, d, a, x.at(0),  3921069994, 20);
-    md5mix(2, a, b, c, d, x.at(5),  3593408605,  5);
-    md5mix(2, d, a, b, c, x.at(10), 38016083,    9);
-    md5mix(2, c, d, a, b, x.at(15), 3634488961, 14);
-    md5mix(2, b, c, d, a, x.at(4),  3889429448, 20);
-    md5mix(2, a, b, c, d, x.at(9),  568446438,   5);
-    md5mix(2, d, a, b, c, x.at(14), 3275163606,  9);
-    md5mix(2, c, d, a, b, x.at(3),  4107603335, 14);
-    md5mix(2, b, c, d, a, x.at(8),  1163531501, 20);
-    md5mix(2, a, b, c, d, x.at(13), 2850285829,  5);
-    md5mix(2, d, a, b, c, x.at(2),  4243563512,  9);
-    md5mix(2, c, d, a, b, x.at(7),  1735328473, 14);
-    md5mix(2, b, c, d, a, x.at(12), 2368359562, 20);
-    md5mix(3, a, b, c, d, x.at(5),  4294588738,  4);
-    md5mix(3, d, a, b, c, x.at(8),  2272392833, 11);
-    md5mix(3, c, d, a, b, x.at(11), 1839030562, 16);
-    md5mix(3, b, c, d, a, x.at(14), 4259657740, 23);
-    md5mix(3, a, b, c, d, x.at(1),  2763975236,  4);
-    md5mix(3, d, a, b, c, x.at(4),  1272893353, 11);
-    md5mix(3, c, d, a, b, x.at(7),  4139469664, 16);
-    md5mix(3, b, c, d, a, x.at(10), 3200236656, 23);
-    md5mix(3, a, b, c, d, x.at(13), 681279174,   4);
-    md5mix(3, d, a, b, c, x.at(0),  3936430074, 11);
-    md5mix(3, c, d, a, b, x.at(3),  3572445317, 16);
-    md5mix(3, b, c, d, a, x.at(6),  76029189,   23);
-    md5mix(3, a, b, c, d, x.at(9),  3654602809,  4);
-    md5mix(3, d, a, b, c, x.at(12), 3873151461, 11);
-    md5mix(3, c, d, a, b, x.at(15), 530742520,  16);
-    md5mix(3, b, c, d, a, x.at(2),  3299628645, 23);
-    md5mix(4, a, b, c, d, x.at(0),  4096336452,  6);
-    md5mix(4, d, a, b, c, x.at(7),  1126891415, 10);
-    md5mix(4, c, d, a, b, x.at(14), 2878612391, 15);
-    md5mix(4, b, c, d, a, x.at(5),  4237533241, 21);
-    md5mix(4, a, b, c, d, x.at(12), 1700485571,  6);
-    md5mix(4, d, a, b, c, x.at(3),  2399980690, 10);
-    md5mix(4, c, d, a, b, x.at(10), 4293915773, 15);
-    md5mix(4, b, c, d, a, x.at(1),  2240044497, 21);
-    md5mix(4, a, b, c, d, x.at(8),  1873313359,  6);
-    md5mix(4, d, a, b, c, x.at(15), 4264355552, 10);
-    md5mix(4, c, d, a, b, x.at(6),  2734768916, 15);
-    md5mix(4, b, c, d, a, x.at(13), 1309151649, 21);
-    md5mix(4, a, b, c, d, x.at(4),  4149444226,  6);
-    md5mix(4, d, a, b, c, x.at(11), 3174756917, 10);
-    md5mix(4, c, d, a, b, x.at(2),  718787259,  15);
-    md5mix(4, b, c, d, a, x.at(9),  3951481745, 21);
+    md5mix(2, mixvars, x.at(1),  4129170786,  5);
+    md5mix(2, mixvars, x.at(6),  3225465664,  9);
+    md5mix(2, mixvars, x.at(11), 643717713,  14);
+    md5mix(2, mixvars, x.at(0),  3921069994, 20);
+    md5mix(2, mixvars, x.at(5),  3593408605,  5);
+    md5mix(2, mixvars, x.at(10), 38016083,    9);
+    md5mix(2, mixvars, x.at(15), 3634488961, 14);
+    md5mix(2, mixvars, x.at(4),  3889429448, 20);
+    md5mix(2, mixvars, x.at(9),  568446438,   5);
+    md5mix(2, mixvars, x.at(14), 3275163606,  9);
+    md5mix(2, mixvars, x.at(3),  4107603335, 14);
+    md5mix(2, mixvars, x.at(8),  1163531501, 20);
+    md5mix(2, mixvars, x.at(13), 2850285829,  5);
+    md5mix(2, mixvars, x.at(2),  4243563512,  9);
+    md5mix(2, mixvars, x.at(7),  1735328473, 14);
+    md5mix(2, mixvars, x.at(12), 2368359562, 20);
+    md5mix(3, mixvars, x.at(5),  4294588738,  4);
+    md5mix(3, mixvars, x.at(8),  2272392833, 11);
+    md5mix(3, mixvars, x.at(11), 1839030562, 16);
+    md5mix(3, mixvars, x.at(14), 4259657740, 23);
+    md5mix(3, mixvars, x.at(1),  2763975236,  4);
+    md5mix(3, mixvars, x.at(4),  1272893353, 11);
+    md5mix(3, mixvars, x.at(7),  4139469664, 16);
+    md5mix(3, mixvars, x.at(10), 3200236656, 23);
+    md5mix(3, mixvars, x.at(13), 681279174,   4);
+    md5mix(3, mixvars, x.at(0),  3936430074, 11);
+    md5mix(3, mixvars, x.at(3),  3572445317, 16);
+    md5mix(3, mixvars, x.at(6),  76029189,   23);
+    md5mix(3, mixvars, x.at(9),  3654602809,  4);
+    md5mix(3, mixvars, x.at(12), 3873151461, 11);
+    md5mix(3, mixvars, x.at(15), 530742520,  16);
+    md5mix(3, mixvars, x.at(2),  3299628645, 23);
+    md5mix(4, mixvars, x.at(0),  4096336452,  6);
+    md5mix(4, mixvars, x.at(7),  1126891415, 10);
+    md5mix(4, mixvars, x.at(14), 2878612391, 15);
+    md5mix(4, mixvars, x.at(5),  4237533241, 21);
+    md5mix(4, mixvars, x.at(12), 1700485571,  6);
+    md5mix(4, mixvars, x.at(3),  2399980690, 10);
+    md5mix(4, mixvars, x.at(10), 4293915773, 15);
+    md5mix(4, mixvars, x.at(1),  2240044497, 21);
+    md5mix(4, mixvars, x.at(8),  1873313359,  6);
+    md5mix(4, mixvars, x.at(15), 4264355552, 10);
+    md5mix(4, mixvars, x.at(6),  2734768916, 15);
+    md5mix(4, mixvars, x.at(13), 1309151649, 21);
+    md5mix(4, mixvars, x.at(4),  4149444226,  6);
+    md5mix(4, mixvars, x.at(11), 3174756917, 10);
+    md5mix(4, mixvars, x.at(2),  718787259,  15);
+    md5mix(4, mixvars, x.at(9),  3951481745, 21);
 
-    a += astore;  //-----------------------------------//
-    b += bstore;  // Add the numbers to each variable  //
-    c += cstore;  // that was stored before shuffling  //
-    d += dstore;  //-----------------------------------//
+    for(int m = 0; m < 4; m++) mixvars[m] += initvars[m];
   }
   bytes output;                // create empty output vector for output
-
-  concat(output, chopLong(a)); //--------------------------------------------//
-  concat(output, chopLong(b)); // For each of a, b, c, and d, return vector  //
-  concat(output, chopLong(c)); // of bytes low order first and add to output //
-  concat(output, chopLong(d)); //--------------------------------------------//
-
+  for(auto m : mixvars) concat(output, chopLong(m));
   return output;
 }
 
@@ -262,40 +239,36 @@ bytes crypto::md5(std::string input) const
 // directly back into the original message using exactly the same key.
 // The algorithm is now in the public domain
 
-bytes crypto::rc4(bytes msg, bytes key) const
-  {
-    int keyLen = key.size();
-    int msgLen = msg.size();
-    uint8_t a, b, t, x, y;
-    int i;
-    bytes state;
-    for (i = 0; i <= 0xff; ++i) state.push_back(i); // fill state with 0 - 0xff
-    if (keyLen == 0)
-      return state;
-    a = b = x = y = 0;
-    for (auto& i : state)
-      {
-        b = (key[a] + i + b) % 256;
-        t = i;
-        i = state[b];
-        state[b] = t;
-        a = (a + 1) % keyLen;
-      }
+void crypto::rc4(bytes& msg, bytes key) const
+{
+  PROFC_NODE("rc4");
+  int keyLen = key.size();
+  int msgLen = msg.size();
+  uint8_t a, b, t, x, y;
+  int i;
+  bytes state;
+  for (i = 0; i <= 0xff; ++i) state.push_back(i); // fill state with 0 - 0xff
+  if (keyLen == 0)
+    return;
+  a = b = x = y = 0;
+  for (auto& i : state)
+    {
+      b = (key[a] + i + b) % 256;
+      t = i;
+      i = state[b];
+      state[b] = t;
+      a = (a + 1) % keyLen;
+    }
 
-    bytes res = msg;
-    for(int k = 0; k < msgLen; k++)
-      {
-        uint8_t x1, y1, tx, ty;
-        x1 = x = (x + 1) % 256;
-        y1 = y = (state[x] + y) % 256;
-        tx = state[x1];
-        ty = state[y1];
-        state[x1] = ty;
-        state[y1] = tx;
-        res[k] = res[k] ^ state[(tx + ty) % 256];
-      }
-    return res;
-  }
+  for(int k = 0; k < msgLen; k++)
+    {
+      uint8_t x1, y1;
+      x1 = x = (x + 1) % 256;
+      y1 = y = (state[x] + y) % 256;
+      iter_swap(state.begin() + x1, state.begin() + y1);
+      msg[k] = msg[k] ^ state[(state[x1] + state[y1]) % 256];
+    }
+}
 
 /*---------------------------------------------------------------------------*/
 // In order to decrypt an encrypted pdf stream, we need a few pieces of
@@ -309,25 +282,24 @@ bytes crypto::rc4(bytes msg, bytes key) const
 // key length plus 5, is then used as the key with which to decrypt the
 // stream using the rc4 algorithm.
 
-std::string crypto::decryptStream(std::string streamstr, int objNum, int objGen)
+void crypto::decryptStream(std::string& streamstr, int objNum, int objGen)
 const  {
-    bytes streambytes(streamstr.begin(), streamstr.end()); // stream as bytes
-    bytes objkey = filekey; // Start building the object key with the file key
-    concat(objkey, chopLong(objNum)); // append the bytes of the object number
-    objkey.pop_back(); // we only wanted the three lowest order bytes; pop last
-    objkey.push_back( objGen & 0xff); // append lowest order byte of gen number
-    objkey.push_back((objGen >> 8) & 0xff); // then the second lowest byte
-    uint8_t objkeysize = objkey.size();
-    objkey = md5(objkey); // md5 hash the resultant key
-    while(objkey.size() > objkeysize) objkey.pop_back(); // then trim to fit
+  bytes streambytes(streamstr.begin(), streamstr.end()); // stream as bytes
+  bytes objkey = filekey; // Start building the object key with the file key
+  concat(objkey, chopLong(objNum)); // append the bytes of the object number
+  objkey.pop_back(); // we only wanted the three lowest order bytes; pop last
+  objkey.push_back( objGen & 0xff); // append lowest order byte of gen number
+  objkey.push_back((objGen >> 8) & 0xff); // then the second lowest byte
+  uint8_t objkeysize = objkey.size();
+  objkey = md5(objkey); // md5 hash the resultant key
+  while(objkey.size() > objkeysize) objkey.pop_back(); // then trim to fit
 
-    // Now we use this key to decrypt the stream using rc4
-    bytes bytevec = rc4(move(streambytes), objkey);
+  // Now we use this key to decrypt the stream using rc4
+  rc4(streambytes, objkey);
 
-    // finally we convert the resultant bytes to a string
-    std::string restring(bytevec.begin(), bytevec.end());
-    return restring;
-  }
+  // finally we convert the resultant bytes to a string
+  streamstr = std::string(streambytes.begin(), streambytes.end());
+}
 
 /*---------------------------------------------------------------------------*/
 // Gets the bytes comprising the hashed owner password from the encryption
@@ -380,7 +352,8 @@ void crypto::getFilekey()
 void crypto::checkKeyR2()
 {
   bytes ubytes = getPassword("/U"); // user password cipher
-  bytes checkans = rc4(UPW, filekey); // rc4 of default user password
+  bytes checkans = UPW;
+  rc4(checkans, filekey); // rc4 of default user password
   if(checkans.size() == 32 && checkans == ubytes) return;
   throw runtime_error("Incorrect cryptkey");
 }

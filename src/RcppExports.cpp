@@ -135,6 +135,15 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// stopCpp
+void stopCpp();
+RcppExport SEXP _PDFR_stopCpp() {
+BEGIN_RCPP
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    stopCpp();
+    return R_NilValue;
+END_RCPP
+}
 
 RcppExport SEXP run_testthat_tests();
 
@@ -150,6 +159,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_PDFR_pagestringraw", (DL_FUNC) &_PDFR_pagestringraw, 2},
     {"_PDFR_pdfdoc", (DL_FUNC) &_PDFR_pdfdoc, 1},
     {"_PDFR_pdfdocraw", (DL_FUNC) &_PDFR_pdfdocraw, 1},
+    {"_PDFR_stopCpp", (DL_FUNC) &_PDFR_stopCpp, 0},
     {"run_testthat_tests",  (DL_FUNC) &run_testthat_tests,  0},
     {NULL, NULL, 0}
 };

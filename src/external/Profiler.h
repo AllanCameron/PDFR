@@ -70,6 +70,7 @@ class TheNodeList {
     static TheNodeList nodes;
     return nodes;
   }
+  void endprofiler(){this->Print();}
   void Print() {
     printf("--------------------------------------------------------------\n");
     printf("name                           count      elapsed      us/call\n");

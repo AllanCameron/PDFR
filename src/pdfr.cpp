@@ -324,4 +324,10 @@ std::string pagestringraw(const std::vector<uint8_t>& rawfile, int pagenum)
   return s;
 }
 
+#ifdef PROFILER_PDFR
+void stopCpp(){TheNodeList::Instance().endprofiler();}
+#endif
 
+#ifndef PROFILER_PDFR
+void stopCpp(){}
+#endif

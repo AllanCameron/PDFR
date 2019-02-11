@@ -51,6 +51,7 @@
 
 #include "dictionary.h" // The class needs utilities and has to be able to
                         // negotiate pdf dictionaries.
+#include<deque>
 
 //---------------------------------------------------------------------------//
 // A std::vector<uint8_t> is more succinctly described by the type name "bytes"
@@ -81,7 +82,7 @@ public:
 // the class. It takes the raw stream, the object and generation numbers then
 // returns the decrypted stream.
 
-  std::string decryptStream(std::string, int obj, int gen) const;
+  void decryptStream(std::string&, int obj, int gen) const;
 
 
 private:
@@ -98,17 +99,11 @@ private:
 
   bytes chopLong(fourbytes) const;    // Chops fourbytes into 4 bytes
   bytes perm(std::string);            // Return permission flags for file
-  void md5mix(int,                    //---------//
-                    fourbytes&,            //
-                    fourbytes,             //
-                    fourbytes,             //--> "byte mangler" for md5
-                    fourbytes,             //
-                    fourbytes,             //
-                    fourbytes,             //
-                    fourbytes) const; //---------//
+  void md5mix(int, std::deque<fourbytes>&,
+              fourbytes, fourbytes, fourbytes) const;
   bytes md5(bytes input) const;       // Gives md5 hash of a vector of raw bytes
   bytes md5(std::string input) const; // Gives md5 hash of a string (as bytes)
-  bytes rc4(bytes, bytes) const; // Gives rc4 cipher of message:key pair, or the
+  void rc4(bytes&, bytes) const; // Gives rc4 cipher of message:key pair, or the
                                  // original message, given a key and the cipher
   bytes getPassword(const std::string&);   // gets /O and /U cipher
   void getFilekey();                       // constructs file key

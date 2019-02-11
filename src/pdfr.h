@@ -157,4 +157,7 @@ Rcpp::DataFrame pdfdoc(const std::string& s);
 // [[Rcpp::export(.pdfdocraw)]]
 Rcpp::DataFrame pdfdocraw(const std::vector<uint8_t>& s);
 
+// [[Rcpp::export(.stopCpp)]]
+void stopCpp();
+
 #endif

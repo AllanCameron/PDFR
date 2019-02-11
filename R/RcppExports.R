@@ -45,3 +45,7 @@
     .Call(`_PDFR_pdfdocraw`, s)
 }
 
+.stopCpp <- function() {
+    invisible(.Call(`_PDFR_stopCpp`))
+}
+
