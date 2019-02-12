@@ -33,26 +33,61 @@ using namespace std;
 // The default user password cipher is required to construct the file key and is
 // declared as a static member of the crypto class; it is defined here
 
-bytes crypto::UPW = { 0x28, 0xBF, 0x4E, 0x5E, 0x4E, 0x75, 0x8A, 0x41,
-                      0x64, 0x00, 0x4E, 0x56, 0xFF, 0xFA, 0x01, 0x08,
-                      0x2E, 0x2E, 0x00, 0xB6, 0xD0, 0x68, 0x3E, 0x80,
-                      0x2F, 0x0C, 0xA9, 0xFE, 0x64, 0x53, 0x69, 0x7A };
+bytes crypto::UPW =
+{
+  0x28, 0xBF, 0x4E, 0x5E, 0x4E, 0x75, 0x8A, 0x41,
+  0x64, 0x00, 0x4E, 0x56, 0xFF, 0xFA, 0x01, 0x08,
+  0x2E, 0x2E, 0x00, 0xB6, 0xD0, 0x68, 0x3E, 0x80,
+  0x2F, 0x0C, 0xA9, 0xFE, 0x64, 0x53, 0x69, 0x7A
+};
 
+//---------------------------------------------------------------------------//
+// The md5 algorithm uses pseudorandom numbers to chop its message into bytes.
+// Having them in a vector stops us from having to call the md5mix function
+// with each seperate number 64 times.
+
+static vector<fourbytes> rnums =
+{
+  3614090360,  3905402710,   606105819,  3250441966,  4118548399,
+  1200080426,  2821735955,  4249261313,  1770035416,  2336552879,
+  4294925233,  2304563134,  1804603682,  4254626195,  2792965006,
+  1236535329,  4129170786,  3225465664,   643717713,  3921069994,
+  3593408605,    38016083,  3634488961,  3889429448,   568446438,
+  3275163606,  4107603335,  1163531501,  2850285829,  4243563512,
+  1735328473,  2368359562,  4294588738,  2272392833,  1839030562,
+  4259657740,  2763975236,  1272893353,  4139469664,  3200236656,
+   681279174,  3936430074,  3572445317,    76029189,  3654602809,
+  3873151461,   530742520,  3299628645,  4096336452,  1126891415,
+  2878612391,  4237533241,  1700485571,  2399980690,  4293915773,
+  2240044497,  1873313359,  4264355552,  2734768916,  1309151649,
+  4149444226,  3174756917,   718787259,  3951481745
+};
+
+//---------------------------------------------------------------------------//
+// More pseudorandom numbers for the md5 hash
+
+std::vector<std::vector<fourbytes>> mixarray =
+{
+  {7, 12, 17, 22},
+  {5,  9, 14, 20},
+  {4, 11, 16, 23},
+  {6, 10, 15, 21},
+};
 //---------------------------------------------------------------------------//
 // This simple function "chops" a four-byte int to a vector of four bytes.
 // The bytes are returned lowest-order first as this is the typical use.
 
 bytes crypto::chopLong(fourbytes longInt) const
 {
-  bytes result; //container for result
-
-   // The mask specifies that only the last byte is read when used with &
+  // The mask specifies that only the last byte is read when used with &
   fourbytes mask = 0x000000ff;
-  result.push_back(longInt & mask);         // read last byte
-  result.push_back((longInt >> 8) & mask);  // read penultimate byte
-  result.push_back((longInt >> 16) & mask); // read second byte
-  result.push_back((longInt >> 24) & mask); // read first byte
-
+  bytes result =
+  {
+    (uint8_t) (longInt & mask),         // read last byte
+    (uint8_t) ((longInt >> 8) & mask),  // read penultimate byte
+    (uint8_t) ((longInt >> 16) & mask), // read second byte
+    (uint8_t) ((longInt >> 24) & mask)  // read first byte
+  };
   return result;
 }
 
@@ -97,22 +132,23 @@ bytes crypto::perm(std::string str) // takes a string with the permissions int
 // This function is called several times with different parameters as part
 // of the main md5 algorithm. It can be considered a "shuffler" of bytes
 
-void crypto::md5mix(int n, deque<fourbytes>& m, fourbytes e, fourbytes f,
-                    fourbytes g) const
+void crypto::md5mix(int n, deque<fourbytes>& m, vector<fourbytes>& x) const
 {
-  fourbytes mixer; // temporary container for results
-
-  // chops and mangles bytes in various ways as per md5 algorithm
-  switch(n)
+  fourbytes mixer, e; // temporary container for results
+  fourbytes f = rnums[n];
+  fourbytes g = mixarray[n / 16][n % 4];
+  switch(n / 16 + 1) // mangles bytes in various ways as per md5 algorithm
   {
-    case 1  : mixer = (m[0] + ((m[1] & m[2]) | (~m[1] & m[3])) + e + f); break;
-    case 2  : mixer = (m[0] + ((m[1] & m[3]) | (m[2] & ~m[3])) + e + f); break;
-    case 3  : mixer = (m[0] + (m[1] ^ m[2] ^ m[3]) + e + f);          break;
-    case 4  : mixer = (m[0] + (m[2] ^ (m[1] | ~m[3])) + e + f);       break;
-    default : throw std::runtime_error("MD5 error"); // this function needs n!
+    case 1  : e = x[(1 * n + 0) % 16];
+              mixer = (m[0] + ((m[1] & m[2]) | (~m[1] & m[3])) + e + f); break;
+    case 2  : e = x[(5 * n + 1) % 16];
+              mixer = (m[0] + ((m[1] & m[3]) | (m[2] & ~m[3])) + e + f); break;
+    case 3  : e = x[(3 * n + 5) % 16];
+              mixer = (m[0] + (m[1] ^ m[2] ^ m[3]) + e + f);             break;
+    case 4  : e = x[(7 * n + 0) % 16];
+              mixer = (m[0] + (m[2] ^ (m[1] | ~m[3])) + e + f);          break;
+    default: throw runtime_error("md5 error: n > 63");
   }
-  mixer &= 0xffffffff; // applies four-byte mask
-
   m[0] = m[1] + (((mixer << g) | (mixer >> (32 - g))) & 0xffffffff);
   m.push_front(m.back());
   m.pop_back();
@@ -122,100 +158,32 @@ void crypto::md5mix(int n, deque<fourbytes>& m, fourbytes e, fourbytes f,
 // The main md5 algorithm. This version of if was modified from various
 // open source online implementations.
 
-bytes crypto::md5(bytes input) const
+bytes crypto::md5(bytes msg) const
 {
-  PROFC_NODE("md5");
-  int len = input.size();
-  std::vector<fourbytes> x {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}; // 16 * fourbytes
+  int len = msg.size();
+  std::vector<fourbytes> x(16, 0); // 16 * fourbytes
   int nblocks = (len + 72) / 64;
   deque<fourbytes> mixvars = {1732584193, 4023233417, 2562383102, 271733878};
-
   int i, j, k = 0;
   for (i = 0; i < nblocks; ++i)
   {
     for (j = 0; j < 16 && k < len - 3; ++j, k += 4)
-      x[j] = (((((input[k+3] << 8) + input[k+2]) << 8) + input[k+1]) << 8)
-      + input[k];
+      x[j] = (((((msg[k+3] << 8) + msg[k+2]) << 8) + msg[k+1]) << 8) + msg[k];
     if (i == nblocks - 1)
     {
       if (k == len - 3)
-        x.at(j) = 0x80000000 +
-                  (((input.at(k + 2) << 8) +
-                  input.at(k + 1)) << 8) +
-                  input.at(k);
-      else if (k == len - 2)
-        x.at(j) = 0x800000 + (input.at(k + 1) << 8) + input.at(k);
-      else if (k == len - 1)
-        x.at(j) = 0x8000 + input.at(k);
-      else
-        x.at(j) = 0x80;
-      j++;
-      while (j < 16)
-        x.at(j++) = 0;
-      x.at(14) = len << 3;
+        x[j++] = 0x80000000 + (((msg[k+2] << 8) + msg[k+1]) << 8) + msg[k];
+      else if (k == len - 2) x[j++] = 0x800000 + (msg[k + 1] << 8) + msg[k];
+      else if (k == len - 1) x[j++] = 0x8000 + msg[k];
+      else x[j++] = 0x80;
+      while (j < 16) x[j++] = 0;
+      x[14] = len << 3;
     }
     deque<fourbytes> initvars = mixvars;
-    vector<fourbytes> rnums = {
-      3614090360,  3905402710,   606105819,  3250441966,  4118548399,
-      1200080426,  2821735955,  4249261313,  1770035416,  2336552879,
-      4294925233,  2304563134,  1804603682,  4254626195,  2792965006,
-      1236535329};
-    // now shuffle the deck using the md5mix function
-    for(int n = 0; n < 16; n++)
-      md5mix(1, mixvars, x[n], rnums[n], (5 * n) % 20 + 7);
-
-    md5mix(2, mixvars, x.at(1),  4129170786,  5);
-    md5mix(2, mixvars, x.at(6),  3225465664,  9);
-    md5mix(2, mixvars, x.at(11), 643717713,  14);
-    md5mix(2, mixvars, x.at(0),  3921069994, 20);
-    md5mix(2, mixvars, x.at(5),  3593408605,  5);
-    md5mix(2, mixvars, x.at(10), 38016083,    9);
-    md5mix(2, mixvars, x.at(15), 3634488961, 14);
-    md5mix(2, mixvars, x.at(4),  3889429448, 20);
-    md5mix(2, mixvars, x.at(9),  568446438,   5);
-    md5mix(2, mixvars, x.at(14), 3275163606,  9);
-    md5mix(2, mixvars, x.at(3),  4107603335, 14);
-    md5mix(2, mixvars, x.at(8),  1163531501, 20);
-    md5mix(2, mixvars, x.at(13), 2850285829,  5);
-    md5mix(2, mixvars, x.at(2),  4243563512,  9);
-    md5mix(2, mixvars, x.at(7),  1735328473, 14);
-    md5mix(2, mixvars, x.at(12), 2368359562, 20);
-    md5mix(3, mixvars, x.at(5),  4294588738,  4);
-    md5mix(3, mixvars, x.at(8),  2272392833, 11);
-    md5mix(3, mixvars, x.at(11), 1839030562, 16);
-    md5mix(3, mixvars, x.at(14), 4259657740, 23);
-    md5mix(3, mixvars, x.at(1),  2763975236,  4);
-    md5mix(3, mixvars, x.at(4),  1272893353, 11);
-    md5mix(3, mixvars, x.at(7),  4139469664, 16);
-    md5mix(3, mixvars, x.at(10), 3200236656, 23);
-    md5mix(3, mixvars, x.at(13), 681279174,   4);
-    md5mix(3, mixvars, x.at(0),  3936430074, 11);
-    md5mix(3, mixvars, x.at(3),  3572445317, 16);
-    md5mix(3, mixvars, x.at(6),  76029189,   23);
-    md5mix(3, mixvars, x.at(9),  3654602809,  4);
-    md5mix(3, mixvars, x.at(12), 3873151461, 11);
-    md5mix(3, mixvars, x.at(15), 530742520,  16);
-    md5mix(3, mixvars, x.at(2),  3299628645, 23);
-    md5mix(4, mixvars, x.at(0),  4096336452,  6);
-    md5mix(4, mixvars, x.at(7),  1126891415, 10);
-    md5mix(4, mixvars, x.at(14), 2878612391, 15);
-    md5mix(4, mixvars, x.at(5),  4237533241, 21);
-    md5mix(4, mixvars, x.at(12), 1700485571,  6);
-    md5mix(4, mixvars, x.at(3),  2399980690, 10);
-    md5mix(4, mixvars, x.at(10), 4293915773, 15);
-    md5mix(4, mixvars, x.at(1),  2240044497, 21);
-    md5mix(4, mixvars, x.at(8),  1873313359,  6);
-    md5mix(4, mixvars, x.at(15), 4264355552, 10);
-    md5mix(4, mixvars, x.at(6),  2734768916, 15);
-    md5mix(4, mixvars, x.at(13), 1309151649, 21);
-    md5mix(4, mixvars, x.at(4),  4149444226,  6);
-    md5mix(4, mixvars, x.at(11), 3174756917, 10);
-    md5mix(4, mixvars, x.at(2),  718787259,  15);
-    md5mix(4, mixvars, x.at(9),  3951481745, 21);
-
-    for(int m = 0; m < 4; m++) mixvars[m] += initvars[m];
+    for(int n = 0; n < 64; n++) md5mix(n, mixvars, x);
+    for(int m = 0; m < 4;  m++) mixvars[m] += initvars[m];
   }
-  bytes output;                // create empty output vector for output
+  bytes output; // create empty output vector for output
   for(auto m : mixvars) concat(output, chopLong(m));
   return output;
 }
@@ -244,30 +212,27 @@ void crypto::rc4(bytes& msg, bytes key) const
   PROFC_NODE("rc4");
   int keyLen = key.size();
   int msgLen = msg.size();
-  uint8_t a, b, t, x, y;
+  uint8_t a, b, x, y;
   int i;
   bytes state;
   for (i = 0; i <= 0xff; ++i) state.push_back(i); // fill state with 0 - 0xff
-  if (keyLen == 0)
-    return;
+  if (keyLen == 0) return;
   a = b = x = y = 0;
   for (auto& i : state)
-    {
-      b = (key[a] + i + b) % 256;
-      t = i;
-      i = state[b];
-      state[b] = t;
-      a = (a + 1) % keyLen;
-    }
+  {
+    b = (key[a] + i + b) % 256;
+    swap(i, state[b]);
+    a = (a + 1) % keyLen;
+  }
 
   for(int k = 0; k < msgLen; k++)
-    {
-      uint8_t x1, y1;
-      x1 = x = (x + 1) % 256;
-      y1 = y = (state[x] + y) % 256;
-      iter_swap(state.begin() + x1, state.begin() + y1);
-      msg[k] = msg[k] ^ state[(state[x1] + state[y1]) % 256];
-    }
+  {
+    uint8_t x1, y1;
+    x1 = x = (x + 1) % 256;
+    y1 = y = (state[x] + y) % 256;
+    iter_swap(state.begin() + x1, state.begin() + y1);
+    msg[k] = msg[k] ^ state[(state[x1] + state[y1]) % 256];
+  }
 }
 
 /*---------------------------------------------------------------------------*/

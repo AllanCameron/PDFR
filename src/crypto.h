@@ -99,8 +99,7 @@ private:
 
   bytes chopLong(fourbytes) const;    // Chops fourbytes into 4 bytes
   bytes perm(std::string);            // Return permission flags for file
-  void md5mix(int, std::deque<fourbytes>&,
-              fourbytes, fourbytes, fourbytes) const;
+  void md5mix(int, std::deque<fourbytes>&, std::vector<fourbytes>&) const;
   bytes md5(bytes input) const;       // Gives md5 hash of a vector of raw bytes
   bytes md5(std::string input) const; // Gives md5 hash of a string (as bytes)
   void rc4(bytes&, bytes) const; // Gives rc4 cipher of message:key pair, or the
