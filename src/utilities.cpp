@@ -261,53 +261,32 @@ vector<int> getObjRefs(const string& s)
   for(const auto& i : s)
   {
     char m = symbol_type(i); // finds out if current char is digit, letter, ws
-    if(state == WAIT_FOR_START)
+    switch(state)
     {
-      if(m == 'D')
-      {
-        buf += i;
-        state = IN_FIRST_INT;
-      }
-      continue; // restarts next iteration of loop.
-    }
-    if(state == IN_FIRST_INT)
-    {
-      switch(m)
-      {
-        case 'D' : buf += i; break;
-        case ' ' : state = WAIT_FOR_GEN; break;
-        default:   buf.clear(); state = WAIT_FOR_START;
-      }
-      continue;
-    }
-    if(state == WAIT_FOR_GEN)
-    {
-      switch(m)
-      {
-        case 'D' : state = IN_GEN; break;
-        default:   state = WAIT_FOR_START; break;
-      }
-      continue;
-    }
-    if(state == IN_GEN)
-    {
-      switch(m)
-      {
-        case 'D' : break;
-        case ' ' : state = WAIT_FOR_R; break;
-        default:   buf.clear(); state = WAIT_FOR_START; break;
-      }
-      continue;
-    }
-    if(state == WAIT_FOR_R)
-    {
-      switch(m)
-      {
-        case 'L' : if(i == 'R') res.push_back(stoi(buf));
-                   buf.clear(); state = WAIT_FOR_START; break;
-        default:   buf.clear(); state = WAIT_FOR_START;
-      }
-      continue;
+      case WAIT_FOR_START:  if(m == 'D'){ buf += i; state = IN_FIRST_INT;}
+                            break;
+      case IN_FIRST_INT:    switch(m)
+                            {
+                              case 'D' : buf += i;              break;
+                              case ' ' : state = WAIT_FOR_GEN;  break;
+                              default  : buf.clear();
+                                         state = WAIT_FOR_START;
+                            }
+                            break;
+      case WAIT_FOR_GEN:    if(m == 'D') state = IN_GEN;
+                            else         state = WAIT_FOR_START;
+                            break;
+      case IN_GEN:          switch(m)
+                            {
+                              case 'D' :                        break;
+                              case ' ' : state = WAIT_FOR_R;    break;
+                              default  : buf.clear();
+                                         state = WAIT_FOR_START;
+                            }
+                            break;
+      case WAIT_FOR_R:      if(i == 'R') res.push_back(stoi(buf));
+                            buf.clear(); state = WAIT_FOR_START;
+                            break;
     }
   }
   return res;
@@ -333,60 +312,31 @@ std::vector<int> getints(const std::string& s)
   for(auto i : s)
   {
     char m = symbol_type(i);
-    if(state == WAITING)
+    switch(state)
     {
-      if(m == 'D')
-      {
-        if(buf.length() > 10)
-          state = IGNORE;
-        else
-        {
-          buf += i;
-          state = INT;
-        }
-      }
-      else if(i == '-')
-      {
-        buf += i;
-        state = NEG;
-      }
-      continue;
+      case WAITING: if(m == 'D')
+                    {
+                      if(buf.length() > 10) state = IGNORE;
+                      else {buf += i;state = INT;}
+                    }
+                    else if(i == '-'){ buf += i; state = NEG;}
+                    break;
+      case NEG    : if(m == 'D'){buf += i; state = INT;}
+                    else { buf.clear(); state = WAITING;}
+                    break;
+      case INT    : if(m == 'D') buf += i;
+                    else
+                    {
+                      if(buf != "-") res.push_back(stoi(buf));
+                      buf.clear();
+                      if(i == '.') state = IGNORE;
+                      else         state = WAITING;
+                    }
+                    break;
+      case IGNORE : if(m != 'D') state = WAITING; break;
     }
-    if(state == NEG)
-    {
-      if(m == 'D')
-      {
-        buf += i;
-        state = INT;
-      }
-      else
-      {
-        buf.clear();
-        state = WAITING;
-      }
-      continue;
-    }
-    if(state == INT)
-    {
-      if(m == 'D') buf += i;
-      else
-      {
-        if(buf != "-")
-          res.push_back(stoi(buf));
-        buf.clear();
-        if(i == '.')
-          state = IGNORE;
-        else
-          state = WAITING;
-      }
-      continue;
-    }
-    if(state == IGNORE)
-      if(m != 'D')
-        state = WAITING;
   }
-  if(state == INT && !buf.empty())
-    res.push_back(stoi(buf));
+  if(state == INT && !buf.empty()) res.push_back(stoi(buf));
   return res;
 }
 

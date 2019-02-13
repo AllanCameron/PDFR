@@ -148,14 +148,18 @@ Rcpp::List get_objectraw(const std::vector<uint8_t>& rawfile, int object)
 }
 
 //---------------------------------------------------------------------------//
+// This is the final common pathway for getting a dataframe of atomic glyphs
+// from the graphic_state. It packages the dataframe with a vector of page
+// dimensions to allow plotting etc
 
 Rcpp::List getatomic(std::shared_ptr<page> p)
 {
-  graphic_state G = graphic_state(p);
-  tokenizer(p->pageContents(), &G);
-  auto GS = G.output();
-  std::vector<std::string> glyph;
-  for(auto& i : GS->text) glyph.push_back(utf({i}));
+  graphic_state G = graphic_state(p); // New graphic_state
+  tokenizer(p->pageContents(), &G);   // Read page contents to graphic state
+  auto GS = G.output();               // Obtain output from graphic state
+  std::vector<std::string> glyph;     // Container for utf-glyphs
+  for(auto& i : GS->text) glyph.push_back(utf({i})); // Unicode to utf8
+  // Now create the data frame
   Rcpp::DataFrame db =  Rcpp::DataFrame::create(
                         Rcpp::Named("text") = glyph,
                         Rcpp::Named("left") = GS->left,
@@ -176,12 +180,8 @@ Rcpp::List getgrid(std::shared_ptr<page> p)
   tokenizer(p->pageContents(), &GS);
   grid Grid = grid(GS);
   std::unordered_map<uint8_t, std::vector<GSrow>> gridout = Grid.output();
-  std::vector<float> left;
-  std::vector<float> right;
-  std::vector<float> size;
-  std::vector<float> bottom;
-  std::vector<std::string> glyph;
-  std::vector<std::string> font;
+  std::vector<float> left, right, size, bottom;
+  std::vector<std::string> glyph, font;
   for(uint8_t i = 0; i < 256; i++)
   {
     for(auto& j : gridout[i])
