@@ -31,6 +31,8 @@
 using namespace std;
 using namespace Token;
 
+std::string tokenizer::inloop = "none";
+
 /*---------------------------------------------------------------------------*/
 // constructor of tokenizer - initializes members and starts main
 // lexer function
@@ -48,6 +50,17 @@ tokenizer::tokenizer(string&& input, graphic_state* GS) :
 
 void tokenizer::pushbuf(const TState type, const TState statename)
 {
+  if(buf == "Do" && statename == IDENTIFIER)
+  {
+    string loopname = gs->getOperand();
+    if(loopname != inloop)
+    {
+      inloop = loopname;
+      string&& xo = gs->getPage()->getXobject(inloop);
+      if(IsAscii(xo)) // don't try to parse binary objects like images etc
+        tokenizer(move(xo), gs);
+    }
+  }
   state = statename; // switch state
   gs->parser(buf, type); // make pair and push to result
   buf.clear(); // clear buffer

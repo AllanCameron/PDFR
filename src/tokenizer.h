@@ -31,25 +31,25 @@
 
 #define PDFR_TOKEN
 
-/* The tokenizer class is used to read page description programs from the
+/* The tokenizer class represents the last of our dealings with the actual
+ * pdf file. After this stage, we have a complete description of the text on
+ * the page including the size and position of every correctly-encoded glyph.
+ * The subsequent steps will use only this data to try to reconstruct useful
+ * semantic information from the text position in an attempt to provide useable
+ * data, and to output the result to a variety of formats.
+ *
+ * The tokenizer class is used to read page description programs from the
  * page contents objects (and form xobjects). Rather than using regex to do
  * this (which is extremely slow), we use a custom-built lexer. This takes the
  * page program as a text string and goes through each character, identifying
  * tokens as it goes and storing them in a buffer until it can be decided what
  * type of token it has read. It switches state according to a finite set of
- * rules so that it knows when to save the buffer to a vector and how to label
- * the token's type appropriately.
+ * rules so that it knows when to pass the buffer to the graphic_state for
+ * parsing.
  *
- * When it has read the whole string, it has a complete set of labelled tokens
- * which are ready to be parsed by the parser method of Graphics state.
- *
- * In the sequence of the program, tokenizer is a bit of an outlier. It is not
- * required until late on in the pdf reading process, but it does not need any
- * knowledge of the structure or methods of pdfs. It #includes the utilities.h
- * header because it uses the standard library and some utility functions.
- *
- * Its interface is very simple - create the object by feeding it a string,
- * and it will return an instruction set using the result() method.
+ * Its interface is very simple - create the object by feeding it a string and
+ * a pointer to the graphics state. It will tokenize the string and send it
+ * to the graphic_state for parsing
  *
  * It has a number of private members because it is a fairly complex lexer and
  * is easier to maintain as a collection of functions that pass private members
@@ -81,14 +81,14 @@ private:
   std::string::const_iterator i;// The iterator that moves through the string
   std::string buf;     // a string buffer to hold chars until pushed to result
   Token::TState state; // The current state of the finite state machine
-  graphic_state* gs;
+  graphic_state* gs;   // The graphic state to which instructions are sent
+  static std::string inloop; // keep track of whether we are in an xobject
+                             // - this prevents an infinite loop
 
   // private methods
 
   void tokenize();                  // chooses state subroutine based on state
-
   void pushbuf(const Token::TState, const Token::TState);
-
   void newsymbolState();    //--------//---------------------------------------
   void resourceState();               //
   void identifierState();             //

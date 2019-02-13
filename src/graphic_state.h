@@ -31,14 +31,7 @@
 
 #define PDFR_GS
 
-/* The graphic_state class represents the last of our dealings with the actual
- * pdf file. After this stage, we have a complete description of the text on
- * the page including the size and position of every correctly-encoded glyph.
- * The subsequent steps will use only this data to try to reconstruct useful
- * semantic information from the text position in an attempt to provide useable
- * data, and to output the result to a variety of formats.
- *
- * The job of the graphic_state class is to parse the pdf page description
+/* The job of the graphic_state class is to parse the pdf page description
  * language into a table of glyphs, positions, sizes and fontnames - one row
  * for each character on the page. The instructions from the page description
  * language have already been "compiled" by the lexer into an instruction set,
@@ -127,6 +120,8 @@ public:
   // access results
   GSoutput* output();
   std::vector<float> getminbox();
+  std::string getOperand();
+  std::shared_ptr<page> getPage();
 
 private:
   //private data members - used to maintain state between calls to parser
@@ -143,8 +138,7 @@ private:
                                   Tdstate;        // Temp modification to Tm
   std::vector<std::array<float, 9>> gs,           // stack of graphics state
                                   statehx;        // history of graphics state
-  std::string                     inloop,
-                                  currentfont;    // Name of current font
+  std::string                     currentfont;    // Name of current font
   std::vector<std::string>        fontname,       // vector of font names
                                   fontstack,      // stack of font history
                                   Operands;
@@ -192,9 +186,6 @@ private:
   // in a pdf string object
   void processRawChar(std::vector<RawChar>&, float&,
                       std::array<float, 9>&,   float&);
-
-  // This tidies and wraps the data
-
 
   // Multiplies to 3x3 matrices represented as length-9 vector floats
   void matmul(const std::array<float, 9>& , std::array<float, 9>&);

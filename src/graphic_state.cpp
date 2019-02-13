@@ -32,23 +32,26 @@
 using namespace std;
 using namespace Token;
 
+//---------------------------------------------------------------------------//
+// This typedef declares fptr as a function pointer
+
 typedef void (graphic_state::*fptr)();
+
+//---------------------------------------------------------------------------//
+// This statically-declared map allows functions to be called based on strings
+// passed to it from the tokenizer
 
 std::unordered_map<std::string, fptr> graphic_state::fmap =
 {
   {"Q",   &Q}, {"q",   &q}, {"BT", &BT}, {"ET", &ET}, {"cm", &cm}, {"Tm", &Tm},
   {"Tf", &Tf}, {"Td", &Td}, {"Th", &TH}, {"Tw", &TW}, {"Tc", &TC}, {"TL", &TL},
-  {"T*", &T_}, {"TD", &TD}, {"'",  &Ap}, {"TJ", &TJ}, {"Tj", &TJ}, {"Do", &Do},
-  {"EOP", &EOP}
+  {"T*", &T_}, {"TD", &TD}, {"'",  &Ap}, {"TJ", &TJ}, {"Tj", &TJ}, {"EOP", &EOP}
 };
 
 //---------------------------------------------------------------------------//
-// The graphic_state constructor has a lot of work to do. It needs to
-// initialize several private data members that will be passed around to
-// maintain state while parsing the contents page. It also does the job
-// of sending the page's contents to the tokenizer to get the instructions it
-// needs for parsing. It then calls the parser to interpret the page, and
-// finally calls the MakeGS() method to make the data suitable for export
+// The graphic_state constructor has to initialize many variables that allow
+// it to track state once instructions are passed to it. After these are set,
+// it does no work unless passed instructions by the tokenizer
 
 graphic_state::graphic_state(shared_ptr<page> pag) : // long initializer list...
   p(pag), // pointer to page of interest
@@ -58,7 +61,6 @@ graphic_state::graphic_state(shared_ptr<page> pag) : // long initializer list...
   Tmstate(initstate), // text transformation matrix
   Tdstate(initstate), // Tm modifier
   gs({initstate}), // graphics state history
-  inloop(""),
   currentfont(""), // name of current font
   fontstack({currentfont}), // font history
   PRstate(0), // kerning
@@ -69,7 +71,28 @@ graphic_state::graphic_state(shared_ptr<page> pag) : // long initializer list...
 {}
 
 //---------------------------------------------------------------------------//
-// The only public method is a getter of the main data member
+// To allow recursive parsing of form xobjects, the tokenizer needs to access
+// the name of the xobject. At the point when the "Do" identifier is read by
+// the tokenizer, the name of the xobject is sitting on the top of the
+// operands stack. This public method passes that name on.
+
+std::string graphic_state::getOperand()
+{
+  if(Operands.empty()) return string("");
+  return Operands[0];
+}
+
+//---------------------------------------------------------------------------//
+// We need to be able to pass the page pointer on to the tokenizer to read
+// form xobjects using a public method
+
+std::shared_ptr<page> graphic_state::getPage()
+{
+  return p;
+}
+
+//---------------------------------------------------------------------------//
+// The public getter of the main data member
 
 GSoutput* graphic_state::output()
 {
@@ -85,28 +108,6 @@ void graphic_state::q()
   gs.emplace_back(gs.back());               // push transformation matrix
   fontstack.emplace_back(currentfont);      // push font name
   fontsizestack.emplace_back(currfontsize); // push pointsize
-}
-
-/*---------------------------------------------------------------------------*/
-// Do operator - reads an xobject and recursively calls the tokenizer and
-// parser so its results are enacted on the current graphics state
-
-void graphic_state::Do()
-{
-  //PROFC_NODE("Do");
-  // don't allow an xobject to call itself recursively
-  if(!Operands.empty())
-  {
-    auto& a = Operands[0];
-    if (inloop != a)
-    {
-      string&& xo = p->getXobject(a); // get xobject
-      if(IsAscii(xo)) // don't try to parse binary objects like images etc
-      {
-        inloop = "";
-      }
-    }
-  }
 }
 
 /*---------------------------------------------------------------------------*/
@@ -244,7 +245,7 @@ void graphic_state::T_()
 void graphic_state::Tm()
 {
     //PROFC_NODE("Tm");
-  Tmstate = stringvectomat(move(Operands)); // Reads the operands as a 3x3 matrix
+  Tmstate = stringvectomat(move(Operands)); // Reads operands as a 3x3 matrix
   Tdstate = initstate; // reset the Td modifier matrix
   PRstate = 0; // reset kerning
 }
@@ -261,6 +262,18 @@ void graphic_state::cm()
 }
 
 /*---------------------------------------------------------------------------*/
+// The "'" operator is a minor variation of the TJ function. Ap is short for
+// apostrophe
+
+void graphic_state::Ap()
+{
+  //PROFC_NODE("TJ");
+  // the "'" operator is the same as Tj except it moves to the next line first
+  Tdstate[7] -= Tl;
+  TJ();
+}
+
+/*---------------------------------------------------------------------------*/
 // TJ operator - prints glyphs to the output. This is the crux of the reading
 // process, because it is where all the elements come together to get the
 // values needed for each character. Since there are actually 3 operators
@@ -270,14 +283,6 @@ void graphic_state::cm()
 //
 // This function is heavily commented as a little mistake here can screw
 // everything up. YOU HAVE BEEN WARNED!
-
-void graphic_state::Ap()
-{
-  //PROFC_NODE("TJ");
-  // the "'" operator is the same as Tj except it moves to the next line first
-  Tdstate[7] -= Tl;
-  TJ();
-}
 
 void graphic_state::TJ()
 {
@@ -336,9 +341,9 @@ void graphic_state::processRawChar(vector<RawChar>& raw, float& scale,
     statehx.push_back(textspace); // each glyph has a whole matrix associated
     float glyphwidth;
     if (j.first == 0x0020) // if this is a space factor in word & char spacing
-    glyphwidth = j.second + 1000 * (Tc + Tw)/currfontsize;
+      glyphwidth = j.second + 1000 * (Tc + Tw)/currfontsize;
     else
-    glyphwidth = j.second + Tc * 1000/currfontsize; // else just char spacing
+      glyphwidth = j.second + Tc * 1000/currfontsize; // else just char spacing
     PRstate += glyphwidth; // adjust the pushright in text space by char width
     // move user space right by the (converted to user space) width of the char
     textspace[6] =  PRstate * scale / 1000 + txtspcinit;
