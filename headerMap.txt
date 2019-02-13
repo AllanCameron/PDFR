@@ -25,52 +25,56 @@ wrapper could be written for any other output target.
 
 
                               "external/Profiler.h"
-                 std::                 |
-                <vector>               |
+                                       |
+                                       |
                 <string>               v
-                <chrono> ----->  "debugtools.h"
-               <iostream>              |
-                                       |                   std::
+                <vector> ----->  "debugtools.h"
+               <iostream>              |                  <algorithm>
+                                       |                  <numeric>
                                        v                  <string>
- ,-----------------------------< "utilities.h" <--------  <vector>
- |               std::      --> {utilities.cpp}        <unordered_map>
- |             <fstream> --'           |
- |            <algorithm>              |
- |                                     v
- |                        ,----- "dictionary.h" -----,
- |                        |     {dictionary.cpp}     |
- |                        |            |             |
- | "external/miniz.h"     v            |             v
- |    {miniz.cpp} '-> "streams.h"      |         "crypto.h"
- |                   {streams.cpp}     |        {crypto.cpp}
- |                        |            |             |
- |                        |            v             |
- |                        '-------> "xref.h" <-------'
- |                                 {xref.cpp}
- |                                     |
- |                                     v
- |                              "object_class.h"
- |                             {object_class.cpp}
- |                                     |
- |                                     v
- |                          ,---- "document.h" ----,
- |                          |    {document.cpp}    |
- |                          |                      |
- |                          v                      v
- |                     "encoding.h"         "glyphwidths.h"
- |                    {encoding.cpp}       {glyphwidths.cpp}
- |                 {charstounicode.cpp}     {corefonts.cpp}
- |                 {adobetounicode.cpp}            |
- |                          |                      |
- |                          '-----> "font.h" <-----'
- |                                 {font.cpp}
- |                                     |
- |                                     v
- |                                  "page.h"
- |                                 {page.cpp}
- |                                     |
- |                                     v
- '---> "tokenizer.h" ---------> "graphic_state.h"
+                                 "utilities.h" <--------  <vector>
+                 std::      --> {utilities.cpp}           <unordered_map>
+               <fstream> --'           |
+                                       |
+                                       v
+                          ,----- "dictionary.h" -----,
+                          |     {dictionary.cpp}     |
+                          |            |             |
+   "external/miniz.h"     v            |             v
+      {miniz.cpp} '-> "streams.h"      |         "crypto.h"
+                     {streams.cpp}     |        {crypto.cpp}
+                          |            |             |
+                          |            v             |
+                          '-------> "xref.h" <-------'
+                                   {xref.cpp}
+                                       |
+                                       v
+                                "object_class.h"
+                               {object_class.cpp}
+                                       |
+                                       v
+                            ,---- "document.h" ----,
+                            |    {document.cpp}    |
+                            |                      |
+                            v                      v
+                       "encoding.h"         "glyphwidths.h"
+                      {encoding.cpp}       {glyphwidths.cpp}
+                   {charstounicode.cpp}     {corefonts.cpp}
+                   {adobetounicode.cpp}            |
+                            |                      |
+                            '-----> "font.h" <-----'
+                                   {font.cpp}
+                                       |
+                                       v
+                                    "page.h"
+                                   {page.cpp}
+                                       |
+                                       v
+                                  "tokenizer.h"
+                                 {tokenizer.cpp}
+                                       |
+                                       v
+                                "graphic_state.h"
                                {graphic_state.cpp}
                                        |
                                        v

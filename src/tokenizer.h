@@ -56,30 +56,8 @@
  * around, rather than one huge hairball function.
  */
 
-#include "page.h"
+#include "graphic_state.h"
 
-//---------------------------------------------------------------------------//
-// The states of the lexer are defined by this enum. It is defined in its own
-// namespace rather than within the class because its states are also used
-// as type labels in the instruction set it produces. These therefore need
-// to be made available to the instruction reader in the graphic_state class
-
-namespace Token
-{
-  enum TState
-  {
-    NEWSYMBOL,
-    IDENTIFIER,
-    NUMBER,
-    RESOURCE,
-    STRING,
-    HEXSTRING,
-    ARRAY,
-    DICT,
-    WAIT,
-    OPERATOR
-  };
-};
 
 //---------------------------------------------------------------------------//
 // The tokenizer class. It has a simple interface of one constructor and one
@@ -92,11 +70,9 @@ public:
 
   // constructor
 
-  tokenizer(std::string&& s);
+  tokenizer(std::string&& s, graphic_state* GS);
 
   // get results from tokenizer
-
-  std::vector<std::pair<std::string, Token::TState>> result();
 
 private:
 
@@ -105,10 +81,7 @@ private:
   std::string::const_iterator i;// The iterator that moves through the string
   std::string buf;     // a string buffer to hold chars until pushed to result
   Token::TState state; // The current state of the finite state machine
-
-  // The main output of the lexer
-  std::vector<std::pair<std::string, Token::TState>> output;
-
+  graphic_state* gs;
 
   // private methods
 

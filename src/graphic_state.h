@@ -71,9 +71,32 @@
  * to reduce the passing around of several parameters.
  */
 
-#include "tokenizer.h"
+
 #include "page.h"
 #include<functional>
+
+//---------------------------------------------------------------------------//
+// The states of the lexer are defined by this enum. It is defined in its own
+// namespace rather than within the class because its states are also used
+// as type labels in the instruction set it produces. These therefore need
+// to be made available to the instruction reader in the graphic_state class
+
+namespace Token
+{
+  enum TState
+  {
+    NEWSYMBOL,
+    IDENTIFIER,
+    NUMBER,
+    RESOURCE,
+    STRING,
+    HEXSTRING,
+    ARRAY,
+    DICT,
+    WAIT,
+    OPERATOR
+  };
+};
 
 //---------------------------------------------------------------------------//
 // This struct is a container for the output of the graphic_state class. All
@@ -99,6 +122,7 @@ class graphic_state
 public:
   // constructor
   graphic_state(std::shared_ptr<page>);
+  void parser(std::string&, Token::TState);
 
   // access results
   GSoutput* output();
@@ -142,7 +166,6 @@ private:
   // to a "stack", or calls an operator method depending on the label given
   // to each token in the instruction set. It loops through the entire
   // instruction set, after which the data just needs tidied and wrapped.
-  void parser(std::vector<std::pair<std::string, Token::TState>>&&);
 
   void Do();              //----------------------------------//
   void Q();               //  OPERATOR METHODS
@@ -161,6 +184,7 @@ private:
   void Tf();              //  data members to maintain
   void TJ();              //
   void Ap();              //---------------------------------//
+  void EOP();
 
   // This is a helper function for the TJ method which otherwise would become
   // a bit of a "hairball". It uses the font information and current graphics
@@ -170,7 +194,7 @@ private:
                       std::array<float, 9>&,   float&);
 
   // This tidies and wraps the data
-  void MakeGS();
+
 
   // Multiplies to 3x3 matrices represented as length-9 vector floats
   void matmul(const std::array<float, 9>& , std::array<float, 9>&);

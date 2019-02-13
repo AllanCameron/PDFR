@@ -35,18 +35,10 @@ using namespace Token;
 // constructor of tokenizer - initializes members and starts main
 // lexer function
 
-tokenizer::tokenizer(string&& input) :
- s(input), i(s.begin()), state(NEWSYMBOL)
+tokenizer::tokenizer(string&& input, graphic_state* GS) :
+ s(input), i(s.begin()), state(NEWSYMBOL), gs(GS)
 {
   tokenize();       // instigate lexer
-}
-
-/*---------------------------------------------------------------------------*/
-// Simple getter which returns main private data member
-
-vector<pair<string, TState>> tokenizer::result()
-{
-  return output;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -56,9 +48,8 @@ vector<pair<string, TState>> tokenizer::result()
 
 void tokenizer::pushbuf(const TState type, const TState statename)
 {
-  PROFC_NODE("pushbuf");
   state = statename; // switch state
-  output.push_back(make_pair(move(buf), type)); // make pair and push to result
+  gs->parser(buf, type); // make pair and push to result
   buf.clear(); // clear buffer
 }
 
@@ -69,13 +60,11 @@ void tokenizer::pushbuf(const TState type, const TState statename)
 
 void tokenizer::tokenize()
 {
-  PROFC_NODE("tokenize");
   while(i != s.end()) // ensure the iterator doesn't exceed string length
   {
     switch(state)
     {
       // Each state has its own handler subroutine - self explanatory
-
       case NEWSYMBOL:   newsymbolState();         break;
       case RESOURCE:    resourceState();          break;
       case IDENTIFIER:  identifierState();        break;
@@ -89,6 +78,8 @@ void tokenizer::tokenize()
     }
     ++i; // move to next character in the string
   }
+  string eop = "EOP";
+  gs->parser(eop, TState::IDENTIFIER); // make pair and push to result
 }
 
 /*---------------------------------------------------------------------------*/
@@ -96,8 +87,6 @@ void tokenizer::tokenize()
 
 void tokenizer::resourceState()
 {
-  PROFC_NODE("resourceState");
-    // get symbol_type of current char
   switch(symbol_type(*i))
   {
     case 'L':   buf += *i;                        break;
@@ -119,8 +108,7 @@ void tokenizer::resourceState()
 
 void tokenizer::newsymbolState()
 {
-  PROFC_NODE("newsymbolState");
-    // get symbol_type of current char
+  // get symbol_type of current char
   switch(symbol_type(*i))
   {
     case 'L':   buf += *i;    state = IDENTIFIER;  break;
@@ -143,8 +131,7 @@ void tokenizer::newsymbolState()
 
 void tokenizer::identifierState()
 {
-  PROFC_NODE("identifierState");
-    // get symbol_type of current char
+  // get symbol_type of current char
   switch(symbol_type(*i))
   {
     case 'L':   buf += *i;                      break;
@@ -168,8 +155,7 @@ void tokenizer::identifierState()
 
 void tokenizer::numberState()
 {
-  PROFC_NODE("numberState");
-    // get symbol_type of current char
+  // get symbol_type of current char
   switch(symbol_type(*i))
   {
     case 'D':   buf += *i;                         break;
@@ -192,8 +178,7 @@ void tokenizer::numberState()
 
 void tokenizer::stringState()
 {
-  PROFC_NODE("stringState");
-    // get symbol_type of current char
+  // get symbol_type of current char
   switch(symbol_type(*i))
   {
     case ')':   pushbuf(STRING, NEWSYMBOL);       break;
@@ -207,7 +192,6 @@ void tokenizer::stringState()
 
 void tokenizer::arrayState()
 {
-  PROFC_NODE("arrayState");
   i--;
   state = NEWSYMBOL;
 }
@@ -217,16 +201,15 @@ void tokenizer::arrayState()
 
 void tokenizer::hexstringState()
 {
-  PROFC_NODE("hexstringState");
-    // get symbol_type of current char
+  // get symbol_type of current char
   switch(symbol_type(*i))
   {
     case '>':   if (!buf.empty())
                   pushbuf(HEXSTRING, NEWSYMBOL);
                 state = NEWSYMBOL;                break;
     case '<':   buf = ""; state = DICT;           break;
-    case '\\':  buf += *i; i++; buf += *i;    break;
-    default:    buf += *i;                      break;
+    case '\\':  buf += *i; i++; buf += *i;        break;
+    default:    buf += *i;                        break;
   }
 }
 
@@ -236,13 +219,12 @@ void tokenizer::hexstringState()
 
 void tokenizer::dictState()
 {
-  PROFC_NODE("dictState");
-    // get symbol_type of current char
+  // get symbol_type of current char
   switch(symbol_type(*i))
   {
-    case '\\':  buf += *i; i++; buf += *i;    break;
+    case '\\':  buf += *i; i++; buf += *i;        break;
     case '>':   pushbuf(DICT, HEXSTRING);         break;
-    default:    buf += *i;                      break;
+    default:    buf += *i;                        break;
   }
 }
 
@@ -251,15 +233,14 @@ void tokenizer::dictState()
 
 void tokenizer::escapeState()
 {
-  PROFC_NODE("escapeState");
   i++;
    // read the next char
   if (symbol_type(*i) == 'D') // if it's a digit it's likely an octal
   {
     int octcount = 0;
     pushbuf(STRING, STRING);
-    while(symbol_type(*i) == 'D' && octcount < 3) // add consecutive chars to octal (up to 3)
-    {
+    while(symbol_type(*i) == 'D' && octcount < 3)
+    {// add consecutive chars to octal (up to 3)
       buf += *i; i++;
       octcount++;
     }
@@ -268,8 +249,7 @@ void tokenizer::escapeState()
     pushbuf(HEXSTRING, STRING);
     i--;                                // decrement to await next char
   }
-  else
-    buf += *i;                  // if not a digit, get escaped char
+  else buf += *i;                       // if not a digit, get escaped char
 }
 
 /*---------------------------------------------------------------------------*/
@@ -278,7 +258,6 @@ void tokenizer::escapeState()
 
 void tokenizer::waitState()
 {
-  PROFC_NODE("waitState");
   // the lexer
   buf = *i; i++; buf += *i; i++;
   buf += symbol_type(*i); i--; i--;

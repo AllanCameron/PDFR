@@ -26,7 +26,7 @@
 //---------------------------------------------------------------------------//
 
 #include "graphic_state.h"
-#include <iostream>
+
 //---------------------------------------------------------------------------//
 
 using namespace std;
@@ -38,7 +38,8 @@ std::unordered_map<std::string, fptr> graphic_state::fmap =
 {
   {"Q",   &Q}, {"q",   &q}, {"BT", &BT}, {"ET", &ET}, {"cm", &cm}, {"Tm", &Tm},
   {"Tf", &Tf}, {"Td", &Td}, {"Th", &TH}, {"Tw", &TW}, {"Tc", &TC}, {"TL", &TL},
-  {"T*", &T_}, {"TD", &TD}, {"'",  &Ap}, {"TJ", &TJ}, {"Tj", &TJ}, {"Do", &Do}
+  {"T*", &T_}, {"TD", &TD}, {"'",  &Ap}, {"TJ", &TJ}, {"Tj", &TJ}, {"Do", &Do},
+  {"EOP", &EOP}
 };
 
 //---------------------------------------------------------------------------//
@@ -65,10 +66,7 @@ graphic_state::graphic_state(shared_ptr<page> pag) : // long initializer list...
   Tw(0), // word spacing
   Th(100), // horizontal scaling
   Tc(0) // character spacing
-{
-  parser(tokenizer(p->pageContents()).result()); //parse instructions
-  MakeGS(); // compose results
-}
+{}
 
 //---------------------------------------------------------------------------//
 // The only public method is a getter of the main data member
@@ -102,11 +100,9 @@ void graphic_state::Do()
     auto& a = Operands[0];
     if (inloop != a)
     {
-      string xo = p->getXobject(a); // get xobject
+      string&& xo = p->getXobject(a); // get xobject
       if(IsAscii(xo)) // don't try to parse binary objects like images etc
       {
-        inloop = a;
-        parser(tokenizer(p->getXobject(a)).result());
         inloop = "";
       }
     }
@@ -152,7 +148,7 @@ void graphic_state::TD()
 {
     //PROFC_NODE("TD");
   array<float, 9> Tds = initstate;                    //------------------------
-  vector<float> tmpvec = stringtofloat(Operands);       //  create translation
+  vector<float> tmpvec = stringtofloat(Operands);   //  create translation
   Tds[6] = tmpvec[0];                                //  matrix (3x3)
   Tds[7] = tmpvec[1];                               //------------------------
   matmul(Tds, Tdstate); // multiply translation and text matrices
@@ -248,7 +244,7 @@ void graphic_state::T_()
 void graphic_state::Tm()
 {
     //PROFC_NODE("Tm");
-  Tmstate = stringvectomat(Operands); // Reads the operands as a 3x3 matrix
+  Tmstate = stringvectomat(move(Operands)); // Reads the operands as a 3x3 matrix
   Tdstate = initstate; // reset the Td modifier matrix
   PRstate = 0; // reset kerning
 }
@@ -261,7 +257,7 @@ void graphic_state::cm()
     //PROFC_NODE("cm");
   // read the operands as a matrix, multiply by top of graphics state stack
   // and replace the top of the stack with the result
-  matmul(stringvectomat(Operands), gs.back());
+  matmul(stringvectomat(move(Operands)), gs.back());
 }
 
 /*---------------------------------------------------------------------------*/
@@ -374,31 +370,29 @@ void graphic_state::processRawChar(vector<RawChar>& raw, float& scale,
 // will not be called if its operand stack contains the same string as inloop.
 
 void
-graphic_state::parser(vector<pair<string, TState>>&& tokens)
+graphic_state::parser(string& token, TState state)
 {
-  for (auto i : tokens) // for each instruction...
+  if (state == IDENTIFIER) // if it's an identifier, call the operator,
+  {                           // passing any stored operands on the stack
+    if (fmap.find(token) != fmap.end()) (this->*fmap[token])();
+    OperandTypes.clear(); // clear the stack since an operator has been called
+    Operands.clear(); // clear the stack since an operator has been called
+  }
+  else
   {
-    if (i.second == IDENTIFIER) // if it's an identifier, call the operator,
-    {                           // passing any stored operands on the stack
-      if (fmap.find(i.first) != fmap.end()) (this->*fmap[i.first])();
-      OperandTypes.clear(); // clear the stack since an operator has been called
-      Operands.clear(); // clear the stack since an operator has been called
-    }
-    else
-    {
-      // push operands and their types on stack, awaiting operator
-      OperandTypes.push_back(i.second);
-      Operands.push_back(i.first);
-    }
+    // push operands and their types on stack, awaiting operator
+    OperandTypes.push_back(state);
+    Operands.push_back(token);
   }
 }
+
 
 /*---------------------------------------------------------------------------*/
 // Once parsing is finished, we write the results to the main data member -
 // a private struct containing vectors of the same length acting as a single
 // large table with a row for each glyph
 
-void graphic_state::MakeGS()
+void graphic_state::EOP()
 {
   size_t gsize = stringres.size();
   for (size_t i = 0; i < gsize; i++) // for each glyph...

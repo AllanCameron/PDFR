@@ -152,6 +152,7 @@ Rcpp::List get_objectraw(const std::vector<uint8_t>& rawfile, int object)
 Rcpp::List getatomic(std::shared_ptr<page> p)
 {
   graphic_state G = graphic_state(p);
+  tokenizer(p->pageContents(), &G);
   auto GS = G.output();
   std::vector<std::string> glyph;
   for(auto& i : GS->text) glyph.push_back(utf({i}));
@@ -172,6 +173,7 @@ Rcpp::List getatomic(std::shared_ptr<page> p)
 Rcpp::List getgrid(std::shared_ptr<page> p)
 {
   graphic_state GS = graphic_state(p);
+  tokenizer(p->pageContents(), &GS);
   grid Grid = grid(GS);
   std::unordered_map<uint8_t, std::vector<GSrow>> gridout = Grid.output();
   std::vector<float> left;
@@ -251,8 +253,10 @@ Rcpp::DataFrame pdfdoc_common(std::shared_ptr<document> myfile)
   for(size_t pagenum = 0; pagenum < npages; pagenum++)
   {
     std::shared_ptr<page> p = std::make_shared<page>(myfile, pagenum);
+    graphic_state GS = graphic_state(p);
+    tokenizer(p->pageContents(), &GS);
     std::unordered_map<uint8_t, std::vector<GSrow>> gridout =
-      grid(graphic_state(p)).output();
+      grid(GS).output();
     for(uint8_t i = 0; i < 256; i++)
     {
       for(auto& j : gridout[i])

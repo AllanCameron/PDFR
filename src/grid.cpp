@@ -26,7 +26,6 @@
 //---------------------------------------------------------------------------//
 
 #include "grid.h"
-#include <algorithm> // for std::sort
 #include <cstdlib>   // for abs()
 
 using namespace std;

@@ -43,7 +43,7 @@
  * as paragraphs, headers and tables.
  */
 
-#include "graphic_state.h"
+#include "tokenizer.h"
 
 //---------------------------------------------------------------------------//
 // The GSrow is a struct which acts as a "row" of information about each text

@@ -143,7 +143,7 @@ void xref::xrefstrings()
     if (len <= 0) throw std::runtime_error("No object found at location");
 
     // extract the xref string from the file string
-    string fullxref = fs->substr(i, len);
+    string&& fullxref = fs->substr(i, len);
 
     // stick a trimmed version of the xref onto Xrefstrings
     // Note the carveout should leave xrefstreams unaltered
