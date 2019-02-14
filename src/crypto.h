@@ -70,25 +70,18 @@ typedef uint32_t fourbytes;
 
 class crypto
 {
-
 public:
-
 // Constructors
-
   crypto(){};
   crypto(dictionary, dictionary);
 
 // This is the main decryption function which is also the public interface for
 // the class. It takes the raw stream, the object and generation numbers then
 // returns the decrypted stream.
-
   void decryptStream(std::string&, int obj, int gen) const;
 
-
 private:
-
 // private data members
-
   dictionary encdict;
   dictionary trailer;
   int revision;
@@ -96,7 +89,6 @@ private:
   static bytes UPW;
 
 // private member functions
-
   bytes chopLong(fourbytes) const;    // Chops fourbytes into 4 bytes
   bytes perm(std::string);            // Return permission flags for file
   void md5mix(int, std::deque<fourbytes>&, std::vector<fourbytes>&) const;

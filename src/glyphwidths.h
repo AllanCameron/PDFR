@@ -97,23 +97,17 @@
 
 class glyphwidths
 {
-
 public:
-
   // Constructor
-
   glyphwidths(dictionary& dic, std::shared_ptr<document> doc);
 
   // public methods
-
   int getwidth(RawChar);                       // Main data lookup
   std::vector<RawChar> widthKeys();            // Returns all map keys
   bool widthsAreForRaw();                      // returns widthfromcharcodes
 
 private:
-
   // private data
-
   std::unordered_map<RawChar, int> Width;         // The main data member
   dictionary fontref;                             // the font dictionary
   std::shared_ptr<document> d;                    // pointer to document
@@ -121,7 +115,6 @@ private:
   bool widthFromCharCodes;                        // are widths for code points?
 
   // private methods
-
   void parsewidtharray(const std::string&);       // lexer
   void getCoreFont();                             // corefont getter
   void parseDescendants();                        // read descendant dictionary
@@ -146,7 +139,6 @@ private:
   static std::unordered_map<Unicode, int> dingbatswidths;               //
                                                                         //
 //----------------------------------------------------------------------//
-
 };
 
 //---------------------------------------------------------------------------//

@@ -67,13 +67,10 @@
 class tokenizer
 {
 public:
-
   // constructor
-
   tokenizer(std::string&& s, graphic_state* GS);
 
 private:
-
   // private data members
   const std::string& s;// the input string itself
   std::string::const_iterator i;// The iterator that moves through the string
@@ -102,4 +99,3 @@ private:
 //---------------------------------------------------------------------------//
 
 #endif
-

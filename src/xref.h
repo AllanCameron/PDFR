@@ -85,7 +85,6 @@
 
 class xref
 {
-
 public:
   // constructors
   xref(){};                     // Default creator
