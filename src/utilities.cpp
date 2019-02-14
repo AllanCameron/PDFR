@@ -191,7 +191,6 @@ string intToHexstring(int i)
   return res;
 }
 
-
 /*---------------------------------------------------------------------------*/
 // Classify characters for use in lexers. This allows the use of switch
 // statements that depend on whether a letter is a character, digit or
@@ -302,7 +301,7 @@ std::vector<int> getints(const std::string& s)
   std::string buf;  // string buffer to hold characters which may be ints
   enum IntState
   {
-    WAITING, // waiting for first digit or minus sign
+    WAITING,// waiting for digit or minus sign
     NEG,    // found a minus sign, looking to see if this starts a negative int
     INT,    // found a digit, now recording successive digits to buffer
     IGNORE  // ignoring any digits between decimal point and next non-number
@@ -351,7 +350,7 @@ std::vector<float> getnums(const std::string& s)
   std::string buf; // a buffer to hold characters until stored or discarded
   enum FloatState // The possible states of the fsm
   {
-    WAITING, // awaiting the first character that might represent a number
+    WAITING,// awaiting the first character that might represent a number
     NEG,    // found a minus sign. Could be start of negative number
     PRE,    // Now reading an integer, waiting for whitespace or decimal point
     POST    // Have read integer and found point, now reading fractional number
@@ -360,77 +359,31 @@ std::vector<float> getnums(const std::string& s)
   for(const auto& i : s)
   {
     char m = symbol_type(i);
-    if(state == WAITING)
+    switch(state)
     {
-      if(m == 'D')
-      {
-        buf += i;
-        state = PRE;
-      }
-      else if(i == '-')
-      {
-        buf += i;
-        state = NEG;
-      }
-      else if(i == '.')
-      {
-        buf += i;
-        state = POST;
-      }
-      continue;
-    }
-    if(state == NEG)
-    {
-      if(m == 'D')
-      {
-        buf += i;
-        state = PRE;
-      }
-      else if (i == '.')
-      {
-        buf = "-0.";
-        state = POST;
-      }
-      else
-      {
-        buf.clear();
-        state = WAITING;
-      }
-      continue;
-    }
-    if(state == PRE)
-    {
-      if(m == 'D') buf += i;
-      else if (i == '.')
-      {
-        buf += i;
-        state = POST;
-      }
-      else
-      {
-        if(buf != "-")
-          res.push_back(stof(buf));
-        buf.clear();
-        state = WAITING;
-      }
-      continue;
-    }
-    if(state == POST)
-    {
-      if(m != 'D')
-      {
-        res.push_back(stof(buf));
-        state = WAITING;
-        buf.clear();
-      }
-      else
-        buf += i;
+    case WAITING: if(m == 'D'){ buf += i; state = PRE;}
+                  else if(i == '-'){ buf += i; state = NEG;}
+                  else if(i == '.'){ buf += i; state = POST;}
+                  break;
+    case NEG:     if(m == 'D'){ buf += i; state = PRE;}
+                  else if (i == '.'){ buf = "-0."; state = POST;}
+                  else {buf.clear(); state = WAITING;}
+                  break;
+    case PRE:     if(m == 'D') buf += i;
+                  else if (i == '.'){ buf += i; state = POST;}
+                  else
+                  {
+                    if(buf != "-") res.push_back(stof(buf));
+                    buf.clear(); state = WAITING;
+                  }
+                  break;
+    case POST:    if(m == 'D') buf += i;
+                  else{ res.push_back(stof(buf)); state = WAITING; buf.clear();}
+                  break;
     }
   }
-  if(state == PRE && !buf.empty())
-    res.push_back(stof(buf));
-  if(state == POST && buf != "-0.")
-    res.push_back(stof(buf));
+  if(state == PRE && !buf.empty()) res.push_back(stof(buf));
+  if(state == POST && buf != "-0.") res.push_back(stof(buf));
   return res;
 }
 
