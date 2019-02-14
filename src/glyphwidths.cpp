@@ -150,10 +150,7 @@ void glyphwidths::getCoreFont()
   // that will result from the given RawChar codes. This is therefore flagged
   // by the boolean widthsFromCharCodes.
 
-  if (    basefont == "/Courier"              ||
-          basefont == "/Courier-Bold"         ||
-          basefont == "/Courier-BoldOblique"  ||
-          basefont == "/Courier-Oblique"      ) Width = courierwidths;
+  if (basefont.find("/Courier") != string::npos) Width = courierwidths;
   else if(basefont == "/Helvetica"            ||
           basefont == "/Helvetica-Oblique"    ) Width = helveticawidths;
   else if(basefont == "/Helvetica-Bold"       ||
