@@ -72,8 +72,6 @@ public:
 
   tokenizer(std::string&& s, graphic_state* GS);
 
-  // get results from tokenizer
-
 private:
 
   // private data members
@@ -99,7 +97,6 @@ private:
   void hexstringState();              //
   void dictState();                   //
   void waitState();         //--------//---------------------------------------
-
 };
 
 //---------------------------------------------------------------------------//

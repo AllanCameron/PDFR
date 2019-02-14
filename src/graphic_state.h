@@ -131,19 +131,14 @@ private:
   std::shared_ptr<font>           wfont;          // pointer to "working" font
   float                           currfontsize;   // Current font size
   std::array<float, 9>            initstate;      // Identity 3x3 matrix as vec9
-  std::vector<float>              fontsizestack,  // stack of current font size
-                                  fontsize,       // size of glyph in points
-                                  widths;         // width of glyph in textspace
+  std::vector<float>              fontsizestack;  // stack of current font size
   std::array<float, 9>            Tmstate,        // Text matrix state
                                   Tdstate;        // Temp modification to Tm
-  std::vector<std::array<float, 9>> gs,           // stack of graphics state
-                                  statehx;        // history of graphics state
+  std::vector<std::array<float, 9>> gs;           // stack of graphics state
   std::string                     currentfont;    // Name of current font
-  std::vector<std::string>        fontname,       // vector of font names
-                                  fontstack,      // stack of font history
+  std::vector<std::string>        fontstack,      // stack of font history
                                   Operands;
   std::vector<Token::TState>      OperandTypes;
-  std::vector<Unicode>            stringres;      // working Unicode vector
   int                             PRstate;        // current kerning state
   float                           Tl,             // Leading (line spacing)
                                   Tw,             // Word spacing

@@ -338,7 +338,8 @@ void graphic_state::processRawChar(vector<RawChar>& raw, float& scale,
 
   for (auto& j : glyphpairs) // Now, for each character...
   {
-    statehx.push_back(textspace); // each glyph has a whole matrix associated
+    db.left.emplace_back( textspace[6]);                  //
+    db.bottom.emplace_back( textspace[7]);                //
     float glyphwidth;
     if (j.first == 0x0020) // if this is a space factor in word & char spacing
       glyphwidth = j.second + 1000 * (Tc + Tw)/currfontsize;
@@ -349,16 +350,16 @@ void graphic_state::processRawChar(vector<RawChar>& raw, float& scale,
     textspace[6] =  PRstate * scale / 1000 + txtspcinit;
 
     // record width of char taking Th (horizontal scaling) into account
-    widths.emplace_back(scale * glyphwidth/1000 * Th/100);
-
+    db.width.emplace_back(scale * glyphwidth/1000 * Th/100);
+    db.right.emplace_back(db.left.back() + db.width.back());
     // Store Unicode point
-    stringres.emplace_back(j.first);
+    db.text.emplace_back(j.first);
 
     // store fontsize for glyph
-    fontsize.emplace_back(scale);
+    db.size.emplace_back(scale);
 
     // store font name of glyph
-    fontname.emplace_back(wfont->fontname());
+    db.fonts.emplace_back(wfont->fontname());
   }
 }
 
@@ -388,27 +389,6 @@ graphic_state::parser(string& token, TState state)
     // push operands and their types on stack, awaiting operator
     OperandTypes.push_back(state);
     Operands.push_back(token);
-  }
-}
-
-
-/*---------------------------------------------------------------------------*/
-// Once parsing is finished, we write the results to the main data member -
-// a private struct containing vectors of the same length acting as a single
-// large table with a row for each glyph
-
-void graphic_state::EOP()
-{
-  size_t gsize = stringres.size();
-  for (size_t i = 0; i < gsize; i++) // for each glyph...
-  {
-    db.text.emplace_back(stringres[i]);               //---//
-    db.left.emplace_back( statehx[i][6]);                  //
-    db.bottom.emplace_back( statehx[i][7]);                //
-    db.right.emplace_back(widths[i] + statehx[i][6]);      //--> store 'row'
-    db.fonts.emplace_back(fontname[i]);                    //
-    db.size.emplace_back(fontsize[i]);                     //
-    db.width.emplace_back(widths[i]);                 //---//
   }
 }
 

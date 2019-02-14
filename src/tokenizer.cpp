@@ -91,8 +91,6 @@ void tokenizer::tokenize()
     }
     ++i; // move to next character in the string
   }
-  string eop = "EOP";
-  gs->parser(eop, TState::IDENTIFIER); // make pair and push to result
 }
 
 /*---------------------------------------------------------------------------*/
