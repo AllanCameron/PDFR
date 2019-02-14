@@ -150,14 +150,14 @@ void glyphwidths::getCoreFont()
   // that will result from the given RawChar codes. This is therefore flagged
   // by the boolean widthsFromCharCodes.
 
-       if(basefont == "/Courier") Width = courierwidths;
-  else if(basefont == "/Courier-Bold") Width = courierboldwidths;
-  else if(basefont == "/Courier-BoldOblique") Width = courierboldobliquewidths;
-  else if(basefont == "/Courier-Oblique") Width = courierobliquewidths;
-  else if(basefont == "/Helvetica") Width = helveticawidths;
-  else if(basefont == "/Helvetica-Bold") Width = helveticaboldwidths;
-  else if(basefont == "/Helvetica-Boldoblique") Width = helveticabold_ob_widths;
-  else if(basefont == "/Helvetica-Oblique") Width = helveticaobliquewidths;
+  if (    basefont == "/Courier"              ||
+          basefont == "/Courier-Bold"         ||
+          basefont == "/Courier-BoldOblique"  ||
+          basefont == "/Courier-Oblique"      ) Width = courierwidths;
+  else if(basefont == "/Helvetica"            ||
+          basefont == "/Helvetica-Oblique"    ) Width = helveticawidths;
+  else if(basefont == "/Helvetica-Bold"       ||
+          basefont == "/Helvetica-Boldoblique") Width = helveticaboldwidths;
   else if(basefont == "/Symbol") Width = symbolwidths;
   else if(basefont == "/Times-Bold") Width = timesboldwidths;
   else if(basefont == "/Times-BoldItalic") Width = timesbolditalicwidths;

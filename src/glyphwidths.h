@@ -124,13 +124,8 @@ private:
 //-- The core fonts as defined in corefonts.cpp ------------------------//
                                                                         //
   static std::unordered_map<Unicode, int> courierwidths;                //
-  static std::unordered_map<Unicode, int> courierboldwidths;            //
-  static std::unordered_map<Unicode, int> courierboldobliquewidths;     //
-  static std::unordered_map<Unicode, int> courierobliquewidths;         //
   static std::unordered_map<Unicode, int> helveticawidths;              //
   static std::unordered_map<Unicode, int> helveticaboldwidths;          //
-  static std::unordered_map<Unicode, int> helveticabold_ob_widths;      //
-  static std::unordered_map<Unicode, int> helveticaobliquewidths;       //
   static std::unordered_map<Unicode, int> symbolwidths;                 //
   static std::unordered_map<Unicode, int> timesboldwidths;              //
   static std::unordered_map<Unicode, int> timesbolditalicwidths;        //
