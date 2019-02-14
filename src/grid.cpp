@@ -30,6 +30,30 @@
 
 using namespace std;
 
+gridoutput grid::out()
+{
+  std::vector<float> left, right, width, bottom, size;
+  std::vector<std::string> font, text;
+  for(uint8_t i = 0; i < 256; i++)
+  {
+    for(auto& j : gridmap[i])
+    {
+      if(!j.consumed)
+      {
+        text.push_back(utf({j.glyph}));
+        left.push_back(j.left);
+        right.push_back(j.right);
+        size.push_back(j.size);
+        bottom.push_back(j.bottom);
+        font.push_back(j.font);
+        width.push_back(j.right - j.left);
+      }
+    }
+    if(i == 255) break; // prevent overflow back to 0 and endless loop
+  }
+  return gridoutput{left, right, width, bottom, size, font, text };
+}
+
 //---------------------------------------------------------------------------//
 // The grid constructor calls three constructing subroutines. These split the
 // page into an easily addressable 16 x 16 grid, find glyphs in close proximity

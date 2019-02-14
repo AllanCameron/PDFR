@@ -109,9 +109,7 @@ bytes crypto::perm(std::string str) // takes a string with the permissions int
 {
   // No string == no permissions. Can't decode pdf, so throw an error
   if(str.empty()) throw std::runtime_error("No permission flags");
-
   int flags = stoi(str); // Convert the string to a 4-byte int
-
   // This reads off the bytes from lowest order to highest order
   return chopLong(flags);
 }
@@ -294,17 +292,13 @@ void crypto::getFilekey()
   bytes Fstring = UPW; // The generic or null user password
   concat(Fstring, getPassword("/O")); // stick the owner password on
   concat(Fstring, perm(encdict.get("/P"))); // Stick permissions flags on
-
   // get first 16 bytes of file ID and stick them on too
   bytes idbytes = bytesFromArray(trailer.get("/ID"));
   idbytes.resize(16);
   concat(Fstring, idbytes);
-
   // now md5 hash the result
   filekey = md5(Fstring);
-
   size_t cryptlen = 5; // the default filekey size
-
   // if the filekey length is not 5, it will be specified as a number of bits
   // so divide by 8 to get the number of bytes and resize the key as needed.
   if(encdict.hasInts("/Length"))
@@ -364,10 +358,7 @@ crypto::crypto(dictionary enc, dictionary trail) :
 {
   // Unless specified, the revision number used for encryption is 2
   if(encdict.hasInts("/R")) revision = encdict.getInts("/R")[0];
-
-  //  gets the filekey
   getFilekey();
-
   if(revision == 2) checkKeyR2(); // if rnum 2, check it and we're done
   else
   {//  Otherwise we're going to md5 and trim the filekey 50 times

@@ -179,32 +179,14 @@ Rcpp::List getgrid(std::shared_ptr<page> p)
   graphic_state GS = graphic_state(p);
   tokenizer(p->pageContents(), &GS);
   grid Grid = grid(GS);
-  std::unordered_map<uint8_t, std::vector<GSrow>> gridout = Grid.output();
-  std::vector<float> left, right, size, bottom;
-  std::vector<std::string> glyph, font;
-  for(uint8_t i = 0; i < 256; i++)
-  {
-    for(auto& j : gridout[i])
-    {
-      if(!j.consumed)
-      {
-        glyph.push_back(utf(j.glyph));
-        left.push_back(j.left);
-        right.push_back(j.right);
-        size.push_back(j.size);
-        bottom.push_back(j.bottom);
-        font.push_back(j.font);
-      }
-    }
-    if(i == 255) break; // prevent overflow back to 0 and endless loop
-  }
+  gridoutput gridout = Grid.out();
   Rcpp::DataFrame db =  Rcpp::DataFrame::create(
-                        Rcpp::Named("text") = glyph,
-                        Rcpp::Named("left") = left,
-                        Rcpp::Named("bottom") = bottom,
-                        Rcpp::Named("right") = right,
-                        Rcpp::Named("font") = font,
-                        Rcpp::Named("size") = size,
+                        Rcpp::Named("text") =   std::move(gridout.text),
+                        Rcpp::Named("left") =   std::move(gridout.left),
+                        Rcpp::Named("bottom") = std::move(gridout.bottom),
+                        Rcpp::Named("right") =  std::move(gridout.right),
+                        Rcpp::Named("font") =   std::move(gridout.font),
+                        Rcpp::Named("size") =   std::move(gridout.size),
                         Rcpp::Named("stringsAsFactors") = false);
   return Rcpp::List::create(Rcpp::Named("Box") = Grid.getBox(),
                             Rcpp::Named("Elements") = db);
@@ -243,37 +225,22 @@ Rcpp::List pdfpageraw(const std::vector<uint8_t>& rawfile, int pagenum, bool g)
 Rcpp::DataFrame pdfdoc_common(std::shared_ptr<document> myfile)
 {
   size_t npages = myfile->pagecount();
-  std::vector<float> left;
-  std::vector<float> right;
-  std::vector<float> size;
-  std::vector<float> bottom;
-  std::vector<std::string> glyph;
-  std::vector<std::string> font;
+  std::vector<float> left, right, size, bottom;
+  std::vector<std::string> glyph, font;
   std::vector<int> pagenums;
   for(size_t pagenum = 0; pagenum < npages; pagenum++)
   {
     std::shared_ptr<page> p = std::make_shared<page>(myfile, pagenum);
     graphic_state GS = graphic_state(p);
     tokenizer(p->pageContents(), &GS);
-    std::unordered_map<uint8_t, std::vector<GSrow>> gridout =
-      grid(GS).output();
-    for(uint8_t i = 0; i < 256; i++)
-    {
-      for(auto& j : gridout[i])
-      {
-        if(!j.consumed)
-        {
-          glyph.push_back(utf(j.glyph));
-          left.push_back(j.left);
-          right.push_back(j.right);
-          size.push_back(j.size);
-          bottom.push_back(j.bottom);
-          font.push_back(j.font);
-          pagenums.push_back(pagenum + 1);
-        }
-      }
-      if(i == 255) break; // prevent overflow back to 0 and endless loop
-    }
+    gridoutput gridout = grid(GS).out();
+    concat(glyph, gridout.text);
+    concat(left, gridout.left);
+    concat(right, gridout.right);
+    concat(bottom, gridout.bottom);
+    concat(font, gridout.font);
+    concat(size, gridout.size);
+    while(pagenums.size() < size.size()) pagenums.push_back(pagenum + 1);
     if(pagenum == (npages - 1)) p->clearFontMap();
   }
 

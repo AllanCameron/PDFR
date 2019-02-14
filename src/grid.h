@@ -66,6 +66,12 @@ struct GSrow
   std::pair<int, int> rightjoin;// address of closest adjacent element
 };
 
+struct gridoutput
+{
+  std::vector<float> left, right, width, bottom, size;
+  std::vector<std::string> font, text;
+};
+
 //---------------------------------------------------------------------------//
 // Simple struct that acts as a method for sorting a vector of GSrows
 // left-to-right
@@ -96,7 +102,7 @@ public:
   // public methods
   std::unordered_map<uint8_t, std::vector<GSrow>> output(); // result
   std::vector<float> getBox();                              // gets minbox
-
+  gridoutput out();
 
 private:
   // private data members
