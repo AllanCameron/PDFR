@@ -92,9 +92,7 @@
 
 class Encoding
 {
-
 public:
-
   // constructor
   Encoding(const dictionary&, std::shared_ptr<document>);
 
@@ -103,7 +101,6 @@ public:
   std::vector<RawChar> encKeys();   // Returns all input code points
 
 private:
-
   // data lookup tables - defined as static, which means only a single
   // instance of each is created rather than a copy for each object.
   // Note these maps are defined in adobetounicode.h and chartounicode.h

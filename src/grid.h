@@ -90,21 +90,16 @@ struct sort_left_right
 class grid
 {
 public:
-
   // constructor
-
   grid(const graphic_state&);
 
   // public methods
-
   std::unordered_map<uint8_t, std::vector<GSrow>> output(); // result
   std::vector<float> getBox();                              // gets minbox
 
 
 private:
-
   // private data members
-
   constexpr static float CLUMP_H = 0.1; // horizontal clumping, high = sticky
   constexpr static float CLUMP_V = 0.5; // vertical clumping, high = sticky
   graphic_state gs;                     // a copy of the gs used to create grid
@@ -114,7 +109,6 @@ private:
   std::unordered_map<uint8_t, std::vector<GSrow>> gridmap;
 
   // private methods
-
   void makegrid();                  // assigns each glyph to a grid
   void compareCells();              // co-ordinates matching between cells
   void matchRight(GSrow&, uint8_t); // compare all glyphs in cell to index glyph

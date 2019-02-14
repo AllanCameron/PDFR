@@ -70,7 +70,6 @@
  * of xref implementation, it has no public interface and is therefore not
  * defined in this header file, but rather within xref.cpp
 */
-
 #include<utility>
 #include "dictionary.h"
 #include "streams.h"
@@ -88,14 +87,11 @@ class xref
 {
 
 public:
-
   // constructors
-
   xref(){};                     // Default creator
   xref(const std::string*);     // The creator called during document creation
 
   // public methods
-
   bool isEncrypted() const;           // Eeturns encryption state
   dictionary trailer() const;         // Get the trailer dictionary
   size_t getStart(int) const;         // Byyte offset of a given object
@@ -111,9 +107,7 @@ public:
   const std::string* docpointer() const; // pointer to main file string
 
 private:
-
 // private data
-
   const std::string* fs;  // a pointer to the creating file string
 
   // The main xref data member is an unordered map with the key being the object
@@ -149,7 +143,6 @@ private:
   void buildXRtable();                    // constructs main data member
   void get_crypto();                      // Allows decryption of encrypted docs
 };
-
 
 //---------------------------------------------------------------------------//
 

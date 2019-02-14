@@ -63,15 +63,11 @@
 
 class page
 {
-
 public:
-
   // constructor
-
   page(std::shared_ptr<document>, int this_is_the_page_number);
 
   // public methods
-
   std::vector<std::string> getFontNames();  // Returns PostScript font names
   std::string pageContents(); // Returns page description program as string
   std::vector<float> getminbox(); // Get co-ordinates of smallest bounding box
@@ -79,11 +75,8 @@ public:
   std::shared_ptr<font> getFont(const std::string&);  // Get pointer to font
   void clearFontMap();
 
-
 private:
-
   // private data members
-
   std::shared_ptr<document> d;        // Pointer to containing document
   int                 pagenumber;     // [Zero-indexed] page number
   dictionary          header,         // The page's header dictionary
@@ -114,7 +107,6 @@ private:
 
   // Gets the leaf nodes of a content tree
   std::vector<int> expandContents(std::vector<int> objnums);
-
 };
 
 //---------------------------------------------------------------------------//

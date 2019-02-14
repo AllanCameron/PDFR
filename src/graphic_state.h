@@ -173,7 +173,6 @@ private:
   void Tf();              //  data members to maintain
   void TJ();              //
   void Ap();              //---------------------------------//
-  void EOP();
 
   // This is a helper function for the TJ method which otherwise would become
   // a bit of a "hairball". It uses the font information and current graphics

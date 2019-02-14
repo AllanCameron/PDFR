@@ -144,7 +144,6 @@ bool IsAscii(const string& s)
   char maxchar = *max_element(s.begin(), s.end()); // maximum char in s
   // if at least one character is outside the ASCII range, return false
   return (minchar > 7) && (maxchar < 127);
-
 }
 
 /*---------------------------------------------------------------------------*/

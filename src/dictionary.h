@@ -67,16 +67,13 @@
 class dictionary
 {
   public:
-
   // Constructors
-
   dictionary(const std::string*); // make dictionary from string pointer
   dictionary(const std::string*, size_t); // make dictionary from pos in string
   dictionary(std::unordered_map<std::string, std::string>); // create from map
   dictionary(); // empty dictionary
 
   // Public member functions
-
   std::string get(const std::string&) const;  // get value as string given name
   bool has(const std::string&) const;         // confirms a key is present
   bool hasRefs(const std::string&) const;     // tests if given key has references
@@ -90,7 +87,6 @@ class dictionary
   std::unordered_map<std::string, std::string> R_out() const; // returns full map
 
 private:
-
 // The lexer which constructs the dictionary is a finite state machine, which
 // behaves in different ways to parse the string depending on its state.
 // The state in turn may be changed by the character read by the lexer.
@@ -121,9 +117,7 @@ enum DState     {PREENTRY,
   std::unordered_map<std::string, std::string> DictionaryMap; // data holder
 
   // Private functions
-
   void tokenize_dict(); // co-ordinates the lexer
-
   void sortkey(std::string, DState);//----//
   void assignValue(std::string, DState);  //
   void handleMaybe(char);                 //
@@ -136,7 +130,6 @@ enum DState     {PREENTRY,
   void handleQuerydict(char);             //
   void handleSubdict(char);               //
   void handleClose(char);           //----//
-
 };
 
 //---------------------------------------------------------------------------//

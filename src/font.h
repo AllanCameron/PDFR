@@ -71,16 +71,12 @@ typedef std::unordered_map<RawChar, std::pair<Unicode, int>> GlyphMap;
 
 class font
 {
-
 public:
-
   // constructors
-
   font(std::shared_ptr<document>, dictionary, const std::string&);
   font(){};
 
   // public methods
-
   std::string fontname();               // get the actual postscript font name
   std::vector<RawChar> getGlyphKeys();  // vector of all mapped RawChars
 
@@ -89,11 +85,8 @@ public:
   // containing the Unicode interpretation and its associated width
   std::vector<std::pair<Unicode, int>> mapRawChar(std::vector<RawChar>);
 
-
 private:
-
   // private data members
-
   std::shared_ptr<document> d;  // pointer to the containing document
   dictionary fontref;   // the font dictionary
   std::string FontID,   // The name the font is given in the PDF
@@ -101,12 +94,10 @@ private:
   GlyphMap glyphmap;    // Main data member, mapping RawChar to {Unicode, width}
 
   // private methods
-
   void getFontName();   // Finds the postscript font name
 
   // Main creator function; makes glyphmap from encoding and glyphwidth classes
   void makeGlyphTable();
-
 };
 
 //---------------------------------------------------------------------------//
