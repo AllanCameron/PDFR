@@ -79,24 +79,19 @@ class font;
 class document
 {
 public:
-
-    // constructors
-
+  // constructors
   document(const std::string& filename);          // create doc from filepath
   document(const std::vector<uint8_t>& rawfile);  // create doc from raw data
   document();                                     // default constructor
 
 
   // public member functions
-
   std::shared_ptr<object_class> getobject(int objnum); // creates object and returns pointer
   dictionary pageHeader(int p);       // returns header dictionary for page p
   size_t pagecount();
 
 private:
-
   // private data members
-
   std::string file;                   // Path used to create file (if used)
   const std::string filestring;       // Full contents of file
   std::shared_ptr<const xref> Xref;   // Contains the xref object for navigation
@@ -109,7 +104,6 @@ private:
   // then return the stored object on request rather than creating a new
   // instance of the object every time it is requested.
   std::unordered_map <int, std::shared_ptr<object_class>> objects;
-
 
   // private member functions used in construction only
 
