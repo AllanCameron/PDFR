@@ -83,7 +83,7 @@
  */
 
 #include<Rcpp.h>
-#include "grid.h"
+#include "grouper.h"
 
 //---------------------------------------------------------------------------//
 // Get xref. Returns a dataframe representing all of the cross-reference tables
