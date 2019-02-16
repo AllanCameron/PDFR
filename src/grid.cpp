@@ -96,7 +96,10 @@ void grid::makegrid()
                       gslist->fonts[i],          //    information
                      {gslist->text[i]},          //
                       false,                     //
-                      make_pair(-1, -1)  //------//
+                      make_pair(-1, -1),         //
+                      false,                     //
+                      false,                     //
+                      false              //------//
                     };
     // push the struct to the vector in the cell
     gridmap[((uint8_t)(newrow.left / dx))  |

@@ -64,6 +64,7 @@ struct GSrow
   std::vector<Unicode> glyph;   // The actual Unicode glyphs encoded
   bool        consumed;         // Should element be ignored in output?
   std::pair<int, int> rightjoin;// address of closest adjacent element
+  bool isLeftEdge, isRightEdge, isMid;
 };
 
 struct gridoutput

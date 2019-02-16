@@ -123,17 +123,7 @@ void sortby(std::vector<Ta>& vec, const std::vector<Tb>& data)
   std::swap(res, vec); // replace vec by the stored results
 }
 
-//---------------------------------------------------------------------------//
-// Mimics the table() function in R. Instantiates a key for every unique member
-// of supplied vector, and increments any duplicates.
 
-template <typename T>
-std::unordered_map<T, size_t> tabulate(const std::vector<T>& a)
-{
-  std::unordered_map<T, size_t> res;
-  for (auto i : a) { if(res.find(i) == res.end()) res[i] = 1; else res[i]++; }
-  return res;
-}
 
 //---------------------------------------------------------------------------//
 //                                                                           //

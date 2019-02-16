@@ -36,19 +36,19 @@ class grouper
 {
 public:
   // constructor
-  grouper(std::unordered_map<uint8_t, std::vector<GSrow>>);
+  grouper(grid*);
 
   // access results
   std::vector<GSrow> output();
   gridoutput out();
 
 private:
-  void findLeftEdges();
-  void findRightEdges();
-  void findMids();
-  void findTops();
-  void findBottoms();
-  std::vector<float> leftEdges, rightEdges, Tops, Bottoms;
+  grid* theGrid;
+  void tabulate(const std::vector<float>&, std::unordered_map<int, size_t>&);
+  void findEdges();
+  void assignEdges();
+  void findRightMatch();
+  std::unordered_map<int, size_t> leftEdges, rightEdges, mids, Bottoms;
   std::vector<GSrow> allRows;
 };
 
