@@ -44,19 +44,19 @@
  * page program as a text string and goes through each character, identifying
  * tokens as it goes and storing them in a buffer until it can be decided what
  * type of token it has read. It switches state according to a finite set of
- * rules so that it knows when to pass the buffer to the graphic_state for
+ * rules so that it knows when to pass the buffer to the parser for
  * parsing.
  *
  * Its interface is very simple - create the object by feeding it a string and
  * a pointer to the graphics state. It will tokenize the string and send it
- * to the graphic_state for parsing
+ * to the parser for parsing
  *
  * It has a number of private members because it is a fairly complex lexer and
  * is easier to maintain as a collection of functions that pass private members
  * around, rather than one huge hairball function.
  */
 
-#include "graphic_state.h"
+#include "parser.h"
 
 
 //---------------------------------------------------------------------------//
@@ -68,7 +68,7 @@ class tokenizer
 {
 public:
   // constructor
-  tokenizer(std::string&& s, graphic_state* GS);
+  tokenizer(std::string&& s, parser* GS);
 
 private:
   // private data members
@@ -76,7 +76,7 @@ private:
   std::string::const_iterator i;// The iterator that moves through the string
   std::string buf;     // a string buffer to hold chars until pushed to result
   Token::TState state; // The current state of the finite state machine
-  graphic_state* gs;   // The graphic state to which instructions are sent
+  parser* gs;   // The graphic state to which instructions are sent
   static std::string inloop; // keep track of whether we are in an xobject
                              // - this prevents an infinite loop
 

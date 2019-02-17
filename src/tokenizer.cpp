@@ -37,7 +37,7 @@ std::string tokenizer::inloop = "none";
 // constructor of tokenizer - initializes members and starts main
 // lexer function
 
-tokenizer::tokenizer(string&& input, graphic_state* GS) :
+tokenizer::tokenizer(string&& input, parser* GS) :
  s(input), i(s.begin()), state(NEWSYMBOL), gs(GS)
 {
   tokenize();       // instigate lexer
@@ -62,7 +62,7 @@ void tokenizer::pushbuf(const TState type, const TState statename)
     }
   }
   state = statename; // switch state
-  gs->parser(buf, type); // make pair and push to result
+  gs->reader(buf, type); // make pair and push to result
   buf.clear(); // clear buffer
 }
 

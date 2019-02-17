@@ -149,12 +149,12 @@ Rcpp::List get_objectraw(const std::vector<uint8_t>& rawfile, int object)
 
 //---------------------------------------------------------------------------//
 // This is the final common pathway for getting a dataframe of atomic glyphs
-// from the graphic_state. It packages the dataframe with a vector of page
+// from the parser. It packages the dataframe with a vector of page
 // dimensions to allow plotting etc
 
 Rcpp::List getatomic(std::shared_ptr<page> p)
 {
-  graphic_state G = graphic_state(p); // New graphic_state
+  parser G = parser(p); // New parser
   tokenizer(p->pageContents(), &G);   // Read page contents to graphic state
   auto GS = G.output();               // Obtain output from graphic state
   std::vector<std::string> glyph;     // Container for utf-glyphs
@@ -176,7 +176,7 @@ Rcpp::List getatomic(std::shared_ptr<page> p)
 
 Rcpp::List getgrid(std::shared_ptr<page> p)
 {
-  graphic_state GS = graphic_state(p);
+  parser GS = parser(p);
   tokenizer(p->pageContents(), &GS);
   grid Grid = grid(GS);
   gridoutput gridout = grouper(&Grid).out();
@@ -231,7 +231,7 @@ Rcpp::DataFrame pdfdoc_common(std::shared_ptr<document> myfile)
   for(size_t pagenum = 0; pagenum < npages; pagenum++)
   {
     std::shared_ptr<page> p = std::make_shared<page>(myfile, pagenum);
-    graphic_state GS = graphic_state(p);
+    parser GS = parser(p);
     tokenizer(p->pageContents(), &GS);
     grid GR = grid(GS);
     gridoutput gridout = grouper(&GR).out();

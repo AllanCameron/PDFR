@@ -300,7 +300,7 @@ string page::getXobject(const string& objID)
 }
 
 /*--------------------------------------------------------------------------*/
-// The graphic_state class needs to use fonts stored in the fontmap. This getter
+// The parser class needs to use fonts stored in the fontmap. This getter
 // will return a pointer to the requested font.
 
 shared_ptr<font> page::getFont(const string& fontID)

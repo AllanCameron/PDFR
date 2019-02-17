@@ -32,7 +32,7 @@
 #define PDFR_GRID
 
 /* The grid class co-ordinates the grouping together of words. In terms of
- * program structure, this comes directly after the graphic_state step that
+ * program structure, this comes directly after the parser step that
  * reads the page description program. The goal of this class is to clump
  * adjoining glyphs to form strings. Mostly, these will form words, but if
  * actual spaces are included as glyphs then grouped strings of words will be
@@ -98,7 +98,7 @@ class grid
 {
 public:
   // constructor
-  grid(const graphic_state&);
+  grid(const parser&);
 
   // public methods
   std::unordered_map<uint8_t, std::vector<GSrow>> output(); // result
@@ -109,7 +109,7 @@ private:
   // private data members
   constexpr static float CLUMP_H = 0.1; // horizontal clumping, high = sticky
   constexpr static float CLUMP_V = 0.7; // vertical clumping, high = sticky
-  graphic_state gs;                     // a copy of the gs used to create grid
+  parser gs;                     // a copy of the gs used to create grid
   std::vector<float> minbox;            // page's minimum bounding box
 
   // the main data member. A 16 x 16 grid of cells, each with GSrow vector

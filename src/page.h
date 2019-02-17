@@ -53,7 +53,7 @@
  * classes. The reason for this is that some of the data held by the page class
  * may be useful to the end user rather than just being abstractions accessed
  * by other classes. Some of the downstream classes will also needs members of
- * the interface however - the graphic_state class needs to access the fonts,
+ * the interface however - the parser class needs to access the fonts,
  * page contents and Xobjects for example.
  */
 

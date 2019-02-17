@@ -1,6 +1,6 @@
 //---------------------------------------------------------------------------//
 //                                                                           //
-//  PDFR graphic_state header file                                           //
+//  PDFR parser header file                                           //
 //                                                                           //
 //  Copyright (C) 2018 by Allan Cameron                                      //
 //                                                                           //
@@ -31,7 +31,7 @@
 
 #define PDFR_GS
 
-/* The job of the graphic_state class is to parse the pdf page description
+/* The job of the parser class is to parse the pdf page description
  * language into a table of glyphs, positions, sizes and fontnames - one row
  * for each character on the page. The instructions from the page description
  * language have already been "compiled" by the lexer into an instruction set,
@@ -43,7 +43,7 @@
  * the stack until an operator is reached. When the operator is reached, it
  * performs an action on the operands then clears the stack.
  *
- * In order that graphic_state can interpret the operands, it needs to know
+ * In order that parser can interpret the operands, it needs to know
  * about the fonts on the page, the content string, and any xobjects that
  * are called to be inserted on the page. It therefore needs to use the page's
  * public interface to get these data, and in fact is created by giving the
@@ -58,7 +58,7 @@
  * a number of private data members which maintain state between loops of the
  * instruction reader, and some which record the entire history of the state.
  *
- * The final output of graphic_state is a collection of vectors, all of the same
+ * The final output of parser is a collection of vectors, all of the same
  * length, comprising the Unicode symbol, width, font size, font name and x/y
  * position of every character on the page. This is output as a specific struct
  * to reduce the passing around of several parameters.
@@ -72,7 +72,7 @@
 // The states of the lexer are defined by this enum. It is defined in its own
 // namespace rather than within the class because its states are also used
 // as type labels in the instruction set it produces. These therefore need
-// to be made available to the instruction reader in the graphic_state class
+// to be made available to the instruction reader in the parser class
 
 namespace Token
 {
@@ -92,7 +92,7 @@ namespace Token
 };
 
 //---------------------------------------------------------------------------//
-// This struct is a container for the output of the graphic_state class. All
+// This struct is a container for the output of the parser class. All
 // of the vectors are the same length, so it can be thought of as a table with
 // one row for each glyph on the page. This makes it straightforward to output
 // to other formats if needed.
@@ -110,12 +110,12 @@ struct GSoutput
 
 //---------------------------------------------------------------------------//
 
-class graphic_state
+class parser
 {
 public:
   // constructor
-  graphic_state(std::shared_ptr<page>);
-  void parser(std::string&, Token::TState);
+  parser(std::shared_ptr<page>);
+  void reader(std::string&, Token::TState);
 
   // access results
   GSoutput* output();
@@ -125,7 +125,7 @@ public:
 
 private:
   //private data members - used to maintain state between calls to parser
-  typedef void (graphic_state::*fptr)();
+  typedef void (parser::*fptr)();
 
   std::shared_ptr<page>           p;              // pointer to creating page
   std::shared_ptr<font>           wfont;          // pointer to "working" font
@@ -151,7 +151,7 @@ private:
 
   // Private methods
 
-  // The parser method takes the compiled instructions and writes operands
+  // The reader method takes the compiled instructions and writes operands
   // to a "stack", or calls an operator method depending on the label given
   // to each token in the instruction set. It loops through the entire
   // instruction set, after which the data just needs tidied and wrapped.
@@ -163,7 +163,7 @@ private:
   void TW();              //  work of performing actions
   void TC();              //  on the graphics state and
   void TL();              //  writing the results. They
-  void T_();              //  are called by the parser
+  void T_();              //  are called by the reader()
   void Tm();              //  method according to the
   void cm();              //  operator it encounters, and
   void Td();              //  act on any operands sitting

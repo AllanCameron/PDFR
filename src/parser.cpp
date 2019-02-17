@@ -1,6 +1,6 @@
 //---------------------------------------------------------------------------//
 //                                                                           //
-//  PDFR graphic_state implementation file                                   //
+//  PDFR parser implementation file                                   //
 //                                                                           //
 //  Copyright (C) 2018 by Allan Cameron                                      //
 //                                                                           //
@@ -25,7 +25,7 @@
 //                                                                           //
 //---------------------------------------------------------------------------//
 
-#include "graphic_state.h"
+#include "parser.h"
 
 //---------------------------------------------------------------------------//
 
@@ -35,13 +35,13 @@ using namespace Token;
 //---------------------------------------------------------------------------//
 // This typedef declares fptr as a function pointer
 
-typedef void (graphic_state::*fptr)();
+typedef void (parser::*fptr)();
 
 //---------------------------------------------------------------------------//
 // This statically-declared map allows functions to be called based on strings
 // passed to it from the tokenizer
 
-std::unordered_map<std::string, fptr> graphic_state::fmap =
+std::unordered_map<std::string, fptr> parser::fmap =
 {
   {"Q",   &Q}, {"q",   &q}, {"BT", &BT}, {"ET", &ET}, {"cm", &cm}, {"Tm", &Tm},
   {"Tf", &Tf}, {"Td", &Td}, {"Th", &TH}, {"Tw", &TW}, {"Tc", &TC}, {"TL", &TL},
@@ -49,11 +49,11 @@ std::unordered_map<std::string, fptr> graphic_state::fmap =
 };
 
 //---------------------------------------------------------------------------//
-// The graphic_state constructor has to initialize many variables that allow
+// The parser constructor has to initialize many variables that allow
 // it to track state once instructions are passed to it. After these are set,
 // it does no work unless passed instructions by the tokenizer
 
-graphic_state::graphic_state(shared_ptr<page> pag) : // long initializer list...
+parser::parser(shared_ptr<page> pag) : // long initializer list...
   p(pag), // pointer to page of interest
   currfontsize(0), // pointsize specified by page program
   initstate({1, 0, 0, 0, 1, 0, 0, 0, 1}), // 3x3 identity matrix
@@ -76,7 +76,7 @@ graphic_state::graphic_state(shared_ptr<page> pag) : // long initializer list...
 // the tokenizer, the name of the xobject is sitting on the top of the
 // operands stack. This public method passes that name on.
 
-std::string graphic_state::getOperand()
+std::string parser::getOperand()
 {
   if(Operands.empty()) return string("");
   return Operands[0];
@@ -86,7 +86,7 @@ std::string graphic_state::getOperand()
 // We need to be able to pass the page pointer on to the tokenizer to read
 // form xobjects using a public method
 
-std::shared_ptr<page> graphic_state::getPage()
+std::shared_ptr<page> parser::getPage()
 {
   return p;
 }
@@ -94,7 +94,7 @@ std::shared_ptr<page> graphic_state::getPage()
 //---------------------------------------------------------------------------//
 // The public getter of the main data member
 
-GSoutput* graphic_state::output()
+GSoutput* parser::output()
 {
   return &db;
 }
@@ -102,7 +102,7 @@ GSoutput* graphic_state::output()
 /*---------------------------------------------------------------------------*/
 // q operator - pushes a copy of the current graphics state to the stack
 
-void graphic_state::q()
+void parser::q()
 {
     ////PROFC_NODE("q");
   gs.emplace_back(gs.back());               // push transformation matrix
@@ -113,7 +113,7 @@ void graphic_state::q()
 /*---------------------------------------------------------------------------*/
 // Q operator - pop the graphics state stack
 
-void graphic_state::Q()
+void parser::Q()
 {
     //PROFC_NODE("Q");
   if (gs.size() > 1) // Empty graphics state is undefined but gs[0] is identity
@@ -131,7 +131,7 @@ void graphic_state::Q()
 /*---------------------------------------------------------------------------*/
 // Td operator - applies tranlational changes only to text matrix (Tm)
 
-void graphic_state::Td()
+void parser::Td()
 {
     //PROFC_NODE("Td");
   array<float, 9> Tds = initstate;                  //------------------------
@@ -145,7 +145,7 @@ void graphic_state::Td()
 /*---------------------------------------------------------------------------*/
 // TD operator - same as Td except it also sets the 'leading' (Tl) operator
 
-void graphic_state::TD()
+void parser::TD()
 {
     //PROFC_NODE("TD");
   array<float, 9> Tds = initstate;                    //------------------------
@@ -160,7 +160,7 @@ void graphic_state::TD()
 /*---------------------------------------------------------------------------*/
 // BT operator - signifies start of text
 
-void graphic_state::BT()
+void parser::BT()
 {
     //PROFC_NODE("BT");
   Tmstate = Tdstate = initstate; // Reset text matrix to identity matrix
@@ -171,7 +171,7 @@ void graphic_state::BT()
 /*---------------------------------------------------------------------------*/
 // ET operator - signifies end of text
 
-void graphic_state::ET()
+void parser::ET()
 {
     //PROFC_NODE("ET");
   Tmstate = Tdstate = initstate; // Reset text matrix to identity matrix
@@ -181,7 +181,7 @@ void graphic_state::ET()
 
 /*---------------------------------------------------------------------------*/
 // Tf operator - specifies font and pointsize
-void graphic_state::Tf()
+void parser::Tf()
 {
     //PROFC_NODE("Tf");
   if(Operands.size() > 1) // Should be 2 operators: 1 is not defined
@@ -197,7 +197,7 @@ void graphic_state::Tf()
 /*---------------------------------------------------------------------------*/
 // TH - sets horizontal spacing
 
-void graphic_state::TH()
+void parser::TH()
 {
     //PROFC_NODE("TH");
   Th = stof(Operands.at(0)); // simply reads operand as new Th value
@@ -206,7 +206,7 @@ void graphic_state::TH()
 /*---------------------------------------------------------------------------*/
 // Tc operator - sets character spacing
 
-void graphic_state::TC()
+void parser::TC()
 {
     //PROFC_NODE("TC");
   Tc = stof(Operands.at(0)); // simply reads operand as new Tc value
@@ -215,7 +215,7 @@ void graphic_state::TC()
 /*---------------------------------------------------------------------------*/
 // TW operator - sets word spacing
 
-void graphic_state::TW()
+void parser::TW()
 {
   Tw = stof(Operands.at(0));  // simply reads operand as new Tw value
 }
@@ -223,7 +223,7 @@ void graphic_state::TW()
 /*---------------------------------------------------------------------------*/
 // TL operator - sets leading (size of vertical jump to new line)
 
-void graphic_state::TL()
+void parser::TL()
 {
     //PROFC_NODE("TL");
   Tl = stof(Operands.at(0));  // simply reads operand as new Tl value
@@ -232,7 +232,7 @@ void graphic_state::TL()
 /*---------------------------------------------------------------------------*/
 // T* operator - moves to new line
 
-void graphic_state::T_()
+void parser::T_()
 {
     //PROFC_NODE("T*");
   Tdstate.at(7) = Tdstate.at(7) - Tl; // decrease y value of text matrix by Tl
@@ -242,7 +242,7 @@ void graphic_state::T_()
 /*---------------------------------------------------------------------------*/
 // Tm operator - sets the text matrix (convolve text relative to graphics state)
 
-void graphic_state::Tm()
+void parser::Tm()
 {
     //PROFC_NODE("Tm");
   Tmstate = stringvectomat(move(Operands)); // Reads operands as a 3x3 matrix
@@ -253,7 +253,7 @@ void graphic_state::Tm()
 /*---------------------------------------------------------------------------*/
 // cm operator - applies transformation matrix to graphics state
 
-void graphic_state::cm()
+void parser::cm()
 {
     //PROFC_NODE("cm");
   // read the operands as a matrix, multiply by top of graphics state stack
@@ -265,7 +265,7 @@ void graphic_state::cm()
 // The "'" operator is a minor variation of the TJ function. Ap is short for
 // apostrophe
 
-void graphic_state::Ap()
+void parser::Ap()
 {
   //PROFC_NODE("TJ");
   // the "'" operator is the same as Tj except it moves to the next line first
@@ -284,7 +284,7 @@ void graphic_state::Ap()
 // This function is heavily commented as a little mistake here can screw
 // everything up. YOU HAVE BEEN WARNED!
 
-void graphic_state::TJ()
+void parser::TJ()
 {
   // We create a text space that is the product of Tm and cm matrices
   array<float, 9> textspace = gs.back();
@@ -330,7 +330,7 @@ void graphic_state::TJ()
 // generated, the userspace and initial userspace to calculate the
 // glyphs, sizes and positions intended by the string in the page program
 
-void graphic_state::processRawChar(vector<RawChar>& raw, float& scale,
+void parser::processRawChar(vector<RawChar>& raw, float& scale,
                              array<float, 9>& textspace, float& txtspcinit)
 {
   // look up the RawChars in the font to get their Unicode values and widths
@@ -364,19 +364,14 @@ void graphic_state::processRawChar(vector<RawChar>& raw, float& scale,
 }
 
 /*---------------------------------------------------------------------------*/
-// The parser takes the instruction set generated by the lexer and enacts it.
+// The reader takes the instructions generated by the tokenizer and enacts them.
 // It does this by reading each token and its type. If it comes across an
 // IDENTIFIER it calls the operator function for that symbol. Otherwise,
 // it assumes it is reading an operand and places it on the operand stack.
 // When an operator function is called, it takes the operands on the stack
-// as arguments. The "inloop" parameter is there to prevent infinite loops -
-// when the parser is called on an xobject it can get stuck if the xobject's
-// contents call itself (it does happen!). To prevent this, an xobject
-// identifies itself with "inloop" if it calls the parser, and the Do operator
-// will not be called if its operand stack contains the same string as inloop.
+// as arguments.
 
-void
-graphic_state::parser(string& token, TState state)
+void parser::reader(string& token, TState state)
 {
   if (state == IDENTIFIER) // if it's an identifier, call the operator,
   {                           // passing any stored operands on the stack
@@ -404,7 +399,7 @@ graphic_state::parser(string& token, TState state)
 //                      | x[6]  x[7]  x[8] |
 //
 
-void graphic_state::matmul(const array<float, 9>& b, array<float, 9>& a)
+void parser::matmul(const array<float, 9>& b, array<float, 9>& a)
 {
   array<float, 9> newmat;
   for(size_t i = 0; i < 9; i++) //clever use of indices to allow fill by loop
@@ -429,7 +424,7 @@ void graphic_state::matmul(const array<float, 9>& b, array<float, 9>& a)
 //                      |   15    16    1  |
 //
 
-array<float, 9> graphic_state::stringvectomat(const vector<string>& a)
+array<float, 9> parser::stringvectomat(const vector<string>& a)
 {
   array<float, 9> newmat {stof(a[0]), stof(a[1]), 0,
                           stof(a[2]), stof(a[3]), 0,
@@ -438,9 +433,9 @@ array<float, 9> graphic_state::stringvectomat(const vector<string>& a)
 }
 
 /*---------------------------------------------------------------------------*/
-// Retrieve the minbox around the graphic_state
+// Retrieve the minbox around the parser
 
-std::vector<float> graphic_state::getminbox()
+std::vector<float> parser::getminbox()
 {
   return p->getminbox();
 }

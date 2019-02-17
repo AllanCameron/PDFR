@@ -59,7 +59,7 @@ gridoutput grid::out()
 // page into an easily addressable 16 x 16 grid, find glyphs in close proximity
 // to each other, and glue them together, respectively.
 
-grid::grid(const graphic_state& GS) : gs(GS)
+grid::grid(const parser& GS) : gs(GS)
 {
   makegrid();     // Split the glyphs into 256 cells to reduce search space
   compareCells(); // Find adjacent glyphs
@@ -83,7 +83,7 @@ grid::grid(const graphic_state& GS) : gs(GS)
 void grid::makegrid()
 {
   minbox = gs.getminbox();  // gets the minbox found on page creation
-  GSoutput* gslist = gs.output(); // Take the output of graphic_state
+  GSoutput* gslist = gs.output(); // Take the output of parser
   float dx = (minbox[2] - minbox[0])/16; // calculate width of cells
   float dy = (minbox[3] - minbox[1])/16; // calculate height of cells
   for(unsigned i = 0; i < gslist->width.size(); i++) // for each glyph...
@@ -154,7 +154,7 @@ void grid::compareCells()
 // This is the algorithm that finds adjoining glyphs. Each glyph is addressable
 // by its cell and the order it appears in the vector of glyphs contained in
 // that cell. The glyphs are called GSrows here because each glyph forms a row
-// of output from the graphic_state class
+// of output from the parser class
 
 void grid::matchRight(GSrow& row, uint8_t key)
 {
@@ -165,9 +165,10 @@ void grid::matchRight(GSrow& row, uint8_t key)
     if (cell[i].left > row.left &&
         abs(cell[i].bottom - row.bottom) < (CLUMP_V * row.size) &&
         (abs(cell[i].left  -  row.right ) < (CLUMP_H * row.size) ||
-        (cell[i].left < row.right)) &&
-        cell[i].size == row.size) // if in reasonable position to be next glyph
+        (cell[i].left < row.right)) )//&&
+        //cell[i].size == row.size) // if in reasonable position to be next glyph
     {
+      if(cell[i].consumed) continue;
       if(row.rightjoin.first == -1) // if no previous match found
       {
         row.rightjoin = make_pair((int) key, (int) i); // store match address
@@ -176,6 +177,8 @@ void grid::matchRight(GSrow& row, uint8_t key)
       if(gridmap[row.rightjoin.first][row.rightjoin.second].left >
            cell[i].left) // if already a match but this one is better...
         row.rightjoin = make_pair((int) key, (int) i); // ...store match address
+      if(cell[i].left == row.left && cell[i].right == row.right &&
+       cell[i].glyph == row.glyph) row.consumed = true;
     }
 }
 
@@ -195,7 +198,7 @@ void grid::merge()
       if(cell.size() == 0) continue;      // Cell empty - nothing to do
       for(auto& k : cell)                 // for each glyph in the cell
       {
-        if(k.rightjoin.first == -1) continue; // nothing joins the right side
+        if(k.consumed || k.rightjoin.first == -1) continue; // nothing joins
         // look up the right-matching glyph
         GSrow& matcher = gridmap[k.rightjoin.first][k.rightjoin.second];
         // paste the left glyph to the right glyph
