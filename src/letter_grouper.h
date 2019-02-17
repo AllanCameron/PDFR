@@ -1,6 +1,6 @@
 //---------------------------------------------------------------------------//
 //                                                                           //
-//  PDFR grid header file                                                    //
+//  PDFR letter_grouper header file                                          //
 //                                                                           //
 //  Copyright (C) 2018 by Allan Cameron                                      //
 //                                                                           //
@@ -25,13 +25,13 @@
 //                                                                           //
 //---------------------------------------------------------------------------//
 
-#ifndef PDFR_GRID
+#ifndef PDFR_LGROUPER
 
 //---------------------------------------------------------------------------//
 
-#define PDFR_GRID
+#define PDFR_LGROUPER
 
-/* The grid class co-ordinates the grouping together of words. In terms of
+/* The letter_grouper class co-ordinates the grouping together of words. In terms of
  * program structure, this comes directly after the parser step that
  * reads the page description program. The goal of this class is to clump
  * adjoining glyphs to form strings. Mostly, these will form words, but if
@@ -49,7 +49,7 @@
 // The GSrow is a struct which acts as a "row" of information about each text
 // element on a page including the actual unicode glyph(s), the position, the
 // font and size of the character(s). It also contains a pair that acts as an
-// address for the adjacent glyph which will be found as part of grid's
+// address for the adjacent glyph which will be found as part of letter_grouper's
 // construction, and a boolean flag to indicate whether it is "consumed" when
 // the glyphs are stuck together into words.
 
@@ -86,7 +86,7 @@ struct sort_left_right
 };
 
 //---------------------------------------------------------------------------//
-// The grid class contains a public constructor, an output map of results,
+// The letter_grouper class contains a public constructor, an output map of results,
 // and a method for passing out the minimum text bounding box found in page
 // construction. Its private methods are used only in construction of the
 // output. The main private member is a map of vectors of GSrows, each
@@ -94,11 +94,11 @@ struct sort_left_right
 // Each glyph is addressable by two numbers - the grid number and the position
 // of the glyph in the cell's vector.
 
-class grid
+class letter_grouper
 {
 public:
   // constructor
-  grid(const parser&);
+  letter_grouper(const parser&);
 
   // public methods
   std::unordered_map<uint8_t, std::vector<GSrow>> output(); // result
@@ -109,7 +109,7 @@ private:
   // private data members
   constexpr static float CLUMP_H = 0.1; // horizontal clumping, high = sticky
   constexpr static float CLUMP_V = 0.7; // vertical clumping, high = sticky
-  parser gs;                     // a copy of the gs used to create grid
+  parser gs;                     // a copy of the parser used to create grid
   std::vector<float> minbox;            // page's minimum bounding box
 
   // the main data member. A 16 x 16 grid of cells, each with GSrow vector

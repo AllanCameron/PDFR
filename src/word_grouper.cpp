@@ -1,6 +1,6 @@
 //---------------------------------------------------------------------------//
 //                                                                           //
-//  PDFR grouper implementation file                                            //
+//  PDFR word_grouper implementation file                                            //
 //                                                                           //
 //  Copyright (C) 2018 by Allan Cameron                                      //
 //                                                                           //
@@ -25,7 +25,7 @@
 //                                                                           //
 //---------------------------------------------------------------------------//
 
-#include "grouper.h"
+#include "word_grouper.h"
 
 using namespace std;
 
@@ -33,7 +33,7 @@ constexpr int EDGECOUNT = 4;
 
 //---------------------------------------------------------------------------//
 
-grouper::grouper(grid* g): theGrid(g)
+word_grouper::word_grouper(letter_grouper* g): theGrid(g)
 {
   std::unordered_map<uint8_t, std::vector<GSrow>> gridout = theGrid->output();
   vector<GSrow> tmpvec;
@@ -49,14 +49,14 @@ grouper::grouper(grid* g): theGrid(g)
 //---------------------------------------------------------------------------//
 
 
-std::vector<GSrow> grouper::output()
+std::vector<GSrow> word_grouper::output()
 {
   return allRows;
 }
 
 //---------------------------------------------------------------------------//
 
-gridoutput grouper::out()
+gridoutput word_grouper::out()
 {
   std::vector<float> left, right, width, bottom, size;
   std::vector<std::string> font, text;
@@ -83,7 +83,7 @@ gridoutput grouper::out()
 // of supplied vector, and increments any duplicates.
 
 
-void grouper::tabulate(const vector<float>& a, unordered_map<int, size_t>& b)
+void word_grouper::tabulate(const vector<float>& a, unordered_map<int, size_t>& b)
 {
   for (auto i : a)
   {
@@ -98,7 +98,7 @@ void grouper::tabulate(const vector<float>& a, unordered_map<int, size_t>& b)
 }
 
 
-void grouper::findEdges()
+void word_grouper::findEdges()
 {
   gridoutput GO = theGrid->out();
   tabulate(GO.left, leftEdges);
@@ -109,7 +109,7 @@ void grouper::findEdges()
   tabulate(midvec, mids);
 }
 
-void grouper::assignEdges()
+void word_grouper::assignEdges()
 {
   for(auto& i : allRows)
   {
@@ -122,7 +122,7 @@ void grouper::assignEdges()
   }
 }
 
-void grouper::findRightMatch()
+void word_grouper::findRightMatch()
 {
   for(auto i = allRows.begin(); i != allRows.end(); i++)
   {

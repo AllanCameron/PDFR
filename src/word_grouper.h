@@ -1,6 +1,6 @@
 //---------------------------------------------------------------------------//
 //                                                                           //
-//  PDFR grouper header file                                                    //
+//  PDFR word_grouper header file                                            //
 //                                                                           //
 //  Copyright (C) 2018 by Allan Cameron                                      //
 //                                                                           //
@@ -25,25 +25,25 @@
 //                                                                           //
 //---------------------------------------------------------------------------//
 
-#ifndef PDFR_GROUPER
+#ifndef PDFR_WGROUPER
 
 //---------------------------------------------------------------------------//
 
-#define PDFR_GROUPER
-#include "grid.h"
+#define PDFR_WGROUPER
+#include "letter_grouper.h"
 
-class grouper
+class word_grouper
 {
 public:
   // constructor
-  grouper(grid*);
+  word_grouper(letter_grouper*);
 
   // access results
   std::vector<GSrow> output();
   gridoutput out();
 
 private:
-  grid* theGrid;
+  letter_grouper* theGrid;
   void tabulate(const std::vector<float>&, std::unordered_map<int, size_t>&);
   void findEdges();
   void assignEdges();

@@ -178,8 +178,8 @@ Rcpp::List getgrid(std::shared_ptr<page> p)
 {
   parser GS = parser(p);
   tokenizer(p->pageContents(), &GS);
-  grid Grid = grid(GS);
-  gridoutput gridout = grouper(&Grid).out();
+  letter_grouper Grid = letter_grouper(GS);
+  gridoutput gridout = word_grouper(&Grid).out();
   Rcpp::DataFrame db =  Rcpp::DataFrame::create(
                         Rcpp::Named("text") =   std::move(gridout.text),
                         Rcpp::Named("left") =   std::move(gridout.left),
@@ -233,8 +233,8 @@ Rcpp::DataFrame pdfdoc_common(std::shared_ptr<document> myfile)
     std::shared_ptr<page> p = std::make_shared<page>(myfile, pagenum);
     parser GS = parser(p);
     tokenizer(p->pageContents(), &GS);
-    grid GR = grid(GS);
-    gridoutput gridout = grouper(&GR).out();
+    letter_grouper GR = letter_grouper(GS);
+    gridoutput gridout = word_grouper(&GR).out();
     concat(glyph, gridout.text);
     concat(left, gridout.left);
     concat(right, gridout.right);

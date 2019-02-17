@@ -83,7 +83,7 @@
  */
 
 #include<Rcpp.h>
-#include "grouper.h"
+#include "word_grouper.h"
 
 //---------------------------------------------------------------------------//
 // Get xref. Returns a dataframe representing all of the cross-reference tables

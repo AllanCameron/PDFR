@@ -1,6 +1,6 @@
 //---------------------------------------------------------------------------//
 //                                                                           //
-//  PDFR grid implementation file                                            //
+//  PDFR letter_grouper implementation file                                            //
 //                                                                           //
 //  Copyright (C) 2018 by Allan Cameron                                      //
 //                                                                           //
@@ -25,12 +25,12 @@
 //                                                                           //
 //---------------------------------------------------------------------------//
 
-#include "grid.h"
+#include "letter_grouper.h"
 #include <cstdlib>   // for abs()
 
 using namespace std;
 
-gridoutput grid::out()
+gridoutput letter_grouper::out()
 {
   std::vector<float> left, right, width, bottom, size;
   std::vector<std::string> font, text;
@@ -55,11 +55,11 @@ gridoutput grid::out()
 }
 
 //---------------------------------------------------------------------------//
-// The grid constructor calls three constructing subroutines. These split the
+// The letter_grouper constructor calls three constructing subroutines. These split the
 // page into an easily addressable 16 x 16 grid, find glyphs in close proximity
 // to each other, and glue them together, respectively.
 
-grid::grid(const parser& GS) : gs(GS)
+letter_grouper::letter_grouper(const parser& GS) : gs(GS)
 {
   makegrid();     // Split the glyphs into 256 cells to reduce search space
   compareCells(); // Find adjacent glyphs
@@ -80,7 +80,7 @@ grid::grid(const parser& GS) : gs(GS)
 // smaller. The grid position is easily stored as a single byte, with the first
 // 8 bits representing the x position and the second representing the y.
 
-void grid::makegrid()
+void letter_grouper::makegrid()
 {
   minbox = gs.getminbox();  // gets the minbox found on page creation
   GSoutput* gslist = gs.output(); // Take the output of parser
@@ -113,7 +113,7 @@ void grid::makegrid()
 //---------------------------------------------------------------------------//
 // Allows the main data object to be output after calculations done
 
-std::unordered_map<uint8_t, std::vector<GSrow>> grid::output()
+std::unordered_map<uint8_t, std::vector<GSrow>> letter_grouper::output()
 {
   return gridmap;
 }
@@ -127,7 +127,7 @@ std::unordered_map<uint8_t, std::vector<GSrow>> grid::output()
 // North and South. If there is no match found in these it will also look in
 // the cells at the NorthEast, East and SouthEast.
 
-void grid::compareCells()
+void letter_grouper::compareCells()
 {
   for(uint8_t i = 0; i < 16; i++) // for each of 16 columns of cells on page
   {
@@ -156,7 +156,7 @@ void grid::compareCells()
 // that cell. The glyphs are called GSrows here because each glyph forms a row
 // of output from the parser class
 
-void grid::matchRight(GSrow& row, uint8_t key)
+void letter_grouper::matchRight(GSrow& row, uint8_t key)
 {
   // The key is the address of the cell in the gridmap
   std::vector<GSrow>& cell = gridmap[key]; // get the vector of matching cell
@@ -187,7 +187,7 @@ void grid::matchRight(GSrow& row, uint8_t key)
 // the latter's size and position parameters and declaring the leftward glyph
 // "consumed"
 
-void grid::merge()
+void letter_grouper::merge()
 {
   for(uint8_t i = 0; i < 16; i++)  // for each column in the x-axis
   {
@@ -221,7 +221,7 @@ void grid::merge()
 //---------------------------------------------------------------------------//
 // Passes the minbox calculated on page creation to allow plotting etc
 
-std::vector<float> grid::getBox()
+std::vector<float> letter_grouper::getBox()
 {
   return minbox;
 }
