@@ -1,6 +1,6 @@
 //---------------------------------------------------------------------------//
 //                                                                           //
-//  PDFR letter_grouper implementation file                                            //
+//  PDFR letter_grouper implementation file                                  //
 //                                                                           //
 //  Copyright (C) 2018 by Allan Cameron                                      //
 //                                                                           //
@@ -30,16 +30,20 @@
 
 using namespace std;
 
+//---------------------------------------------------------------------------//
+// This is a tabular output for the class to provide a method for outputting
+// words to the interface without any higher level grouping
+
 gridoutput letter_grouper::out()
 {
-  std::vector<float> left, right, width, bottom, size;
-  std::vector<std::string> font, text;
-  for(uint8_t i = 0; i < 256; i++)
-  {
+  std::vector<float> left, right, width, bottom, size; // these vectors are
+  std::vector<std::string> font, text;                 // components of the
+  for(uint8_t i = 0; i < 256; i++)                     // gridout struct
+  {// for each cell in the grid...
     for(auto& j : gridmap[i])
-    {
-      if(!j.consumed)
-      {
+    {// for each textrow in the cell...
+      if(!j.consumed) //if it isn't marked for deletion...
+      {// copy its contents over
         text.push_back(utf({j.glyph}));
         left.push_back(j.left);
         right.push_back(j.right);
@@ -55,7 +59,7 @@ gridoutput letter_grouper::out()
 }
 
 //---------------------------------------------------------------------------//
-// The letter_grouper constructor calls three constructing subroutines. These split the
+// The letter_grouper constructor calls three subroutines. These split the
 // page into an easily addressable 16 x 16 grid, find glyphs in close proximity
 // to each other, and glue them together, respectively.
 
@@ -68,7 +72,7 @@ letter_grouper::letter_grouper(const parser& GS) : gs(GS)
 
 //---------------------------------------------------------------------------//
 // This method creates a 16 x 16 grid of equally-sized bins across the page and
-// places each row of the GS output into a vector in each bin. The reason for
+// places each textrow from the parser into a vector in each bin. The reason for
 // doing this is to narrow the search space of potentially adjoining glyphs. The
 // naive method would involve comparing the right and bottom edge of every glyph
 // to every other glyph. By putting the glyphs into bins, we only need to
@@ -78,7 +82,7 @@ letter_grouper::letter_grouper(const parser& GS) : gs(GS)
 // above and two cells below each character. This still leaves us with a search
 // space of approximately 6/256 * n^2 as opposed to n^2, which is 40 times
 // smaller. The grid position is easily stored as a single byte, with the first
-// 8 bits representing the x position and the second representing the y.
+// 4 bits representing the x position and the second representing the y.
 
 void letter_grouper::makegrid()
 {
@@ -88,7 +92,7 @@ void letter_grouper::makegrid()
   float dy = (minbox[3] - minbox[1])/16; // calculate height of cells
   for(unsigned i = 0; i < gslist->width.size(); i++) // for each glyph...
   {
-    GSrow newrow = {  gslist->left[i],   //------//
+    textrow newrow = {  gslist->left[i],   //------//
                       gslist->right[i],          //
                       gslist->width[i],          //
                       gslist->bottom[i],         //    create a struct with all
@@ -113,7 +117,7 @@ void letter_grouper::makegrid()
 //---------------------------------------------------------------------------//
 // Allows the main data object to be output after calculations done
 
-std::unordered_map<uint8_t, std::vector<GSrow>> letter_grouper::output()
+std::unordered_map<uint8_t, std::vector<textrow>> letter_grouper::output()
 {
   return gridmap;
 }
@@ -134,7 +138,7 @@ void letter_grouper::compareCells()
     for(uint8_t j = 0; j < 16; j++) // for each cell in the column
     {
       uint8_t key = i | (j << 4);   // get the address of the cell
-      vector<GSrow>& maingroup = gridmap[key]; // get the cell's contents
+      vector<textrow>& maingroup = gridmap[key]; // get the cell's contents
       if(maingroup.empty()) continue;  // empty cell - nothing to be done
       for(auto& k : maingroup) // for each glyph in the cell
       {
@@ -153,32 +157,31 @@ void letter_grouper::compareCells()
 //---------------------------------------------------------------------------//
 // This is the algorithm that finds adjoining glyphs. Each glyph is addressable
 // by its cell and the order it appears in the vector of glyphs contained in
-// that cell. The glyphs are called GSrows here because each glyph forms a row
+// that cell. The glyphs are called textrows here because each glyph forms a row
 // of output from the parser class
 
-void letter_grouper::matchRight(GSrow& row, uint8_t key)
+void letter_grouper::matchRight(textrow& row, uint8_t key)
 {
   // The key is the address of the cell in the gridmap
-  std::vector<GSrow>& cell = gridmap[key]; // get the vector of matching cell
+  std::vector<textrow>& cell = gridmap[key]; // get the vector of matching cell
   if(cell.empty()) return; // some cells are empty - nothing to do
   for(uint16_t i = 0; i < cell.size(); i++) // for each glyph in the cell...
     if (cell[i].left > row.left &&
         abs(cell[i].bottom - row.bottom) < (CLUMP_V * row.size) &&
         (abs(cell[i].left  -  row.right ) < (CLUMP_H * row.size) ||
-        (cell[i].left < row.right)) )//&&
-        //cell[i].size == row.size) // if in reasonable position to be next glyph
-    {
-      if(cell[i].consumed) continue;
+        (cell[i].left < row.right)) )
+    {// if in good position to be next glyph
+      // mark row for deletion if it is identical
+      if(cell[i] == row) row.consumed = true;
+      if(cell[i].consumed) continue; // ignore if marked for deletion
       if(row.rightjoin.first == -1) // if no previous match found
       {
         row.rightjoin = make_pair((int) key, (int) i); // store match address
-        continue; // don't check next statement
+        continue; // don't bother checking next statement
       }
       if(gridmap[row.rightjoin.first][row.rightjoin.second].left >
            cell[i].left) // if already a match but this one is better...
         row.rightjoin = make_pair((int) key, (int) i); // ...store match address
-      if(cell[i].left == row.left && cell[i].right == row.right &&
-       cell[i].glyph == row.glyph) row.consumed = true;
     }
 }
 
@@ -194,13 +197,13 @@ void letter_grouper::merge()
     for(uint8_t j = 0; j < 16; j++) // for each cell in that column
     {
       uint8_t key = i | (j << 4);         // get the cell's address
-      vector<GSrow>& cell = gridmap[key]; // get the cell's contents
+      vector<textrow>& cell = gridmap[key]; // get the cell's contents
       if(cell.size() == 0) continue;      // Cell empty - nothing to do
       for(auto& k : cell)                 // for each glyph in the cell
       {
         if(k.consumed || k.rightjoin.first == -1) continue; // nothing joins
         // look up the right-matching glyph
-        GSrow& matcher = gridmap[k.rightjoin.first][k.rightjoin.second];
+        textrow& matcher = gridmap[k.rightjoin.first][k.rightjoin.second];
         // paste the left glyph to the right glyph
         concat(k.glyph, matcher.glyph);
         // make the right glyph now contain both glyphs

@@ -31,8 +31,8 @@
 
 #define PDFR_LGROUPER
 
-/* The letter_grouper class co-ordinates the grouping together of words. In terms of
- * program structure, this comes directly after the parser step that
+/* The letter_grouper class co-ordinates the grouping together of words. In
+ * terms of program structure, this comes directly after the parser step that
  * reads the page description program. The goal of this class is to clump
  * adjoining glyphs to form strings. Mostly, these will form words, but if
  * actual spaces are included as glyphs then grouped strings of words will be
@@ -46,14 +46,15 @@
 #include "tokenizer.h"
 
 //---------------------------------------------------------------------------//
-// The GSrow is a struct which acts as a "row" of information about each text
+// The textrow is a struct which acts as a "row" of information about each text
 // element on a page including the actual unicode glyph(s), the position, the
 // font and size of the character(s). It also contains a pair that acts as an
-// address for the adjacent glyph which will be found as part of letter_grouper's
-// construction, and a boolean flag to indicate whether it is "consumed" when
-// the glyphs are stuck together into words.
+// address for the adjacent glyph which will be found during letter_grouper's
+// construction, and Boolean flags to indicate whether it is "consumed" when
+// the glyphs are stuck together into words, as well as flags to indicate
+// whether the element is at the left, right or centre of a column
 
-struct GSrow
+struct textrow
 {
   float       left,             // position of left edge of text on page
               right,            // position of right edge of text on page
@@ -65,7 +66,17 @@ struct GSrow
   bool        consumed;         // Should element be ignored in output?
   std::pair<int, int> rightjoin;// address of closest adjacent element
   bool isLeftEdge, isRightEdge, isMid;
+  bool operator ==(const textrow& a) const
+  {
+    return (a.left == this->left && a.bottom == this->bottom &&
+            a.size == this->size && a.glyph == this->glyph);
+  }
 };
+
+//---------------------------------------------------------------------------//
+// The gridoutput struct transposes a vector of textrows to give a table of
+// text elements and their associated characteristics. This allows output
+// to a variety of formats
 
 struct gridoutput
 {
@@ -74,22 +85,22 @@ struct gridoutput
 };
 
 //---------------------------------------------------------------------------//
-// Simple struct that acts as a method for sorting a vector of GSrows
+// Simple struct that acts as a method for sorting a vector of textrows
 // left-to-right
 
 struct sort_left_right
 {
-  inline bool operator() (const GSrow& row1, const GSrow& row2)
+  inline bool operator() (const textrow& row1, const textrow& row2)
   {
       return (row1.left < row2.left);
   }
 };
 
 //---------------------------------------------------------------------------//
-// The letter_grouper class contains a public constructor, an output map of results,
+// The letter_grouper class contains a constructor, an output map of results,
 // and a method for passing out the minimum text bounding box found in page
 // construction. Its private methods are used only in construction of the
-// output. The main private member is a map of vectors of GSrows, each
+// output. The main private member is a map of vectors of textrows, each
 // vector representing all glyphs in one of 256 equally sized cells on the page.
 // Each glyph is addressable by two numbers - the grid number and the position
 // of the glyph in the cell's vector.
@@ -97,13 +108,14 @@ struct sort_left_right
 class letter_grouper
 {
 public:
-  // constructor
+  // constructor.
   letter_grouper(const parser&);
 
   // public methods
-  std::unordered_map<uint8_t, std::vector<GSrow>> output(); // result
-  std::vector<float> getBox();                              // gets minbox
-  gridoutput out();
+  // Passes text elements to word_grouper for further construction if needed
+  std::unordered_map<uint8_t, std::vector<textrow>> output();
+  std::vector<float> getBox(); // pass out minbox for plotting etc
+  gridoutput out(); // output table to interface if ungrouped words needed
 
 private:
   // private data members
@@ -112,14 +124,14 @@ private:
   parser gs;                     // a copy of the parser used to create grid
   std::vector<float> minbox;            // page's minimum bounding box
 
-  // the main data member. A 16 x 16 grid of cells, each with GSrow vector
-  std::unordered_map<uint8_t, std::vector<GSrow>> gridmap;
+  // the main data member. A 16 x 16 grid of cells, each with textrow vector
+  std::unordered_map<uint8_t, std::vector<textrow>> gridmap;
 
   // private methods
-  void makegrid();                  // assigns each glyph to a grid
-  void compareCells();              // co-ordinates matching between cells
-  void matchRight(GSrow&, uint8_t); // compare all glyphs in cell to index glyph
-  void merge();                     // join matching glyphs
+  void makegrid();                    // assigns each glyph to a 16 x 16 grid
+  void compareCells();                // co-ordinates matching between cells
+  void matchRight(textrow&, uint8_t); // compare all glyphs in cell
+  void merge();                       // join matching glyphs together
 };
 
 //---------------------------------------------------------------------------//

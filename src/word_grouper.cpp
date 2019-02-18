@@ -35,8 +35,8 @@ constexpr int EDGECOUNT = 4;
 
 word_grouper::word_grouper(letter_grouper* g): theGrid(g)
 {
-  std::unordered_map<uint8_t, std::vector<GSrow>> gridout = theGrid->output();
-  vector<GSrow> tmpvec;
+  std::unordered_map<uint8_t, std::vector<textrow>> gridout = theGrid->output();
+  vector<textrow> tmpvec;
   for(uint8_t i = 0; i < 255; i++)
     concat(tmpvec, gridout[i]);
   concat(tmpvec, gridout[0xff]);
@@ -49,7 +49,7 @@ word_grouper::word_grouper(letter_grouper* g): theGrid(g)
 //---------------------------------------------------------------------------//
 
 
-std::vector<GSrow> word_grouper::output()
+std::vector<textrow> word_grouper::output()
 {
   return allRows;
 }
@@ -77,13 +77,12 @@ gridoutput word_grouper::out()
 }
 
 //---------------------------------------------------------------------------//
-
-//---------------------------------------------------------------------------//
 // Mimics the table() function in R. Instantiates a key for every unique member
 // of supplied vector, and increments any duplicates.
 
 
-void word_grouper::tabulate(const vector<float>& a, unordered_map<int, size_t>& b)
+void word_grouper::tabulate(const vector<float>& a,
+                            unordered_map<int, size_t>& b)
 {
   for (auto i : a)
   {
@@ -131,12 +130,12 @@ void word_grouper::findRightMatch()
     {
       if(j.consumed) continue;
       if(j.left < i->right) continue;
-      if(j.bottom - i->bottom > 0.5 * i->size) continue;
-      if(i->bottom - j.bottom > 0.5 * i->size) continue;
-      if(j.left - i->right > 4 * i->size) continue;
+      if(j.bottom - i->bottom > 0.7 * i->size) continue;
+      if(i->bottom - j.bottom > 0.7 * i->size) continue;
+      if(j.left - i->right > 2.5 * i->size) continue;
       if(j.isLeftEdge || j.isMid) continue;
       i->glyph.push_back(0x0020);
-      if(j.left - i->right > 2 * i->size) i->glyph.push_back(0x0020);
+      if(j.left - i->right > 1.5 * i->size) i->glyph.push_back(0x0020);
       concat(i->glyph, j.glyph);
       i->right = j.right;
       i->isRightEdge = j.isRightEdge;

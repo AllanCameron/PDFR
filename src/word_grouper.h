@@ -39,7 +39,7 @@ public:
   word_grouper(letter_grouper*);
 
   // access results
-  std::vector<GSrow> output();
+  std::vector<textrow> output();
   gridoutput out();
 
 private:
@@ -49,7 +49,7 @@ private:
   void assignEdges();
   void findRightMatch();
   std::unordered_map<int, size_t> leftEdges, rightEdges, mids, Bottoms;
-  std::vector<GSrow> allRows;
+  std::vector<textrow> allRows;
 };
 
 

@@ -1,6 +1,6 @@
 //---------------------------------------------------------------------------//
 //                                                                           //
-//  PDFR parser implementation file                                   //
+//  PDFR parser implementation file                                          //
 //                                                                           //
 //  Copyright (C) 2018 by Allan Cameron                                      //
 //                                                                           //
@@ -338,8 +338,11 @@ void parser::processRawChar(vector<RawChar>& raw, float& scale,
 
   for (auto& j : glyphpairs) // Now, for each character...
   {
+    if(j.first != 0x0020)
+    {
     db.left.emplace_back( textspace[6]);                  //
     db.bottom.emplace_back( textspace[7]);                //
+    }
     float glyphwidth;
     if (j.first == 0x0020) // if this is a space factor in word & char spacing
       glyphwidth = j.second + 1000 * (Tc + Tw)/currfontsize;
@@ -348,7 +351,8 @@ void parser::processRawChar(vector<RawChar>& raw, float& scale,
     PRstate += glyphwidth; // adjust the pushright in text space by char width
     // move user space right by the (converted to user space) width of the char
     textspace[6] =  PRstate * scale / 1000 + txtspcinit;
-
+    if (j.first != 0x0020)
+    {
     // record width of char taking Th (horizontal scaling) into account
     db.width.emplace_back(scale * glyphwidth/1000 * Th/100);
     db.right.emplace_back(db.left.back() + db.width.back());
@@ -360,6 +364,7 @@ void parser::processRawChar(vector<RawChar>& raw, float& scale,
 
     // store font name of glyph
     db.fonts.emplace_back(wfont->fontname());
+    }
   }
 }
 
