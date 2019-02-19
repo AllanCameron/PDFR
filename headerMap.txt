@@ -74,23 +74,26 @@ wrapper could be written for any other output target.
                                  {tokenizer.cpp}
                                        |
                                        v
-                                "graphic_state.h"
-                               {graphic_state.cpp}
+                                   "parser.h"
+                                  {parser.cpp}
                                        |
                                        v
-                                    "grid.h"             std::
-                                   {grid.cpp}  <------ <numeric>
-                                       |              <algorithm>
+                                "letter_grouper"        std::
+                              {letter_grouper.cpp}  <- <numeric>
+                                       |               <algorithm>
                                        v
-
-                       [Just #include "grid.h" in wrapper]
+                                "word_grouper.h"
+                               {word_grouper.cpp}
+                                       |
+                                       v
+                   [Just #include "word_grouper.h" in wrapper]
 
 --------------------------------------------------------------------------------
 
                                    R wrapper
                                    =========
 
-                                    "grid.h"
+                                "word_grouper.h"
                                        |
                                        v
                           ------>    pdfr.h
