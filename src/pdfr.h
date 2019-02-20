@@ -33,8 +33,7 @@
 
 /* This is the final header in the daisy-chain of headers constituting the PDFR
  * program. Until now, the project was entirely written in C++11 with no
- * reliance on pre-compiled libraries and just one small external library that
- * is included in the source files.
+ * reliance on pre-compiled libraries.
  *
  * This header file describes the interface with R. It comprises functions in
  * the global namespace that return objects which can be directly loaded into
@@ -45,31 +44,22 @@
  * commented.
  *
  * Rcpp "knows" which functions to export because of the modified comments which
- * come before each declaration. This would work just as well if I left out
- * this header file and used the modified comments in the implementation file.
- * However, this way it is possible to see at a glance the functions that are
- * made available for export.
+ * come before each declaration.
  *
- * There are a few different items that can be returned to R at present. An
- * 'xref' is an R dataframe giving the full cross-reference table for the file.
- * An 'object' is one of the numbered pdf objects in the file, which is a
- * named list with two components - the "header", or object dictionary, as a
- * named character vector, and the "stream", which gives the unencrypted and
- * decompressed contents of an object's stream (if any) as a single string. We
- * can also return a list of the "glyphmaps" for each page. These are the
- * Unicode mappings and widths for each glyph used in the fonts on the page.
- * The number of items in the list is the same as the number of fonts on the
- * page, and each item comprises a dataframe of input characters, output
- * characters and output widths.
+ * There are a few different items that can be returned to R. An 'xref' is an R
+ * dataframe giving the full cross-reference table for the file. An 'object' is
+ * one of the numbered pdf objects in the file, which is a named list with two
+ * components - the "header", or object dictionary, as a named character vector,
+ * and the "stream", which gives the unencrypted and decompressed contents of
+ * an object's stream (if any) as a single string. We can also return a list of
+ * the "glyphmaps" for each page. These are the Unicode mappings and widths for
+ * each glyph used in the fonts on the page. The number of items in the list is
+ * the same as the number of fonts on the page, and each item comprises a
+ * dataframe of input characters, output characters and output widths.
  *
  * While these objects are all useful for debugging and exploring the structure
  * of a pdf file, the main purpose is to extract text, and this is done by
- * producing a "page" object. This returns a list with three named entries -
- * the "minbox", or smallest text bounding box for the page, the PageString,
- * which is a single string showing the "source file" of the page description
- * language from which the page was created, and the Elements dataframe, which
- * gives each glyph on the page along with its size, position and the font used
- * to create it, with a single row for each glyph.
+ * calling pdfpage or pdfdoc, to get a single page or the whole document.
  *
  * There are also some global functions in the implementation file which are
  * not declared in this header file. The reason is that they are just internal
@@ -141,21 +131,30 @@ Rcpp::List pdfpageraw(const std::vector<uint8_t>& rawfile, int pagenum, bool g);
 Rcpp::DataFrame getglyphmap(const std::string& s, int pagenum);
 
 //---------------------------------------------------------------------------//
+// This function, used mainly for debugging, returns the uncompressed Postscript
+// page description program for a given page. It is output as a single string
+// which can be passed on to R for examination
 
 // [[Rcpp::export(.pagestring)]]
 std::string pagestring(const std::string& s, int pagenum);
 
-
-//---------------------------------------------------------------------------//
-
 // [[Rcpp::export(.pagestringraw)]]
 std::string pagestringraw(const std::vector<uint8_t>& rawfile, int pagenum);
+
+//---------------------------------------------------------------------------//
+// These two versions of the pdfdoc function return R dataframes with all of
+// the extracted text from an entire document.
 
 // [[Rcpp::export(.pdfdoc)]]
 Rcpp::DataFrame pdfdoc(const std::string& s);
 
 // [[Rcpp::export(.pdfdocraw)]]
 Rcpp::DataFrame pdfdocraw(const std::vector<uint8_t>& s);
+
+
+//---------------------------------------------------------------------------//
+// This function can be called from R to stop the underlying C++ code. This can
+// be handy in profiling etc.
 
 // [[Rcpp::export(.stopCpp)]]
 void stopCpp();

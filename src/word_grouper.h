@@ -30,6 +30,7 @@
 //---------------------------------------------------------------------------//
 
 #define PDFR_WGROUPER
+
 #include "letter_grouper.h"
 
 class word_grouper

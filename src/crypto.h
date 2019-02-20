@@ -51,7 +51,7 @@
 
 #include "dictionary.h" // The class needs utilities and has to be able to
                         // negotiate pdf dictionaries.
-#include<deque>
+#include<deque> // needed for md5mix function
 
 //---------------------------------------------------------------------------//
 // A std::vector<uint8_t> is more succinctly described by the type name "bytes"
@@ -98,8 +98,8 @@ private:
                                  // original message, given a key and the cipher
   bytes getPassword(const std::string&);   // gets /O and /U cipher
   void getFilekey();                       // constructs file key
-  void checkKeyR2();                       // checks file key
-  void checkKeyR3();                       // checks file key
+  void checkKeyR2();                       // checks file key (revision 2)
+  void checkKeyR3();                       // checks file key (revision 3)
 };
 
 //---------------------------------------------------------------------------//

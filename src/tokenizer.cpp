@@ -26,7 +26,6 @@
 //---------------------------------------------------------------------------//
 
 #include "tokenizer.h"
-#include<utility>
 
 using namespace std;
 using namespace Token;

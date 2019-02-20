@@ -25,7 +25,7 @@
 //                                                                           //
 //---------------------------------------------------------------------------//
 
-#include"Encoding.h"
+#include "encoding.h"
 
 /* This data file defines three std::unordered_maps as static members of the
  * Encoding class. They are required to translate pdf strings to Unicode

@@ -14,9 +14,9 @@ compilation units to seperate out runtime code from the large static data
 structures required for encoding etc.
 
 The library consists of a C++ program which takes a pdf file as input and gives
-a complex data structure as output. This data structure can be passed to
-a wrapper to generate the desired output. This project outputs to R, but a
-wrapper could be written for any other output target.
+a complex data structure comprising std::vectors as output. This data structure
+can be passed to a wrapper to generate the desired output. This project outputs
+to R, but a wrapper could be written for any other output target.
 
 --------------------------------------------------------------------------------
 
@@ -33,57 +33,66 @@ wrapper could be written for any other output target.
                                        |                  <numeric>
                                        v                  <string>
                                  "utilities.h" <--------  <vector>
-                 std::      --> {utilities.cpp}           <unordered_map>
-               <fstream> --'           |
+                <fstream>  ---> {utilities.cpp}           <unordered_map>
+                                       |
                                        |
                                        v
                           ,----- "dictionary.h" -----,
                           |     {dictionary.cpp}     |
-                          |            |             |
-   "external/miniz.h"     v            |             v
-      {miniz.cpp} '-> "streams.h"      |         "crypto.h"
-                     {streams.cpp}     |        {crypto.cpp}
+                          |                          |
+                          v                          v
+"external/miniz.h"    "streams.h"  <utility>    "crypto.h"
+   {miniz.cpp}  ---> {streams.cpp}     |        {crypto.cpp} <-- <deque>
                           |            |             |
                           |            v             |
                           '-------> "xref.h" <-------'
                                    {xref.cpp}
                                        |
+                                       |
                                        v
                                 "object_class.h"
                                {object_class.cpp}
                                        |
-                                       v
+                                       |     .----- <memory>
+                                       |    |
+                                       v    v
                             ,---- "document.h" ----,
                             |    {document.cpp}    |
                             |                      |
                             v                      v
                        "encoding.h"         "glyphwidths.h"
                       {encoding.cpp}       {glyphwidths.cpp}
-                   {charstounicode.cpp}     {corefonts.cpp}
+                   {chartounicode.cpp}      {corefonts.cpp}
                    {adobetounicode.cpp}            |
                             |                      |
                             '-----> "font.h" <-----'
                                    {font.cpp}
                                        |
+                                       |
                                        v
                                     "page.h"
                                    {page.cpp}
+                                       |
+                                       |
+                                       v
+                                   "parser.h"  <--- <functional>
+                                  {parser.cpp}
+                                       |
                                        |
                                        v
                                   "tokenizer.h"
                                  {tokenizer.cpp}
                                        |
-                                       v
-                                   "parser.h"
-                                  {parser.cpp}
                                        |
                                        v
-                                "letter_grouper"        std::
-                              {letter_grouper.cpp}  <- <numeric>
-                                       |               <algorithm>
+                                "letter_grouper"
+                              {letter_grouper.cpp} <--- <cstdlib>
+                                       |
+                                       |
                                        v
                                 "word_grouper.h"
                                {word_grouper.cpp}
+                                       |
                                        |
                                        v
                    [Just #include "word_grouper.h" in wrapper]
@@ -96,12 +105,12 @@ wrapper could be written for any other output target.
                                 "word_grouper.h"
                                        |
                                        v
-                          ------>    pdfr.h
-                         /         {pdfr.cpp}
-              <Rcpp.h>  /              |
-             *external* \              |
-                         \             v
-                          ---> {RcppExports.cpp}<--
+                          ------>    pdfr.h   ----------------
+                         /         {pdfr.cpp}                 |
+              <Rcpp.h>  /                                     |
+             *external* \                                     |
+                         \                                    |
+                          ---> {RcppExports.cpp}<--           v
                                        |           \ [automatically generated
                                        v           / from export tags in pdfr.h]
                                  RcppExports.R  <--

@@ -71,7 +71,6 @@
  * defined in this header file, but rather within xref.cpp
 */
 #include<utility>
-#include "dictionary.h"
 #include "streams.h"
 #include "crypto.h"
 

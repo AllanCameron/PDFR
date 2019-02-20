@@ -136,8 +136,8 @@ bytes crypto::perm(std::string str) // takes a string with the permissions int
 void crypto::md5mix(int n, deque<fourbytes>& m, vector<fourbytes>& x) const
 {
   fourbytes mixer, e; // temporary container for results
-  fourbytes f = rnums[n];
-  fourbytes g = mixarray[n / 16][n % 4];
+  fourbytes f = rnums[n]; // select the starting pseudorandom number
+  fourbytes g = mixarray[n / 16][n % 4]; // select another pseudorandom number
   switch(n / 16 + 1) // mangles bytes in various ways as per md5 algorithm
   {
     case 1  : e = x[(1 * n + 0) % 16];
@@ -150,7 +150,9 @@ void crypto::md5mix(int n, deque<fourbytes>& m, vector<fourbytes>& x) const
               mixer = (m[0] + (m[2] ^ (m[1] | ~m[3])) + e + f);          break;
     default: throw runtime_error("md5 error: n > 63");
   }
+  // further bit shuffling:
   m[0] = m[1] + (((mixer << g) | (mixer >> (32 - g))) & 0xffffffff);
+  // now push all elements to the left (with aliasing)
   m.push_front(m.back());
   m.pop_back();
 }
@@ -161,30 +163,41 @@ void crypto::md5mix(int n, deque<fourbytes>& m, vector<fourbytes>& x) const
 
 bytes crypto::md5(bytes msg) const
 {
-  int len = msg.size();
-  std::vector<fourbytes> x(16, 0); // 16 * fourbytes
-  int nblocks = (len + 72) / 64;
+  int len = msg.size(); // The length of the message
+  std::vector<fourbytes> x(16, 0); // 16 * fourbytes will contain "fingerprint"
+  int nblocks = (len + 72) / 64; // The number of 64-byte blocks to be processed
+                                 // allowing for an extra 8-byte filler
+  // Starting pseudorandom numbers
   deque<fourbytes> mixvars = {0x67452301, 0xEFCDAB89, 0x98BADCFE, 0x10325476};
+
+  // This next block fills the 16-element long "fingerprint" of the message (x)
+  // with up to 64 bytes from each block of the message, mangles them and
+  // turns them into the pseudorandom seed for the next block
   int i, j, k = 0;
-  for (i = 0; i < nblocks; ++i)
+  for (i = 0; i < nblocks; ++i) // for each block...
   {
-    for (j = 0; j < 16 && k < len - 3; ++j, k += 4)
+    for (j = 0; j < 16 && k < len - 3; ++j, k += 4) // for each 4 bytes of block
+      // create a single low-order first fourbyte of the four seperate bytes
       x[j] = (((((msg[k+3] << 8) + msg[k+2]) << 8) + msg[k+1]) << 8) + msg[k];
-    if (i == nblocks - 1)
+    if (i == nblocks - 1) // if this is the last block...
     {
+      // create a fourbyte from the remaining bytes (low order first), with a
+      // left-sided padding of (binary) 10000000...
       if (k == len - 3)
         x[j++] = 0x80000000 + (((msg[k+2] << 8) + msg[k+1]) << 8) + msg[k];
       else if (k == len - 2) x[j++] = 0x800000 + (msg[k + 1] << 8) + msg[k];
       else if (k == len - 1) x[j++] = 0x8000 + msg[k];
       else x[j++] = 0x80;
-      while (j < 16) x[j++] = 0;
-      x[14] = len << 3;
+
+      while (j < 16) x[j++] = 0; // right pad x with zeros to total 16 bytes
+      x[14] = len << 3; // store a mangled copy of length in the fingerprint
     }
-    deque<fourbytes> initvars = mixvars;
-    for(int n = 0; n < 64; n++) md5mix(n, mixvars, x);
-    for(int m = 0; m < 4;  m++) mixvars[m] += initvars[m];
+    deque<fourbytes> initvars = mixvars; // store a copy of initial random nums
+    for(int n = 0; n < 64; n++) md5mix(n, mixvars, x); // shuffle x 64 times
+    for(int m = 0; m < 4;  m++) mixvars[m] += initvars[m]; // add initial nums
   }
   bytes output; // create empty output vector for output
+  // split the resultant 4 x fourbytes into a single 16-byte vector
   for(auto m : mixvars) concat(output, chopLong(m));
   return output;
 }
@@ -210,24 +223,25 @@ bytes crypto::md5(std::string input) const
 
 void crypto::rc4(bytes& msg, bytes key) const
 {
-  PROFC_NODE("rc4");
   int keyLen = key.size();
   int msgLen = msg.size();
   uint8_t a, b, x, y;
   int i;
   bytes state;
   for (i = 0; i <= 0xff; ++i) state.push_back(i); // fill state with 0 - 0xff
-  if (keyLen == 0) return;
+  if (keyLen == 0) return; // no key - can't modify message
   a = b = x = y = 0;
-  for (auto& i : state)
+  for (auto& i : state) // for each element in state...
   {
+    // mix the state around according to the key
     b = (key[a] + i + b) % 256;
     swap(i, state[b]);
     a = (a + 1) % keyLen;
   }
 
-  for(int k = 0; k < msgLen; k++)
+  for(int k = 0; k < msgLen; k++) // for each character in the message
   {
+    // mix the message around according to the state
     uint8_t x1, y1;
     x1 = x = (x + 1) % 256;
     y1 = y = (state[x] + y) % 256;
@@ -351,7 +365,8 @@ void crypto::checkKeyR3()
 
 /*---------------------------------------------------------------------------*/
 // Creator function for the crypto class. Its two jobs are to obtain the
-// file key and to check it's right.
+// file key and to check it's right. The crypto object is then kept alive to
+// decode any encoded strings in the file
 
 crypto::crypto(dictionary enc, dictionary trail) :
   encdict(enc), trailer(trail), revision(2)
