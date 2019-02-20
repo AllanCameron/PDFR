@@ -31,7 +31,39 @@
 
 #define PDFR_WGROUPER
 
+/* The word grouper takes all of the words stuck together by the letter grouper
+ * and attempts to join them into lines of text. It does this primarily by
+ * identifying whether two adjacent words are close enough to be joined by a
+ * single space character.
+ *
+ * There are a few caveats to this. Often text will be in columns, and we don't
+ * want words at the right edge of one column to join to words in the adjacent
+ * column if they are close together. The word grouper attempts to prevent this
+ * by identifying words on the page whose left edges are aligned. If several
+ * words have matching left edges, then they probably form a left-aligned
+ * column. Any word with its left edge on a left-aligned column should not be
+ * allowed to be joined to a word to its right.
+ *
+ * This isn't perfect, since we may get false positives, when words
+ * coincidentally line up within a body of text. The higher we stipulate the
+ * number of words that must be aligned to count as a column, the less likely
+ * this is to happen, but we will then run the risk of false negatives, where
+ * adjacent columns get stuck together. Therefore, the more left edges we find
+ * and the higher the likliehood of a column being present, the smaller the gap
+ * that is allowed to be bridged.
+ *
+ * We carry out a similar process for right-aligned and centre-aligned text.
+ * Right-aligned text is intolerant of anything to the left joining and centre-
+ * aligned text is intolerant of left or right joins.
+ */
+
 #include "letter_grouper.h"
+
+//---------------------------------------------------------------------------//
+// The word grouper class takes a pointer to a letter grouper object in its
+// constructor. It makes a table of the x values of the left, right and centre
+// points of each word, and uses these to infer which word pairs are elligible
+// for sticking together.
 
 class word_grouper
 {
@@ -40,18 +72,27 @@ public:
   word_grouper(letter_grouper*);
 
   // access results
-  std::vector<textrow> output();
-  gridoutput out();
+  std::vector<textrow> output(); // output individual text elements for next
+                                 // phase of layout analysis
+  gridoutput out(); // Output text elements with sizes, fonts, positions to API
 
 private:
-  letter_grouper* theGrid;
+  letter_grouper* theGrid; // pointer to the letter_grouper used in construction
+  // Make a table of values in a vector of floats rounded to one decimal place
   void tabulate(const std::vector<float>&, std::unordered_map<int, size_t>&);
+  // Use tabulate function to find likely left, right or mid-aligned columns
   void findEdges();
+  // Tell the text elements whether they form an edge or not
   void assignEdges();
+  // Join elligible adjacent glyphs together and merge their properties
   void findRightMatch();
+  // tables of edges
   std::unordered_map<int, size_t> leftEdges, rightEdges, mids, Bottoms;
+  // The main data member: a vector of textrows, each containing a word with
+  // its associated size, font and position
   std::vector<textrow> allRows;
 };
 
+//---------------------------------------------------------------------------//
 
 #endif
