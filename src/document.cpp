@@ -42,7 +42,6 @@ using namespace std;
 document::document(const string& filename) :
   file(filename), filestring(get_file(file))
 {
-  PROFC_NODE("Document from string");
   buildDoc(); // Call constructor helper to build document
 }
 
@@ -54,7 +53,6 @@ document::document(const string& filename) :
 document::document(const vector<uint8_t>& bytevector) :
   filestring(std::string(bytevector.begin(), bytevector.end()))
 {
-  PROFC_NODE("Document from bytes");
   buildDoc(); // Call constructor helper to build document
 }
 
@@ -90,7 +88,7 @@ shared_ptr<object_class> document::getobject(int n)
       objects[n] = make_shared<object_class>(objects[holder], n);
     }
     else
-    objects[n] = make_shared<object_class>(Xref, n); // if not, create and store it
+    objects[n] = make_shared<object_class>(Xref, n); // else create & store it
   }
   return objects[n]; // return a pointer to requested object
 }

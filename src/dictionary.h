@@ -76,15 +76,15 @@ class dictionary
   // Public member functions
   std::string get(const std::string&) const;  // get value as string given name
   bool has(const std::string&) const;         // confirms a key is present
-  bool hasRefs(const std::string&) const;     // tests if given key has references
+  bool hasRefs(const std::string&) const;   // tests if given key has references
   bool hasInts(const std::string&) const;     // tests if given key has ints
   bool hasDictionary(const std::string&) const; // tests if key has dictionary
-  std::vector<int> getRefs(const std::string&) const; // gets references from key
+  std::vector<int> getRefs(const std::string&) const; // gets obj refs from key
   std::vector<int> getInts(const std::string&) const; // gets ints from key
   std::vector<float> getNums(const std::string&) const; // gets floats from key
   std::vector<std::string> getDictKeys() const; // gets all keys from dictionary
-  dictionary getDictionary(const std::string&) const; // gets sub-dictionary from key
-  std::unordered_map<std::string, std::string> R_out() const; // returns full map
+  dictionary getDictionary(const std::string&) const; // gets sub-dict from key
+  std::unordered_map<std::string, std::string> R_out() const; // gets full map
 
 private:
 // The lexer which constructs the dictionary is a finite state machine, which
@@ -118,7 +118,7 @@ enum DState     {PREENTRY,
 
   // Private functions
   void tokenize_dict(); // co-ordinates the lexer
-  void sortkey(std::string, DState);//----//
+  void setkey(std::string, DState); //----//
   void assignValue(std::string, DState);  //
   void handleMaybe(char);                 //
   void handleStart(char);                 //

@@ -66,6 +66,12 @@ using namespace std;
  */
 
 /*---------------------------------------------------------------------------*/
+// A 'magic number' to specify the maximum length of string that the dictionary
+// lexer will look through to find a dictionary
+
+constexpr size_t MAX_DICT_LEN = 100000;
+
+/*---------------------------------------------------------------------------*/
 // This is the main loop which iterates through the string, reads the char,
 // finds its type and then runs the subroutine that deals with the current
 // state of the machine.
@@ -75,7 +81,7 @@ void dictionary::tokenize_dict()
   // The lexer would go through an entire string without halting if it didn't
   // come across a dictionary. To prevent this in the event of a massive file,
   // set a limit on how far the lexer will read into a string
-  size_t maxlen = i + 100000;
+  size_t maxlen = i + MAX_DICT_LEN;
   // Main loop : read next char from string and pass to state handling function
   while(i < s->length() && i < maxlen)
   {
@@ -111,7 +117,7 @@ void dictionary::tokenize_dict()
 // flag is flipped. Although this code is short, it is efficient and used a lot
 // so needs its own function.
 
-void dictionary::sortkey(string b, DState st)
+void dictionary::setkey(string b, DState st)
 {
   if(!keyPending)
     pendingKey = buf; // If no key is awaiting a value, store the name as a key
@@ -149,12 +155,12 @@ void dictionary::handleKey(char n)
     case '+': buf += (*s)[i];                   break;
     case '-': buf += (*s)[i];                   break;
     case '_': buf += (*s)[i];                   break;
-    case '/': sortkey("/",       KEY);          break; // A new name has begun
-    case ' ': sortkey("",   PREVALUE);          break; // await next new value
-    case '(': sortkey("(",   DSTRING);          break; // must be a string
-    case '[': sortkey("[",  ARRAYVAL);          break; // must be an array
-    case '<': sortkey("",  QUERYDICT);          break; // probably a dictionary
-    case '>': sortkey("", QUERYCLOSE);          break; // likely end of dict.
+    case '/': setkey("/",       KEY);           break; // A new name has begun
+    case ' ': setkey("",   PREVALUE);           break; // await next new value
+    case '(': setkey("(",   DSTRING);           break; // must be a string
+    case '[': setkey("[",  ARRAYVAL);           break; // must be an array
+    case '<': setkey("",  QUERYDICT);           break; // probably a dictionary
+    case '>': setkey("", QUERYCLOSE);           break; // likely end of dict.
   }
 }
 

@@ -1,6 +1,6 @@
 //---------------------------------------------------------------------------//
 //                                                                           //
-//  PDFR word_grouper implementation file                                            //
+//  PDFR word_grouper implementation file                                    //
 //                                                                           //
 //  Copyright (C) 2018 by Allan Cameron                                      //
 //                                                                           //
@@ -162,22 +162,27 @@ void word_grouper::findRightMatch()
 {
   for(auto i = allRows.begin(); i != allRows.end(); i++) // for each word
   {
-    if(i->isRightEdge || i->isMid || i->consumed) continue; // check elligible
+    if( i->consumed) continue; // check elligible
+
     for(auto& j : allRows) // if so, look at every other word for a match
     {
       if(j.consumed) continue; // ignore words that have already been joined
       if(j.left < i->right) continue; // ignore words to the left
       if(j.bottom - i->bottom > 0.7 * i->size) continue; // only match elements
       if(i->bottom - j.bottom > 0.7 * i->size) continue; // on the same "line"
-      if(j.left - i->right > 2.5 * i->size) continue; // ignore if too far right
-      if(j.isLeftEdge || j.isMid) continue; // ignore if not elligble for join
+      if(j.left - i->right > 2 * i->size) continue; // ignore if too far right
+      if((j.isLeftEdge || j.isMid) && (j.left - i->right > 0.51 * i->size))
+        continue; // ignore if not elligble for join
+      if((i->isRightEdge || i->isMid ) &&  (j.left - i->right > 0.51 * i->size))
+        continue;
       // The element is elligible for joining
       i->glyph.push_back(0x0020); // add a space
       // if the gap is wide enough, add two spaces
-      if(j.left - i->right > 1.5 * i->size) i->glyph.push_back(0x0020);
+      if(j.left - i->right > 1 * i->size) i->glyph.push_back(0x0020);
       concat(i->glyph, j.glyph); // stick contents together
       i->right = j.right; // the right edge is now the rightmost edge
       i->isRightEdge = j.isRightEdge; // as are the right edge's properties
+      if(i->size < j.size) i->size = j.size;
       i->width = i->right - i->left; // update the width
       j.consumed = true; // the element on the right is now consumed
       i--; // The element we have just matched now has different characteristics

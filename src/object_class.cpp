@@ -1,6 +1,6 @@
 //---------------------------------------------------------------------------//
 //                                                                           //
-//  PDFR object_class implementation file                                     /
+//  PDFR object_class implementation file                                    //
 //                                                                           //
 //  Copyright (C) 2018 by Allan Cameron                                      //
 //                                                                           //
@@ -74,12 +74,16 @@ object_class::object_class(shared_ptr<const xref> Xref, int objnum) :
   }
 }
 
+//---------------------------------------------------------------------------//
+// object streams start with a group of integers representing the object
+// numbers and the byte offset of each object relative to the stream. This
+// method reads the objects and their positions in the stream, indexing them
+// for later retrieval.
+
 void object_class::indexObjectStream()
 {
   int startbyte = 0;
-  // object streams start with a group of integers representing the object
-  // numbers and the byte offset of each object relative to the stream.
-  // This loop tells us where the boundary between these registration numbers
+  // This loop tells us where the boundary between the registration numbers
   // and the objects proper begins using the symbol_type function declared in
   // utilities.h
   for(auto i : stream)
@@ -119,6 +123,9 @@ void object_class::indexObjectStream()
     }
   }
 }
+
+//---------------------------------------------------------------------------//
+// Gets the string containing the stream object
 
 string object_class::objFromStream(int objnum)
 {
