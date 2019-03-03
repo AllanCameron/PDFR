@@ -34,6 +34,9 @@ using namespace std;
 // line up to infer an aligned column on the page.
 
 constexpr int EDGECOUNT = 4;
+constexpr float MAX_SPACE = 0;
+constexpr float ONE_SPACE = 0;
+constexpr float H_MAX = 0.7;
 
 //---------------------------------------------------------------------------//
 // Constructor for word_grouper class. This takes the output from letter_grouper
@@ -168,17 +171,19 @@ void word_grouper::findRightMatch()
     {
       if(j.consumed) continue; // ignore words that have already been joined
       if(j.left < i->right) continue; // ignore words to the left
-      if(j.bottom - i->bottom > 0.7 * i->size) continue; // only match elements
-      if(i->bottom - j.bottom > 0.7 * i->size) continue; // on the same "line"
-      if(j.left - i->right > 2 * i->size) continue; // ignore if too far right
-      if((j.isLeftEdge || j.isMid) && (j.left - i->right > 0.51 * i->size))
+      if(j.bottom - i->bottom > H_MAX * i->size) continue; // match elements
+      if(i->bottom - j.bottom > H_MAX * i->size) continue; // on same "line"
+      if(j.left - i->right > MAX_SPACE * i->size) continue; // too far right
+      if((j.isLeftEdge || j.isMid) &&
+         (j.left - i->right > ONE_SPACE * i->size))
         continue; // ignore if not elligble for join
-      if((i->isRightEdge || i->isMid ) &&  (j.left - i->right > 0.51 * i->size))
+      if((i->isRightEdge || i->isMid ) &&
+         (j.left - i->right > ONE_SPACE * i->size))
         continue;
       // The element is elligible for joining
       i->glyph.push_back(0x0020); // add a space
       // if the gap is wide enough, add two spaces
-      if(j.left - i->right > 1 * i->size) i->glyph.push_back(0x0020);
+      if(j.left - i->right > ONE_SPACE * i->size) i->glyph.push_back(0x0020);
       concat(i->glyph, j.glyph); // stick contents together
       i->right = j.right; // the right edge is now the rightmost edge
       i->isRightEdge = j.isRightEdge; // as are the right edge's properties

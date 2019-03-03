@@ -144,6 +144,30 @@ BEGIN_RCPP
     return R_NilValue;
 END_RCPP
 }
+// pdfpolygons
+Rcpp::DataFrame pdfpolygons(const std::string& s, int pagenum);
+RcppExport SEXP _PDFR_pdfpolygons(SEXP sSEXP, SEXP pagenumSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const std::string& >::type s(sSEXP);
+    Rcpp::traits::input_parameter< int >::type pagenum(pagenumSEXP);
+    rcpp_result_gen = Rcpp::wrap(pdfpolygons(s, pagenum));
+    return rcpp_result_gen;
+END_RCPP
+}
+// pdfboxes
+Rcpp::DataFrame pdfboxes(const std::string& s, int pagenum);
+RcppExport SEXP _PDFR_pdfboxes(SEXP sSEXP, SEXP pagenumSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const std::string& >::type s(sSEXP);
+    Rcpp::traits::input_parameter< int >::type pagenum(pagenumSEXP);
+    rcpp_result_gen = Rcpp::wrap(pdfboxes(s, pagenum));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 RcppExport SEXP run_testthat_tests();
 
@@ -160,6 +184,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_PDFR_pdfdoc", (DL_FUNC) &_PDFR_pdfdoc, 1},
     {"_PDFR_pdfdocraw", (DL_FUNC) &_PDFR_pdfdocraw, 1},
     {"_PDFR_stopCpp", (DL_FUNC) &_PDFR_stopCpp, 0},
+    {"_PDFR_pdfpolygons", (DL_FUNC) &_PDFR_pdfpolygons, 2},
+    {"_PDFR_pdfboxes", (DL_FUNC) &_PDFR_pdfboxes, 2},
     {"run_testthat_tests",  (DL_FUNC) &run_testthat_tests,  0},
     {NULL, NULL, 0}
 };

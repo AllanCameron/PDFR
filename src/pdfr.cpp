@@ -28,6 +28,7 @@
 #include "pdfr.h"
 #include<list>
 
+
 //---------------------------------------------------------------------------//
 // This exported function is used mainly for debugging the font reading
 // process in PDFR. It returns a single dataframe, with a row for every
@@ -178,8 +179,7 @@ Rcpp::List getgrid(std::shared_ptr<page> p)
 {
   parser GS = parser(p);
   tokenizer(p->pageContents(), &GS);
-  letter_grouper Grid = letter_grouper(GS);
-  gridoutput gridout = word_grouper(&Grid).out();
+  gridoutput gridout = letter_grouper(GS).out();
   Rcpp::DataFrame db =  Rcpp::DataFrame::create(
                         Rcpp::Named("text") =   std::move(gridout.text),
                         Rcpp::Named("left") =   std::move(gridout.left),
@@ -188,7 +188,7 @@ Rcpp::List getgrid(std::shared_ptr<page> p)
                         Rcpp::Named("font") =   std::move(gridout.font),
                         Rcpp::Named("size") =   std::move(gridout.size),
                         Rcpp::Named("stringsAsFactors") = false);
-  return Rcpp::List::create(Rcpp::Named("Box") = Grid.getBox(),
+  return Rcpp::List::create(Rcpp::Named("Box") = p->getminbox(),
                             Rcpp::Named("Elements") = db);
 }
 
@@ -233,8 +233,7 @@ Rcpp::DataFrame pdfdoc_common(std::shared_ptr<document> myfile)
     std::shared_ptr<page> p = std::make_shared<page>(myfile, pagenum);
     parser GS = parser(p);
     tokenizer(p->pageContents(), &GS);
-    letter_grouper GR = letter_grouper(GS);
-    gridoutput gridout = word_grouper(&GR).out();
+    gridoutput gridout = letter_grouper(GS).out();
     concat(glyph, gridout.text);
     concat(left, gridout.left);
     concat(right, gridout.right);
@@ -295,6 +294,70 @@ std::string pagestringraw(const std::vector<uint8_t>& rawfile, int pagenum)
   p->clearFontMap();
   return s;
 }
+
+//---------------------------------------------------------------------------//
+
+Rcpp::DataFrame pdfpolygons(const std::string& s, int pagenum)
+{
+  if(pagenum < 1) Rcpp::stop("Invalid page number");
+  std::shared_ptr<document> myfile = std::make_shared<document>(s);
+  std::shared_ptr<page> p = std::make_shared<page>(myfile, pagenum - 1);
+  parser G = parser(p); // New parser
+  tokenizer(p->pageContents(), &G);   // Read page contents to graphic state
+  Whitespace polygons(G);
+  auto Poly = polygons.output();
+  std::vector<size_t> polykeys = getKeys(Poly);
+  std::vector<float> xs, ys;
+  std::vector<int> groups;
+  for(auto i : polykeys)
+  {
+    for(auto j : Poly[i])
+    {
+      xs.push_back(j.x);
+      ys.push_back(j.y);
+      groups.push_back((int) i);
+    }
+  }
+  return Rcpp::DataFrame::create(
+    Rcpp::Named("x") = xs,
+    Rcpp::Named("y") = ys,
+    Rcpp::Named("polygon") = groups,
+    Rcpp::Named("stringsAsFactors") = false
+  );
+}
+
+
+Rcpp::DataFrame pdfboxes(const std::string& s, int pagenum)
+{
+  if(pagenum < 1) Rcpp::stop("Invalid page number");
+  std::shared_ptr<document> myfile = std::make_shared<document>(s);
+  std::shared_ptr<page> p = std::make_shared<page>(myfile, pagenum - 1);
+  parser G = parser(p); // New parser
+  tokenizer(p->pageContents(), &G);   // Read page contents to graphic state
+  Whitespace polygons(G);
+  auto Poly = polygons.ws_box_out();
+  std::vector<float> xmin, ymin, xmax, ymax;
+  std::vector<int> groups;
+  int group = 0;
+    for(auto j : Poly)
+    {
+      xmin.push_back(j.left);
+      ymin.push_back(j.bottom);
+      xmax.push_back(j.right);
+      ymax.push_back(j.top);
+      groups.push_back(group++);
+    }
+  return Rcpp::DataFrame::create(
+    Rcpp::Named("xmin") = xmin,
+    Rcpp::Named("ymin") = ymin,
+    Rcpp::Named("xmax") = xmax,
+    Rcpp::Named("ymax") = ymax,
+    Rcpp::Named("box") = groups,
+    Rcpp::Named("stringsAsFactors") = false
+  );
+}
+
+//---------------------------------------------------------------------------//
 
 #ifdef PROFILER_PDFR
 void stopCpp(){TheNodeList::Instance().endprofiler();}

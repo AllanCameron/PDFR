@@ -206,6 +206,8 @@ void letter_grouper::merge()
         textrow& matcher = gridmap[k.rightjoin.first][k.rightjoin.second];
         // paste the left glyph to the right glyph
         concat(k.glyph, matcher.glyph);
+        if(matcher.size < k.size && matcher.bottom != k.bottom)
+          matcher.size = k.size;
         // make the right glyph now contain both glyphs
         matcher.glyph = k.glyph;
         // make the right glyph now start where the left glyph started
@@ -216,6 +218,7 @@ void letter_grouper::merge()
         if(k.bottom < matcher.bottom) matcher.bottom = k.bottom;
         // The checked glyph is now consumed - move to the next
         k.consumed = true;
+        matcher.consumed = false;
       }
     }
   }
