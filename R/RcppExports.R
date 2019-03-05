@@ -49,11 +49,3 @@
     invisible(.Call(`_PDFR_stopCpp`))
 }
 
-pdfpolygons <- function(s, pagenum) {
-    .Call(`_PDFR_pdfpolygons`, s, pagenum)
-}
-
-pdfboxes <- function(s, pagenum) {
-    .Call(`_PDFR_pdfboxes`, s, pagenum)
-}
-

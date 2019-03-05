@@ -73,8 +73,7 @@
  */
 
 #include<Rcpp.h>
-#include "letter_grouper.h"
-#include "whitespace.h"
+#include "word_grouper.h"
 
 //---------------------------------------------------------------------------//
 // Get xref. Returns a dataframe representing all of the cross-reference tables
@@ -159,11 +158,5 @@ Rcpp::DataFrame pdfdocraw(const std::vector<uint8_t>& s);
 
 // [[Rcpp::export(.stopCpp)]]
 void stopCpp();
-
-// [[Rcpp::export]]
-Rcpp::DataFrame pdfpolygons(const std::string& s, int pagenum);
-
-// [[Rcpp::export]]
-Rcpp::DataFrame pdfboxes(const std::string& s, int pagenum);
 
 #endif
