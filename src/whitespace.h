@@ -68,7 +68,7 @@
  * on size, shape, position and order on the page.
  */
 
-#include "tokenizer.h"
+#include "word_grouper.h"
 
 //---------------------------------------------------------------------------//
 
@@ -98,17 +98,17 @@ struct Vertex
 class Whitespace
 {
 public:
-  Whitespace(const parser&);
+  Whitespace(const word_grouper&);
   std::unordered_map<size_t, std::vector<Vertex>> output() const;
   std::vector<WSbox> ws_box_out() const;
 
 private:
-  parser GS;
+  word_grouper GS;
   std::unordered_map<size_t, std::vector<Vertex>> polygonMap;
   float pageleft, pageright, pagetop, pagebottom, pagewidth, pixwidth;
   std::vector<WSbox> ws_boxes;
   std::vector<Vertex> vertices;
-  static const size_t DIVISIONS = 150;
+  static const size_t DIVISIONS = 200;
   static std::unordered_map<uint8_t, std::pair<Direction, Direction>> arrows;
   float minfontsize, maxfontsize, midfontsize;
   void clearDeletedBoxes();

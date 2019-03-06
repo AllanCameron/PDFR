@@ -296,6 +296,55 @@ std::string pagestringraw(const std::vector<uint8_t>& rawfile, int pagenum)
   return s;
 }
 
+//---------------------------------------------------------------------------//
+
+Rcpp::DataFrame pdfboxescommon(std::shared_ptr<document> myfile, int pagenum)
+{
+  std::shared_ptr<page> p = std::make_shared<page>(myfile, pagenum);
+  parser G = parser(p); // New parser
+  tokenizer(p->pageContents(), &G);   // Read page contents to graphic state
+  letter_grouper GR = letter_grouper(G);
+  word_grouper WG = word_grouper(&GR);
+  Whitespace polygons(WG);
+  auto Poly = polygons.ws_box_out();
+  std::vector<float> xmin, ymin, xmax, ymax;
+  std::vector<int> groups;
+  int group = 0;
+    for(auto j : Poly)
+    {
+      xmin.push_back(j.left);
+      ymin.push_back(j.bottom);
+      xmax.push_back(j.right);
+      ymax.push_back(j.top);
+      groups.push_back(group++);
+    }
+  return Rcpp::DataFrame::create(
+    Rcpp::Named("xmin") = xmin,
+    Rcpp::Named("ymin") = ymin,
+    Rcpp::Named("xmax") = xmax,
+    Rcpp::Named("ymax") = ymax,
+    Rcpp::Named("box") = groups,
+    Rcpp::Named("stringsAsFactors") = false
+  );
+}
+
+
+Rcpp::DataFrame pdfboxesString(const std::string& s, int pagenum)
+{
+  if(pagenum < 1) Rcpp::stop("Invalid page number");
+  std::shared_ptr<document> myfile = std::make_shared<document>(s);
+  return pdfboxescommon(myfile, pagenum - 1);
+}
+
+Rcpp::DataFrame pdfboxesRaw(const std::vector<uint8_t>& s, int pagenum)
+{
+  if(pagenum < 1) Rcpp::stop("Invalid page number");
+  std::shared_ptr<document> myfile = std::make_shared<document>(s);
+  return pdfboxescommon(myfile, pagenum - 1);
+}
+
+
+
 #ifdef PROFILER_PDFR
 void stopCpp(){TheNodeList::Instance().endprofiler();}
 #endif

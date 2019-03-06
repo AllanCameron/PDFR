@@ -373,3 +373,31 @@ pdfdoc <- function(pdf)
   return(x)
 }
 
+
+pdfboxes <- function(pdf, pagenum)
+{
+  if(class(pdf) == "raw")
+  {
+    x <- .pdfboxesRaw(pdf, pagenum)
+  }
+  if(class(pdf) == "character" & length(pdf) == 1 & grepl("[.]pdf$", pdf) &
+     !grepl("/", pdf))
+  {
+    x <- .pdfboxesString(paste0(path.expand("~/"), pdf), pagenum)
+  }
+  if(class(pdf) == "character" & length(pdf) == 1 & grepl("[.]pdf$", pdf) &
+     grepl("/", pdf))
+  {
+    x <- .pdfboxesString(pdf, pagenum)
+  }
+  if((class(pdf) != "raw"       & class(pdf) != "character") |
+     (class(pdf) == "character" & length(pdf) > 1)           |
+     (class(pdf) == "character" & !grepl("[.]pdf$", pdf))    )
+  {
+    stop("pdfboxes requires a single path to a valid pdf or a raw vector.")
+  }
+  ggplot(data = x, aes(xmin = xmin, ymin = ymin, xmax = xmax, ymax = ymax,
+                       fill = factor(box))) -> D
+  print(D + geom_rect(alpha = 0.5))
+  .stopCpp()
+}

@@ -135,6 +135,30 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// pdfboxesString
+Rcpp::DataFrame pdfboxesString(const std::string& s, int pagenum);
+RcppExport SEXP _PDFR_pdfboxesString(SEXP sSEXP, SEXP pagenumSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const std::string& >::type s(sSEXP);
+    Rcpp::traits::input_parameter< int >::type pagenum(pagenumSEXP);
+    rcpp_result_gen = Rcpp::wrap(pdfboxesString(s, pagenum));
+    return rcpp_result_gen;
+END_RCPP
+}
+// pdfboxesRaw
+Rcpp::DataFrame pdfboxesRaw(const std::vector<uint8_t>& s, int pagenum);
+RcppExport SEXP _PDFR_pdfboxesRaw(SEXP sSEXP, SEXP pagenumSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const std::vector<uint8_t>& >::type s(sSEXP);
+    Rcpp::traits::input_parameter< int >::type pagenum(pagenumSEXP);
+    rcpp_result_gen = Rcpp::wrap(pdfboxesRaw(s, pagenum));
+    return rcpp_result_gen;
+END_RCPP
+}
 // stopCpp
 void stopCpp();
 RcppExport SEXP _PDFR_stopCpp() {
@@ -159,8 +183,10 @@ static const R_CallMethodDef CallEntries[] = {
     {"_PDFR_pagestringraw", (DL_FUNC) &_PDFR_pagestringraw, 2},
     {"_PDFR_pdfdoc", (DL_FUNC) &_PDFR_pdfdoc, 1},
     {"_PDFR_pdfdocraw", (DL_FUNC) &_PDFR_pdfdocraw, 1},
+    {"_PDFR_pdfboxesString", (DL_FUNC) &_PDFR_pdfboxesString, 2},
+    {"_PDFR_pdfboxesRaw", (DL_FUNC) &_PDFR_pdfboxesRaw, 2},
     {"_PDFR_stopCpp", (DL_FUNC) &_PDFR_stopCpp, 0},
-    {"run_testthat_tests",  (DL_FUNC) &run_testthat_tests,  0},
+    {"run_testthat_tests",   (DL_FUNC) &run_testthat_tests,   0},
     {NULL, NULL, 0}
 };
 

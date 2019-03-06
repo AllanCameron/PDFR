@@ -51,9 +51,9 @@ bool Whitespace::eq(float a, float b)
 }
 //---------------------------------------------------------------------------//
 
-Whitespace::Whitespace(const parser& prsr): GS(prsr)
+Whitespace::Whitespace(const word_grouper& prsr): GS(prsr)
 {
-  vector<float> pagebox = GS.getminbox();
+  vector<float> pagebox = GS.getBox();
   pageleft = pagebox[0];
   pageright = pagebox[2];
   pagebottom = pagebox[1];
@@ -86,11 +86,12 @@ void Whitespace::clearDeletedBoxes()
 
 void Whitespace::makeStrips()
 {
-  GSoutput* GSO = GS.output();
-  size_t N_elements = GSO->left.size();
+  std::vector<textrow> GSO = GS.output();
+  size_t N_elements = GSO.size();
   std::vector<float> leftEdges {pageleft};
   std::vector<float> rightEdges {pageleft + pixwidth};
-  std::vector<float> fontsizes = GSO->size;
+  std::vector<float> fontsizes;
+  for(auto& i : GSO) fontsizes.push_back(i.size);
   sort(fontsizes.begin(), fontsizes.end());
   minfontsize = fontsizes[0];
   maxfontsize = fontsizes.back();
@@ -106,10 +107,10 @@ void Whitespace::makeStrips()
     topboundaries = {pagetop};
     for(size_t j = 0; j < N_elements; j++)
     {
-      if(GSO->left[j] < rightEdges[i] && GSO->right[j] > leftEdges[i])
+      if(GSO[j].left < rightEdges[i] && GSO[j].right > leftEdges[i])
       {
-        bottomboundaries.push_back(GSO->bottom[j] + GSO->size[j]);
-        topboundaries.push_back(GSO->bottom[j]);
+        bottomboundaries.push_back(GSO[j].bottom + GSO[j].size);
+        topboundaries.push_back(GSO[j].bottom);
       }
     }
     bottomboundaries.push_back(pagebottom);
@@ -353,12 +354,14 @@ unordered_map<size_t, vector<Vertex>> Whitespace::output() const
   return polygonMap;
 }
 
+//---------------------------------------------------------------------------//
 
 std::vector<WSbox> Whitespace::ws_box_out() const
 {
   return ws_boxes;
 }
 
+//---------------------------------------------------------------------------//
 
 void Whitespace::polygonMax()
 {

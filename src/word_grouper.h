@@ -75,6 +75,7 @@ public:
   std::vector<textrow> output(); // output individual text elements for next
                                  // phase of layout analysis
   gridoutput out(); // Output text elements with sizes, fonts, positions to API
+  std::vector<float> getBox() const {return theGrid->getBox();};
 
 private:
   letter_grouper* theGrid; // pointer to the letter_grouper used in construction
@@ -91,6 +92,7 @@ private:
   // The main data member: a vector of textrows, each containing a word with
   // its associated size, font and position
   std::vector<textrow> allRows;
+
 };
 
 //---------------------------------------------------------------------------//

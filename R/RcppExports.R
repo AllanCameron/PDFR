@@ -45,6 +45,14 @@
     .Call(`_PDFR_pdfdocraw`, s)
 }
 
+.pdfboxesString <- function(s, pagenum) {
+    .Call(`_PDFR_pdfboxesString`, s, pagenum)
+}
+
+.pdfboxesRaw <- function(s, pagenum) {
+    .Call(`_PDFR_pdfboxesRaw`, s, pagenum)
+}
+
 .stopCpp <- function() {
     invisible(.Call(`_PDFR_stopCpp`))
 }
