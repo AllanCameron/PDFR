@@ -104,6 +104,7 @@ public:
 
 private:
   word_grouper WG;
+  std::vector<textrow> WGO;
   std::unordered_map<size_t, std::vector<Vertex>> polygonMap;
   float pageleft, pageright, pagetop, pagebottom;
   float midfontsize;
@@ -117,7 +118,6 @@ private:
   void mergeStrips();
   void removeSmall();
   void removeInvaginations();
-  void removeSingletons();
   void makeVertices();
   void tracePolygons();
   void tidyVertices();

@@ -81,14 +81,17 @@ bool Whitespace::eq(float a, float b)
 // then trace round all the vertices, storing every connected loop as a
 // polygon surrounding a text element.
 
-Whitespace::Whitespace(const word_grouper& prsr): WG(prsr)
+Whitespace::Whitespace(const word_grouper& prsr): WG(prsr), WGO(WG.output())
 {
+  std::vector<float> fontsizes;
+  for(auto& i : WGO) fontsizes.push_back(i.size);
+  sort(fontsizes.begin(), fontsizes.end());
+  midfontsize = fontsizes[fontsizes.size()/2];
   pageDimensions();
   makeStrips();
   mergeStrips();
   removeSmall();
   removeInvaginations();
-  removeSingletons();
   makeVertices();
   tidyVertices();
   tracePolygons();
@@ -143,67 +146,28 @@ void Whitespace::clearDeletedBoxes()
 
 void Whitespace::makeStrips()
 {
-  std::vector<textrow> WGO = WG.output();
-  std::vector<float> fontsizes;
-  for(auto& i : WGO) fontsizes.push_back(i.size);
-  sort(fontsizes.begin(), fontsizes.end());
-  midfontsize = fontsizes[fontsizes.size()/2];
-  size_t N_elements = WGO.size();
-  float pixwidth = (pageright - pageleft) / DIVISIONS;
-  std::vector<float> leftEdges {pageleft};
-  std::vector<float> rightEdges {pageleft + pixwidth};
-  while(leftEdges.size() < DIVISIONS)
+  float pixwidth = (pageright - pageleft) / DIVISIONS; // find strip widths
+  float L_Edge = pageleft;              // first strip starts at left edge
+  float R_Edge = pageleft + pixwidth;  // and stops one stripwidth to right
+  for(size_t i = 0; i < DIVISIONS; i++) // for each of our divisions
   {
-    leftEdges.push_back(rightEdges.back());
-    rightEdges.push_back(rightEdges.back() + pixwidth);
-  }
-  for(size_t i = 0; i < DIVISIONS; i++)
-  {
-    vector<float> topboundaries, bottomboundaries;
-    topboundaries = {pagetop};
-    for(size_t j = 0; j < N_elements; j++)
-    {
-      if(WGO[j].left < rightEdges[i] && WGO[j].right > leftEdges[i])
+    vector<float> tops = {pagetop};       // create top/bottom bounds for boxes.
+    vector<float> bottoms = {pagebottom}; // First box starts at top of the page
+    for(const auto& j : WGO)     // Now for each text element on the page
+      if(j.left < R_Edge && j.right > L_Edge) // if it obstructs our strip,
       {
-        bottomboundaries.push_back(WGO[j].bottom + WGO[j].size);
-        topboundaries.push_back(WGO[j].bottom);
-      }
-    }
-    bottomboundaries.push_back(pagebottom);
-    sort(topboundaries.begin(), topboundaries.end(), greater<float>());
-    sort(bottomboundaries.begin(), bottomboundaries.end(), greater<float>());
-    for(size_t j = 0; j < topboundaries.size(); j++)
-      ws_boxes.emplace_back(WSbox{leftEdges[i], rightEdges[i],
-                                  topboundaries[j], bottomboundaries[j], false});
-  }
-}
-/*
-void Whitespace::makeStrips()
-{
-  float stripwidth = (pageright - pageleft)/ DIVISIONS; // calculate strip width
-  std::vector<textrow> WGO = WG.output();   // get our text elements
-  float L_Edge = pageleft;    // first strip starts at left edge
-  float R_Edge = pageleft + stripwidth; // and stops one stripwidth to right
-  while(R_Edge <= pageright) // while we are still on the page...
-  {
-    vector<float> tops, bottoms;        // create top/bottom bounds for boxes.
-    tops = {pagetop};                   // First box starts at top of the page.
-    for(auto& i : WGO)                        // Now for each text element on
-      if(i.left < R_Edge && i.right > L_Edge) // the page...
-      {                                       // if it obstructs our strip,
-        bottoms.push_back(i.bottom + i.size); // store its upper and lower
-        tops.push_back(i.bottom);             // bounds as bottom and top of
-      }                                       // whitespace boxes
-    bottoms.push_back(pagebottom);      // Last box ends at bottom of page.
-    sort(tops.begin(), tops.end(), greater<float>()); // Sort all the tops
+        bottoms.push_back(j.bottom + j.size);   // store its upper and lower
+        tops.push_back(j.bottom);               // bounds as bottom and top of
+      }                                         // whitespace boxes
+    sort(tops.begin(), tops.end(), greater<float>()); // reverse sort the tops
     sort(bottoms.begin(), bottoms.end(), greater<float>()); // and the bottoms
-    for(size_t i = 0; i < tops.size(); i++) // Now create boxes for our strip
-      ws_boxes.emplace_back(WSbox{L_Edge, R_Edge, tops[i], bottoms[i], false});
-    L_Edge = R_Edge;      // Move to our next strip by incrementing the
-    R_Edge += stripwidth; // left and right edges by the strip width
+    for(size_t j = 0; j < tops.size(); j++) // Now create boxes for our strip
+      ws_boxes.emplace_back(WSbox{L_Edge, R_Edge, tops[j], bottoms[j], false});
+    L_Edge = R_Edge;    // move along to next strip
+    R_Edge += pixwidth;
   }
 }
-*/
+
 //---------------------------------------------------------------------------//
 // Now we have covered all the whitespace, but we have an awful lot of tall
 // thin boxes to look through to find edges that sit against a text element.
@@ -214,38 +178,46 @@ void Whitespace::makeStrips()
 
 void Whitespace::mergeStrips()
 {
-  for(auto& i : ws_boxes) // for each box
-  {
-    for(auto& j :ws_boxes) // compare to every other box
+  size_t nboxes = ws_boxes.size();  // count the boxes
+  for(size_t i = 0; i < nboxes; i++) // for each box
+    for(size_t j = i; j < nboxes; j++) // compare to every other box
     { // if its right edge matches the left edge of the compared box
-      if(j.left == i.right && j.top == i.top && j.bottom == i.bottom)
+      if(ws_boxes[j].left   == ws_boxes[i].right &&
+         ws_boxes[j].top    == ws_boxes[i].top &&
+         ws_boxes[j].bottom == ws_boxes[i].bottom)
       {
-        j.left = i.left; // merge the two by making the left edges match...
-        i.deletionFlag = true; // ... and deleting the leftmost box
-        break;
+        ws_boxes[j].left = ws_boxes[i].left; // merge the left edges
+        ws_boxes[i].deletionFlag = true; // ... and delete the leftmost box
+        break; // There can be only one match - skip to next iteration
       }
+      // since boxes are ordered, if no adjacent boxes match this, skip to next
+      if(ws_boxes[j].left > ws_boxes[i].right) break;
     }
-  }
-  clearDeletedBoxes();
+  clearDeletedBoxes(); // now we can remove boxes flagged for deletion
 }
 
 //---------------------------------------------------------------------------//
+// We don't want to call the spacing between consecutive lines of a paragraph
+// whitespace - this removes boxes that are not tall enough to count
 
 void Whitespace::removeSmall()
 {
-  for(auto& i : ws_boxes)
-    if(i.top != pagetop && i.bottom != pagebottom &&
-       i.left != pageleft && i.right != pageright &&
-       (i.top - i.bottom) < 0.7 * (midfontsize)) i.deletionFlag = true;
-
-  clearDeletedBoxes();
+  for(auto& i : ws_boxes) // for each box
+    if(i.top != pagetop && i.bottom != pagebottom && // if not at the edge
+       i.left != pageleft && i.right != pageright && // of a page and less than
+       (i.top - i.bottom) < 0.7 * (midfontsize))     // a rule-of-thumb constant
+      i.deletionFlag = true;                         // mark for deletion...
+  clearDeletedBoxes();                               // ...and delete
 }
 
 //---------------------------------------------------------------------------//
+// Sometimes an area of whitespace creeps into large spaces between words if
+// they are at the top or bottom of a paragraph and not caught by the word
+// grouper class. This identifies and removes them.
 
 void Whitespace::removeInvaginations()
 {
-  for(auto& row : ws_boxes)
+  for(auto& row : ws_boxes)   // for each box
   {
     bool hasLeftMatch, hasRightMatch;
     hasLeftMatch = hasRightMatch = false;
@@ -282,67 +254,78 @@ void Whitespace::removeInvaginations()
 }
 
 //---------------------------------------------------------------------------//
-
-void Whitespace::removeSingletons()
-{
-  for(auto& i : ws_boxes)
-    for(auto& j : ws_boxes)
-      if((j.bottom == i.top && j.left < i.right && j.right > i.left) ||
-         (i.bottom == j.top && j.left < i.right && j.right > i.left) ||
-         (j.left == i.right && j.bottom < i.top && j.top > i.bottom) ||
-         (i.left == j.right && j.bottom < i.top && j.top > i.bottom))
-          i.deletionFlag = false; else i.deletionFlag = true;
-  //clearDeletedBoxes();
-}
-
-//---------------------------------------------------------------------------//
+// Now we have the whitespace we want, but it is actually the bits of the
+// document that are not covered by whitespace that we need. We therefore need
+// to find the edges of the whitespace boxes and trace around them. We'll do
+// this by first identifying the vertices of the whitespace boxes. We then
+// want to know which of the four directions NW, NE, SE, SW lying immediately
+// adjacent contain whitespace. As a space-saving trick, we use bit flags
+// for this - 1000 is NW, 0100 is NE, 0010 is SE, 0001 is SW. We can therefore
+// use the | operator to combine the bits, so that 1111 would be a vertex
+// surrounded by whitespace, whereas 0011 would have whitespace below it but
+// not above it.
 
 void Whitespace::makeVertices()
 {
-  for(auto& i : ws_boxes)
+  for(auto& i : ws_boxes) // for each whitespace box
   {
-    for(int j = 0; j < 4; j++)
+    for(int j = 0; j < 4; j++) // for each of its four vertices
     {
-      float x, y;
-      uint8_t flags = 0;
-      if(j == 0){x = i.left; y = i.top; flags = 0x02;}
-      if(j == 1){x = i.right; y = i.top; flags = 0x01;}
-      if(j == 2){x = i.left; y = i.bottom; flags = 0x04;}
-      if(j == 3){x = i.right; y = i.bottom; flags = 0x08;}
-      for(auto& k : ws_boxes)
-      {
+      float x, y;        // empty x, y co-ordinates of vertex
+      uint8_t flags = 0; // create an empty flag byte
+      // we know at least one direction has whitespace by virtue of the
+      // position of the vertex on the box, so we populate the flag with it,
+      // along with the x, y co-ordinates of the vertex
+      if(j == 0){x = i.left; y = i.top; flags = 0x02;} // top left vertex
+      if(j == 1){x = i.right; y = i.top; flags = 0x01;} // top right vertex
+      if(j == 2){x = i.left; y = i.bottom; flags = 0x04;} // bottom right vertex
+      if(j == 3){x = i.right; y = i.bottom; flags = 0x08;} // bottom left vertex
+      for(auto& k : ws_boxes) // now compare the other boxes to find neighbours
+      {                       // and add the flags as needed
         if(k.right >= x && k.left < x && k.top > y && k.bottom <= y)
-          flags = flags | 0x08;
+          flags = flags | 0x08; // NW
         if(k.right > x && k.left <= x && k.top > y && k.bottom <= y)
-          flags = flags | 0x04;
+          flags = flags | 0x04; // NE
         if(k.right > x && k.left <= x && k.top >= y && k.bottom < y)
-          flags = flags | 0x02;
+          flags = flags | 0x02; // SE
         if(k.right >= x && k.left < x && k.top >= y && k.bottom < y)
-          flags = flags | 0x01;
+          flags = flags | 0x01; // SW
       }
-      vertices.push_back(Vertex{x, y, flags, None, None, 0, 0});
+      // Now we can create our vertex object and add it to the list
+      vertices.emplace_back(Vertex{x, y, flags, None, None, 0, 0});
     }
   }
 }
 
 //---------------------------------------------------------------------------//
+// Since we have a flag byte on the vertices with 4 unused bits, we use the
+// high order bit as a deletion flag. Since we are only interested in
+// vertices that are on corners (those in the middle of edges are redundant),
+// and those on two opposite corners can't easily be defined, we are only
+// interested in those with one or three compass directions containing
+// whitespace. It turns out that this means we want to drop any whose flags
+// are 0 modulo 3.
 
 void Whitespace::tidyVertices()
 {
-  for(auto& i : vertices) // remove if 0, 2 adjacent or 4 sides
-    if(i.flags % 3 == 0) i.flags = i.flags | 0x80;
-  std::vector<Vertex> res;
-  for(auto& i : vertices)
-    if((i.flags & 0x80) == 0) res.push_back(i);
-  swap(res, vertices);
-  for(auto& i : vertices)
-  {
-    i.InDir = arrows[i.flags & 0x0f].first;
+  std::vector<Vertex> res;  // temporary vector
+  for(auto& i : vertices)   // for each vertex
+    if((i.flags % 3) != 0)  // if not 0, 2 or 4 corners have whitespace
+      res.push_back(i);     // add vertex to temporary vector
+  swap(res, vertices);      // Swap temp vector into vertices
+  for(auto& i : vertices)   // Look up the implied direction of the edges that
+  {                         // enter and exit the vertex using "arrows" map
+    i.InDir  = arrows[i.flags & 0x0f].first;
     i.OutDir = arrows[i.flags & 0x0f].second;
   }
 }
 
 //---------------------------------------------------------------------------//
+// Now we have the vertices and the arrows pointing into and out of them,
+// we can trace the polygons of which they form the perimeters. We take each
+// vertex, find its out direction then follow where it points until we come to
+// the next vertex on this line. By identifying the index of this vertex, we
+// know to which vertex our test vertex points.
 
 void Whitespace::tracePolygons()
 {
@@ -411,30 +394,45 @@ void Whitespace::tracePolygons()
   }
 }
 
-
 //---------------------------------------------------------------------------//
+// We can now start at any vertex and label it as being a member of our first
+// polygon, copy it into a new vector then jump to the vertex it points to.
+// If we then label this and push it into our new vector, jump to the next
+// vertex and continue doing this, we will end up with a clockwise vector of
+// vertices describing our polygon. We'll know we're back to the start if we
+// come across a vertex labelled as a member of the current polygon vector.
+// When this happens, we add our new polygon vector to a map with an appropriate
+// label. We next iterate through our initial "master" vector of vertices until
+// we come to an unflagged vertex. By setting a new label for our next polygon
+// and following the same procedure as before, we identify the next polygon and
+// so on until all the vertices in our master vector are flagged as belonging
+// to a particular polygon, and we have a complete map of all the polygons
+// on our page. This actually takes much longer to describe than it does to
+// write the function...
 
 void Whitespace::makePolygonMap()
 {
-  size_t polygonNumber = 1;
-  for(size_t i = 0 ; i < vertices.size(); i++)
+  size_t polygonNumber = 1; // we'll label our polygons with size_t's
+  for(size_t i = 0 ; i < vertices.size(); i++) // for each vertex...
   {
-    if(vertices[i].group != 0) continue;
-    size_t j = i;
-    while(vertices[j].group == 0)
+    if(vertices[i].group != 0) continue; // this vertex is taken. Move along...
+    size_t j = i; // we're starting at the first unlabelled vertex
+    while(vertices[j].group == 0) // while we're not back at the first vertex
     {
-      vertices[j].group = polygonNumber;
+      vertices[j].group = polygonNumber; // label the vertex with polygon #
+      // if this is a new polygon number that we haven't mapped yet...
       if(polygonMap.find(polygonNumber) == polygonMap.end())
-        polygonMap[polygonNumber] = {vertices[j]};
+        polygonMap[polygonNumber] = {vertices[j]}; // start a new vector
       else
-        polygonMap[polygonNumber].push_back(vertices[j]);
-      j = vertices[j].points_to;
+        polygonMap[polygonNumber].push_back(vertices[j]); // else add to current
+      j = vertices[j].points_to; // now our loop jumps to next clockwise vertex
     }
-    polygonNumber++;
+    polygonNumber++; // we've come back to start of polygon - start a new one
   }
 }
 
 //---------------------------------------------------------------------------//
+// Simple getter for the polygon map
 
 unordered_map<size_t, vector<Vertex>> Whitespace::output() const
 {
@@ -442,6 +440,7 @@ unordered_map<size_t, vector<Vertex>> Whitespace::output() const
 }
 
 //---------------------------------------------------------------------------//
+// Simple getter for the whitespace boxes - useful for debugging
 
 std::vector<WSbox> Whitespace::ws_box_out() const
 {
@@ -449,6 +448,8 @@ std::vector<WSbox> Whitespace::ws_box_out() const
 }
 
 //---------------------------------------------------------------------------//
+// Now we have our polygons. Perhaps the simplest way of dealing with them is
+// to find their bounding rectangles. This does that by finding minmax x and y
 
 void Whitespace::polygonMax()
 {
