@@ -103,14 +103,15 @@ public:
   std::vector<WSbox> ws_box_out() const;
 
 private:
-  word_grouper GS;
+  word_grouper WG;
   std::unordered_map<size_t, std::vector<Vertex>> polygonMap;
-  float pageleft, pageright, pagetop, pagebottom, pagewidth, pixwidth;
+  float pageleft, pageright, pagetop, pagebottom;
+  float midfontsize;
   std::vector<WSbox> ws_boxes;
   std::vector<Vertex> vertices;
   static const size_t DIVISIONS = 200;
   static std::unordered_map<uint8_t, std::pair<Direction, Direction>> arrows;
-  float minfontsize, maxfontsize, midfontsize;
+  void pageDimensions();
   void clearDeletedBoxes();
   void makeStrips();
   void mergeStrips();
