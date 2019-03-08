@@ -30,6 +30,8 @@
 #include<iostream>
 using namespace std;
 
+static const float MAXPAGE = 30000;
+
 //---------------------------------------------------------------------------//
 // Every vertex of the final polygon surrounding each text element contains
 // information about its position. However, to "connect" the vertices so as to
@@ -91,12 +93,12 @@ Whitespace::Whitespace(const word_grouper& prsr): WG(prsr), WGO(WG.output())
   makeStrips();
   mergeStrips();
   removeSmall();
-  removeInvaginations();
   makeVertices();
   tidyVertices();
   tracePolygons();
   makePolygonMap();
   polygonMax();
+  removeEngulfed();
 }
 
 //---------------------------------------------------------------------------//
@@ -108,10 +110,10 @@ Whitespace::Whitespace(const word_grouper& prsr): WG(prsr), WGO(WG.output())
 void Whitespace::pageDimensions()
 {
   vector<float> pagebox = WG.getBox();
-  pageleft   = pagebox[0];
-  pageright  = pagebox[2];
-  pagebottom = pagebox[1];
-  pagetop    = pagebox[3];
+  pageleft   = pagebox[West];
+  pageright  = pagebox[East];
+  pagebottom = pagebox[South];
+  pagetop    = pagebox[North];
 }
 
 //---------------------------------------------------------------------------//
@@ -122,11 +124,11 @@ void Whitespace::pageDimensions()
 
 void Whitespace::clearDeletedBoxes()
 {
-  std::vector<WSbox> res; // create new vector for non-flagged boxes
-  for(auto& i : ws_boxes) // for each box
-    if(!i.deletionFlag)   // if it is not flagged for deletion
-      res.push_back(i);   // add it to our new vector
-  swap(res, ws_boxes);    // swap our new vector with the original
+  ws_boxes.erase(std::remove_if(ws_boxes.begin(), ws_boxes.end(),
+    [&](WSbox x)
+    {
+      return x.deletionFlag;
+    }), ws_boxes.end());
 }
 
 //---------------------------------------------------------------------------//
@@ -205,52 +207,9 @@ void Whitespace::removeSmall()
   for(auto& i : ws_boxes) // for each box
     if(i.top != pagetop && i.bottom != pagebottom && // if not at the edge
        i.left != pageleft && i.right != pageright && // of a page and less than
-       (i.top - i.bottom) < 0.7 * (midfontsize))     // a rule-of-thumb constant
+       (i.top - i.bottom) < 0.3 * (midfontsize))     // a rule-of-thumb constant
       i.deletionFlag = true;                         // mark for deletion...
   clearDeletedBoxes();                               // ...and delete
-}
-
-//---------------------------------------------------------------------------//
-// Sometimes an area of whitespace creeps into large spaces between words if
-// they are at the top or bottom of a paragraph and not caught by the word
-// grouper class. This identifies and removes them.
-
-void Whitespace::removeInvaginations()
-{
-  for(auto& row : ws_boxes)   // for each box
-  {
-    bool hasLeftMatch, hasRightMatch;
-    hasLeftMatch = hasRightMatch = false;
-    shared_ptr<WSbox> leftmatch, rightmatch;
-    for(auto& maybe : ws_boxes)
-    {
-      if(maybe.right == row.left &&
-         (maybe.top == row.top || maybe.bottom == row.bottom))
-      {
-        leftmatch = std::make_shared<WSbox>(maybe);
-        hasRightMatch = true;
-      }
-      if(maybe.left == row.right &&
-         (maybe.top == row.top || maybe.bottom == row.bottom))
-      {
-        rightmatch = std::make_shared<WSbox>(maybe);
-        hasRightMatch = true;
-      }
-    }
-    if(hasLeftMatch && hasRightMatch)
-    {
-      if((row.right - row.left) < (1.5 * midfontsize) &&
-         (row.top - row.bottom) > (leftmatch->top - leftmatch->bottom) &&
-          rightmatch->top == leftmatch->bottom &&
-          rightmatch->bottom == leftmatch->top)
-      {
-        rightmatch->left = leftmatch->left;
-        row.deletionFlag = true;
-        leftmatch->deletionFlag = true;
-      }
-    }
-  }
-  clearDeletedBoxes();
 }
 
 //---------------------------------------------------------------------------//
@@ -315,8 +274,8 @@ void Whitespace::tidyVertices()
   swap(res, vertices);      // Swap temp vector into vertices
   for(auto& i : vertices)   // Look up the implied direction of the edges that
   {                         // enter and exit the vertex using "arrows" map
-    i.InDir  = arrows[i.flags & 0x0f].first;
-    i.OutDir = arrows[i.flags & 0x0f].second;
+    i.In  = arrows[i.flags & 0x0f].first;
+    i.Out = arrows[i.flags & 0x0f].second;
   }
 }
 
@@ -329,68 +288,28 @@ void Whitespace::tidyVertices()
 
 void Whitespace::tracePolygons()
 {
-  for(auto& i : vertices)
+  for(auto& i : vertices) // for every vertex
   {
-    switch(i.OutDir)
-    {
-    case North: {float min_y = pagetop + 100.0; size_t bestMatch = 0;
-                for(size_t j = 0; j < vertices.size(); j++)
-                {
-                  if(eq(vertices[j].x, i.x) &&
-                     vertices[j].InDir == North &&
-                     vertices[j].y > i.y && vertices[j].y < min_y)
-                    {
-                      bestMatch = j;
-                      min_y = vertices[j].y;
-                    }
-                }
-                if(!eq(min_y, pagetop + 100.0)) i.points_to = bestMatch;
-                else i.flags = i.flags | 0x80;
-                break;}
-    case South: {float max_y = pagebottom - 100.0; size_t bestMatch = 0;
-                for(size_t j = 0; j < vertices.size(); j++)
-                {
-                  if(eq(vertices[j].x, i.x) &&
-                     vertices[j].InDir == South &&
-                     vertices[j].y < i.y && vertices[j].y > max_y)
-                    {
-                      bestMatch = j;
-                      max_y = vertices[j].y;
-                    }
-                }
-                if(!eq(max_y, pagebottom - 100.0)) i.points_to = bestMatch;
-                else i.flags = i.flags | 0x80;
-                break;}
-    case East:  {float min_x = pageright + 100.0; size_t bestMatch = 0;
-                for(size_t j = 0; j < vertices.size(); j++)
-                {
-                  if(eq(vertices[j].y, i.y) &&
-                     vertices[j].InDir == East &&
-                     vertices[j].x > i.x && vertices[j].x < min_x)
-                    {
-                      bestMatch = j ;
-                      min_x = vertices[j].x;
-                    }
-                }
-                if(!eq(min_x, pageright + 100.0)) i.points_to = bestMatch;
-                else i.flags = i.flags | 0x80;
-                break;}
-    case West:  {float max_x = pageleft - 100.0; size_t bestMatch = 0;
-                for(size_t j = 0; j < vertices.size(); j++)
-                {
-                  if(eq(vertices[j].y, i.y) &&
-                     vertices[j].InDir == West &&
-                     vertices[j].x < i.x && vertices[j].x > max_x)
-                    {
-                      bestMatch = j;
-                      max_x = vertices[j].x;
-                    }
-                }
-                if(!eq(max_x, pageleft - 100.0)) i.points_to = bestMatch;
-                else i.flags = i.flags | 0x80;
-                break;}
-    default:    i.flags = i.flags | 0x80;
-    }
+    vector<float> pagebox = WG.getBox(); // Allows us to get initialEdge
+    // Use the Direction enum as an int to get points beyond page edges
+    float initialEdge = pagebox[i.Out] + (2 * (i.Out / 2) - 1) * 100;
+    float edge = initialEdge; // "edge" keeps track of the nearest vertex
+    for(auto& j : vertices)  // now for every other vertex
+      if((i.Out == North && j.x == i.x && // if North of North-pointing vertex
+          j.In  == North && j.y >  i.y && j.y < edge) || // and closest yet or
+         (i.Out == South && j.x == i.x && // South of South-pointing vertex
+          j.In  == South && j.y <  i.y && j.y > edge) || // and closest yet or
+         (i.Out == East  && j.y == i.y && // if East of East-pointing vertex
+          j.In  == East  && j.x >  i.x && j.x < edge) ||// and closest yet or
+         (i.Out == West  && j.y == i.y && // if West of West-pointing vertex
+          j.In  == West  && j.x <  i.x && j.x > edge)  ) // and closest yet
+      {
+        i.points_to = &j - &(vertices[0]); // i provisionally points to j
+        // Now we update "edge" to make it the closest yet
+        if(i.Out == North || i.Out == South) edge = j.y; else edge = j.x;
+      }
+    // If the closest yet is not on the page, mark vertex for deletion
+    if(eq(edge, initialEdge)) i.flags = i.flags | 0x80;
   }
 }
 
@@ -453,28 +372,37 @@ std::vector<WSbox> Whitespace::ws_box_out() const
 
 void Whitespace::polygonMax()
 {
-  ws_boxes.clear();
+  ws_boxes.clear(); // we're going to recycle ws_boxes for our text boxes
   for(auto& i : polygonMap)
   {
-    float xmin, xmax, ymin, ymax;
-    xmin = ymin = 30000.0;
-    xmax = ymax = -30000.0;
+    // define floats that will shrink and invert to fit our text box
+    float xmin = MAXPAGE, xmax = -MAXPAGE, ymin = MAXPAGE, ymax = -MAXPAGE;
     for(auto& j : i.second)
     {
-      if(j.x < xmin) xmin = j.x;
-      if(j.x > xmax) xmax = j.x;
-      if(j.y < ymin) ymin = j.y;
-      if(j.y > ymax) ymax = j.y;
+      if(j.x < xmin) xmin = j.x;  // move left edge to leftmost point
+      if(j.x > xmax) xmax = j.x;  // move right edge to rightmost point
+      if(j.y < ymin) ymin = j.y;  // move bottom edge to lowest point
+      if(j.y > ymax) ymax = j.y;  // move top edge to highest point
     }
-    if(eq(xmin, pageleft) && eq(xmax, pageright) &&
-       eq(ymax, pagetop) && eq(ymin, pagebottom)) continue;
-    else ws_boxes.push_back(WSbox{xmin, xmax, ymax, ymin, false});
+    if(!(eq(xmin, pageleft) && eq(xmax, pageright) &&
+       eq(ymax, pagetop) && eq(ymin, pagebottom))) // if box != page itself
+      ws_boxes.push_back(WSbox{xmin, xmax, ymax, ymin, false}); // create box
   }
-  for(auto & i : ws_boxes)
-    for(auto & j : ws_boxes)
+}
+
+//---------------------------------------------------------------------------//
+// We have created a bunch of boxes containing text, but some boxes will
+// completely contain other boxes. We want to remove the inner boxes to get our
+// final set of content boxes.
+
+void Whitespace::removeEngulfed()
+{
+  for(auto & i : ws_boxes)  // for each box
+    for(auto & j : ws_boxes) // check whether another box engulfs it
       if(i.bottom >= j.bottom && i.top <= j.top &&
          i.left >= j.left && i.right <= j.right &&
          !(i.bottom == j.bottom && i.top == j.top &&
-         i.left == j.left && i.right == j.right )) i.deletionFlag = true;
-  clearDeletedBoxes();
+         i.left == j.left && i.right == j.right ))
+        i.deletionFlag = true; // if so, mark for deletion
+  clearDeletedBoxes(); // deleted boxes marked for deletion
 }

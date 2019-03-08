@@ -318,6 +318,7 @@ Rcpp::DataFrame pdfboxescommon(std::shared_ptr<document> myfile, int pagenum)
       ymax.push_back(j.top);
       groups.push_back(group++);
     }
+  p->clearFontMap();
   return Rcpp::DataFrame::create(
     Rcpp::Named("xmin") = xmin,
     Rcpp::Named("ymin") = ymin,
@@ -346,7 +347,7 @@ Rcpp::DataFrame pdfboxesRaw(const std::vector<uint8_t>& s, int pagenum)
 
 
 #ifdef PROFILER_PDFR
-void stopCpp(){TheNodeList::Instance().endprofiler();}
+void stopCpp(){TheNodeList::Instance().endprofiler(); }
 #endif
 
 #ifndef PROFILER_PDFR

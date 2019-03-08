@@ -72,7 +72,7 @@
 
 //---------------------------------------------------------------------------//
 
-enum Direction {North, South, East, West, None};
+enum Direction {North = 3, South = 1, East = 2, West = 0, None = 4};
 
 //---------------------------------------------------------------------------//
 
@@ -88,7 +88,7 @@ struct Vertex
 {
   float x, y;
   uint8_t flags; // delete-void-void-void-NW-NE-SE-SW
-  Direction InDir, OutDir;
+  Direction In, Out;
   size_t points_to, group;
 
 };
@@ -117,12 +117,12 @@ private:
   void makeStrips();
   void mergeStrips();
   void removeSmall();
-  void removeInvaginations();
   void makeVertices();
   void tracePolygons();
   void tidyVertices();
   void makePolygonMap();
   void polygonMax();
+  void removeEngulfed();
   bool eq(float a, float b);
 };
 
