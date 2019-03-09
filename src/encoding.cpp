@@ -121,8 +121,8 @@ void Encoding::mapUnicode(dictionary& fontref, shared_ptr<document> d)
   vector<string> Char =  multicarve(x, "beginbfchar", "endbfchar");
   vector<string> Range = multicarve(x, "beginbfrange", "endbfrange");
 
-  if (Char.size() > 0)  processUnicodeChars(Char); // if chars, processChar
-  if (Range.size() > 0) processUnicodeRange(Range); // if ranges, processRange
+  if (!Char.empty())  processUnicodeChars(Char); // if chars, processChar
+  if (!Range.empty()) processUnicodeRange(Range); // if ranges, processRange
 }
 
 /*---------------------------------------------------------------------------*/
@@ -135,67 +135,45 @@ void Encoding::processUnicodeChars(vector<string>& Char)
   {
     // use multicarve() to get ascii-encoded byte representations
     vector<string> allentries = multicarve(j, "<", ">");
-    RawChar key; // temporary variable representing code point to be mapped
-
     // This loop takes the ascii-encoded bytes in the first column and
     // converts them to rawchar. It stores this number as 'key', then
     // converts the ascii-encoded bytes in the second column, converts them
     // to Unicode and makes them the raw key's mapped value in the encoding map
-    for(size_t i = 0; i < allentries.size(); i++)
+    for(size_t i = 0; i < (allentries.size() - 1); i += 2)
     {
-      if(i % 2 == 0) // even index == first column
-        key = HexstringToRawChar(allentries[i]).at(0);
-      else // odd index == second column
-        EncodingMap[key] = (Unicode) HexstringToRawChar(allentries[i]).at(0);
+        RawChar key = HexstringToRawChar(allentries[i])[0];
+        EncodingMap[key] = (Unicode) HexstringToRawChar(allentries[i + 1])[0];
     }
   }
 }
 
 /*---------------------------------------------------------------------------*/
 // This function parses the "bfrange" entries in the CMap and adds them to the
-// encoding map
+// encoding map. The bfrange comprises three numbers: the first code point to be
+// translated in a range of code points, the last code point to be
+// translated in the range, and the Unicode point from which to start the
+// translation - hence { 1; 4; 10 } would generate {1,10; 2,11; 3,12; 4,13}
 
 void Encoding::processUnicodeRange(vector<string>& Range)
 {
   for(auto& i : Range)
-  {
-    // uses multicarve() from utilities.h to get ascii-endoded byte strings
+  { // uses multicarve() from utilities.h to get ascii-endoded byte strings
     vector<string> allentries = multicarve(i, "<", ">");
-
     // sanity check - there should be at least three entries for a valid range
     if(allentries.size() < 3) throw runtime_error("No entries in range");
-
-    // The bfrange comprises three numbers: the first code point to be
-    // translated in a range of code points, the last code point to be
-    // translated in the range, and the Unicode point from which to start the
-    // translation - hence { 1; 4; 10 } would generate {1,10; 2,11; 3,12; 4,13}
-
-    RawChar first, last;        // temporary holders for first two columns
-    Unicode start;              // temporary holder for third column entry
-    first = last = start = 0;   // initialize to prevent compiler complaints
-
     // loop to calculate entries and fill encoding map
-    for(size_t j = 0; j < allentries.size(); j++)
+    for(size_t j = 2; j < allentries.size(); j += 3)
     {
-      switch(j % 3)
-      {
-      case 0 :  // first column == first code point
-                first = HexstringToRawChar(allentries[j]).at(0); break;
-      case 1 :  // second column == first code point
-                last = HexstringToRawChar(allentries[j]).at(0); break;
-      case 2 :  // We call the HexstringtoRawChar function as it outputs uint16
-                // However, 'start' is Unicode and we make this explicit
-                start = (Unicode) HexstringToRawChar(allentries[j]).at(0);
-
-                // Calculate the number of map entries needed. Since the first 2
-                // columns show glyphs to be mapped inclusive of both, we add 1
-                // to their difference to get the number of mapped chars we need
-                int nchar = (last - first) + 1;
-
-                // Now we can fill the encoding map from the data in the row
-                for(int k = 0; k < nchar; k++)
-                  EncodingMap[first + k] = start + k;
-      }
+      // first column == first code point
+      RawChar first = HexstringToRawChar(allentries[j - 2]).at(0);
+      // second column == first code point
+      RawChar last = HexstringToRawChar(allentries[j - 1]).at(0);
+      // We call the HexstringtoRawChar function as it outputs uint16
+      // However, 'start' is Unicode and we make this explicit
+      Unicode start = (Unicode) HexstringToRawChar(allentries[j]).at(0);
+      // Now we can fill the encoding map from the data in the row
+      for(int k = 0; k <= (last - first); k++)
+        EncodingMap[first + k] = start + k;
     }
   }
 }
@@ -216,7 +194,6 @@ void Encoding::getEncoding(dictionary& fontref, shared_ptr<document> d)
     if(encref.has("/BaseEncoding"))                     // entry
       encname = encref.get("/BaseEncoding");            //
   }                                             //------//
-
   if( encname == "/WinAnsiEncoding")            //---------------------------//
     EncodingMap = Encoding::winAnsiEncodingToUnicode; //
   else if(encname == "/MacRomanEncoding")             // Fill encoding map with
@@ -226,10 +203,8 @@ void Encoding::getEncoding(dictionary& fontref, shared_ptr<document> d)
   else                                                // with 1:1 Raw : Unicode
     for(RawChar i = 0; i < 256; i++)                  //
       EncodingMap[i] = (Unicode) i;             //---------------------------//
-
-  // call Differences() if a /Differences entry is found to modify base encoding
   if(encref.has("/Differences"))
-  {
+  {// call Differences() if a /Differences entry is found to modify encoding
     BaseEncoding = encref.get("/Differences");
     Differences(BaseEncoding);
   }

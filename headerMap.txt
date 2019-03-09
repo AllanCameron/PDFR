@@ -14,9 +14,10 @@ compilation units to seperate out runtime code from the large static data
 structures required for encoding etc.
 
 The library consists of a C++ program which takes a pdf file as input and gives
-a complex data structure comprising std::vectors as output. This data structure
-can be passed to a wrapper to generate the desired output. This project outputs
-to R, but a wrapper could be written for any other output target.
+complex data structures as output. These data structures can be passed to a
+C++ file that includes an interface to the required output format or language.
+This project outputs to R, but a wrapper could be written for any other output
+target.
 
 --------------------------------------------------------------------------------
 
@@ -95,14 +96,18 @@ to R, but a wrapper could be written for any other output target.
                                        |
                                        |
                                        v
-                   [Just #include "word_grouper.h" in wrapper]
+                                 "whitespace.h"
+                                {whitespace.cpp}                                                                        |
+                                       |
+                                       v
+                   [Just #include "whitespace.h" in wrapper]
 
 --------------------------------------------------------------------------------
 
                                    R wrapper
                                    =========
 
-                                "word_grouper.h"
+                                 "whitespace.h"
                                        |
                                        v
                           ------>    pdfr.h   ----------------

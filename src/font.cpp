@@ -84,16 +84,13 @@ void font::makeGlyphTable()
 {
   // Create Encoding object
   Encoding Enc = Encoding(this->fontref, this->d);
-
   // Create glyphwidth object
   glyphwidths Wid = glyphwidths(this->fontref, this->d);
-
   // get all the mapped RawChars from the Encoding object
   vector<RawChar> inkeys = Enc.encKeys();
 
   // We need to know whether the width code points refer to the width of raw
   // character codes or to the final Unicode translations
-
   if(Wid.widthsAreForRaw()) // The widths refer to RawChar code points
     for(auto& i : inkeys) // map every mapped RawChar to a width
       glyphmap[i] = make_pair(Enc.Interpret(i), Wid.getwidth(i));

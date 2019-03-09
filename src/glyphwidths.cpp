@@ -75,14 +75,11 @@ void glyphwidths::getWidthTable()
 void glyphwidths::parseWidths()
 {
   vector<float> widtharray; // usually widths given as ints, but can be floats
-  RawChar firstchar = 0x0000; // if no firstchar, default to zero
-  if(fontref.hasInts("/FirstChar"))
-    firstchar = fontref.getInts("/FirstChar")[0]; // get first char
-
+  RawChar firstchr = 0x0000; // if no firstchar, default to zero
+  if(fontref.hasInts("/FirstChar")) firstchr = fontref.getInts("/FirstChar")[0];
   // Annoyingly, widths sometimes contains a pointer to another object that
   // contains the width array, either in a stream or as a 'naked object'.
   // Note that contents of a naked object are stored as the object's 'stream'.
-
   if (fontref.hasRefs("/Widths")) // test if widths is a reference
   {
     shared_ptr<object_class> o = d->getobject(fontref.getRefs("/Widths").at(0));
@@ -91,12 +88,11 @@ void glyphwidths::parseWidths()
   }
   else  // not a reference - get widths directly
     widtharray = fontref.getNums("/Widths");
-
   if (!widtharray.empty())
   {
     this->widthFromCharCodes = true; // widths are given pre-Unicode translation
     for (size_t i = 0; i < widtharray.size(); i++)
-      Width[firstchar + i] = (int) widtharray[i]; // fill width map from array
+      Width[firstchr + i] = (int) widtharray[i]; // fill width map from array
   }
 }
 
@@ -116,21 +112,17 @@ void glyphwidths::parseDescendants()
   // sometimes the descendantfonts object is just a reference to another object
   if(!getObjRefs(descstream).empty())
     descdict = d->getobject(getObjRefs(descstream)[0])->getDict(); // so use it
-
   if (descdict.has("/W"))
   {
     string widthstring; // we will fill this string with width array when found
-
     // sometimes the /W entry only contains a pointer to the containing object
     if (descdict.hasRefs("/W")) // so we use that
       widthstring = d->getobject(descdict.getRefs("/W").at(0))->getStream();
     else // otherwise we assume /W contains the widths needed
       widthstring = descdict.get("/W");
-
     // in either case widthstring should now contain the /W array which we
     // now need to parse using our lexer method
     parsewidtharray(widthstring);
-
     // The widths obtained apply to the RawChars, not to post-conversion Unicode
     this->widthFromCharCodes = true;
   }

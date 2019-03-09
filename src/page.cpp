@@ -46,11 +46,9 @@ void page::boxes()
   // page header. We therefore need to look for the boxes in the page header,
   // then, if they are not found, iteratively search the parent nodes until
   // they are
-
   // start with the page header as the boxheader - this can change in the loop
   dictionary boxheader = header;
   bool hasparent = true;  // need to keep track of whether node has a parent
-
   // Note this is a do...while loop - I don't use these much so pay attention!
   do
   {
@@ -59,7 +57,6 @@ void page::boxes()
     mediabox = boxheader.getNums("/MediaBox");      //--> look for / store boxes
     artbox   = boxheader.getNums("/ArtBox");        //
     trimbox  = boxheader.getNums("/TrimBox");   //--//
-
     if (!bleedbox.empty()) minbox = bleedbox;   //--//
     if (!mediabox.empty()) minbox = mediabox;       //    iterate logically
     if (!cropbox.empty())  minbox = cropbox;        //--> nested boxes to find
@@ -313,6 +310,7 @@ shared_ptr<font> page::getFont(const string& fontID)
   return (fontmap[fontID]);
 }
 
+/*--------------------------------------------------------------------------*/
 
 void page::clearFontMap()
 {

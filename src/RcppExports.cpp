@@ -199,7 +199,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_PDFR_pdfboxesRaw", (DL_FUNC) &_PDFR_pdfboxesRaw, 2},
     {"_PDFR_pdftext", (DL_FUNC) &_PDFR_pdftext, 2},
     {"_PDFR_stopCpp", (DL_FUNC) &_PDFR_stopCpp, 0},
-    {"run_testthat_tests",   (DL_FUNC) &run_testthat_tests,   0},
+    {"run_testthat_tests", (DL_FUNC) &run_testthat_tests, 0},
     {NULL, NULL, 0}
 };
 
