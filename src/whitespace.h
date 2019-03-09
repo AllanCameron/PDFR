@@ -71,10 +71,18 @@
 #include "word_grouper.h"
 
 //---------------------------------------------------------------------------//
+// This enum allows Vertices to be labelled according to which clockwise
+// direction around a polygon their incoming and outgoing edges point. The
+// strange numbering is simply to allow a matching to the indices of the crop
+// box passed from page.h, so that these labels can be used in place of indices
 
 enum Direction {North = 3, South = 1, East = 2, West = 0, None = 4};
 
 //---------------------------------------------------------------------------//
+// A lot of the work of Whitespace.cpp is done by identifying and manipulating
+// rectangles of whitespace. These are simply a struct of 4 co-ordinates and
+// an additional deletion flag that allows a vector of WSbox to be iterated and
+// allowing deletions without removing iterator validity.
 
 struct WSbox
 {
@@ -83,6 +91,13 @@ struct WSbox
 };
 
 //---------------------------------------------------------------------------//
+// Each vertex starts life at the corner of a whitespace box, then most are
+// pruned until only those forming the vertices of text boxes remain. Along the
+// way a Vertex has to know in which direction whitespace lies, which directions
+// the edges of the text box enter and leave it, which other Vertex this one
+// points to, and which group of vertices it belongs to. It also needs a
+// deletion flad - hence the relatively large number of member variables. Some
+// of these have been compressed into a flag byte to save space.
 
 struct Vertex
 {
@@ -94,36 +109,48 @@ struct Vertex
 };
 
 //---------------------------------------------------------------------------//
+// The whitespace class takes a word grouper as an argument in its constructor
+// and from that uses a sequence of helper functions to construct its final
+// output, which is a vector of WS_box containing the text boxes for a page.
 
 class Whitespace
 {
 public:
+  // constructor
   Whitespace(const word_grouper&);
-  std::unordered_map<size_t, std::vector<Vertex>> output() const;
+  //  Output the text element groups directly
+  std::vector<std::pair<WSbox, std::vector<textrow>>> output() const;
+  // Output the final text box co-ordinates
   std::vector<WSbox> ws_box_out() const;
 
 private:
-  word_grouper WG;
-  std::vector<textrow> WGO;
-  std::unordered_map<size_t, std::vector<Vertex>> polygonMap;
-  float pageleft, pageright, pagetop, pagebottom;
-  float midfontsize;
-  std::vector<WSbox> ws_boxes;
-  std::vector<Vertex> vertices;
-  static const size_t DIVISIONS = 200;
+  //The main output is a collection of pairs of text boxes with their elements
+  std::vector<std::pair<WSbox, std::vector<textrow>>> groups;
+  word_grouper WG; // a copy of the word grouper object
+  std::vector<textrow> WGO; // a copy of wgo's output
+  std::unordered_map<size_t, std::vector<Vertex>> polygonMap;// main polygon map
+  float pageleft, pageright, pagetop, pagebottom; // taken from crop box
+  float midfontsize;  // The average font size on the page
+  std::vector<WSbox> ws_boxes; // used in whitespace construction AND output
+  std::vector<Vertex> vertices; // The vertices used to make polygons
+  static const size_t DIVISIONS = 200; // number of strips used for whitespace
+  // we use this to map directions to vertices
   static std::unordered_map<uint8_t, std::pair<Direction, Direction>> arrows;
-  void pageDimensions();
-  void clearDeletedBoxes();
-  void makeStrips();
-  void mergeStrips();
-  void removeSmall();
-  void makeVertices();
-  void tracePolygons();
-  void tidyVertices();
-  void makePolygonMap();
-  void polygonMax();
-  void removeEngulfed();
-  bool eq(float a, float b);
+
+  void pageDimensions();    // Gets page margins
+  void clearDeletedBoxes(); // Helper to remove WSboxes flagged for deletion
+  void makeStrips();        // Cover the whitespace with tall thin strips
+  void mergeStrips();       // merge adjacent strips into boxes
+  void removeSmall();       // remove insufficiently tall boxes
+  void makeVertices();      // use WSboxes to find vertices of polygons
+  void tidyVertices();      // identify and remove the unneeded vertices
+  void tracePolygons();     // trace around polygons by following vertices
+  void makePolygonMap();    // map polygons to size_t keys
+  void polygonMax();        // find bounding boxes of polygons
+  void removeEngulfed();    // remove boxes within other boxes
+  void groupText();         // Adds each text element to correct box
+
+  bool eq(float a, float b);// compare floats for close equality
 };
 
 

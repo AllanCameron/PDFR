@@ -139,11 +139,9 @@ vector<string> multicarve(const string& s, const string& a, const string& b)
 
 bool IsAscii(const string& s)
 {
-  if(s.length() == 0) return false;
-  char minchar = *min_element(s.begin(), s.end()); // minimum char in s
-  char maxchar = *max_element(s.begin(), s.end()); // maximum char in s
-  // if at least one character is outside the ASCII range, return false
-  return (minchar > 7) && (maxchar < 127);
+  if(s.empty()) return false;
+  auto i = minmax_element(s.begin(), s.end()); // pair of iterators, minmax char
+  return *(i.first) > 7 && *(i.second) < 127; // none outside the ascii range?
 }
 
 /*---------------------------------------------------------------------------*/
@@ -231,9 +229,9 @@ vector<RawChar> StringToRawChar(const string& s)
 {
   vector<RawChar> result; // vector to hold results
   result.reserve(s.size());
-  if(s.size() == 0) return result; // string s is empty - nothing to do.
-  for(auto i : s)
-    result.emplace_back(0x00ff & ((uint8_t) i)); // convert to uint16
+  if(!s.empty())
+    for(auto i : s)
+      result.emplace_back(0x00ff & ((uint8_t) i)); // convert to uint16
   return result;
 }
 

@@ -102,7 +102,7 @@ public:
   // finds start and stop of the first stream after the given byte offset
   std::vector<size_t> getStreamLoc(int) const;
   void decrypt(std::string&, int, int) const; // Decrypt a stream
-  const std::string* docpointer() const; // pointer to main file string
+  const std::string* file() const; // pointer to main file string
 
 private:
 // private data

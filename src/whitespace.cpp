@@ -99,6 +99,7 @@ Whitespace::Whitespace(const word_grouper& prsr): WG(prsr), WGO(WG.output())
   makePolygonMap();
   polygonMax();
   removeEngulfed();
+  groupText();
 }
 
 //---------------------------------------------------------------------------//
@@ -351,11 +352,11 @@ void Whitespace::makePolygonMap()
 }
 
 //---------------------------------------------------------------------------//
-// Simple getter for the polygon map
+// Simple getter for the output vector
 
-unordered_map<size_t, vector<Vertex>> Whitespace::output() const
+std::vector<std::pair<WSbox, std::vector<textrow>>> Whitespace::output() const
 {
-  return polygonMap;
+  return groups;
 }
 
 //---------------------------------------------------------------------------//
@@ -405,4 +406,24 @@ void Whitespace::removeEngulfed()
          i.left == j.left && i.right == j.right ))
         i.deletionFlag = true; // if so, mark for deletion
   clearDeletedBoxes(); // deleted boxes marked for deletion
+}
+
+//---------------------------------------------------------------------------//
+// Finally we need to group our text items together in the text boxes for
+// joining and analysis.
+
+void Whitespace::groupText()
+{
+  for(auto& i : ws_boxes)
+  {
+    vector<textrow> textcontent;
+    for(auto& j : WGO)
+    {
+      if(j.left >= i.left && j.right <= i.right &&
+         j.bottom >= i.bottom && (j.bottom + j.size) <= i.top &&
+         !j.consumed)
+        textcontent.push_back(j);
+    }
+    groups.emplace_back(pair<WSbox, vector<textrow>>(i, textcontent));
+  }
 }

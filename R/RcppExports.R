@@ -53,6 +53,10 @@
     .Call(`_PDFR_pdfboxesRaw`, s, pagenum)
 }
 
+pdftext <- function(s, pagenum) {
+    .Call(`_PDFR_pdftext`, s, pagenum)
+}
+
 .stopCpp <- function() {
     invisible(.Call(`_PDFR_stopCpp`))
 }

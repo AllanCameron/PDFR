@@ -40,31 +40,25 @@ object_class::object_class(shared_ptr<const xref> Xref, int objnum) :
 {
   size_t startbyte = XR->getStart(objnum);  // Finds start of obj
   size_t stopbyte  = XR->getEnd(objnum);    // Finds endobj
-
   // We check to see if the object has a header dictionary by finding '<<'
-  if(XR->docpointer()->substr(startbyte, 20).find("<<") == string::npos)
-  {
-    // No dictionary found
+  if(XR->file()->substr(startbyte, 20).find("<<") == string::npos)
+  { // No dictionary found
     header = dictionary(); // make blank dictionary for header
-    // find start of contents
-    streampos[0] = XR->docpointer()->find(" obj", startbyte) + 4;
-    // find end of contents
-    streampos[1] = stopbyte - 1;
+    // find start and end of contents
+    streampos = {XR->file()->find(" obj", startbyte) + 4, stopbyte - 1};
     // ensure the resulting "stream" has positive length
     // The scare quotes are there because it is not a true stream, but
     // direct contents such as a string, array or just an int
     has_stream = streampos[1] > streampos[0];
   }
   else
-  {
-    // The object has a header dictionary
-    header = dictionary(XR->docpointer(), startbyte); // construct the dict
+  { // The object has a header dictionary
+    header = dictionary(XR->file(), startbyte); // construct the dict
     streampos = XR->getStreamLoc(startbyte);   // find the stream (if any)
     has_stream = streampos[1] > streampos[0];  // record stream's existence
     if(header.get("/Type") == "/ObjStm")
     {
-      stream = XR->docpointer()->substr(streampos[0],
-                              streampos[1] - streampos[0]);
+      stream = XR->file()->substr(streampos[0], streampos[1] - streampos[0]);
       if(XR->isEncrypted()) // decrypt if necessary
         XR->decrypt(stream, number, 0);
       if(header.get("/Filter").find("/FlateDecode", 0) != string::npos)
@@ -82,45 +76,23 @@ object_class::object_class(shared_ptr<const xref> Xref, int objnum) :
 
 void object_class::indexObjectStream()
 {
-  int startbyte = 0;
-  // This loop tells us where the boundary between the registration numbers
-  // and the objects proper begins using the symbol_type function declared in
-  // utilities.h
-  for(auto i : stream)
-  {
-    char a = symbol_type(i);
-    if(a != ' ' && a != 'D') break;
-    startbyte++;
-  }
+  // Get the first character that is not a digit or space
+  int startbyte = stream.find_first_not_of(" 0123456789");
   // Now get the substring with the objects proper...
   std::string s(stream.begin() + startbyte, stream.end());
-
   // ...and the substring with the registration numbers...
   std::string pre(stream.begin(), stream.begin() + startbyte - 1);
-
-  // .. from which we extract the numbers as a vector.
-  std::vector<int> numarray = getints(pre);
-
+  std::vector<int> numarray = getints(pre); // extract these numbers to a vector
   // If this is empty, something has gone wrong.
   if(numarray.empty()) throw runtime_error("Couldn't parse object stream");
-
   // We now set up a loop that determines which numbers are object numbers and
   // which are byte offsets
-  int objnum, bytenum, bytelen;
-  objnum = bytenum = bytelen = 0;
-  for(size_t i = 0; i < numarray.size(); i++)
+  for(size_t i = 1; i < numarray.size(); i += 2)
   {
-    if(i % 2 == 0)
-      objnum = numarray[i]; // even entries are object numbers
-    if(i % 2 == 1)
-    {
-      bytenum = numarray[i] + startbyte; // odd entries are offsets
-      if(i == (numarray.size() - 1))
-        bytelen = s.size() - numarray[i];
-      else
-        bytelen = numarray[i + 2] - numarray[i];
-      objstmIndex[objnum] = make_pair(bytenum, bytelen);
-    }
+    int bytelen;
+    if(i == (numarray.size() - 1)) bytelen = s.size() - numarray[i];
+    else bytelen = numarray[i + 2] - numarray[i];
+    objstmIndex[numarray[i - 1]] = make_pair(numarray[i] + startbyte, bytelen);
   }
 }
 
@@ -167,9 +139,8 @@ object_class::object_class(shared_ptr<object_class> holder, int objnum)
       else
       {
         size_t oldnumber = this->number;
-        shared_ptr<object_class> holding =
-          make_shared<object_class>(XR, newholder);
-        *this = object_class(holding, newobjnum);
+        shared_ptr<object_class> h = make_shared<object_class>(XR, newholder);
+        *this = object_class(h, newobjnum);
         this->number = oldnumber;
       }
     }
@@ -193,7 +164,7 @@ std::string object_class::getStream()
   if(!hasStream()) return ""; // no stream - return empty string
   else if(!stream.empty()) return stream; // stream already calculated - return
   else // get the stream from known stream locations
-    stream = XR->docpointer()->substr(streampos[0], streampos[1] -streampos[0]);
+    stream = XR->file()->substr(streampos[0], streampos[1] - streampos[0]);
   if(XR->isEncrypted()) // decrypt if necessary
     XR->decrypt(stream, number, 0);
   if(header.get("/Filter").find("/FlateDecode", 0) != string::npos)

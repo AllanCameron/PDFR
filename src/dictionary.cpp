@@ -171,10 +171,12 @@ void dictionary::handleKey(char n)
 
 void dictionary::handleMaybe(char n)
 {
-  switch(n)
+  if(n == '<')
+    state = START;
+  else
   {
-    case '<': state = START;                    break; // in a dictionary
-    default:  buf =""; state = PREENTRY;        break; // not a dictionary
+    buf.clear();
+    state = PREENTRY;
   }
 }
 

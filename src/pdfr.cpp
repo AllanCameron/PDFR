@@ -329,6 +329,7 @@ Rcpp::DataFrame pdfboxescommon(std::shared_ptr<document> myfile, int pagenum)
   );
 }
 
+//---------------------------------------------------------------------------//
 
 Rcpp::DataFrame pdfboxesString(const std::string& s, int pagenum)
 {
@@ -345,6 +346,46 @@ Rcpp::DataFrame pdfboxesRaw(const std::vector<uint8_t>& s, int pagenum)
 }
 
 
+Rcpp::DataFrame pdftext(const std::string& s, int pagenum)
+{
+  if(pagenum < 1) Rcpp::stop("Invalid page number");
+  std::shared_ptr<document> myfile = std::make_shared<document>(s);
+  std::shared_ptr<page> p = std::make_shared<page>(myfile, pagenum - 1);
+  parser G = parser(p); // New parser
+  tokenizer(p->pageContents(), &G);   // Read page contents to graphic state
+  letter_grouper GR = letter_grouper(G);
+  word_grouper WG = word_grouper(&GR);
+  Whitespace polygons(WG);
+  auto Poly = polygons.output();
+  std::vector<float> left, right, size, bottom;
+  std::vector<std::string> glyph, font;
+  std::vector<int> polygon;
+  int polygonNumber = 0;
+  for(auto& i : Poly)
+  {
+    for(auto& j : i.second)
+    {
+      left.push_back(j.left);
+      right.push_back(j.right);
+      size.push_back(j.size);
+      bottom.push_back(j.bottom);
+      glyph.push_back(utf(j.glyph));
+      font.push_back(j.font);
+      polygon.push_back(polygonNumber);
+    }
+    polygonNumber++;
+  }
+    return Rcpp::DataFrame::create(
+                        Rcpp::Named("text") = glyph,
+                        Rcpp::Named("left") = left,
+                        Rcpp::Named("right") = right,
+                        Rcpp::Named("bottom") = bottom,
+                        Rcpp::Named("font") = font,
+                        Rcpp::Named("size") = size,
+                        Rcpp::Named("box") = polygon,
+                        Rcpp::Named("stringsAsFactors") = false);
+}
+//---------------------------------------------------------------------------//
 
 #ifdef PROFILER_PDFR
 void stopCpp(){TheNodeList::Instance().endprofiler(); }

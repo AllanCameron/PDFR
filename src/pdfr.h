@@ -156,6 +156,9 @@ Rcpp::DataFrame pdfboxesString(const std::string& s, int pagenum);
 
 // [[Rcpp::export(.pdfboxesRaw)]]
 Rcpp::DataFrame pdfboxesRaw(const std::vector<uint8_t>& s, int pagenum);
+
+// [[Rcpp::export]]
+Rcpp::DataFrame pdftext(const std::string& s, int pagenum);
 //---------------------------------------------------------------------------//
 // This function can be called from R to stop the underlying C++ code. This can
 // be handy in profiling etc.

@@ -104,20 +104,16 @@ void xref::locateXrefs()
 {
   // get last 50 chars of the file
   std::string&& partial = fs->substr(fs->size() - 50, 50);
-
   // use carveout() from utilities.h to find the first xref offset
   std::string&& xrefstring =  carveout(partial, "startxref", "%%EOF");
-
   // convert the number string to an int
   Xreflocations.emplace_back(stoi(xrefstring));
   if(Xreflocations.empty()) throw runtime_error("No xref entry found");
-
   // the first dictionary found after any xref offset is always a trailer
   // dictionary, though sometimes it doubles as an xrefstream dictionary.
   // We make the first one found the canonical trailer dictionary
   TrailerDictionary = dictionary(fs, Xreflocations[0]);
   dictionary tempdict = TrailerDictionary;
-
   // Follow pointers to all xrefs sequentially.
   while (true)
     if(tempdict.hasInts("/Prev"))
@@ -169,22 +165,19 @@ void xref::xrefFromStream(int xrefloc)
 {
   // Gets the table from the stream
   vector<vector<int>> xreftable = xrefstream(this, xrefloc).table();
-
   // Throws if something's broken
-  if(xreftable.empty()) throw std::runtime_error("xreftable empty");
-
-  // Fills the main data map from the table --------//
-  size_t xrts = xreftable[0].size();                // define loop length
-  for (size_t j = 0; j < xrts; j++)                 //
-  {                                                 //
-    xrefrow txr;                                    // maps' values are xrefrows
-    txr.object = xreftable[3][j];                   // 4th col of table == obj
-    txr.startbyte = txr.in_object = xreftable[1][j];// 2nd col of table == inobj
-    if (xreftable[0][j] == 1) txr.in_object = 0;    // 1st col == isinobj
-    if (xreftable[0][j] == 2) txr.startbyte = 0;    // if isinobj, no startbyte
-    objenum.emplace_back(txr.object);               // write to vec of objnums
-    xreftab[txr.object] = move(txr);                // write to main map
-  }                                                 //
+  if(xreftable.empty())
+    throw std::runtime_error("xreftable empty");
+  // Fills the main data map from the table ---------------------------------//
+  size_t xrts = xreftable[0].size();                                         //
+  for (size_t j = 0; j < xrts; j++)                                          //
+  {                                                                          //
+    xrefrow txr {xreftable[3][j], xreftable[1][j], 0, xreftable[1][j]};      //
+    if (xreftable[0][j] == 1) txr.in_object = 0;                             //
+    if (xreftable[0][j] == 2) txr.startbyte = 0; // if isinobj, no startbyte //
+    objenum.emplace_back(txr.object);                                        //
+    xreftab[txr.object] = move(txr);             // write to main map        //
+  }                                              //--------------------------//
 }
 
 /*---------------------------------------------------------------------------*/
@@ -312,32 +305,22 @@ std::vector<int> xref::getObjects() const
 vector<size_t> xref::getStreamLoc(int objstart) const
 {
   dictionary dict = dictionary(fs, objstart); // get the object dictionary
-  if(dict.has("stream"))     // this is created automatically in dictionary
-    if(dict.has("/Length"))  // sanity check; should length if there is stream
+  if(dict.has("stream") && dict.has("/Length")) // only if stream exists...
+  {
+    int streamlen;
+    if(dict.hasRefs("/Length")) // sometimes length is given as another object
     {
-      int streamlen;
-      if(dict.hasRefs("/Length")) // sometimes length is given as another object
-      {
-        int lengthob = dict.getRefs("/Length")[0]; // finds reference
-        size_t firstpos = getStart(lengthob);      // gets start of length obj
-        size_t lastpos = fs->find("endobj", firstpos); // and end of it
-        size_t len = lastpos - firstpos;  // from which we can get its length
-        string objstr = fs->substr(firstpos, len); // from which we get a string
-        streamlen = getints(move(objstr)).back(); // from which we get a number
-      }
-      // thankfully though most lengths are just direct ints
-      else streamlen = dict.getInts("/Length")[0];
-
-      // now get stream's start
-      int strmstart = dict.getInts("stream")[0];
-
-      // now we can return a length-2 vector of the stream start + end
-      vector<size_t> res = {(size_t) strmstart, (size_t) strmstart + streamlen};
-      return res;
-    }
-  // No stream; return a zero-pair.
-  vector<size_t> res = {0,0};
-  return res;
+      int lengthob = dict.getRefs("/Length")[0]; // finds reference
+      size_t firstpos = getStart(lengthob);      // gets start of length obj
+      size_t len = fs->find("endobj", firstpos) - firstpos; // and its length
+      string objstr = fs->substr(firstpos, len); // from which we get a string
+      streamlen = getints(move(objstr)).back(); // from which we get a number
+    } // thankfully though most lengths are just direct ints
+    else streamlen = dict.getInts("/Length")[0];
+    int strmstart = dict.getInts("stream")[0]; // now get stream's start
+    return vector<size_t>{(size_t) strmstart, (size_t) strmstart + streamlen};
+  }
+  return vector<size_t> {0,0}; // if no length, return empty length-2 vector
 }
 
 /*---------------------------------------------------------------------------*/
@@ -392,7 +375,7 @@ std::vector<std::vector<int>> xrefstream::table()
 /*---------------------------------------------------------------------------*/
 // get a pointer to the original document
 
-const std::string* xref::docpointer() const
+const std::string* xref::file() const
 {
   return this->fs;
 }
@@ -406,17 +389,15 @@ const std::string* xref::docpointer() const
 xrefstream::xrefstream(xref* Xref, int starts) :
   XR(Xref), ncols(0), predictor(0), objstart(starts)
 {
-  dict = dictionary(XR->docpointer(), objstart);    // get the xrefstream dict
+  dict = dictionary(XR->file(), objstart);    // get the xrefstream dict
   string decodestring = "<<>>";
   if(dict.has("/DecodeParms"))
     decodestring = dict.get("/DecodeParms"); // string for subdict
   subdict = dictionary(&decodestring);            // get parameters (subdict)
   getIndex(); // read Index entry of dict so we know which objects are in stream
   getParms(); // read the PNG decoding parameters
-
   // If there is no /W entry, we don't know how to interpret the stream. Abort!
   if(!dict.hasInts("/W")) throw std::runtime_error("Malformed xref stream");
-
   getRawMatrix(); // arrange the raw data in the stream into correct table form
   if(predictor == 12) diffup(); // Undiff the raw data
   modulotranspose(); // transposes table which ensuring all numbers are <256
@@ -450,17 +431,12 @@ void xrefstream::getIndex()
     int firstObject = 0;
     // Loop to expand the shorthand list of objects into a vector
     for(size_t i = 0; i < indexEntries.size(); i++)
-    {
-      // even indices represent the first object being described in a group
-      if(i % 2 == 0)
-        firstObject = indexEntries[i];
-      else
-      {
-        // odd indices are the number of objects present
+    {   // even indices represent the first object being described in a group
+      if(i % 2 == 0) firstObject = indexEntries[i];
+      else // odd indices are the number of objects present
         // This subloop just adds sequentially to the first object in the group
         for(auto j = 0; j < indexEntries[i]; j++)
           objectNumbers.emplace_back(firstObject + j);
-      }
     }
   }
 }
@@ -484,47 +460,25 @@ void xrefstream::getParms()
 
 void xrefstream::getRawMatrix()
 {
-  // finds location of stream beginning and end
-  std::vector<size_t> sl = XR->getStreamLoc(objstart);
-
-  // extracts stream from file
-  std::string SS = XR->docpointer()->substr(sl[0], sl[1] - sl[0]);
-
-  // gets the containing object's dictionary
-  dictionary dict = dictionary(XR->docpointer(), objstart);
-
-  // applies decompression to stream if needed
+  std::vector<size_t> sl = XR->getStreamLoc(objstart);  // finds stream location
+  std::string SS = XR->file()->substr(sl[0], sl[1] - sl[0]); // get stream
+  dictionary dict = dictionary(XR->file(), objstart); // containing object
   if(dict.get("/Filter").find("/FlateDecode", 0) != string::npos)
-    SS = FlateDecode(SS);
-
-  // turn the string into an array of bytes
-  std::vector<uint8_t> conv(SS.begin(), SS.end());
-
-  // turn the bytes into an array of ints
-  std::vector<int> intstrm(conv.begin(), conv.end());
-
+    SS = FlateDecode(SS); // applies decompression to stream if needed
+  std::vector<uint8_t> conv(SS.begin(), SS.end());  // convert string to bytes..
+  std::vector<int> intstrm(conv.begin(), conv.end()); // and bytes to ints
   // read the /W entry to get the width in bytes of each column in the table
   std::vector<int>&& tmparraywidths = dict.getInts("/W");
-
   // check the widths for any zero values and skip them if present
   for (auto i : tmparraywidths) if (i > 0) arrayWidths.push_back(i);
-
   // if no record of column numbers, infer from number of /W entries >0
-  if (ncols == 0) for (auto i : arrayWidths) ncols += i;
-
-  // the predictor algorithms above 10 require an extra marginal column
-  if(predictor > 9) ncols++;
-
-  // sanity check
-  if(ncols == 0) throw std::runtime_error("divide by zero error");
-
-  // nrows is just the stream length / ncols (must be no remainder)
-  int nrows = intstrm.size() / ncols;
-  if ((size_t)(nrows * ncols) != intstrm.size())
+  if(ncols == 0) for (auto i : arrayWidths) ncols += i;
+  if(predictor > 9) ncols++; // Predictors above 10 require an extra column
+  if(ncols == 0) throw runtime_error("divide by zero error"); // sanity check
+  int nrows = intstrm.size() / ncols; // get number of rows
+  if ((size_t)(nrows * ncols) != intstrm.size()) // ensure rectangular table
     throw runtime_error("Unmatched row and column numbers");
-
-  // now fill the raw matrix with the stream data
-  for(int i = 0; i < nrows; i++)
+  for(int i = 0; i < nrows; i++) // now fill the raw matrix with stream data
     rawMatrix.emplace_back(intstrm.begin() + ncols * i,
                            intstrm.begin() + ncols * (i + 1));
 }
@@ -549,11 +503,9 @@ void xrefstream::modulotranspose()
   for(size_t i = 0; i < rawMatrix.at(0).size(); i++)  // for each row...
   {
     std::vector<int> tempcol;   // create a new column vector
-
      // then for each entry in the row make it modulo 256 and push to new column
-    for(size_t j = 0; j < rawMatrix.size(); j++)
-      tempcol.push_back(rawMatrix.at(j).at(i) % 256);
-
+    for(auto& j : rawMatrix)
+      tempcol.push_back(j.at(i) % 256);
     // the new column is pushed to the final array unless it is the first
     // column (which is skipped when the predictor is > 9)
     if(predictor < 10 || i > 0) finalArray.push_back(tempcol);
@@ -568,7 +520,7 @@ void xrefstream::expandbytes()
 {
   // The bytes in the matrix represent powers of 256 depending on the number
   // being represented's width in bytes
-  std::vector<int> byteVals {16777216, 65536, 256, 1};
+  std::vector<int> byteVals {0x01000000, 0x010000, 0x0100, 0x01};
 
   // create the multiplier fot each column with 1:1 correspondence
   std::vector<int> columnConst;
@@ -589,30 +541,20 @@ void xrefstream::mergecolumns()
 {
   int cumsum = 0;
   for(auto i : arrayWidths) // for each of the final columns
-  {
-    // take the next column from the unmerged array
+  { // take the next column from the unmerged array
     std::vector<int> newcolumn = finalArray.at(cumsum);
     if(i > 1) // if the final column is more than 1 byte wide...
-    {
       for(int j = 1; j < i; j++) // for each width value above 1
       {
         size_t fas = finalArray.at(cumsum + j).size(); // take another column
-        // add it to the previous one
-        for(size_t k = 0; k < fas; k++)
+        for(size_t k = 0; k < fas; k++) // and add it to the previous one
           newcolumn.at(k) += finalArray.at(cumsum + j).at(k);
       }
-    }
-    // this is now one of our final columns, so push it to the result
-    result.push_back(newcolumn);
-
-    // move to the next column in the final result
-    cumsum += i;
+    result.push_back(newcolumn); // This is a final column - push it to result
+    cumsum += i;     // move to the next column in the final result
   }
   if(result.size() == 2) // if there are only two columns add a zero filled col
-  {
-    std::vector<int> zeroArray(result.at(0).size(), 0); // array of 0s
-    result.push_back(zeroArray);
-  }
+    result.emplace_back(std::vector<int>(result.at(0).size(), 0));
 }
 
 /*---------------------------------------------------------------------------*/
@@ -621,11 +563,10 @@ void xrefstream::mergecolumns()
 
 void xrefstream::numberRows()
 {
-  vector<int> objectIndex;
   if(indexEntries.empty()) // if no index entries, assume start at object 0
-  {
-    for(size_t i = 0; i < result.at(0).size(); i++) // fill sequentially from 0
-      objectIndex.push_back(i + objectNumbers.at(0));
+  {// create extra column numbered sequentially from first of objectNumbers
+    vector<int> objectIndex(result[0].size());
+    iota(objectIndex.begin(), objectIndex.end(), objectNumbers.at(0));
     result.push_back(objectIndex);
   }
   else // simply push previously calculated object numbers
