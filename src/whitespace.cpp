@@ -115,6 +115,13 @@ void Whitespace::pageDimensions()
   pageright  = pagebox[East];
   pagebottom = pagebox[South];
   pagetop    = pagebox[North];
+  for(auto& i : WGO)
+  {
+    if(i.right > pageright) pageright += 10.0;
+    if(i.left < pageleft) pageleft -= 10.0;
+    if((i.bottom + i.size) > pagetop) pagetop += 10.0;
+    if(i.bottom < pagebottom) pagebottom -= 10.0;
+  }
 }
 
 //---------------------------------------------------------------------------//
@@ -161,7 +168,7 @@ void Whitespace::makeStrips()
       {
         bottoms.push_back(j.bottom + j.size);   // store its upper and lower
         tops.push_back(j.bottom);               // bounds as bottom and top of
-      }                                         // whitespace boxes
+      }                                        // whitespace boxes
     sort(tops.begin(), tops.end(), greater<float>()); // reverse sort the tops
     sort(bottoms.begin(), bottoms.end(), greater<float>()); // and the bottoms
     for(size_t j = 0; j < tops.size(); j++) // Now create boxes for our strip
@@ -185,16 +192,16 @@ void Whitespace::mergeStrips()
   for(size_t i = 0; i < nboxes; i++) // for each box
     for(size_t j = i; j < nboxes; j++) // compare to every other box
     { // if its right edge matches the left edge of the compared box
-      if(ws_boxes[j].left   == ws_boxes[i].right &&
-         ws_boxes[j].top    == ws_boxes[i].top &&
-         ws_boxes[j].bottom == ws_boxes[i].bottom)
+      auto& m = ws_boxes[j];
+      auto& c = ws_boxes[i];
+      if(m.left == c.right && m.top == c.top && m.bottom == c.bottom)
       {
-        ws_boxes[j].left = ws_boxes[i].left; // merge the left edges
-        ws_boxes[i].deletionFlag = true; // ... and delete the leftmost box
+        m.left = c.left; // merge the left edges
+        c.deletionFlag = true; // ... and delete the leftmost box
         break; // There can be only one match - skip to next iteration
       }
       // since boxes are ordered, if no adjacent boxes match this, skip to next
-      if(ws_boxes[j].left > ws_boxes[i].right) break;
+      if(m.left > c.right) break;
     }
   clearDeletedBoxes(); // now we can remove boxes flagged for deletion
 }
@@ -420,7 +427,7 @@ void Whitespace::groupText()
     for(auto& j : WGO)
     {
       if(j.left >= i.left && j.right <= i.right &&
-         j.bottom >= i.bottom && (j.bottom + j.size) <= i.top &&
+         j.bottom >= i.bottom && (j.bottom ) <= i.top &&
          !j.consumed)
         textcontent.push_back(j);
     }

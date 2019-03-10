@@ -113,7 +113,13 @@ pdfpage <- function(pdf, page, atomic = FALSE)
   {
     x <- .pdfpageraw(pdf, page, atomic)
   }
-  if(class(pdf) == "character" & length(pdf) == 1 & grepl("[.]pdf$", pdf))
+  if(class(pdf) == "character" & length(pdf) == 1 & grepl("[.]pdf$", pdf) &
+     !grepl("/", pdf))
+  {
+    x <- .pdfpage(paste0(path.expand("~/"), pdf), page, atomic)
+  }
+  if(class(pdf) == "character" & length(pdf) == 1 & grepl("[.]pdf$", pdf) &
+     grepl("/", pdf))
   {
     x <- .pdfpage(pdf, page, atomic)
   }
@@ -210,7 +216,8 @@ pdfplot <- function(pdf, page = 1, atomic = FALSE, textsize = 1)
   G + ggplot2::geom_rect(ggplot2::aes(xmin = x$Box[1], ymin = x$Box[2],
                                       xmax = x$Box[3], ymax = x$Box[4]),
                          fill = "white", colour = "black", size = 0.2
-  ) + ggplot2::geom_text(ggplot2::aes(label = y$text), hjust = 0, vjust = 0
+  ) + ggplot2::geom_text(ggplot2::aes(label = y$text, colour = factor(box)),
+                         hjust = 0, vjust = 0
   ) + ggplot2::coord_equal(
   ) + ggplot2::scale_size_identity(
   )

@@ -176,19 +176,40 @@ Rcpp::List getatomic(std::shared_ptr<page> p)
 
 Rcpp::List getgrid(std::shared_ptr<page> p)
 {
-  parser GS = parser(p);
-  tokenizer(p->pageContents(), &GS);
-  letter_grouper Grid = letter_grouper(GS);
-  gridoutput gridout = word_grouper(&Grid).out();
+  parser G = parser(p); // New parser
+  tokenizer(p->pageContents(), &G);   // Read page contents to graphic state
+  letter_grouper GR = letter_grouper(G);
+  word_grouper WG = word_grouper(&GR);
+  Whitespace polygons(WG);
+  auto Poly = polygons.output();
+  std::vector<float> left, right, size, bottom;
+  std::vector<std::string> glyph, font;
+  std::vector<int> polygon;
+  int polygonNumber = 0;
+  for(auto& i : Poly)
+  {
+    for(auto& j : i.second)
+    {
+      left.push_back(j.left);
+      right.push_back(j.right);
+      size.push_back(j.size);
+      bottom.push_back(j.bottom);
+      glyph.push_back(utf(j.glyph));
+      font.push_back(j.font);
+      polygon.push_back(polygonNumber);
+    }
+    polygonNumber++;
+  }
   Rcpp::DataFrame db =  Rcpp::DataFrame::create(
-                        Rcpp::Named("text") =   std::move(gridout.text),
-                        Rcpp::Named("left") =   std::move(gridout.left),
-                        Rcpp::Named("bottom") = std::move(gridout.bottom),
-                        Rcpp::Named("right") =  std::move(gridout.right),
-                        Rcpp::Named("font") =   std::move(gridout.font),
-                        Rcpp::Named("size") =   std::move(gridout.size),
+                        Rcpp::Named("text") = glyph,
+                        Rcpp::Named("left") = left,
+                        Rcpp::Named("right") = right,
+                        Rcpp::Named("bottom") = bottom,
+                        Rcpp::Named("font") = font,
+                        Rcpp::Named("size") = size,
+                        Rcpp::Named("box") = polygon,
                         Rcpp::Named("stringsAsFactors") = false);
-  return Rcpp::List::create(Rcpp::Named("Box") = Grid.getBox(),
+  return Rcpp::List::create(Rcpp::Named("Box") = GR.getBox(),
                             Rcpp::Named("Elements") = db);
 }
 
