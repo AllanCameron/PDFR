@@ -101,7 +101,7 @@ string carveout(const string& s, const string& pre, const string& post)
   string str = s.substr(start, s.size() - start); // trim start of s
   int stp = str.find(post);
   if(stp == -1) return str; // if post not found, finish at end of string
-  return str.substr(0, stp); // discard end of string starting at end of post
+  return str.substr(0, stp);// discard end of string starting at end of post
 }
 
 /*---------------------------------------------------------------------------*/
@@ -113,7 +113,7 @@ vector<string> multicarve(const string& s, const string& a, const string& b)
 {
   std::vector<std::string> res; // vector to store results
   // if any of the strings are length 0 then return an empty vector
-  if(a.size() == 0 || b.size() == 0 || s.size() == 0) return res;
+  if(a.empty() || b.empty() || s.empty()) return res;
   std::string str = s; // makes a copy to allow const correctness
   while(true)
   {
@@ -180,13 +180,12 @@ vector<float> stringtofloat(const vector<string>& b)
 string intToHexstring(int i)
 {
   if(i < 0 || i > 0xffff) return "FFFF"; // returns max if out of range
-  string hex = "0123456789ABCDEF";
-  string res; // string to hold results
-  res += hex[(i & 0xf000) >> 12]; // gets index of hex from first 4 bits
-  res += hex[(i & 0x0f00) >> 8];  // gets index of hex from second 4 bits
-  res += hex[(i & 0x00f0) >> 4];  // gets index of hex from third 4 bits
-  res += hex[i & 0x000f];         // gets index of hex from last 4 bits
-  return res;
+  string hex {"0123456789ABCDEF"};
+  hex += hex[(i & 0xf000) >> 12]; // gets index of hex from first 4 bits
+  hex += hex[(i & 0x0f00) >>  8]; // gets index of hex from second 4 bits
+  hex += hex[(i & 0x00f0) >>  4]; // gets index of hex from third 4 bits
+  hex += hex[(i & 0x000f) >>  0]; // gets index of hex from last 4 bits
+  return string {hex, 16, 4};
 }
 
 /*---------------------------------------------------------------------------*/

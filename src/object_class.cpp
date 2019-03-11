@@ -77,7 +77,7 @@ object_class::object_class(shared_ptr<const xref> Xref, int objnum) :
 void object_class::indexObjectStream()
 {
   // Get the first character that is not a digit or space
-  int startbyte = stream.find_first_not_of(" 0123456789");
+  int startbyte = stream.find_first_not_of("\n\r\t 0123456789");
   // Now get the substring with the objects proper...
   std::string s(stream.begin() + startbyte, stream.end());
   // ...and the substring with the registration numbers...
