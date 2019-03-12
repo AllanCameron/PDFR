@@ -411,8 +411,11 @@ std::string utf(const std::vector<uint16_t>& Unicode_points)
   for(auto& point : Unicode_points) // for each uint16_t in the input vector...
   {
     // values less than 128 are just single-byte ASCII
-    if(point < 0x0080) result_string.push_back(point & 0x007f);
-
+    if(point < 0x0080)
+    {
+      result_string.push_back(point & 0x007f);
+      continue;
+    }
     // values of 128 - 2047 are two bytes. The first byte starts 110xxxxx
     // and the second starts 10xxxxxx. The remaining 11 x's are filled with the
     // 11 bits representing a number between 128 and 2047. e.g. Unicode point
@@ -427,6 +430,7 @@ std::string utf(const std::vector<uint16_t>& Unicode_points)
       result_string.push_back((0x00c0 | ((point >> 6) & 0x001f)));
       // construct byte with bits 10 and final 6 bits of unicode point number
       result_string.push_back(0x0080 | (point & 0x003f));
+      continue;
     }
 
     // Unicode values between 2048 (0x0800) and the maximum uint16_t value
@@ -435,6 +439,12 @@ std::string utf(const std::vector<uint16_t>& Unicode_points)
     // the 16 bits representing 2048 - 65535.
     if(point > 0x07ff)
     {
+      // convert ligatures
+      if(point == 0xFB00) {result_string += "ff"; continue;}
+      if(point == 0xFB01) {result_string += "fi"; continue;}
+      if(point == 0xFB02) {result_string += "fl"; continue;}
+      if(point == 0xFB03) {result_string += "ffi"; continue;}
+      if(point == 0xFB04) {result_string += "ffl"; continue;}
       // construct byte with 1110 and first 4 bits of unicode point number
       result_string.push_back(0x00e0 | ((point >> 12) & 0x000f));
       // construct byte with 10 and bits 5-10 of unicode point number

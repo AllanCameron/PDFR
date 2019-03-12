@@ -120,7 +120,7 @@ public:
 private:
   // private data members
   constexpr static float CLUMP_H = 0.1; // horizontal clumping, high = sticky
-  constexpr static float CLUMP_V = 0.7; // vertical clumping, high = sticky
+  constexpr static float CLUMP_V = 0.1; // vertical clumping, high = sticky
   parser gs;                     // a copy of the parser used to create grid
   std::vector<float> minbox;            // page's minimum bounding box
 
