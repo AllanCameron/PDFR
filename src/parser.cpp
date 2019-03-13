@@ -83,20 +83,12 @@ std::string parser::getOperand()
 }
 
 //---------------------------------------------------------------------------//
-// We need to be able to pass the page pointer on to the tokenizer to read
-// form xobjects using a public method
-
-std::shared_ptr<page> parser::getPage()
-{
-  return p;
-}
-
-//---------------------------------------------------------------------------//
 // The public getter of the main data member
 
-GSoutput* parser::output()
+GSoutput parser::output()
 {
-  return &db;
+  db.minbox = p->getminbox();
+  return db;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -357,7 +349,7 @@ void parser::processRawChar(vector<RawChar>& raw, float& scale,
     db.width.emplace_back(scale * glyphwidth/1000 * Th/100);
     db.right.emplace_back(db.left.back() + db.width.back());
     // Store Unicode point
-    db.text.emplace_back(j.first);
+    db.text.emplace_back(std::vector<Unicode>{j.first});
 
     // store fontsize for glyph
     db.size.emplace_back(scale);
@@ -435,14 +427,6 @@ array<float, 9> parser::stringvectomat(const vector<string>& a)
                           stof(a[2]), stof(a[3]), 0,
                           stof(a[4]), stof(a[5]), 1};
   return newmat;
-}
-
-/*---------------------------------------------------------------------------*/
-// Retrieve the minbox around the parser
-
-std::vector<float> parser::getminbox()
-{
-  return p->getminbox();
 }
 
 

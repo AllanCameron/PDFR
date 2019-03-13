@@ -117,7 +117,7 @@ class Whitespace
 {
 public:
   // constructor
-  Whitespace(const word_grouper&);
+  Whitespace(LGout);
   //  Output the text element groups directly
   std::vector<std::pair<WSbox, std::vector<textrow>>> output() const;
   // Output the final text box co-ordinates
@@ -126,8 +126,8 @@ public:
 private:
   //The main output is a collection of pairs of text boxes with their elements
   std::vector<std::pair<WSbox, std::vector<textrow>>> groups;
-  word_grouper WG; // a copy of the word grouper object
   std::vector<textrow> WGO; // a copy of wgo's output
+  std::vector<float> minbox;
   std::unordered_map<size_t, std::vector<Vertex>> polygonMap;// main polygon map
   float pageleft, pageright, pagetop, pagebottom; // taken from crop box
   float midfontsize;  // The average font size on the page

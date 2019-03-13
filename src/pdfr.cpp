@@ -158,17 +158,17 @@ Rcpp::List getatomic(std::shared_ptr<page> p)
   tokenizer(p->pageContents(), &G);   // Read page contents to graphic state
   auto GS = G.output();               // Obtain output from graphic state
   std::vector<std::string> glyph;     // Container for utf-glyphs
-  for(auto& i : GS->text) glyph.push_back(utf({i})); // Unicode to utf8
+  for(auto& i : GS.text) glyph.push_back(utf({i})); // Unicode to utf8
   // Now create the data frame
   Rcpp::DataFrame db =  Rcpp::DataFrame::create(
                         Rcpp::Named("text") = glyph,
-                        Rcpp::Named("left") = GS->left,
-                        Rcpp::Named("bottom") = GS->bottom,
-                        Rcpp::Named("right") = GS->right,
-                        Rcpp::Named("font") = GS->fonts,
-                        Rcpp::Named("size") = GS->size,
+                        Rcpp::Named("left") = GS.left,
+                        Rcpp::Named("bottom") = GS.bottom,
+                        Rcpp::Named("right") = GS.right,
+                        Rcpp::Named("font") = GS.fonts,
+                        Rcpp::Named("size") = GS.size,
                         Rcpp::Named("stringsAsFactors") = false);
-  return Rcpp::List::create(Rcpp::Named("Box") = G.getminbox(),
+  return Rcpp::List::create(Rcpp::Named("Box") = p->getminbox(),
                             Rcpp::Named("Elements") = db);
 }
 
@@ -176,12 +176,10 @@ Rcpp::List getatomic(std::shared_ptr<page> p)
 
 Rcpp::List getgrid(std::shared_ptr<page> p)
 {
-  parser G = parser(p); // New parser
+  parser G(p); // New parser
   tokenizer(p->pageContents(), &G);   // Read page contents to graphic state
-  letter_grouper GR = letter_grouper(G);
-  word_grouper WG = word_grouper(&GR);
-  Whitespace polygons(WG);
-  auto Poly = polygons.output();
+  auto Poly = Whitespace(word_grouper(letter_grouper(
+              G.output()).output()).output()).output();
   std::vector<float> left, right, size, bottom;
   std::vector<std::string> glyph, font;
   std::vector<int> polygon;
@@ -209,7 +207,7 @@ Rcpp::List getgrid(std::shared_ptr<page> p)
                         Rcpp::Named("size") = size,
                         Rcpp::Named("box") = polygon,
                         Rcpp::Named("stringsAsFactors") = false);
-  return Rcpp::List::create(Rcpp::Named("Box") = GR.getBox(),
+  return Rcpp::List::create(Rcpp::Named("Box") = p->getminbox(),
                             Rcpp::Named("Elements") = db);
 }
 
@@ -252,10 +250,11 @@ Rcpp::DataFrame pdfdoc_common(std::shared_ptr<document> myfile)
   for(size_t pagenum = 0; pagenum < npages; pagenum++)
   {
     std::shared_ptr<page> p = std::make_shared<page>(myfile, pagenum);
-    parser GS = parser(p);
-    tokenizer(p->pageContents(), &GS);
-    letter_grouper GR = letter_grouper(GS);
-    gridoutput gridout = word_grouper(&GR).out();
+    parser G(p); // New parser
+    tokenizer(p->pageContents(), &G);   // Read page contents to graphic state
+    letter_grouper LG(G.output());
+    word_grouper WG(LG.output());
+    gridoutput gridout = WG.out();
     concat(glyph, gridout.text);
     concat(left, gridout.left);
     concat(right, gridout.right);
@@ -322,11 +321,11 @@ std::string pagestringraw(const std::vector<uint8_t>& rawfile, int pagenum)
 Rcpp::DataFrame pdfboxescommon(std::shared_ptr<document> myfile, int pagenum)
 {
   std::shared_ptr<page> p = std::make_shared<page>(myfile, pagenum);
-  parser G = parser(p); // New parser
+  parser G(p); // New parser
   tokenizer(p->pageContents(), &G);   // Read page contents to graphic state
-  letter_grouper GR = letter_grouper(G);
-  word_grouper WG = word_grouper(&GR);
-  Whitespace polygons(WG);
+  letter_grouper LG(G.output());
+  word_grouper WG(LG.output());
+  Whitespace polygons(WG.output());
   auto Poly = polygons.ws_box_out();
   std::vector<float> xmin, ymin, xmax, ymax;
   std::vector<int> groups;
@@ -372,11 +371,11 @@ Rcpp::DataFrame pdftext(const std::string& s, int pagenum)
   if(pagenum < 1) Rcpp::stop("Invalid page number");
   std::shared_ptr<document> myfile = std::make_shared<document>(s);
   std::shared_ptr<page> p = std::make_shared<page>(myfile, pagenum - 1);
-  parser G = parser(p); // New parser
+  parser G(p); // New parser
   tokenizer(p->pageContents(), &G);   // Read page contents to graphic state
-  letter_grouper GR = letter_grouper(G);
-  word_grouper WG = word_grouper(&GR);
-  Whitespace polygons(WG);
+  letter_grouper LG(G.output());
+  word_grouper WG(LG.output());
+  Whitespace polygons(WG.output());
   auto Poly = polygons.output();
   std::vector<float> left, right, size, bottom;
   std::vector<std::string> glyph, font;

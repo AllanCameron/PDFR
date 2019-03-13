@@ -27,6 +27,7 @@
 
 #include "page.h"
 
+
 //---------------------------------------------------------------------------//
 
 using namespace std;
@@ -73,7 +74,7 @@ void page::boxes()
       else hasparent = false; // didn't find any parent node - loop will exit
     }
   } while (minbox.empty() && hasparent); // stop loop if we have minbox or
-                                         // there are no more parent nodes
+                // there are no more parent nodes
 
   // Get the "rotate" value - will need in future feature development
   if (header.has("/Rotate")) rotate = header.getNums("/Rotate").at(0);
@@ -279,14 +280,6 @@ string page::pageContents()
 }
 
 /*--------------------------------------------------------------------------*/
-// Simple getter of the minimum bounding box for text on a page
-
-vector<float> page::getminbox()
-{
-  return this->minbox;
-}
-
-/*--------------------------------------------------------------------------*/
 // Finds and returns a particular XObject used on the page
 
 string page::getXobject(const string& objID)
@@ -308,6 +301,11 @@ shared_ptr<font> page::getFont(const string& fontID)
   if(fontmap.find(fontID) == fontmap.end()) return (fontmap.begin()->second);
   // Otherwise we're all good and return the requested font
   return (fontmap[fontID]);
+}
+
+std::vector<float> page::getminbox()
+{
+  return minbox;
 }
 
 /*--------------------------------------------------------------------------*/

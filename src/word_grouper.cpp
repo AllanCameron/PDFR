@@ -40,21 +40,8 @@ constexpr int EDGECOUNT = 4;
 // and finds its column edges, then joins elligible words together as long as
 // they do not belong to different columns.
 
-word_grouper::word_grouper(letter_grouper* g): theGrid(g)
+word_grouper::word_grouper(LGout g): allRows(g.textrows), minbox(g.minbox)
 {
-  // get the output from letter_grouper
-  std::unordered_map<uint8_t, std::vector<textrow>> gridout = theGrid->output();
-
-  // This block fills "allRows" by taking the ouput from letter_grouper and
-  // placing each word with its associated size and position (a textrow) from it
-  // into a vector
-  vector<textrow> tmpvec;
-  for(uint8_t i = 0; i < 255; i++)
-    concat(tmpvec, gridout[i]);
-  concat(tmpvec, gridout[0xff]); // otherwise loop will overflow infinitely
-  for(auto& i : tmpvec)
-    if(!i.consumed) allRows.emplace_back(move(i)); // no consumed entries please
-
   findEdges();
   assignEdges();
   findRightMatch();
@@ -63,9 +50,9 @@ word_grouper::word_grouper(letter_grouper* g): theGrid(g)
 //---------------------------------------------------------------------------//
 // This returns a vector of textrows for continued processing if needed
 
-std::vector<textrow> word_grouper::output()
+LGout word_grouper::output()
 {
-  return allRows;
+  return LGout{allRows, minbox};
 }
 
 //---------------------------------------------------------------------------//
@@ -124,12 +111,17 @@ void word_grouper::tabulate(const vector<float>& a,
 
 void word_grouper::findEdges()
 {
-  gridoutput GO = theGrid->out(); // uses the gridoutput from letter_grouper
-  tabulate(GO.left, leftEdges); // use tabulate to get left edges
-  tabulate(GO.right, rightEdges); // use tabulate to get right edges
+  vector<float> left, right;
+  for(auto& i : allRows)
+  {
+    left.push_back(i.left);
+    right.push_back(i.right);
+  }
+  tabulate(left, leftEdges); // use tabulate to get left edges
+  tabulate(right, rightEdges); // use tabulate to get right edges
   vector<float> midvec; //  create a vector of midpoints of text element --//
-  for(size_t i = 0; i < GO.right.size(); i++)                              //
-    midvec.emplace_back((GO.right[i] + GO.left[i])/2);  //-----------------//
+  for(size_t i = 0; i < right.size(); i++)                              //
+    midvec.emplace_back((right[i] + left[i])/2);  //-----------------//
   tabulate(midvec, mids); // use tabulate to find centre-aligned items
 }
 

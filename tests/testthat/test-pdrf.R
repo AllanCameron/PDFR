@@ -17,7 +17,7 @@ test_that("Encoding works",
 
 test_that("Ligatures are properly encoded",
 {
-  expect_match(paste(tex$text, collapse = " "), "ﬁ")
+  expect_match(paste(tex$text, collapse = " "), "fi")
 })
 
 test_that("Widths are non-zero",

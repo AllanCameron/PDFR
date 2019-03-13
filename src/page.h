@@ -70,9 +70,9 @@ public:
   // public methods
   std::vector<std::string> getFontNames();  // Returns PostScript font names
   std::string pageContents(); // Returns page description program as string
-  std::vector<float> getminbox(); // Get co-ordinates of smallest bounding box
   std::string getXobject(const std::string&); // Return specified XObject string
   std::shared_ptr<font> getFont(const std::string&);  // Get pointer to font
+  std::vector<float> getminbox();
   void clearFontMap();
 
 private:
@@ -86,8 +86,7 @@ private:
                       cropbox,              //
                       mediabox,             //--> Various page bounding boxes
                       trimbox,              //
-                      artbox,         //----//
-                      minbox;         // The smallest bounding box around text
+                      artbox;         //----//
   std::string         contentstring;  // The page description program as string
   double              rotate;         // Intended page rotation in degrees
 
@@ -107,6 +106,8 @@ private:
 
   // Gets the leaf nodes of a content tree
   std::vector<int> expandContents(std::vector<int> objnums);
+
+  std::vector<float> minbox;
 };
 
 //---------------------------------------------------------------------------//

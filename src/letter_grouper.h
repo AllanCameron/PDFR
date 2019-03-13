@@ -46,34 +46,6 @@
 #include "tokenizer.h"
 
 //---------------------------------------------------------------------------//
-// The textrow is a struct which acts as a "row" of information about each text
-// element on a page including the actual unicode glyph(s), the position, the
-// font and size of the character(s). It also contains a pair that acts as an
-// address for the adjacent glyph which will be found during letter_grouper's
-// construction, and Boolean flags to indicate whether it is "consumed" when
-// the glyphs are stuck together into words, as well as flags to indicate
-// whether the element is at the left, right or centre of a column
-
-struct textrow
-{
-  float       left,             // position of left edge of text on page
-              right,            // position of right edge of text on page
-              width,            // width of text element
-              bottom,           // y position of bottom edge of text
-              size;             // point size of font used to draw text
-  std::string font;             // Name of font used to draw text
-  std::vector<Unicode> glyph;   // The actual Unicode glyphs encoded
-  bool        consumed;         // Should element be ignored in output?
-  std::pair<int, int> rightjoin;// address of closest adjacent element
-  bool isLeftEdge, isRightEdge, isMid;
-  bool operator ==(const textrow& a) const
-  {
-    return (a.left == this->left && a.bottom == this->bottom &&
-            a.size == this->size && a.glyph == this->glyph);
-  }
-};
-
-//---------------------------------------------------------------------------//
 // The gridoutput struct transposes a vector of textrows to give a table of
 // text elements and their associated characteristics. This allows output
 // to a variety of formats
@@ -82,6 +54,12 @@ struct gridoutput
 {
   std::vector<float> left, right, width, bottom, size;
   std::vector<std::string> font, text;
+};
+
+struct LGout
+{
+  std::vector<textrow> textrows;
+  std::vector<float> minbox;
 };
 
 //---------------------------------------------------------------------------//
@@ -109,20 +87,19 @@ class letter_grouper
 {
 public:
   // constructor.
-  letter_grouper(const parser&);
+  letter_grouper(GSoutput);
 
   // public methods
   // Passes text elements to word_grouper for further construction if needed
-  std::unordered_map<uint8_t, std::vector<textrow>> output();
-  std::vector<float> getBox(); // pass out minbox for plotting etc
+  LGout output();
   gridoutput out(); // output table to interface if ungrouped words needed
 
 private:
   // private data members
   constexpr static float CLUMP_H = 0.1; // horizontal clumping, high = sticky
   constexpr static float CLUMP_V = 0.1; // vertical clumping, high = sticky
-  parser gs;                     // a copy of the parser used to create grid
-  std::vector<float> minbox;            // page's minimum bounding box
+  GSoutput gslist;            // a copy of the parser output used to create grid
+  std::vector<float> minbox;
 
   // the main data member. A 16 x 16 grid of cells, each with textrow vector
   std::unordered_map<uint8_t, std::vector<textrow>> gridmap;

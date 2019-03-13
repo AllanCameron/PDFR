@@ -1,6 +1,6 @@
 //---------------------------------------------------------------------------//
 //                                                                           //
-//  PDFR parser header file                                           //
+//  PDFR parser header file                                                  //
 //                                                                           //
 //  Copyright (C) 2018 by Allan Cameron                                      //
 //                                                                           //
@@ -92,6 +92,41 @@ namespace Token
 };
 
 //---------------------------------------------------------------------------//
+// The textrow is a struct which acts as a "row" of information about each text
+// element on a page including the actual unicode glyph(s), the position, the
+// font and size of the character(s). It also contains a pair that acts as an
+// address for the adjacent glyph which will be found during letter_grouper's
+// construction, and Boolean flags to indicate whether it is "consumed" when
+// the glyphs are stuck together into words, as well as flags to indicate
+// whether the element is at the left, right or centre of a column
+
+struct textrow
+{
+  float       left,             // position of left edge of text on page
+              right,            // position of right edge of text on page
+              width,            // width of text element
+              bottom,           // y position of bottom edge of text
+              size;             // point size of font used to draw text
+  std::string font;             // Name of font used to draw text
+  std::vector<Unicode> glyph;   // The actual Unicode glyphs encoded
+  bool        consumed;         // Should element be ignored in output?
+  std::pair<int, int> rightjoin;// address of closest adjacent element
+  bool isLeftEdge, isRightEdge, isMid;
+
+  textrow(float l, float r, float w, float b, float s,
+          std::string f, std::vector<Unicode> g): left(l), right(r), width(w),
+          bottom(b), size(s), font(f), glyph(g), consumed(false),
+          rightjoin(std::make_pair(-1, -1)), isLeftEdge(false),
+          isRightEdge(false), isMid(false) {};
+
+  bool operator ==(const textrow& a) const
+  {
+    return (a.left == this->left && a.bottom == this->bottom &&
+            a.size == this->size && a.glyph == this->glyph);
+  }
+};
+
+//---------------------------------------------------------------------------//
 // This struct is a container for the output of the parser class. All
 // of the vectors are the same length, so it can be thought of as a table with
 // one row for each glyph on the page. This makes it straightforward to output
@@ -99,13 +134,36 @@ namespace Token
 
 struct GSoutput
 {
-  std::vector<Unicode> text;      // vector of unicode code points
+  std::vector<std::vector<Unicode>> text;      // vector of unicode code points
   std::vector<float> left;        // vector of glyphs' left edges
   std::vector<float> bottom;      // vector of glyphs' bottom edges
   std::vector<float> right;       // vector of glyphs' right edges
   std::vector<std::string> fonts; // vector of glyphs' font names
   std::vector<float> size;        // vector of glyphs' point size
   std::vector<float> width;       // vector of glyphs' widths in text space
+  std::vector<float> minbox;
+  std::vector<textrow> transpose()
+  {
+    std::vector<textrow> res;
+    if(!left.empty())
+      for(size_t i = 0; i < left.size(); i++)
+        res.emplace_back(textrow(left[i], right[i], width[i], bottom[i],
+                                 size[i], fonts[i], text[i]));
+    return res;
+  }
+};
+
+struct textrows
+{
+  std::vector<textrow> _data;
+  std::vector<textrow>::iterator begin(){return _data.begin();}
+  std::vector<textrow>::iterator end(){return _data.end();}
+  textrow operator[](int n){return _data[n];}
+  textrows(std::vector<textrow> t): _data(t){}
+  textrows(const textrows& t): _data(t._data){}
+  textrows(textrows&& t){std::swap(t._data, this->_data);}
+  textrows() = default;
+  void push_back(textrow t){_data.push_back(t);}
 };
 
 //---------------------------------------------------------------------------//
@@ -118,10 +176,11 @@ public:
   void reader(std::string&, Token::TState);
 
   // access results
-  GSoutput* output();
-  std::vector<float> getminbox();
+  GSoutput output();
   std::string getOperand();
-  std::shared_ptr<page> getPage();
+  std::string getXobject(std::string inloop) const {
+    return p->getXobject(inloop);
+  };
 
 private:
   //private data members - used to maintain state between calls to parser

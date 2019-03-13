@@ -83,7 +83,7 @@ bool Whitespace::eq(float a, float b)
 // then trace round all the vertices, storing every connected loop as a
 // polygon surrounding a text element.
 
-Whitespace::Whitespace(const word_grouper& prsr): WG(prsr), WGO(WG.output())
+Whitespace::Whitespace(LGout wgo): WGO(wgo.textrows), minbox(wgo.minbox)
 {
   std::vector<float> fontsizes;
   for(auto& i : WGO) fontsizes.push_back(i.size);
@@ -110,11 +110,10 @@ Whitespace::Whitespace(const word_grouper& prsr): WG(prsr), WGO(WG.output())
 
 void Whitespace::pageDimensions()
 {
-  vector<float> pagebox = WG.getBox();
-  pageleft   = pagebox[West];
-  pageright  = pagebox[East];
-  pagebottom = pagebox[South];
-  pagetop    = pagebox[North];
+  pageleft   = minbox[West];
+  pageright  = minbox[East];
+  pagebottom = minbox[South];
+  pagetop    = minbox[North];
   for(auto& i : WGO)
   {
     if(i.right > pageright) pageright += 10.0;
@@ -298,9 +297,8 @@ void Whitespace::tracePolygons()
 {
   for(auto& i : vertices) // for every vertex
   {
-    vector<float> pagebox = WG.getBox(); // Allows us to get initialEdge
     // Use the Direction enum as an int to get points beyond page edges
-    float initialEdge = pagebox[i.Out] + (2 * (i.Out / 2) - 1) * 100;
+    float initialEdge = minbox[i.Out] + (2 * (i.Out / 2) - 1) * 100;
     float edge = initialEdge; // "edge" keeps track of the nearest vertex
     for(auto& j : vertices)  // now for every other vertex
       if((i.Out == North && j.x == i.x && // if North of North-pointing vertex

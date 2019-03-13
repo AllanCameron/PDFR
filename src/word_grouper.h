@@ -69,16 +69,14 @@ class word_grouper
 {
 public:
   // constructor
-  word_grouper(letter_grouper*);
+  word_grouper(LGout);
 
   // access results
-  std::vector<textrow> output(); // output individual text elements for next
+  LGout output(); // output individual text elements for next
                                  // phase of layout analysis
   gridoutput out(); // Output text elements with sizes, fonts, positions to API
-  std::vector<float> getBox() const {return theGrid->getBox();};
 
 private:
-  letter_grouper* theGrid; // pointer to the letter_grouper used in construction
   // Make a table of values in a vector of floats rounded to one decimal place
   void tabulate(const std::vector<float>&, std::unordered_map<int, size_t>&);
   // Use tabulate function to find likely left, right or mid-aligned columns
@@ -92,7 +90,7 @@ private:
   // The main data member: a vector of textrows, each containing a word with
   // its associated size, font and position
   std::vector<textrow> allRows;
-
+    std::vector<float> minbox;
 };
 
 //---------------------------------------------------------------------------//

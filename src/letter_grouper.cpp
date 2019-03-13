@@ -44,7 +44,7 @@ gridoutput letter_grouper::out()
     {// for each textrow in the cell...
       if(!j.consumed) //if it isn't marked for deletion...
       {// copy its contents over
-        text.push_back(utf({j.glyph}));
+        text.push_back(utf(j.glyph));
         left.push_back(j.left);
         right.push_back(j.right);
         size.push_back(j.size);
@@ -55,7 +55,7 @@ gridoutput letter_grouper::out()
     }
     if(i == 255) break; // prevent overflow back to 0 and endless loop
   }
-  return gridoutput{left, right, width, bottom, size, font, text };
+  return gridoutput{left, right, width, bottom, size, font, text};
 }
 
 //---------------------------------------------------------------------------//
@@ -63,7 +63,7 @@ gridoutput letter_grouper::out()
 // page into an easily addressable 16 x 16 grid, find glyphs in close proximity
 // to each other, and glue them together, respectively.
 
-letter_grouper::letter_grouper(const parser& GS) : gs(GS)
+letter_grouper::letter_grouper(GSoutput GS) : gslist(GS), minbox(GS.minbox)
 {
   makegrid();     // Split the glyphs into 256 cells to reduce search space
   compareCells(); // Find adjacent glyphs
@@ -86,25 +86,18 @@ letter_grouper::letter_grouper(const parser& GS) : gs(GS)
 
 void letter_grouper::makegrid()
 {
-  minbox = gs.getminbox();  // gets the minbox found on page creation
-  GSoutput* gslist = gs.output(); // Take the output of parser
   float dx = (minbox[2] - minbox[0])/16; // calculate width of cells
   float dy = (minbox[3] - minbox[1])/16; // calculate height of cells
-  for(unsigned i = 0; i < gslist->width.size(); i++) // for each glyph...
+  for(unsigned i = 0; i < gslist.width.size(); i++) // for each glyph...
   {
-    textrow newrow = {  gslist->left[i],   //------//
-                      gslist->right[i],          //
-                      gslist->width[i],          //
-                      gslist->bottom[i],         //    create a struct with all
-                      gslist->size[i],           //--> pertinent size & position
-                      gslist->fonts[i],          //    information
-                     {gslist->text[i]},          //
-                      false,                     //
-                      make_pair(-1, -1),         //
-                      false,                     //
-                      false,                     //
-                      false              //------//
-                    };
+    textrow newrow(gslist.left[i],   //------//
+                      gslist.right[i],          //
+                      gslist.width[i],          //
+                      gslist.bottom[i],         //    create a struct with all
+                      gslist.size[i],           //--> pertinent size & position
+                      gslist.fonts[i],          //    information
+                      gslist.text[i]
+                      );
     // push the struct to the vector in the cell
     gridmap[((uint8_t)(newrow.left / dx))  |
             ((uint8_t)(15 - (newrow.bottom / dy)) << 4 )].push_back(newrow);
@@ -117,9 +110,18 @@ void letter_grouper::makegrid()
 //---------------------------------------------------------------------------//
 // Allows the main data object to be output after calculations done
 
-std::unordered_map<uint8_t, std::vector<textrow>> letter_grouper::output()
+LGout letter_grouper::output()
 {
-  return gridmap;
+  // This block fills "allRows" by taking the ouput from letter_grouper and
+  // placing each word with its associated size and position (a textrow) from it
+  // into a vector
+  vector<textrow> tmpvecx, tmpvecy;
+  for(uint8_t i = 0; i < 255; i++)
+    concat(tmpvecx, gridmap[i]);
+  concat(tmpvecx, gridmap[0xff]); // otherwise loop will overflow infinitely
+  for(auto& i : tmpvecx)
+    if(!i.consumed) tmpvecy.emplace_back(i); // no consumed entries please
+  return LGout{tmpvecy, minbox};
 }
 
 //---------------------------------------------------------------------------//
@@ -221,10 +223,3 @@ void letter_grouper::merge()
   }
 }
 
-//---------------------------------------------------------------------------//
-// Passes the minbox calculated on page creation to allow plotting etc
-
-std::vector<float> letter_grouper::getBox()
-{
-  return minbox;
-}

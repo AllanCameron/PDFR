@@ -55,7 +55,7 @@ void tokenizer::pushbuf(const TState type, const TState statename)
     if(loopname != inloop)
     {
       inloop = loopname;
-      string&& xo = gs->getPage()->getXobject(inloop);
+      string&& xo = gs->getXobject(inloop);
       if(IsAscii(xo)) // don't try to parse binary objects like images etc
         tokenizer(move(xo), gs);
     }
