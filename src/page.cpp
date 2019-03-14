@@ -114,7 +114,7 @@ void page::getResources()
   else // Resources contains a subdictionary
   {
     string resdict = header.get("/Resources");
-    resources = dictionary(&resdict); // create a dictionary from the entry
+    resources = dictionary(make_shared<string>(resdict)); // create dictionary
   }
 }
 
@@ -134,7 +134,7 @@ void page::getFonts()
   else // it's a subdictionary
   {
     string fontdict = resources.get("/Font");
-    fonts = dictionary(&fontdict); // create the font dictionary from the entry
+    fonts = dictionary(make_shared<string>(fontdict)); // create font dict
   }
 
   // We can now iterate through the font names using getFontNames(), create
@@ -193,7 +193,7 @@ void page::parseXObjStream()
   // Look to see if the /xobject entry is a dictionary
   if(xobjstring.find("<<") != string::npos)
   {
-    objdict = dictionary(&xobjstring);
+    objdict = dictionary(make_shared<string>(xobjstring));
   }
   else
   {

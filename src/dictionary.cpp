@@ -315,7 +315,7 @@ void dictionary::handleClose(char n)
 // Creator function. Takes a string pointer so big strings can be passed
 // cheaply. This version starts at the beginning of the given string
 
-dictionary::dictionary(const string* str) :
+dictionary::dictionary(shared_ptr<const string> str) :
   s(str), i(0), bracket(0), keyPending(false), state(PREENTRY) // initializers
 {
   if(s->empty()) *this = dictionary(); // empty string -> empty dict
@@ -327,7 +327,7 @@ dictionary::dictionary(const string* str) :
 // This allows dictionaries to be read starting from the object locations
 // given in the cross-reference (xref) table
 
-dictionary::dictionary(const string* str, size_t pos) :
+dictionary::dictionary(shared_ptr<const string> str, size_t pos) :
   s(str), i(pos), bracket(0), keyPending(false), state(PREENTRY)
 {
   // check string isn't empty or smaller than the starting position
@@ -432,7 +432,7 @@ dictionary dictionary::getDictionary(const string& Key) const
 {
   string dict = this->get(Key);       // Get the value string
   if(dict.find("<<") != string::npos) // Test that it is a dictionary
-    return dictionary(&dict);         // if so, create a new dictionary from it
+    return dictionary(make_shared<string> (dict));// if so, create a new dict
   return dictionary();                // Otherwise return an empty dictionary
 }
 

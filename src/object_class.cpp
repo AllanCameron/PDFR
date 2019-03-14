@@ -119,7 +119,7 @@ object_class::object_class(shared_ptr<object_class> holder, int objnum)
   std::string H = holder->objFromStream(objnum);
   if(H[0] == '<') // Most stream objects consist of just a dictionary
   {
-    header = dictionary(&H); // read the dictionary as the object's header
+    header = dictionary(make_shared<string>(H)); // read dict as object's header
     stream = "";             // stream objects don't have their own stream
     has_stream = false;      // stream objects don't have their own stream
   }

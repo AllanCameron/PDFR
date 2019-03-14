@@ -85,9 +85,9 @@
 class xref
 {
 public:
-  // constructors
-  xref(){};                     // Default creator
-  xref(const std::string*);     // The creator called during document creation
+  // constructor
+  xref(){};
+  xref(std::shared_ptr<const std::string>); // Constructor
 
   // public methods
   bool isEncrypted() const;           // Eeturns encryption state
@@ -102,11 +102,11 @@ public:
   // finds start and stop of the first stream after the given byte offset
   std::vector<size_t> getStreamLoc(int) const;
   void decrypt(std::string&, int, int) const; // Decrypt a stream
-  const std::string* file() const; // pointer to main file string
+  std::shared_ptr<const std::string> file() const; // pointer to main file string
 
 private:
 // private data
-  const std::string* fs;  // a pointer to the creating file string
+  std::shared_ptr<const std::string> fs;  // a pointer to the creating file string
 
   // The main xref data member is an unordered map with the key being the object
   // number and the value being a struct of named ints as defined here

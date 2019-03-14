@@ -68,7 +68,7 @@ Rcpp::DataFrame getglyphmap(const std::string& s, int pagenum)
 // get_xref. It acts as a helper function and common final pathway for the
 // raw and filepath versions of get_xref
 
-Rcpp::DataFrame xrefcreator(std::string* fs)
+Rcpp::DataFrame xrefcreator(std::shared_ptr<const std::string> fs)
 {
   xref Xref = xref(fs); // create the xref from the given string pointer
 
@@ -99,7 +99,7 @@ Rcpp::DataFrame xrefcreator(std::string* fs)
 Rcpp::DataFrame get_xref(const std::string& filename)
 {
   std::string fs = get_file(filename); // loads file from path name
-  return xrefcreator(&fs);             // returns the output of xrefcreator
+  return xrefcreator(std::make_shared<std::string>(fs));// output of xrefcreator
 }
 
 //---------------------------------------------------------------------------//
@@ -110,7 +110,7 @@ Rcpp::DataFrame get_xref(const std::string& filename)
 Rcpp::DataFrame get_xrefraw(const std::vector<uint8_t>& rawfile)
 {
   std::string fs(rawfile.begin(), rawfile.end()); // cast raw vector to string
-  return xrefcreator(&fs);  // return results of calling xrefcreator
+  return xrefcreator(std::make_shared<std::string>(fs));// output of xrefcreator
 }
 
 //---------------------------------------------------------------------------//
@@ -368,45 +368,6 @@ Rcpp::DataFrame pdfboxesRaw(const std::vector<uint8_t>& s, int pagenum)
 }
 
 
-Rcpp::DataFrame pdftext(const std::string& s, int pagenum)
-{
-  if(pagenum < 1) Rcpp::stop("Invalid page number");
-  std::shared_ptr<document> myfile = std::make_shared<document>(s);
-  std::shared_ptr<page> p = std::make_shared<page>(myfile, pagenum - 1);
-  parser G(p); // New parser
-  tokenizer(p->pageContents(), &G);   // Read page contents to graphic state
-  letter_grouper LG(G.output());
-  word_grouper WG(LG.output());
-  Whitespace polygons(WG.output());
-  auto Poly = polygons.output();
-  std::vector<float> left, right, size, bottom;
-  std::vector<std::string> glyph, font;
-  std::vector<int> polygon;
-  int polygonNumber = 0;
-  for(auto& i : Poly)
-  {
-    for(auto& j : i.second)
-    {
-      left.push_back(j.left);
-      right.push_back(j.right);
-      size.push_back(j.size);
-      bottom.push_back(j.bottom);
-      glyph.push_back(utf(j.glyph));
-      font.push_back(j.font);
-      polygon.push_back(polygonNumber);
-    }
-    polygonNumber++;
-  }
-    return Rcpp::DataFrame::create(
-                        Rcpp::Named("text") = glyph,
-                        Rcpp::Named("left") = left,
-                        Rcpp::Named("right") = right,
-                        Rcpp::Named("bottom") = bottom,
-                        Rcpp::Named("font") = font,
-                        Rcpp::Named("size") = size,
-                        Rcpp::Named("box") = polygon,
-                        Rcpp::Named("stringsAsFactors") = false);
-}
 //---------------------------------------------------------------------------//
 
 #ifdef PROFILER_PDFR

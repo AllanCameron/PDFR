@@ -43,7 +43,7 @@ using namespace std;
 class xrefstream
 {
   friend class xref;  // This class is only constructible from xref...
-  xref* XR;           // ...to which it needs a pointer
+  shared_ptr<xref> XR;  // ...to which it needs a pointer
   dictionary dict,    // The dictionary of the object containing the xrefstream
              subdict; // The decode parameters dictionary, an entry in dict
   std::vector<std::vector<int>> rawMatrix,  // Holds the raw data in r x c vecs
@@ -56,6 +56,7 @@ class xrefstream
       nrows,       // rows in table
       predictor,   // predictor number - specifies decoding algorithm
       objstart;    // byte offset of the xrefstream's containing object
+
   void getIndex();          // reads the index entry of main dict
   void getParms();          // reads the PNG decoding parameters
   void getRawMatrix();      // reads the stream into appropriately-sized table
@@ -66,7 +67,7 @@ class xrefstream
   void numberRows();        // merge object numbers with data table
 
   // private constructor
-  xrefstream(xref*, int objstart);
+  xrefstream(shared_ptr<xref>, int objstart);
 
   // getter of final result
   std::vector<std::vector<int>> table();
@@ -76,7 +77,7 @@ class xrefstream
 // the xref creator function. It takes the entire file contents as a string
 // then sequentially runs the steps in creation of an xref master map
 
-xref::xref(const string* s) :  fs(s), encrypted(false)
+xref::xref(shared_ptr<const std::string> s) :  fs(s), encrypted(false)
 {
   locateXrefs();           // find all xrefs
   xrefstrings();           // get the strings containing all xrefs
@@ -164,7 +165,8 @@ void xref::xrefIsstream()
 void xref::xrefFromStream(int xrefloc)
 {
   // Gets the table from the stream
-  vector<vector<int>> xreftable = xrefstream(this, xrefloc).table();
+  vector<vector<int>> xreftable =
+    xrefstream(make_shared<xref>(*this), xrefloc).table();
   // Throws if something's broken
   if(xreftable.empty())
     throw std::runtime_error("xreftable empty");
@@ -375,7 +377,7 @@ std::vector<std::vector<int>> xrefstream::table()
 /*---------------------------------------------------------------------------*/
 // get a pointer to the original document
 
-const std::string* xref::file() const
+std::shared_ptr<const std::string> xref::file() const
 {
   return this->fs;
 }
@@ -386,14 +388,14 @@ const std::string* xref::file() const
 // PNG decompression algorithm. They are seperated out to prevent one large
 // hairball function being created that is difficult to debug.
 
-xrefstream::xrefstream(xref* Xref, int starts) :
+xrefstream::xrefstream(shared_ptr<xref> Xref, int starts) :
   XR(Xref), ncols(0), predictor(0), objstart(starts)
 {
   dict = dictionary(XR->file(), objstart);    // get the xrefstream dict
   string decodestring = "<<>>";
   if(dict.has("/DecodeParms"))
     decodestring = dict.get("/DecodeParms"); // string for subdict
-  subdict = dictionary(&decodestring);            // get parameters (subdict)
+  subdict = dictionary(make_shared<string>(decodestring));// get param (subdict)
   getIndex(); // read Index entry of dict so we know which objects are in stream
   getParms(); // read the PNG decoding parameters
   // If there is no /W entry, we don't know how to interpret the stream. Abort!

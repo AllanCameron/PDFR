@@ -137,34 +137,39 @@ void word_grouper::assignEdges()
 
 void word_grouper::findRightMatch()
 {
-  for(auto i = allRows.begin(); i != allRows.end(); i++) // for each word
+  if(allRows._data.empty()) throw runtime_error("empty data");
+  for(int k = 0; k < (int) allRows._data.size(); k++) // for each word
   {
-    if( i->consumed) continue; // check elligible
+    auto& i = allRows._data[k];
+    if( i.consumed) continue; // check elligible
 
-    for(auto& j : allRows) // if so, look at every other word for a match
+    for(int m = 0; m < (int) allRows._data.size(); m++) // if so, look at every other word for a match
     {
+      if(m == k) continue;
+      auto& j = allRows._data[m];
       if(j.consumed) continue; // ignore words that have already been joined
-      if(j.left < i->right) continue; // ignore words to the left
-      if(j.bottom - i->bottom > 0.7 * i->size) continue; // only match elements
-      if(i->bottom - j.bottom > 0.7 * i->size) continue; // on the same "line"
-      if(j.left - i->right > 2 * i->size) continue; // ignore if too far right
-      if((j.isLeftEdge || j.isMid) && (j.left - i->right > 0.51 * i->size))
+      if(j.left < i.right) continue; // ignore words to the left
+      if(j.bottom - i.bottom > 0.7 * i.size) continue; // only match elements
+      if(i.bottom - j.bottom > 0.7 * i.size) continue; // on the same "line"
+      if(j.left - i.right > 2 * i.size) continue; // ignore if too far right
+      if((j.isLeftEdge || j.isMid) && (j.left - i.right > 0.51 * i.size))
         continue; // ignore if not elligble for join
-      if((i->isRightEdge || i->isMid ) &&  (j.left - i->right > 0.51 * i->size))
+      if((i.isRightEdge || i.isMid ) &&  (j.left - i.right > 0.51 * i.size))
         continue;
       // The element is elligible for joining
-      i->glyph.push_back(0x0020); // add a space
+      i.glyph.push_back(0x0020); // add a space
       // if the gap is wide enough, add two spaces
-      if(j.left - i->right > 1 * i->size) i->glyph.push_back(0x0020);
-      concat(i->glyph, j.glyph); // stick contents together
-      i->right = j.right; // the right edge is now the rightmost edge
-      i->isRightEdge = j.isRightEdge; // as are the right edge's properties
-      if(i->size < j.size) i->size = j.size;
-      i->width = i->right - i->left; // update the width
+      if(j.left - i.right > 1 * i.size) i.glyph.push_back(0x0020);
+      concat(i.glyph, j.glyph); // stick contents together
+      i.right = j.right; // the right edge is now the rightmost edge
+      i.isRightEdge = j.isRightEdge; // as are the right edge's properties
+      if(i.size < j.size) i.size = j.size;
+      i.width = i.right - i.left; // update the width
       j.consumed = true; // the element on the right is now consumed
-      i--; // The element we have just matched now has different characteristics
+      k--; // The element we have just matched now has different characteristics
            // so may be matched by a different element - match it again until
            // no further matches are found.
+      break;
     }
   }
 }

@@ -159,18 +159,6 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// pdftext
-Rcpp::DataFrame pdftext(const std::string& s, int pagenum);
-RcppExport SEXP _PDFR_pdftext(SEXP sSEXP, SEXP pagenumSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const std::string& >::type s(sSEXP);
-    Rcpp::traits::input_parameter< int >::type pagenum(pagenumSEXP);
-    rcpp_result_gen = Rcpp::wrap(pdftext(s, pagenum));
-    return rcpp_result_gen;
-END_RCPP
-}
 // stopCpp
 void stopCpp();
 RcppExport SEXP _PDFR_stopCpp() {
@@ -197,7 +185,6 @@ static const R_CallMethodDef CallEntries[] = {
     {"_PDFR_pdfdocraw", (DL_FUNC) &_PDFR_pdfdocraw, 1},
     {"_PDFR_pdfboxesString", (DL_FUNC) &_PDFR_pdfboxesString, 2},
     {"_PDFR_pdfboxesRaw", (DL_FUNC) &_PDFR_pdfboxesRaw, 2},
-    {"_PDFR_pdftext", (DL_FUNC) &_PDFR_pdftext, 2},
     {"_PDFR_stopCpp", (DL_FUNC) &_PDFR_stopCpp, 0},
     {"run_testthat_tests",   (DL_FUNC) &run_testthat_tests,   0},
     {NULL, NULL, 0}

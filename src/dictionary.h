@@ -68,8 +68,8 @@ class dictionary
 {
   public:
   // Constructors
-  dictionary(const std::string*); // make dictionary from string pointer
-  dictionary(const std::string*, size_t); // make dictionary from pos in string
+  dictionary(std::shared_ptr<const std::string>); // make dictionary from string
+  dictionary(std::shared_ptr<const std::string>, size_t); // dict from pos + str
   dictionary(std::unordered_map<std::string, std::string>); // create from map
   dictionary(); // empty dictionary
 
@@ -107,7 +107,7 @@ enum DState     {PREENTRY,
 
   // Private data members
 
-  const std::string* s;   // pointer to the string being read
+  std::shared_ptr<const std::string> s;   // pointer to the string being read
   size_t i;         // the string's iterator which is passed between functions
   int bracket;      // integer to store the nesting level of angle brackets
   bool keyPending;  // flag that indicates a key name has been read

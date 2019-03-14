@@ -63,7 +63,7 @@ document::document(const vector<uint8_t>& bytevector) :
 
 void document::buildDoc()
 {
-  Xref = make_shared<const xref>(&filestring); // Creates the xref
+  Xref = make_shared<const xref>(make_shared<string>(filestring)); // Creates the xref
   getCatalog();             // Gets the catalog dictionary
   getPageDir();             // Gets the /Pages dictionary
   getPageHeaders();         // Finds all descendant leaf nodes of /Pages
