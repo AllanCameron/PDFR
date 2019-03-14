@@ -56,11 +56,6 @@ struct gridoutput
   std::vector<std::string> font, text;
 };
 
-struct LGout
-{
-  std::vector<textrow> textrows;
-  std::vector<float> minbox;
-};
 
 //---------------------------------------------------------------------------//
 // Simple struct that acts as a method for sorting a vector of textrows
@@ -91,8 +86,8 @@ public:
 
   // public methods
   // Passes text elements to word_grouper for further construction if needed
-  LGout output();
-  gridoutput out(); // output table to interface if ungrouped words needed
+  textrows output();
+  GSoutput out(); // output table to interface if ungrouped words needed
 
 private:
   // private data members

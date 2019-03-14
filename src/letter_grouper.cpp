@@ -34,17 +34,18 @@ using namespace std;
 // This is a tabular output for the class to provide a method for outputting
 // words to the interface without any higher level grouping
 
-gridoutput letter_grouper::out()
+GSoutput letter_grouper::out()
 {
   std::vector<float> left, right, width, bottom, size; // these vectors are
-  std::vector<std::string> font, text;                 // components of the
-  for(uint8_t i = 0; i < 256; i++)                     // gridout struct
+  std::vector<std::string> font;                       // components of GSoutput
+  std::vector<std::vector<Unicode>> text;
+  for(uint8_t i = 0; i < 256; i++)
   {// for each cell in the grid...
     for(auto& j : gridmap[i])
     {// for each textrow in the cell...
       if(!j.consumed) //if it isn't marked for deletion...
       {// copy its contents over
-        text.push_back(utf(j.glyph));
+        text.push_back(j.glyph);
         left.push_back(j.left);
         right.push_back(j.right);
         size.push_back(j.size);
@@ -55,7 +56,7 @@ gridoutput letter_grouper::out()
     }
     if(i == 255) break; // prevent overflow back to 0 and endless loop
   }
-  return gridoutput{left, right, width, bottom, size, font, text};
+  return GSoutput{text, left, bottom, right, font, size, width, minbox};
 }
 
 //---------------------------------------------------------------------------//
@@ -110,7 +111,7 @@ void letter_grouper::makegrid()
 //---------------------------------------------------------------------------//
 // Allows the main data object to be output after calculations done
 
-LGout letter_grouper::output()
+textrows letter_grouper::output()
 {
   // This block fills "allRows" by taking the ouput from letter_grouper and
   // placing each word with its associated size and position (a textrow) from it
@@ -121,7 +122,7 @@ LGout letter_grouper::output()
   concat(tmpvecx, gridmap[0xff]); // otherwise loop will overflow infinitely
   for(auto& i : tmpvecx)
     if(!i.consumed) tmpvecy.emplace_back(i); // no consumed entries please
-  return LGout{tmpvecy, minbox};
+  return textrows{tmpvecy, minbox};
 }
 
 //---------------------------------------------------------------------------//

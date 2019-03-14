@@ -117,7 +117,7 @@ class Whitespace
 {
 public:
   // constructor
-  Whitespace(LGout);
+  Whitespace(textrows);
   //  Output the text element groups directly
   std::vector<std::pair<WSbox, std::vector<textrow>>> output() const;
   // Output the final text box co-ordinates

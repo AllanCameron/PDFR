@@ -178,8 +178,10 @@ Rcpp::List getgrid(std::shared_ptr<page> p)
 {
   parser G(p); // New parser
   tokenizer(p->pageContents(), &G);   // Read page contents to graphic state
-  auto Poly = Whitespace(word_grouper(letter_grouper(
-              G.output()).output()).output()).output();
+  letter_grouper LG(G.output());
+  word_grouper WG(LG.output());
+  Whitespace WS(WG.output());
+  std::vector<std::pair<WSbox, std::vector<textrow>>> Poly = WS.output();
   std::vector<float> left, right, size, bottom;
   std::vector<std::string> glyph, font;
   std::vector<int> polygon;
@@ -254,12 +256,12 @@ Rcpp::DataFrame pdfdoc_common(std::shared_ptr<document> myfile)
     tokenizer(p->pageContents(), &G);   // Read page contents to graphic state
     letter_grouper LG(G.output());
     word_grouper WG(LG.output());
-    gridoutput gridout = WG.out();
-    concat(glyph, gridout.text);
+    GSoutput gridout = WG.out();
+    for(auto& i : gridout.text) glyph.push_back(utf(i));
     concat(left, gridout.left);
     concat(right, gridout.right);
     concat(bottom, gridout.bottom);
-    concat(font, gridout.font);
+    concat(font, gridout.fonts);
     concat(size, gridout.size);
     while(pagenums.size() < size.size()) pagenums.push_back(pagenum + 1);
     if(pagenum == (npages - 1)) p->clearFontMap();

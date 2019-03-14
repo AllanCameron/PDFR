@@ -67,6 +67,7 @@
 
 #include "page.h"
 #include<functional>
+#include<iostream>
 
 //---------------------------------------------------------------------------//
 // The states of the lexer are defined by this enum. It is defined in its own
@@ -142,6 +143,7 @@ struct GSoutput
   std::vector<float> size;        // vector of glyphs' point size
   std::vector<float> width;       // vector of glyphs' widths in text space
   std::vector<float> minbox;
+
   std::vector<textrow> transpose()
   {
     std::vector<textrow> res;
@@ -156,14 +158,32 @@ struct GSoutput
 struct textrows
 {
   std::vector<textrow> _data;
+  std::vector<float> minbox;
   std::vector<textrow>::iterator begin(){return _data.begin();}
   std::vector<textrow>::iterator end(){return _data.end();}
   textrow operator[](int n){return _data[n];}
-  textrows(std::vector<textrow> t): _data(t){}
-  textrows(const textrows& t): _data(t._data){}
-  textrows(textrows&& t){std::swap(t._data, this->_data);}
+  textrows(std::vector<textrow> t, std::vector<float> m): _data(t), minbox(m){}
+  textrows(const textrows& t): _data(t._data), minbox(t.minbox){}
+  textrows(textrows&& t){std::swap(t._data, this->_data);
+                         std::swap(t.minbox, this->minbox);}
   textrows() = default;
   void push_back(textrow t){_data.push_back(t);}
+
+  GSoutput transpose(){
+    GSoutput res;
+    res.minbox = this->minbox;
+    for(auto i : this->_data)
+    {
+      res.text.push_back(i.glyph);
+      res.left.push_back(i.left);
+      res.bottom.push_back(i.bottom);
+      res.right.push_back(i.right);
+      res.fonts.push_back(i.font);
+      res.size.push_back(i.size);
+      res.width.push_back(i.width);
+    }
+    return res;
+  }
 };
 
 //---------------------------------------------------------------------------//

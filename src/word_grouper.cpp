@@ -40,7 +40,7 @@ constexpr int EDGECOUNT = 4;
 // and finds its column edges, then joins elligible words together as long as
 // they do not belong to different columns.
 
-word_grouper::word_grouper(LGout g): allRows(g.textrows), minbox(g.minbox)
+word_grouper::word_grouper(textrows g): allRows(g)
 {
   findEdges();
   assignEdges();
@@ -50,9 +50,9 @@ word_grouper::word_grouper(LGout g): allRows(g.textrows), minbox(g.minbox)
 //---------------------------------------------------------------------------//
 // This returns a vector of textrows for continued processing if needed
 
-LGout word_grouper::output()
+textrows word_grouper::output()
 {
-  return LGout{allRows, minbox};
+  return allRows;
 }
 
 //---------------------------------------------------------------------------//
@@ -61,25 +61,10 @@ LGout word_grouper::output()
 // the results of word_grouper to be passed out to an API if no further
 // processing is required.
 
-gridoutput word_grouper::out()
+GSoutput word_grouper::out()
 {
-  std::vector<float> left, right, width, bottom, size; // temporary
-  std::vector<std::string> font, text;                 //  vectors
-  for(auto& j : allRows) // for each of allRows...
-  {
-    if(!j.consumed) // unless it is consumed...
-    {
-      text.push_back(utf({j.glyph}));    //---//
-      left.push_back(j.left);                 //
-      right.push_back(j.right);               //
-      size.push_back(j.size);                 //--> fill the temporary vectors
-      bottom.push_back(j.bottom);             //
-      font.push_back(j.font);                 //
-      width.push_back(j.right - j.left); //---//
-    }
-  }
   // and return them in an API-consumable format
-  return gridoutput{left, right, width, bottom, size, font, text };
+  return allRows.transpose();
 }
 
 //---------------------------------------------------------------------------//

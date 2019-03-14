@@ -69,12 +69,12 @@ class word_grouper
 {
 public:
   // constructor
-  word_grouper(LGout);
+  word_grouper(textrows);
 
   // access results
-  LGout output(); // output individual text elements for next
+  textrows output(); // output individual text elements for next
                                  // phase of layout analysis
-  gridoutput out(); // Output text elements with sizes, fonts, positions to API
+  GSoutput out(); // Output text elements with sizes, fonts, positions to API
 
 private:
   // Make a table of values in a vector of floats rounded to one decimal place
@@ -89,8 +89,7 @@ private:
   std::unordered_map<int, size_t> leftEdges, rightEdges, mids, Bottoms;
   // The main data member: a vector of textrows, each containing a word with
   // its associated size, font and position
-  std::vector<textrow> allRows;
-    std::vector<float> minbox;
+  textrows allRows;
 };
 
 //---------------------------------------------------------------------------//
