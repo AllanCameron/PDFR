@@ -56,7 +56,8 @@ GSoutput letter_grouper::out()
     }
     if(i == 255) break; // prevent overflow back to 0 and endless loop
   }
-  return GSoutput{text, left, bottom, right, font, size, width, minbox};
+  return GSoutput{move(text), move(left), move(bottom), move(right),
+                  move(font), move(size), move(width), move(minbox)};
 }
 
 //---------------------------------------------------------------------------//
@@ -64,7 +65,8 @@ GSoutput letter_grouper::out()
 // page into an easily addressable 16 x 16 grid, find glyphs in close proximity
 // to each other, and glue them together, respectively.
 
-letter_grouper::letter_grouper(GSoutput GS) : gslist(GS), minbox(GS.minbox)
+letter_grouper::letter_grouper(GSoutput& GS) :
+  gslist(GS), minbox(gslist.minbox)
 {
   makegrid();     // Split the glyphs into 256 cells to reduce search space
   compareCells(); // Find adjacent glyphs
@@ -101,7 +103,7 @@ void letter_grouper::makegrid()
                       );
     // push the struct to the vector in the cell
     gridmap[((uint8_t)(newrow.left / dx))  |
-            ((uint8_t)(15 - (newrow.bottom / dy)) << 4 )].push_back(newrow);
+            ((uint8_t)(15 - (newrow.bottom / dy)) << 4 )].push_back(move(newrow));
   }
   // sort the contents of the cell from left to right
   for(auto& vec : gridmap)

@@ -45,17 +45,6 @@
 
 #include "tokenizer.h"
 
-//---------------------------------------------------------------------------//
-// The gridoutput struct transposes a vector of textrows to give a table of
-// text elements and their associated characteristics. This allows output
-// to a variety of formats
-
-struct gridoutput
-{
-  std::vector<float> left, right, width, bottom, size;
-  std::vector<std::string> font, text;
-};
-
 
 //---------------------------------------------------------------------------//
 // Simple struct that acts as a method for sorting a vector of textrows
@@ -82,7 +71,7 @@ class letter_grouper
 {
 public:
   // constructor.
-  letter_grouper(GSoutput);
+  letter_grouper(GSoutput&);
 
   // public methods
   // Passes text elements to word_grouper for further construction if needed
@@ -93,7 +82,7 @@ private:
   // private data members
   constexpr static float CLUMP_H = 0.1; // horizontal clumping, high = sticky
   constexpr static float CLUMP_V = 0.1; // vertical clumping, high = sticky
-  GSoutput gslist;            // a copy of the parser output used to create grid
+  GSoutput& gslist;            // a copy of the parser output used to create grid
   std::vector<float> minbox;
 
   // the main data member. A 16 x 16 grid of cells, each with textrow vector

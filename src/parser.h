@@ -157,15 +157,16 @@ struct GSoutput
 
 struct textrows
 {
-  std::vector<textrow> _data;
-  std::vector<float> minbox;
   std::vector<textrow>::iterator begin(){return _data.begin();}
   std::vector<textrow>::iterator end(){return _data.end();}
   textrow& operator[](int n){return _data[n];}
-  textrows(std::vector<textrow> t, std::vector<float> m): _data(t), minbox(m){}
-  textrows(const textrows& t): _data(t._data), minbox(t.minbox){}
+  textrows(std::vector<textrow> t, std::vector<float> m):
+    _data(t), minbox(m), data_size(t.size()) {}
+  textrows(const textrows& t):
+    _data(t._data), minbox(t.minbox), data_size(t._data.size()) {}
   textrows() = default;
-  void push_back(textrow t){_data.push_back(t);}
+  void push_back(textrow t){_data.push_back(t); data_size++;}
+  size_t size(){return data_size;}
 
   GSoutput transpose(){
     GSoutput res;
@@ -185,6 +186,9 @@ struct textrows
     }
     return res;
   }
+  std::vector<textrow> _data;
+  std::vector<float> minbox;
+  size_t data_size;
 };
 
 //---------------------------------------------------------------------------//
@@ -197,7 +201,7 @@ public:
   void reader(std::string&, Token::TState);
 
   // access results
-  GSoutput output();
+  GSoutput& output();
   std::string getOperand();
   std::string getXobject(std::string inloop) const {
     return p->getXobject(inloop);

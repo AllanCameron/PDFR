@@ -85,7 +85,7 @@ std::string parser::getOperand()
 //---------------------------------------------------------------------------//
 // The public getter of the main data member
 
-GSoutput parser::output()
+GSoutput& parser::output()
 {
   db.minbox = p->getminbox();
   return db;

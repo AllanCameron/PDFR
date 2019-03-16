@@ -362,7 +362,7 @@ void xref::get_crypto()
 
   // mark the file as encrypted and read the encryption dictionary
   encrypted = true;
-  dictionary encdict = dictionary(fs, getStart(encnum));
+  dictionary&& encdict = dictionary(fs, getStart(encnum));
   encryption = crypto(move(encdict), TrailerDictionary);
 }
 
