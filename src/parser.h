@@ -164,6 +164,9 @@ struct textrows
     _data(t), minbox(m), data_size(t.size()) {}
   textrows(const textrows& t):
     _data(t._data), minbox(t.minbox), data_size(t._data.size()) {}
+  textrows(textrows&& t):
+    _data(std::move(t._data)), minbox(std::move(t.minbox)),
+    data_size(_data.size()) {}
   textrows() = default;
   void push_back(textrow t){_data.push_back(t); data_size++;}
   size_t size(){return data_size;}
