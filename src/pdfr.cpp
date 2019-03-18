@@ -156,7 +156,8 @@ Rcpp::List getatomic(std::shared_ptr<page> p)
 {
   parser G = parser(p); // New parser
   tokenizer(p->pageContents(), &G);   // Read page contents to graphic state
-  auto GS = G.output();               // Obtain output from graphic state
+  auto TR = G.output();               // Obtain output from graphic state
+  auto GS = TR.transpose();
   std::vector<std::string> glyph;     // Container for utf-glyphs
   for(auto& i : GS.text) glyph.push_back(utf({i})); // Unicode to utf8
   // Now create the data frame
@@ -178,7 +179,7 @@ Rcpp::List getgrid(std::shared_ptr<page> p)
 {
   parser G(p); // New parser
   tokenizer(p->pageContents(), &G);   // Read page contents to graphic state
-  letter_grouper LG(G.output());
+  letter_grouper LG(std::move(G.output()));
   word_grouper WG(LG.output());
   Whitespace WS(WG.output());
   std::vector<std::pair<WSbox, std::vector<textrow>>> Poly = WS.output();
@@ -254,7 +255,7 @@ Rcpp::DataFrame pdfdoc_common(std::shared_ptr<document> myfile)
     std::shared_ptr<page> p = std::make_shared<page>(myfile, pagenum);
     parser G(p); // New parser
     tokenizer(p->pageContents(), &G);   // Read page contents to graphic state
-    letter_grouper LG(G.output());
+    letter_grouper LG(std::move(G.output()));
     word_grouper WG(LG.output());
     GSoutput gridout = WG.out();
     for(auto& i : gridout.text) glyph.push_back(utf(i));
@@ -325,7 +326,7 @@ Rcpp::DataFrame pdfboxescommon(std::shared_ptr<document> myfile, int pagenum)
   std::shared_ptr<page> p = std::make_shared<page>(myfile, pagenum);
   parser G(p); // New parser
   tokenizer(p->pageContents(), &G);   // Read page contents to graphic state
-  letter_grouper LG(G.output());
+  letter_grouper LG(std::move(G.output()));
   word_grouper WG(LG.output());
   Whitespace polygons(WG.output());
   auto Poly = polygons.ws_box_out();

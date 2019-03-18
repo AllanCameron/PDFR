@@ -69,7 +69,7 @@ class word_grouper
 {
 public:
   // constructor
-  word_grouper(textrows);
+  word_grouper(textrows&&);
 
   // access results
   textrows output(); // output individual text elements for next

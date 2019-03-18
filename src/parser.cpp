@@ -85,7 +85,7 @@ std::string parser::getOperand()
 //---------------------------------------------------------------------------//
 // The public getter of the main data member
 
-GSoutput& parser::output()
+textrows& parser::output()
 {
   db.minbox = p->getminbox();
   return db;
@@ -330,12 +330,12 @@ void parser::processRawChar(vector<RawChar>& raw, float& scale,
 
   for (auto& j : glyphpairs) // Now, for each character...
   {
+    float glyphwidth, left, right, bottom, width;
     if(j.first != 0x0020)
     {
-    db.left.emplace_back( textspace[6]);                  //
-    db.bottom.emplace_back( textspace[7]);                //
+      left = textspace[6];                  //
+      bottom = textspace[7];                //
     }
-    float glyphwidth;
     if (j.first == 0x0020) // if this is a space factor in word & char spacing
       glyphwidth = j.second + 1000 * (Tc + Tw)/currfontsize;
     else
@@ -346,16 +346,10 @@ void parser::processRawChar(vector<RawChar>& raw, float& scale,
     if (j.first != 0x0020)
     {
     // record width of char taking Th (horizontal scaling) into account
-    db.width.emplace_back(scale * glyphwidth/1000 * Th/100);
-    db.right.emplace_back(db.left.back() + db.width.back());
-    // Store Unicode point
-    db.text.emplace_back(std::vector<Unicode>{j.first});
-
-    // store fontsize for glyph
-    db.size.emplace_back(scale);
-
-    // store font name of glyph
-    db.fonts.emplace_back(wfont->fontname());
+    width = scale * glyphwidth/1000 * Th/100;
+    right = left + width;
+    db.push_back(textrow(left, right, width, bottom, scale, wfont->fontname(),
+                         vector<Unicode>{j.first}));
     }
   }
 }

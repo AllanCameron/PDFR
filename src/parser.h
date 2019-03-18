@@ -204,7 +204,7 @@ public:
   void reader(std::string&, Token::TState);
 
   // access results
-  GSoutput& output();
+  textrows& output();
   std::string getOperand();
   std::string getXobject(std::string inloop) const {
     return p->getXobject(inloop);
@@ -234,7 +234,7 @@ private:
 
   // The main output struct
 
-  GSoutput db;
+  textrows db;
 
   // Private methods
 
