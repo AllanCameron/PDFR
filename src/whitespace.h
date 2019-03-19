@@ -119,14 +119,14 @@ public:
   // constructor
   Whitespace(textrows);
   //  Output the text element groups directly
-  std::vector<std::pair<WSbox, std::vector<textrow>>> output() const;
+  std::vector<std::pair<WSbox, std::vector<text_ptr>>> output() const;
   // Output the final text box co-ordinates
   std::vector<WSbox> ws_box_out() const;
 
 private:
   //The main output is a collection of pairs of text boxes with their elements
-  std::vector<std::pair<WSbox, std::vector<textrow>>> groups;
-  std::vector<textrow> WGO; // a copy of wgo's output
+  std::vector<std::pair<WSbox, std::vector<text_ptr>>> groups;
+  std::vector<text_ptr> WGO; // a copy of wgo's output
   std::vector<float> minbox;
   std::unordered_map<size_t, std::vector<Vertex>> polygonMap;// main polygon map
   float pageleft, pageright, pagetop, pagebottom; // taken from crop box

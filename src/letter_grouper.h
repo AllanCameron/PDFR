@@ -52,9 +52,9 @@
 
 struct sort_left_right
 {
-  inline bool operator() (const textrow& row1, const textrow& row2)
+  inline bool operator() (text_ptr row1, text_ptr row2)
   {
-      return (row1.left < row2.left);
+      return (row1->left < row2->left);
   }
 };
 
@@ -86,12 +86,12 @@ private:
   std::vector<float> minbox;
 
   // the main data member. A 16 x 16 grid of cells, each with textrow vector
-  std::unordered_map<uint8_t, std::vector<textrow>> gridmap;
+  std::unordered_map<uint8_t, std::vector<text_ptr>> gridmap;
 
   // private methods
   void makegrid();                    // assigns each glyph to a 16 x 16 grid
   void compareCells();                // co-ordinates matching between cells
-  void matchRight(textrow&, uint8_t); // compare all glyphs in cell
+  void matchRight(text_ptr, uint8_t); // compare all glyphs in cell
   void merge();                       // join matching glyphs together
 };
 

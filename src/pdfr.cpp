@@ -182,7 +182,7 @@ Rcpp::List getgrid(std::shared_ptr<page> p)
   letter_grouper LG(std::move(G.output()));
   word_grouper WG(LG.output());
   Whitespace WS(WG.output());
-  std::vector<std::pair<WSbox, std::vector<textrow>>> Poly = WS.output();
+  auto Poly = WS.output();
   std::vector<float> left, right, size, bottom;
   std::vector<std::string> glyph, font;
   std::vector<int> polygon;
@@ -191,12 +191,12 @@ Rcpp::List getgrid(std::shared_ptr<page> p)
   {
     for(auto& j : i.second)
     {
-      left.push_back(j.left);
-      right.push_back(j.right);
-      size.push_back(j.size);
-      bottom.push_back(j.bottom);
-      glyph.push_back(utf(j.glyph));
-      font.push_back(j.font);
+      left.push_back(j->left);
+      right.push_back(j->right);
+      size.push_back(j->size);
+      bottom.push_back(j->bottom);
+      glyph.push_back(utf(j->glyph));
+      font.push_back(j->font);
       polygon.push_back(polygonNumber);
     }
     polygonNumber++;

@@ -127,6 +127,8 @@ struct textrow
   }
 };
 
+typedef std::shared_ptr<textrow> text_ptr;
+
 //---------------------------------------------------------------------------//
 // This struct is a container for the output of the parser class. All
 // of the vectors are the same length, so it can be thought of as a table with
@@ -157,10 +159,10 @@ struct GSoutput
 
 struct textrows
 {
-  std::vector<textrow>::iterator begin(){return _data.begin();}
-  std::vector<textrow>::iterator end(){return _data.end();}
-  textrow& operator[](int n){return _data[n];}
-  textrows(std::vector<textrow> t, std::vector<float> m):
+  std::vector<text_ptr>::iterator begin(){return _data.begin();}
+  std::vector<text_ptr>::iterator end(){return _data.end();}
+  text_ptr operator[](int n){return _data[n];}
+  textrows(std::vector<text_ptr> t, std::vector<float> m):
     _data(t), minbox(m), data_size(t.size()) {}
   textrows(const textrows& t):
     _data(t._data), minbox(t.minbox), data_size(t._data.size()) {}
@@ -168,7 +170,7 @@ struct textrows
     _data(std::move(t._data)), minbox(std::move(t.minbox)),
     data_size(_data.size()) {}
   textrows() = default;
-  void push_back(textrow t){_data.push_back(t); data_size++;}
+  void push_back(text_ptr t){_data.push_back(t); data_size++;}
   size_t size(){return data_size;}
 
   GSoutput transpose(){
@@ -176,20 +178,20 @@ struct textrows
     res.minbox = this->minbox;
     for(auto i : this->_data)
     {
-      if(!i.consumed)
+      if(!i->consumed)
       {
-        res.text.push_back(i.glyph);
-        res.left.push_back(i.left);
-        res.bottom.push_back(i.bottom);
-        res.right.push_back(i.right);
-        res.fonts.push_back(i.font);
-        res.size.push_back(i.size);
-        res.width.push_back(i.width);
+        res.text.push_back(i->glyph);
+        res.left.push_back(i->left);
+        res.bottom.push_back(i->bottom);
+        res.right.push_back(i->right);
+        res.fonts.push_back(i->font);
+        res.size.push_back(i->size);
+        res.width.push_back(i->width);
       }
     }
     return res;
   }
-  std::vector<textrow> _data;
+  std::vector<text_ptr> _data;
   std::vector<float> minbox;
   size_t data_size;
 };

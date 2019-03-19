@@ -43,15 +43,15 @@ GSoutput letter_grouper::out()
   {// for each cell in the grid...
     for(auto& j : gridmap[i])
     {// for each textrow in the cell...
-      if(!j.consumed) //if it isn't marked for deletion...
+      if(!j->consumed) //if it isn't marked for deletion...
       {// copy its contents over
-        text.push_back(j.glyph);
-        left.push_back(j.left);
-        right.push_back(j.right);
-        size.push_back(j.size);
-        bottom.push_back(j.bottom);
-        font.push_back(j.font);
-        width.push_back(j.right - j.left);
+        text.push_back(j->glyph);
+        left.push_back(j->left);
+        right.push_back(j->right);
+        size.push_back(j->size);
+        bottom.push_back(j->bottom);
+        font.push_back(j->font);
+        width.push_back(j->right - j->left);
       }
     }
     if(i == 255) break; // prevent overflow back to 0 and endless loop
@@ -91,10 +91,10 @@ void letter_grouper::makegrid()
 {
   float dx = (minbox[2] - minbox[0])/16; // calculate width of cells
   float dy = (minbox[3] - minbox[1])/16; // calculate height of cells
-  for(auto i : gslist) // for each glyph...
+  for(auto& i : gslist) // for each glyph...
   {
-    gridmap[((uint8_t)(i.left / dx))  |
-            ((uint8_t)(15 - (i.bottom / dy)) << 4 )].push_back(i);
+    gridmap[((uint8_t)(i->left / dx))  |
+            ((uint8_t)(15 - (i->bottom / dy)) << 4 )].push_back(i);
   }
   // sort the contents of the cell from left to right
   for(auto& vec : gridmap)
@@ -109,12 +109,13 @@ textrows letter_grouper::output()
   // This block fills "allRows" by taking the ouput from letter_grouper and
   // placing each word with its associated size and position (a textrow) from it
   // into a vector
-  vector<textrow> tmpvecx, tmpvecy;
+  vector<text_ptr> tmpvecx, tmpvecy;
   for(uint8_t i = 0; i < 255; i++)
     concat(tmpvecx, gridmap[i]);
   concat(tmpvecx, gridmap[0xff]); // otherwise loop will overflow infinitely
+
   for(auto& i : tmpvecx)
-    if(!i.consumed) tmpvecy.emplace_back(i); // no consumed entries please
+    if(!i->consumed) tmpvecy.emplace_back(i); // no consumed entries please
   return textrows{tmpvecy, minbox};
 }
 
@@ -134,14 +135,14 @@ void letter_grouper::compareCells()
     for(uint8_t j = 0; j < 16; j++) // for each cell in the column
     {
       uint8_t key = i | (j << 4);   // get the address of the cell
-      vector<textrow>& maingroup = gridmap[key]; // get the cell's contents
+      vector<text_ptr> maingroup = gridmap[key]; // get the cell's contents
       if(maingroup.empty()) continue;  // empty cell - nothing to be done
       for(auto& k : maingroup) // for each glyph in the cell
       {
         matchRight(k, key); // check for matches in this cell
         if(j < 15) matchRight(k, (i) | ((j + 1) << 4)); // and cell to North
         if(j > 0) matchRight(k, (i) | ((j - 1) << 4)); // and cell to South
-        if(k.rightjoin.first != -1) continue; // If match, look no further
+        if(k->rightjoin.first != -1) continue; // If match, look no further
         if(i < 15) matchRight(k, (i + 1) | (j << 4)); // else check to the East,
         if(i < 15 && j < 15) matchRight(k, (i + 1) | ((j + 1) << 4)); // NE,
         if(i < 15 && j > 0) matchRight(k, (i + 1) | ((j - 1) << 4)); // and SE
@@ -156,28 +157,28 @@ void letter_grouper::compareCells()
 // that cell. The glyphs are called textrows here because each glyph forms a row
 // of output from the parser class
 
-void letter_grouper::matchRight(textrow& row, uint8_t key)
+void letter_grouper::matchRight(text_ptr row, uint8_t key)
 {
   // The key is the address of the cell in the gridmap
-  std::vector<textrow>& cell = gridmap[key]; // get the vector of matching cell
+  std::vector<text_ptr>& cell = gridmap[key]; // get the vector of matching cell
   if(cell.empty()) return; // some cells are empty - nothing to do
   for(uint16_t i = 0; i < cell.size(); i++) // for each glyph in the cell...
-    if (cell[i].left > row.left &&
-        abs(cell[i].bottom - row.bottom) < (CLUMP_V * row.size) &&
-        (abs(cell[i].left  -  row.right ) < (CLUMP_H * row.size) ||
-        (cell[i].left < row.right)) )
+    if (cell[i]->left > row->left &&
+        abs(cell[i]->bottom - row->bottom) < (CLUMP_V * row->size) &&
+        (abs(cell[i]->left  -  row->right ) < (CLUMP_H * row->size) ||
+        (cell[i]->left < row->right)) )
     {// if in good position to be next glyph
       // mark row for deletion if it is identical
-      if(cell[i] == row) row.consumed = true;
-      if(cell[i].consumed) continue; // ignore if marked for deletion
-      if(row.rightjoin.first == -1) // if no previous match found
+      if(*cell[i] == *row) row->consumed = true;
+      if(cell[i]->consumed) continue; // ignore if marked for deletion
+      if(row->rightjoin.first == -1) // if no previous match found
       {
-        row.rightjoin = make_pair((int) key, (int) i); // store match address
+        row->rightjoin = make_pair((int) key, (int) i); // store match address
         continue; // don't bother checking next statement
       }
-      if(gridmap[row.rightjoin.first][row.rightjoin.second].left >
-           cell[i].left) // if already a match but this one is better...
-        row.rightjoin = make_pair((int) key, (int) i); // ...store match address
+      if(gridmap[row->rightjoin.first][row->rightjoin.second]->left >
+           cell[i]->left) // if already a match but this one is better...
+        row->rightjoin = make_pair((int) key, (int) i); // ...store match address
     }
 }
 
@@ -193,25 +194,25 @@ void letter_grouper::merge()
     for(uint8_t j = 0; j < 16; j++) // for each cell in that column
     {
       uint8_t key = i | (j << 4);         // get the cell's address
-      vector<textrow>& cell = gridmap[key]; // get the cell's contents
+      vector<text_ptr>& cell = gridmap[key]; // get the cell's contents
       if(cell.size() == 0) continue;      // Cell empty - nothing to do
       for(auto& k : cell)                 // for each glyph in the cell
       {
-        if(k.consumed || k.rightjoin.first == -1) continue; // nothing joins
+        if(k->consumed || k->rightjoin.first == -1) continue; // nothing joins
         // look up the right-matching glyph
-        textrow& matcher = gridmap[k.rightjoin.first][k.rightjoin.second];
+        auto& matcher = gridmap[k->rightjoin.first][k->rightjoin.second];
         // paste the left glyph to the right glyph
-        concat(k.glyph, matcher.glyph);
+        concat(k->glyph, matcher->glyph);
         // make the right glyph now contain both glyphs
-        matcher.glyph = k.glyph;
+        matcher->glyph = k->glyph;
         // make the right glyph now start where the left glyph started
-        matcher.left = k.left;
+        matcher->left = k->left;
         // and ensure the width is correct
-        matcher.width = matcher.right - matcher.left;
+        matcher->width = matcher->right - matcher->left;
         // Ensure bottom is the lowest value of the two glyphs
-        if(k.bottom < matcher.bottom) matcher.bottom = k.bottom;
+        if(k->bottom < matcher->bottom) matcher->bottom = k->bottom;
         // The checked glyph is now consumed - move to the next
-        k.consumed = true;
+        k->consumed = true;
       }
     }
   }

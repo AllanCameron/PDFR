@@ -99,8 +99,8 @@ void word_grouper::findEdges()
   vector<float> left, right;
   for(auto& i : allRows)
   {
-    left.push_back(i.left);
-    right.push_back(i.right);
+    left.push_back(i->left);
+    right.push_back(i->right);
   }
   tabulate(left, leftEdges); // use tabulate to get left edges
   tabulate(right, rightEdges); // use tabulate to get right edges
@@ -119,12 +119,12 @@ void word_grouper::assignEdges()
 {
   for(auto& i : allRows) // for each word
   {
-    if(leftEdges.find((int) (i.left * 10)) != leftEdges.end())
-      i.isLeftEdge = true; // Non-unique left edge - assume column edge
-    if(rightEdges.find((int) (i.right * 10)) != rightEdges.end())
-      i.isRightEdge = true; // Non-unique right edge - assume column edge
-    if(mids.find((int) ((i.right + i.left) * 5)) != mids.end())
-      i.isMid = true; // Non-unique centre value - assume centred column
+    if(leftEdges.find((int) (i->left * 10)) != leftEdges.end())
+      i->isLeftEdge = true; // Non-unique left edge - assume column edge
+    if(rightEdges.find((int) (i->right * 10)) != rightEdges.end())
+      i->isRightEdge = true; // Non-unique right edge - assume column edge
+    if(mids.find((int) ((i->right + i->left) * 5)) != mids.end())
+      i->isMid = true; // Non-unique centre value - assume centred column
   }
 }
 
@@ -141,31 +141,31 @@ void word_grouper::findRightMatch()
   for(int k = 0; k < (int) allRows._data.size(); k++) // for each word
   {
     auto& i = allRows._data[k];
-    if( i.consumed) continue; // check elligible
+    if( i->consumed) continue; // check elligible
 
     for(int m = 0; m < (int) allRows._data.size(); m++) // if so, look at every other word for a match
     {
       if(m == k) continue;
       auto& j = allRows._data[m];
-      if(j.consumed) continue; // ignore words that have already been joined
-      if(j.left < i.right) continue; // ignore words to the left
-      if(j.bottom - i.bottom > 0.7 * i.size) continue; // only match elements
-      if(i.bottom - j.bottom > 0.7 * i.size) continue; // on the same "line"
-      if(j.left - i.right > 2 * i.size) continue; // ignore if too far right
-      if((j.isLeftEdge || j.isMid) && (j.left - i.right > 0.51 * i.size))
+      if(j->consumed) continue; // ignore words that have already been joined
+      if(j->left < i->right) continue; // ignore words to the left
+      if(j->bottom - i->bottom > 0.7 * i->size) continue; // only match elements
+      if(i->bottom - j->bottom > 0.7 * i->size) continue; // on the same "line"
+      if(j->left - i->right > 2 * i->size) continue; // ignore if too far right
+      if((j->isLeftEdge || j->isMid) && (j->left - i->right > 0.51 * i->size))
         continue; // ignore if not elligble for join
-      if((i.isRightEdge || i.isMid ) &&  (j.left - i.right > 0.51 * i.size))
+      if((i->isRightEdge || i->isMid ) &&  (j->left - i->right > 0.51 * i->size))
         continue;
       // The element is elligible for joining
-      i.glyph.push_back(0x0020); // add a space
+      i->glyph.push_back(0x0020); // add a space
       // if the gap is wide enough, add two spaces
-      if(j.left - i.right > 1 * i.size) i.glyph.push_back(0x0020);
-      concat(i.glyph, j.glyph); // stick contents together
-      i.right = j.right; // the right edge is now the rightmost edge
-      i.isRightEdge = j.isRightEdge; // as are the right edge's properties
-      if(i.size < j.size) i.size = j.size;
-      i.width = i.right - i.left; // update the width
-      j.consumed = true; // the element on the right is now consumed
+      if(j->left - i->right > 1 * i->size) i->glyph.push_back(0x0020);
+      concat(i->glyph, j->glyph); // stick contents together
+      i->right = j->right; // the right edge is now the rightmost edge
+      i->isRightEdge = j->isRightEdge; // as are the right edge's properties
+      if(i->size < j->size) i->size = j->size;
+      i->width = i->right - i->left; // update the width
+      j->consumed = true; // the element on the right is now consumed
       k--; // The element we have just matched now has different characteristics
            // so may be matched by a different element - match it again until
            // no further matches are found.

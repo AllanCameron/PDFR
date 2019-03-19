@@ -86,7 +86,7 @@ bool Whitespace::eq(float a, float b)
 Whitespace::Whitespace(textrows wgo): WGO(wgo._data), minbox(wgo.minbox)
 {
   std::vector<float> fontsizes;
-  for(auto& i : WGO) fontsizes.push_back(i.size);
+  for(auto& i : WGO) fontsizes.push_back(i->size);
   sort(fontsizes.begin(), fontsizes.end());
   midfontsize = fontsizes[fontsizes.size()/2];
   pageDimensions();
@@ -116,10 +116,10 @@ void Whitespace::pageDimensions()
   pagetop    = minbox[North];
   for(auto& i : WGO)
   {
-    if(i.right > pageright) pageright += 10.0;
-    if(i.left < pageleft) pageleft -= 10.0;
-    if((i.bottom + i.size) > pagetop) pagetop += 10.0;
-    if(i.bottom < pagebottom) pagebottom -= 10.0;
+    if(i->right > pageright) pageright += 10.0;
+    if(i->left < pageleft) pageleft -= 10.0;
+    if((i->bottom + i->size) > pagetop) pagetop += 10.0;
+    if(i->bottom < pagebottom) pagebottom -= 10.0;
   }
 }
 
@@ -163,10 +163,10 @@ void Whitespace::makeStrips()
     vector<float> tops = {pagetop};       // create top/bottom bounds for boxes.
     vector<float> bottoms = {pagebottom}; // First box starts at top of the page
     for(const auto& j : WGO)     // Now for each text element on the page
-      if(j.left < R_Edge && j.right > L_Edge) // if it obstructs our strip,
+      if(j->left < R_Edge && j->right > L_Edge) // if it obstructs our strip,
       {
-        bottoms.push_back(j.bottom + j.size);   // store its upper and lower
-        tops.push_back(j.bottom);               // bounds as bottom and top of
+        bottoms.push_back(j->bottom + j->size);   // store its upper and lower
+        tops.push_back(j->bottom);               // bounds as bottom and top of
       }                                        // whitespace boxes
     sort(tops.begin(), tops.end(), greater<float>()); // reverse sort the tops
     sort(bottoms.begin(), bottoms.end(), greater<float>()); // and the bottoms
@@ -359,7 +359,7 @@ void Whitespace::makePolygonMap()
 //---------------------------------------------------------------------------//
 // Simple getter for the output vector
 
-std::vector<std::pair<WSbox, std::vector<textrow>>> Whitespace::output() const
+vector<pair<WSbox, vector<text_ptr>>> Whitespace::output() const
 {
   return groups;
 }
@@ -421,14 +421,14 @@ void Whitespace::groupText()
 {
   for(auto& i : ws_boxes)
   {
-    vector<textrow> textcontent;
+    vector<text_ptr> textcontent;
     for(auto& j : WGO)
     {
-      if(j.left >= i.left && j.right <= i.right &&
-         j.bottom >= i.bottom && (j.bottom ) <= i.top &&
-         !j.consumed)
+      if(j->left >= i.left && j->right <= i.right &&
+         j->bottom >= i.bottom && (j->bottom ) <= i.top &&
+         !j->consumed)
         textcontent.push_back(j);
     }
-    groups.emplace_back(pair<WSbox, vector<textrow>>(i, textcontent));
+    groups.emplace_back(pair<WSbox, vector<text_ptr>>(i, textcontent));
   }
 }
