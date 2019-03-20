@@ -169,6 +169,12 @@ struct textrows
   textrows(textrows&& t):
     _data(std::move(t._data)), minbox(std::move(t.minbox)),
     data_size(_data.size()) {}
+  textrows& operator=(const textrows& t)
+  {
+    this->_data = t._data;
+    this->minbox = t.minbox;
+    return *this;
+  }
   textrows() = default;
   void push_back(text_ptr t){_data.push_back(t); data_size++;}
   size_t size(){return data_size;}
@@ -203,6 +209,12 @@ class parser
 public:
   // constructor
   parser(std::shared_ptr<page>);
+  parser(const parser& prs): db(prs.db){}
+  parser(parser&& prs): db(std::move(prs.db)){  }
+  parser& operator=(const parser& prs){
+    this->db = std::move(prs.db);
+    return *this;
+  }
   void reader(std::string&, Token::TState);
 
   // access results

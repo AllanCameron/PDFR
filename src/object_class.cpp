@@ -133,16 +133,16 @@ object_class::object_class(shared_ptr<object_class> holder, int objnum)
     // be handled by recursively calling the main creator function
     if(stream.size() < 15 && stream.find(" R", 0) < 15)
     {
+      size_t oldnumber = this->number;
       size_t newobjnum = getObjRefs(stream)[0];
       size_t newholder = XR->inObject(newobjnum); // ensure no holding object
       if(newholder == 0) *this = object_class(XR, newobjnum);
       else
       {
-        size_t oldnumber = this->number;
         shared_ptr<object_class> h = make_shared<object_class>(XR, newholder);
         *this = object_class(h, newobjnum);
-        this->number = oldnumber;
       }
+      this->number = oldnumber;
     }
   }
 }

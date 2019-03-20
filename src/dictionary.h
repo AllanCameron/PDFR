@@ -61,6 +61,7 @@
  */
 
 #include "utilities.h"
+#include<iostream>
 
 //---------------------------------------------------------------------------//
 
@@ -71,7 +72,13 @@ class dictionary
   dictionary(std::shared_ptr<const std::string>); // make dictionary from string
   dictionary(std::shared_ptr<const std::string>, size_t); // dict from pos + str
   dictionary(std::unordered_map<std::string, std::string>); // create from map
+  dictionary(const dictionary& d): DictionaryMap(d.DictionaryMap){};
+  dictionary(dictionary&& d): DictionaryMap(std::move(d.DictionaryMap)){};
   dictionary(); // empty dictionary
+  dictionary& operator=(const dictionary& d){
+    DictionaryMap = d.DictionaryMap;
+    return *this;
+    }
 
   // Public member functions
   std::string get(const std::string&) const;  // get value as string given name

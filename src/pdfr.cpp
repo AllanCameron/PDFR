@@ -180,8 +180,8 @@ Rcpp::List getgrid(std::shared_ptr<page> p)
   parser G(p); // New parser
   tokenizer(p->pageContents(), &G);   // Read page contents to graphic state
   letter_grouper LG(std::move(G.output()));
-  word_grouper WG(LG.output());
-  Whitespace WS(WG.output());
+  word_grouper WG(std::move(LG.output()));
+  Whitespace WS(std::move(WG.output()));
   auto Poly = WS.output();
   std::vector<float> left, right, size, bottom;
   std::vector<std::string> glyph, font;
@@ -327,8 +327,8 @@ Rcpp::DataFrame pdfboxescommon(std::shared_ptr<document> myfile, int pagenum)
   parser G(p); // New parser
   tokenizer(p->pageContents(), &G);   // Read page contents to graphic state
   letter_grouper LG(std::move(G.output()));
-  word_grouper WG(LG.output());
-  Whitespace polygons(WG.output());
+  word_grouper WG(std::move(LG.output()));
+  Whitespace polygons(std::move(WG.output()));
   auto Poly = polygons.ws_box_out();
   std::vector<float> xmin, ymin, xmax, ymax;
   std::vector<int> groups;

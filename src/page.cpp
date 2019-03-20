@@ -53,11 +53,11 @@ void page::boxes()
   // Note this is a do...while loop - I don't use these much so pay attention!
   do
   {
-    bleedbox = boxheader.getNums("/BleedBox");  //--//
-    cropbox  = boxheader.getNums("/CropBox");       //
-    mediabox = boxheader.getNums("/MediaBox");      //--> look for / store boxes
-    artbox   = boxheader.getNums("/ArtBox");        //
-    trimbox  = boxheader.getNums("/TrimBox");   //--//
+    vector<float>&& bleedbox = boxheader.getNums("/BleedBox");  //--//
+    vector<float>&& cropbox  = boxheader.getNums("/CropBox");       //    find &
+    vector<float>&& mediabox = boxheader.getNums("/MediaBox");      //--> store
+    vector<float>&& artbox   = boxheader.getNums("/ArtBox");        //    boxes
+    vector<float>&& trimbox  = boxheader.getNums("/TrimBox");   //--//
     if (!bleedbox.empty()) minbox = bleedbox;   //--//
     if (!mediabox.empty()) minbox = mediabox;       //    iterate logically
     if (!cropbox.empty())  minbox = cropbox;        //--> nested boxes to find

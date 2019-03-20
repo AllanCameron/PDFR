@@ -66,6 +66,10 @@ class page
 public:
   // constructor
   page(std::shared_ptr<document>, int this_is_the_page_number);
+  page& operator=(page&& p){
+    *this = std::move(p);
+    return *this;
+  }
 
   // public methods
   std::vector<std::string> getFontNames();  // Returns PostScript font names
@@ -82,11 +86,7 @@ private:
   dictionary          header,         // The page's header dictionary
                       resources,      // Resource sub-dictionary
                       fonts;          // Font sub-dictionary
-  std::vector<float>  bleedbox,       //----//
-                      cropbox,              //
-                      mediabox,             //--> Various page bounding boxes
-                      trimbox,              //
-                      artbox;         //----//
+  std::vector<float>  minbox;
   std::string         contentstring;  // The page description program as string
   double              rotate;         // Intended page rotation in degrees
 
@@ -106,8 +106,6 @@ private:
 
   // Gets the leaf nodes of a content tree
   std::vector<int> expandContents(std::vector<int> objnums);
-
-  std::vector<float> minbox;
 };
 
 //---------------------------------------------------------------------------//

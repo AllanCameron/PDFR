@@ -72,7 +72,7 @@ public:
   word_grouper(textrows&&);
 
   // access results
-  textrows output(); // output individual text elements for next
+  textrows& output(); // output individual text elements for next
                                  // phase of layout analysis
   GSoutput out(); // Output text elements with sizes, fonts, positions to API
 

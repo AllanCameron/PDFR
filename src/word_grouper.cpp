@@ -50,7 +50,7 @@ word_grouper::word_grouper(textrows&& g): allRows(move(g))
 //---------------------------------------------------------------------------//
 // This returns a vector of textrows for continued processing if needed
 
-textrows word_grouper::output()
+textrows& word_grouper::output()
 {
   return allRows;
 }
