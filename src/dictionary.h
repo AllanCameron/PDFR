@@ -64,41 +64,16 @@
 #include<iostream>
 
 //---------------------------------------------------------------------------//
-
-class dictionary
+class dict_builder
 {
-  public:
-  // Constructors
-  dictionary(std::shared_ptr<const std::string>); // make dictionary from string
-  dictionary(std::shared_ptr<const std::string>, size_t); // dict from pos + str
-  dictionary(std::unordered_map<std::string, std::string>); // create from map
-  dictionary(const dictionary& d): DictionaryMap(d.DictionaryMap){};
-  dictionary(dictionary&& d): DictionaryMap(std::move(d.DictionaryMap)){};
-  dictionary(); // empty dictionary
-  dictionary& operator=(const dictionary& d){
-    DictionaryMap = d.DictionaryMap;
-    return *this;
-    }
-
-  // Public member functions
-  std::string get(const std::string&) const;  // get value as string given name
-  bool has(const std::string&) const;         // confirms a key is present
-  bool hasRefs(const std::string&) const;   // tests if given key has references
-  bool hasInts(const std::string&) const;     // tests if given key has ints
-  bool hasDictionary(const std::string&) const; // tests if key has dictionary
-  std::vector<int> getRefs(const std::string&) const; // gets obj refs from key
-  std::vector<int> getInts(const std::string&) const; // gets ints from key
-  std::vector<float> getNums(const std::string&) const; // gets floats from key
-  std::vector<std::string> getDictKeys() const; // gets all keys from dictionary
-  dictionary getDictionary(const std::string&) const; // gets sub-dict from key
-  std::unordered_map<std::string, std::string> R_out() const; // gets full map
+public:
+  dict_builder(std::shared_ptr<const std::string>);
+  dict_builder(std::shared_ptr<const std::string>, size_t);
+  dict_builder();
+  std::unordered_map<std::string, std::string>&& get();
 
 private:
-// The lexer which constructs the dictionary is a finite state machine, which
-// behaves in different ways to parse the string depending on its state.
-// The state in turn may be changed by the character read by the lexer.
-// The following enum lists the possible states of the finite state machine.
-enum DState     {PREENTRY,
+  enum DState     {PREENTRY,
                  QUERYCLOSE,
                  VALUE,
                  MAYBE,
@@ -137,6 +112,40 @@ enum DState     {PREENTRY,
   void handleQuerydict(char);             //
   void handleSubdict(char);               //
   void handleClose(char);           //----//
+};
+
+class dictionary
+{
+  public:
+  // Constructors
+  dictionary(std::shared_ptr<const std::string>); // make dictionary from string
+  dictionary(std::shared_ptr<const std::string>, size_t); // dict from pos + str
+  dictionary(std::unordered_map<std::string, std::string>); // create from map
+  dictionary(const dictionary& d): DictionaryMap(d.DictionaryMap){};
+  dictionary(dictionary&& d): DictionaryMap(std::move(d.DictionaryMap)){};
+  dictionary(); // empty dictionary
+  dictionary& operator=(const dictionary& d){
+    DictionaryMap = d.DictionaryMap;
+    return *this;
+    }
+
+  // Public member functions
+  std::string get(const std::string&) const;  // get value as string given name
+  bool has(const std::string&) const;         // confirms a key is present
+  bool hasRefs(const std::string&) const;   // tests if given key has references
+  bool hasInts(const std::string&) const;     // tests if given key has ints
+  bool hasDictionary(const std::string&) const; // tests if key has dictionary
+  std::vector<int> getRefs(const std::string&) const; // gets obj refs from key
+  std::vector<int> getInts(const std::string&) const; // gets ints from key
+  std::vector<float> getNums(const std::string&) const; // gets floats from key
+  std::vector<std::string> getDictKeys() const; // gets all keys from dictionary
+  dictionary getDictionary(const std::string&) const; // gets sub-dict from key
+  std::unordered_map<std::string, std::string> R_out() const; // gets full map
+
+private:
+  std::unordered_map<std::string, std::string> DictionaryMap; // data holder
+
+
 };
 
 //---------------------------------------------------------------------------//
