@@ -73,6 +73,7 @@ public:
 private:
   // private data members
   const std::string& s;// the input string itself
+  char j;
   std::string::const_iterator i;// The iterator that moves through the string
   std::string buf;     // a string buffer to hold chars until pushed to result
   Token::TState state; // The current state of the finite state machine

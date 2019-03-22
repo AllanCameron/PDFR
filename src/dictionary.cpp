@@ -71,6 +71,58 @@ using namespace std;
 
 constexpr size_t MAX_DICT_LEN = 100000;
 
+//---------------------------------------------------------------------------//
+class dict_builder
+{
+public:
+  dict_builder(std::shared_ptr<const std::string>);
+  dict_builder(std::shared_ptr<const std::string>, size_t);
+  dict_builder();
+  std::unordered_map<std::string, std::string>&& get();
+
+private:
+  enum DState     {PREENTRY,
+                 QUERYCLOSE,
+                 VALUE,
+                 MAYBE,
+                 START,
+                 KEY,
+                 PREVALUE,
+                 DSTRING,
+                 ARRAYVAL,
+                 QUERYDICT,
+                 SUBDICT,
+                 CLOSE,
+                 THE_END};
+
+  // Private data members
+
+  std::shared_ptr<const std::string> s;   // pointer to the string being read
+  char S;           // The actual character being read
+  size_t i;         // the string's iterator which is passed between functions
+  int bracket;      // integer to store the nesting level of angle brackets
+  bool keyPending;  // flag that indicates a key name has been read
+  std::string buf;  // string to hold the read characters in memory until needed
+  std::string pendingKey; // name of key waiting for a value
+  DState state;     // current state of fsm
+  std::unordered_map<std::string, std::string> Map; // data holder
+
+  // Private functions
+  void tokenize_dict(); // co-ordinates the lexer
+  void setkey(std::string, DState); //----//
+  void assignValue(std::string, DState);  //
+  void handleMaybe(char);                 //
+  void handleStart(char);                 //
+  void handleKey(char);                   //
+  void handlePrevalue(char);              //--> functions to handle lexer states
+  void handleValue(char);                 //
+  void handleArrayval(char);              //
+  void handleDstring(char);               //
+  void handleQuerydict(char);             //
+  void handleSubdict(char);               //
+  void handleClose(char);           //----//
+};
+
 /*---------------------------------------------------------------------------*/
 // This is the main loop which iterates through the string, reads the char,
 // finds its type and then runs the subroutine that deals with the current
@@ -85,7 +137,8 @@ void dict_builder::tokenize_dict()
   // Main loop : read next char from string and pass to state handling function
   while(i < s->length() && i < maxlen)
   {
-    char n = symbol_type((*s)[i]); // determine char type at start of each loop
+    S = (*s)[i];
+    char n = symbol_type(S); // determine char type at start of each loop
     switch(state)
     {
       case PREENTRY:    if(n == '<')  state = MAYBE;                    break;
@@ -122,7 +175,7 @@ void dict_builder::setkey(string b, DState st)
   if(!keyPending)
     pendingKey = buf; // If no key is awaiting a value, store the name as a key
   else
-    DictionaryMap[pendingKey] = buf; // else the name is a value so store it
+    Map[pendingKey] = buf; // else the name is a value so store it
   keyPending = !keyPending; // flip the buffer flag in either case
   buf = b;
   state = st;  // set buffer and state as needed
@@ -134,7 +187,7 @@ void dict_builder::setkey(string b, DState st)
 
 void dict_builder::assignValue(string b, DState st)
 {
-  DictionaryMap[pendingKey] = buf; // Contents of buffer assigned to key name
+  Map[pendingKey] = buf; // Contents of buffer assigned to key name
   keyPending = false;              // No key pending - ready for a new key
   buf = b;                         //
   state = st;                      // Defined values of buf and state set
@@ -150,11 +203,11 @@ void dict_builder::handleKey(char n)
 {
   switch(n)
   {
-    case 'L': buf += (*s)[i];                   break;
-    case 'D': buf += (*s)[i];                   break;
-    case '+': buf += (*s)[i];                   break;
-    case '-': buf += (*s)[i];                   break;
-    case '_': buf += (*s)[i];                   break;
+    case 'L': buf += S;                         break;
+    case 'D': buf += S;                         break;
+    case '+': buf += S;                         break;
+    case '-': buf += S;                         break;
+    case '_': buf += S;                         break;
     case '/': setkey("/",       KEY);           break; // A new name has begun
     case ' ': setkey("",   PREVALUE);           break; // await next new value
     case '(': setkey("(",   DSTRING);           break; // must be a string
@@ -207,7 +260,7 @@ void dict_builder::handlePrevalue(char n)
     case '>': state = QUERYCLOSE;               break; // ?end of dictionary
     case '/': state = KEY;      buf = '/';      break; // value is a name
     case '[': state = ARRAYVAL; buf = '[';      break; // value is an array
-    default : state = VALUE;    buf = (*s)[i];  break; // any other value
+    default : state = VALUE;    buf = S;  break; // any other value
   }
 }
 
@@ -223,7 +276,7 @@ void dict_builder::handleValue(char n)
     case '<': assignValue("", QUERYDICT);       break; // may be new subdict
     case '>': assignValue("", QUERYCLOSE);      break; // probable end of dict
     case ' ': buf += ' ';                       break; // whitespace in value
-    default : buf += (*s)[i];                   break; // keep writing value
+    default : buf += S;                   break; // keep writing value
   }
 }
 
@@ -233,7 +286,7 @@ void dict_builder::handleValue(char n)
 
 void dict_builder::handleArrayval(char n)
 {
-  buf += (*s)[i];
+  buf += S;
   if(n == ']') assignValue("", START);
 }
 
@@ -243,7 +296,7 @@ void dict_builder::handleArrayval(char n)
 
 void dict_builder::handleDstring(char n)
 {
-  buf += (*s)[i];
+  buf += S;
   if(n == ')')
     assignValue("", START);
 }
@@ -277,9 +330,9 @@ void dict_builder::handleSubdict(char n)
 {
   switch(n)
   {
-    case '<': buf += (*s)[i]; bracket ++; break; // keep track of nesting
-    case '>': buf += (*s)[i]; bracket --; break; // keep track of nesting
-    default:  buf += (*s)[i];             break; // keep on writing
+    case '<': buf += S; bracket ++; break; // keep track of nesting
+    case '>': buf += S; bracket --; break; // keep track of nesting
+    default:  buf += S;             break; // keep on writing
   }
   if (bracket == 0)                              // now out of subdictionary
     assignValue("", START);
@@ -303,7 +356,7 @@ void dict_builder::handleClose(char n)
                   while(symbol_type((*s)[i + ex]) == ' ')
                     ex++; // read the whitespace characters after word "stream"
                   // Now store the location of the start of the stream
-                  DictionaryMap["stream"] = to_string(i + ex);
+                  Map["stream"] = to_string(i + ex);
                 }
               }
               state = THE_END; // stream or not, we are done
@@ -340,7 +393,7 @@ dict_builder::dict_builder(shared_ptr<const string> str, size_t pos) :
 
 unordered_map<string, string>&& dict_builder::get()
 {
-  return move(DictionaryMap);
+  return move(Map);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -349,23 +402,23 @@ unordered_map<string, string>&& dict_builder::get()
 dict_builder::dict_builder()
 {
   unordered_map<string, string> Empty;
-  DictionaryMap = Empty;
+  Map = Empty;
 }
 
 dictionary::dictionary(shared_ptr<const string> s)
 {
-  DictionaryMap = move(dict_builder(s).get());
+  Map = move(dict_builder(s).get());
 }
 
 dictionary::dictionary(shared_ptr<const string> s, size_t pos)
 {
-  DictionaryMap = move(dict_builder(s, pos).get());
+  Map = move(dict_builder(s, pos).get());
 }
 
 dictionary::dictionary()
 {
   unordered_map<string, string> Empty;
-  DictionaryMap = Empty;
+  Map = Empty;
 }
 /*---------------------------------------------------------------------------*/
 // A dictionary can be created from an existing map. Not used but appears
@@ -373,7 +426,7 @@ dictionary::dictionary()
 
 dictionary::dictionary(std::unordered_map<string, string> dict)
 {
-  DictionaryMap = dict;
+  Map = dict;
 };
 
 /*---------------------------------------------------------------------------*/
@@ -382,9 +435,9 @@ dictionary::dictionary(std::unordered_map<string, string> dict)
 string dictionary::get(const string& Key) const
 {
   // A simple map index lookup with square brackets adds the key to
-  // DictionaryMap, which we don't want. Using find(key) leaves it unaltered
-  if(DictionaryMap.find(Key) != DictionaryMap.end())
-    return DictionaryMap.at(Key);
+  // Map, which we don't want. Using find(key) leaves it unaltered
+  if(Map.find(Key) != Map.end())
+    return Map.at(Key);
   // We want an empty string rather than an error if the key isn't found.
   // This allows functions that try to return references, ints, floats etc
   // to return an empty vector so a boolean test of their presence is
@@ -397,7 +450,7 @@ string dictionary::get(const string& Key) const
 
 bool dictionary::has(const string& Key) const
 {
-  return DictionaryMap.find(Key) != DictionaryMap.end();
+  return Map.find(Key) != Map.end();
 }
 
 /*---------------------------------------------------------------------------*/
@@ -474,14 +527,14 @@ bool dictionary::hasDictionary(const string& Key) const
 
 vector<string> dictionary::getDictKeys() const
 {
-  return getKeys(this->DictionaryMap);
+  return getKeys(this->Map);
 }
 
 /*---------------------------------------------------------------------------*/
 // Returns the entire map. This is useful for passing dictionaries out of
 // the program, for example in debugging
 
-std::unordered_map<string, string> dictionary::R_out() const
+const std::unordered_map<string, string>& dictionary::R_out() const
 {
-  return this->DictionaryMap;
+  return this->Map;
 }

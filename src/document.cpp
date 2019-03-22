@@ -108,7 +108,7 @@ void document::getCatalog()
   if (rootnums.empty()) throw runtime_error("Couldn't find catalog dictionary");
 
   // With errors handled, we can now just get the pointed-to object's dictionary
-  catalog = getobject(rootnums.at(0))->getDict();
+  catalog = getobject(rootnums[0])->getDict();
 }
 
 /*---------------------------------------------------------------------------*/
@@ -122,7 +122,7 @@ void document::getPageDir()
   if(!catalog.hasRefs("/Pages")) throw runtime_error("No valid /Pages entry");
 
   // Else get the object number of the /Pages dictionary
-  int pagesobject = catalog.getRefs("/Pages").at(0);
+  int pagesobject = catalog.getRefs("/Pages")[0];
 
   // Now fetch that object and store it
   pagedir = getobject(pagesobject)->getDict();
@@ -197,7 +197,7 @@ void document::getPageHeaders()
     pageheaders.reserve(kids.size());
 
     // Now we can just fill up our pageheader vector
-    for (auto i : kids) pageheaders.emplace_back(objects.at(i)->getDict());
+    for (auto i : kids) pageheaders.emplace_back(objects[i]->getDict());
 }
 
 /*---------------------------------------------------------------------------*/

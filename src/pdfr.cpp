@@ -182,12 +182,11 @@ Rcpp::List getgrid(std::shared_ptr<page> p)
   letter_grouper LG(std::move(G.output()));
   word_grouper WG(std::move(LG.output()));
   Whitespace WS(std::move(WG.output()));
-  auto Poly = WS.output();
   std::vector<float> left, right, size, bottom;
   std::vector<std::string> glyph, font;
   std::vector<int> polygon;
   int polygonNumber = 0;
-  for(auto& i : Poly)
+  for(auto& i : WS.output())
   {
     for(auto& j : i.second)
     {
@@ -202,13 +201,13 @@ Rcpp::List getgrid(std::shared_ptr<page> p)
     polygonNumber++;
   }
   Rcpp::DataFrame db =  Rcpp::DataFrame::create(
-                        Rcpp::Named("text") = glyph,
-                        Rcpp::Named("left") = left,
-                        Rcpp::Named("right") = right,
-                        Rcpp::Named("bottom") = bottom,
-                        Rcpp::Named("font") = font,
-                        Rcpp::Named("size") = size,
-                        Rcpp::Named("box") = polygon,
+                        Rcpp::Named("text") = std::move(glyph),
+                        Rcpp::Named("left") = std::move(left),
+                        Rcpp::Named("right") = std::move(right),
+                        Rcpp::Named("bottom") = std::move(bottom),
+                        Rcpp::Named("font") = std::move(font),
+                        Rcpp::Named("size") = std::move(size),
+                        Rcpp::Named("box") = std::move(polygon),
                         Rcpp::Named("stringsAsFactors") = false);
   return Rcpp::List::create(Rcpp::Named("Box") = p->getminbox(),
                             Rcpp::Named("Elements") = db);

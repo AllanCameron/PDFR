@@ -164,12 +164,6 @@ bool IsAscii(const std::string&);
 std::vector<unsigned char> bytesFromArray(const std::string&);
 
 //---------------------------------------------------------------------------//
-// Transforms a vector of strings to a vector of floats
-// (vectorised version of stof)
-
-std::vector<float> stringtofloat(const std::vector<std::string>&);
-
-//---------------------------------------------------------------------------//
 //Converts an int to the relevant 2-byte ASCII hex (4 characters long)
 // eg 161 -> "00A1"
 

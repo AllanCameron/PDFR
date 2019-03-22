@@ -40,7 +40,7 @@ using namespace std;
 // The flatedecode algorithm. This uses the API of the miniz library to recreate
 // the original version of a compressed stream.
 
-string FlateDecode(string& s)
+void FlateDecode(string& s)
 {
   z_stream stream ; // create a new z_stream object
   int factor = 20;  // initialize the anticipated maximum decompression factor
@@ -64,10 +64,10 @@ string FlateDecode(string& s)
       factor *= 2;      //  ... try again with the array being twice as big
       continue;         //
     }
-    string result(out, stream.total_out);
-    swap(result, s);
+    string res(out, stream.total_out);
+    swap(res, s);
     delete[] out; // make sure the created array is destroyed to avoid leak
-    return s;
+    break;
   }
 }
 

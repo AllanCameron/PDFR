@@ -50,84 +50,36 @@
  *
  * This class is created by providing a pointer to a std::string containing a
  * pdf dictionary. It is overloaded to allow a starting position to be
- * specified, though not stopping point is needed as the dictionary lexer
+ * specified, though no stopping point is needed as the dictionary lexer
  * will stop reading automatically when it comes to the end if the dictionary.
  *
- * This string is passed through the lexer which parses the name:value pairs
- * into a std::unordered_map. The values are all stored as strings and
- * processed as required. Mostly this processing is done by the class itself
- * from public member functions which can return numbers, references, strings
- * and dictionaries on request. The interface is therefore large but read-only.
+ * This string is passed through a lexer. This is implemented by a helper class
+ * in the implementation file that does not require a public interface. The
+ * lexer parses the name:value pairs into a std::unordered_map. The values are
+ * all stored as strings and processed as required. Mostly this processing is
+ * done by the class itself from public member functions which can return
+ * numbers, references, strings and dictionaries on request. The interface is
+ * therefore large but read-only.
  */
 
 #include "utilities.h"
-#include<iostream>
 
 //---------------------------------------------------------------------------//
-class dict_builder
-{
-public:
-  dict_builder(std::shared_ptr<const std::string>);
-  dict_builder(std::shared_ptr<const std::string>, size_t);
-  dict_builder();
-  std::unordered_map<std::string, std::string>&& get();
-
-private:
-  enum DState     {PREENTRY,
-                 QUERYCLOSE,
-                 VALUE,
-                 MAYBE,
-                 START,
-                 KEY,
-                 PREVALUE,
-                 DSTRING,
-                 ARRAYVAL,
-                 QUERYDICT,
-                 SUBDICT,
-                 CLOSE,
-                 THE_END};
-
-  // Private data members
-
-  std::shared_ptr<const std::string> s;   // pointer to the string being read
-  size_t i;         // the string's iterator which is passed between functions
-  int bracket;      // integer to store the nesting level of angle brackets
-  bool keyPending;  // flag that indicates a key name has been read
-  std::string buf;  // string to hold the read characters in memory until needed
-  std::string pendingKey; // name of key waiting for a value
-  DState state;     // current state of fsm
-  std::unordered_map<std::string, std::string> DictionaryMap; // data holder
-
-  // Private functions
-  void tokenize_dict(); // co-ordinates the lexer
-  void setkey(std::string, DState); //----//
-  void assignValue(std::string, DState);  //
-  void handleMaybe(char);                 //
-  void handleStart(char);                 //
-  void handleKey(char);                   //
-  void handlePrevalue(char);              //--> functions to handle lexer states
-  void handleValue(char);                 //
-  void handleArrayval(char);              //
-  void handleDstring(char);               //
-  void handleQuerydict(char);             //
-  void handleSubdict(char);               //
-  void handleClose(char);           //----//
-};
 
 class dictionary
 {
+  std::unordered_map<std::string, std::string> Map; // data holder
+
   public:
   // Constructors
   dictionary(std::shared_ptr<const std::string>); // make dictionary from string
   dictionary(std::shared_ptr<const std::string>, size_t); // dict from pos + str
   dictionary(std::unordered_map<std::string, std::string>); // create from map
-  dictionary(const dictionary& d): DictionaryMap(d.DictionaryMap){};
-  dictionary(dictionary&& d): DictionaryMap(std::move(d.DictionaryMap)){};
+  dictionary(const dictionary& d): Map(d.Map){};
+  dictionary(dictionary&& d){std::swap(this->Map, d.Map);};
+  dictionary& operator=(dictionary&& d){std::swap(Map, d.Map); return *this;}
   dictionary(); // empty dictionary
-  dictionary& operator=(const dictionary& d){
-    DictionaryMap = d.DictionaryMap;
-    return *this;
-    }
+  dictionary& operator=(const dictionary& d){Map = d.Map; return *this;}
 
   // Public member functions
   std::string get(const std::string&) const;  // get value as string given name
@@ -140,12 +92,7 @@ class dictionary
   std::vector<float> getNums(const std::string&) const; // gets floats from key
   std::vector<std::string> getDictKeys() const; // gets all keys from dictionary
   dictionary getDictionary(const std::string&) const; // gets sub-dict from key
-  std::unordered_map<std::string, std::string> R_out() const; // gets full map
-
-private:
-  std::unordered_map<std::string, std::string> DictionaryMap; // data holder
-
-
+  const std::unordered_map<std::string, std::string>& R_out() const;
 };
 
 //---------------------------------------------------------------------------//

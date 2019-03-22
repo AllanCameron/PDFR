@@ -127,9 +127,9 @@ void parser::Td()
 {
     //PROFC_NODE("Td");
   array<float, 9> Tds = initstate;                  //------------------------
-  vector<float> tmpvec = stringtofloat(Operands);   //  create translation
-  Tds[6] = tmpvec[0];                               //  matrix (3x3)
-  Tds[7] = tmpvec[1];                               //------------------------
+                                                    //  create translation
+  Tds[6] = stof(Operands[0]);                       //  matrix (3x3)
+  Tds[7] = stof(Operands[1]);                       //------------------------
   matmul(Tds, Tdstate); // multiply translation and text matrices
   PRstate = 0; // Td resets kerning
 }
@@ -140,10 +140,10 @@ void parser::Td()
 void parser::TD()
 {
     //PROFC_NODE("TD");
-  array<float, 9> Tds = initstate;                    //------------------------
-  vector<float> tmpvec = stringtofloat(Operands);   //  create translation
-  Tds[6] = tmpvec[0];                                //  matrix (3x3)
-  Tds[7] = tmpvec[1];                               //------------------------
+  array<float, 9> Tds = initstate;                  //------------------------
+                                                    //  create translation
+  Tds[6] = stof(Operands[0]);                       //  matrix (3x3)
+  Tds[7] = stof(Operands[1]);                       //------------------------
   matmul(Tds, Tdstate); // multiply translation and text matrices
   PRstate = 0; // TD resets kerning
   Tl = -Tds[7]; // set text leading to new value

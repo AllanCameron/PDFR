@@ -74,6 +74,7 @@ void tokenizer::tokenize()
 {
   while(i != s.end()) // ensure the iterator doesn't exceed string length
   {
+    j = *i;
     switch(state)
     {
       // Each state has its own handler subroutine - self explanatory
@@ -97,10 +98,10 @@ void tokenizer::tokenize()
 
 void tokenizer::resourceState()
 {
-  switch(symbol_type(*i))
+  switch(symbol_type(j))
   {
-    case 'L':   buf += *i;                        break;
-    case 'D':   buf += *i;                        break;
+    case 'L':   buf += j;                        break;
+    case 'D':   buf += j;                        break;
     case '-':   buf += '-';                       break;
     case '+':   buf += '+';                       break;
     case '_':   buf += '_';                       break;
@@ -119,15 +120,15 @@ void tokenizer::resourceState()
 void tokenizer::newsymbolState()
 {
   // get symbol_type of current char
-  switch(symbol_type(*i))
+  switch(symbol_type(j))
   {
-    case 'L':   buf += *i;    state = IDENTIFIER;  break;
-    case 'D':   buf += *i;    state = NUMBER;      break;
-    case '-':   buf += *i;    state = NUMBER;      break;
-    case '_':   buf += *i;    state = IDENTIFIER;  break;
-    case '*':   buf += *i;    state = IDENTIFIER;  break;
-    case '\'':  buf += *i;    state = IDENTIFIER;  break;
-    case '/':   buf += *i;    state = RESOURCE;    break;
+    case 'L':   buf += j;    state = IDENTIFIER;  break;
+    case 'D':   buf += j;    state = NUMBER;      break;
+    case '-':   buf += j;    state = NUMBER;      break;
+    case '_':   buf += j;    state = IDENTIFIER;  break;
+    case '*':   buf += j;    state = IDENTIFIER;  break;
+    case '\'':  buf += j;    state = IDENTIFIER;  break;
+    case '/':   buf += j;    state = RESOURCE;    break;
     case '.':   buf +=  "0."; state = NUMBER;      break;
     case '[':                 state = ARRAY;       break;
     case '(':                 state = STRING;      break;
@@ -142,9 +143,9 @@ void tokenizer::newsymbolState()
 void tokenizer::identifierState()
 {
   // get symbol_type of current char
-  switch(symbol_type(*i))
+  switch(symbol_type(j))
   {
-    case 'L':   buf += *i;                      break;
+    case 'L':   buf += j;                      break;
     case ' ':   if (buf == "BI") state = WAIT;  else // BI == inline image
                 pushbuf(IDENTIFIER, NEWSYMBOL); break;
     case '/':   pushbuf(IDENTIFIER, RESOURCE);
@@ -152,10 +153,10 @@ void tokenizer::identifierState()
     case '[':   pushbuf(IDENTIFIER, ARRAY);     break;
     case '(':   pushbuf(IDENTIFIER, STRING);    break;
     case '<':   pushbuf(IDENTIFIER, HEXSTRING); break;
-    case 'D':   buf += *i;                      break;
-    case '-':   buf += *i;                      break;
-    case '_':   buf += *i;                      break;
-    case '*':   buf += *i;                      break;
+    case 'D':   buf += j;                      break;
+    case '-':   buf += j;                      break;
+    case '_':   buf += j;                      break;
+    case '*':   buf += j;                      break;
     default:                                    break;
   }
 }
@@ -166,15 +167,15 @@ void tokenizer::identifierState()
 void tokenizer::numberState()
 {
   // get symbol_type of current char
-  switch(symbol_type(*i))
+  switch(symbol_type(j))
   {
-    case 'D':   buf += *i;                         break;
+    case 'D':   buf += j;                         break;
     case ' ':   pushbuf(NUMBER, NEWSYMBOL);        break;
-    case '.':   buf += *i;                         break;
+    case '.':   buf += j;                         break;
     case '(':   pushbuf(NUMBER, STRING);           break;
     case '<':   pushbuf(NUMBER, HEXSTRING);        break;
-    case 'L':   buf += *i;                         break;
-    case '_':   buf += *i;                         break;
+    case 'L':   buf += j;                         break;
+    case '_':   buf += j;                         break;
     case '-':   pushbuf(NUMBER, NUMBER); buf = ""; break;
     case '*':   pushbuf(NUMBER, NUMBER); buf = ""; break;
     case '/':   pushbuf(NUMBER, NUMBER); buf = ""; break;
@@ -189,11 +190,11 @@ void tokenizer::numberState()
 void tokenizer::stringState()
 {
   // get symbol_type of current char
-  switch(symbol_type(*i))
+  switch(symbol_type(j))
   {
     case ')':   pushbuf(STRING, NEWSYMBOL);       break;
     case '\\':  escapeState();                    break;
-    default:    buf += *i;                      break;
+    default:    buf += j;                      break;
   }
 }
 
@@ -212,14 +213,14 @@ void tokenizer::arrayState()
 void tokenizer::hexstringState()
 {
   // get symbol_type of current char
-  switch(symbol_type(*i))
+  switch(symbol_type(j))
   {
     case '>':   if (!buf.empty())
                   pushbuf(HEXSTRING, NEWSYMBOL);
                 state = NEWSYMBOL;                break;
     case '<':   buf = ""; state = DICT;           break;
-    case '\\':  buf += *i; i++; buf += *i;        break;
-    default:    buf += *i;                        break;
+    case '\\':  buf += j; i++; buf += j;        break;
+    default:    buf += j;                        break;
   }
 }
 
@@ -230,11 +231,11 @@ void tokenizer::hexstringState()
 void tokenizer::dictState()
 {
   // get symbol_type of current char
-  switch(symbol_type(*i))
+  switch(symbol_type(j))
   {
-    case '\\':  buf += *i; i++; buf += *i;        break;
+    case '\\':  buf += j; i++; buf += j;        break;
     case '>':   pushbuf(DICT, HEXSTRING);         break;
-    default:    buf += *i;                        break;
+    default:    buf += j;                        break;
   }
 }
 
@@ -245,13 +246,13 @@ void tokenizer::escapeState()
 {
   i++;
    // read the next char
-  if (symbol_type(*i) == 'D') // if it's a digit it's likely an octal
+  if (symbol_type(j) == 'D') // if it's a digit it's likely an octal
   {
     int octcount = 0;
     pushbuf(STRING, STRING);
-    while(symbol_type(*i) == 'D' && octcount < 3)
+    while(symbol_type(j) == 'D' && octcount < 3)
     {// add consecutive chars to octal (up to 3)
-      buf += *i; i++;
+      buf += j; i++;
       octcount++;
     }
     int newint = stoi(buf, nullptr, 8); // convert octal string to int
@@ -259,7 +260,7 @@ void tokenizer::escapeState()
     pushbuf(HEXSTRING, STRING);
     i--;                                // decrement to await next char
   }
-  else buf += *i;                       // if not a digit, get escaped char
+  else buf += j;                       // if not a digit, get escaped char
 }
 
 /*---------------------------------------------------------------------------*/
@@ -269,8 +270,8 @@ void tokenizer::escapeState()
 void tokenizer::waitState()
 {
   // the lexer
-  buf = *i; i++; buf += *i; i++;
-  buf += symbol_type(*i); i--; i--;
+  buf = j; i++; buf += j; i++;
+  buf += symbol_type(j); i--; i--;
   if(buf == "EI ") // look for EI with any whitespace char following
   {
     buf.clear();

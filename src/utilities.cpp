@@ -163,17 +163,6 @@ vector<uint8_t> bytesFromArray(const string& s)
 }
 
 /*---------------------------------------------------------------------------*/
-// Transforms a vector of strings to a vector of floats
-// (vectorised version of stof)
-
-vector<float> stringtofloat(const vector<string>& b)
-{
-  vector<float> r;
-  for(const auto& i : b) r.push_back(stof(i));
-  return r;
-}
-
-/*---------------------------------------------------------------------------*/
 //Converts an int to the relevant 2-byte ASCII hex (4 characters long)
 // eg 161 -> "00A1"
 
@@ -211,10 +200,10 @@ vector<RawChar> HexstringToRawChar(string& s)
   raw_vector.reserve(s.size() / 4);
   for(size_t i = 0; i < (s.size() - 3); i += 4)
   {
-    raw_vector.emplace_back(hexmap[s[i]] * 4096 +
-                            hexmap[s[i + 1]] * 256 +
-                            hexmap[s[i + 2]] * 16 +
-                            hexmap[s[i + 3]]);
+    raw_vector.emplace_back(((hexmap[s[i]] & 0x000f) << 12)      |
+                            ((hexmap[s[i + 1]] & 0x000f) << 8)  |
+                            ((hexmap[s[i + 2]] & 0x000f) << 4)  |
+                             (hexmap[s[i + 3]] & 0x000f));
   }
   return raw_vector;
 }

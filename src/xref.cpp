@@ -466,7 +466,7 @@ void xrefstream::getRawMatrix()
   std::string SS = XR->file()->substr(sl[0], sl[1] - sl[0]); // get stream
   dictionary dict = dictionary(XR->file(), objstart); // containing object
   if(dict.get("/Filter").find("/FlateDecode", 0) != string::npos)
-    SS = FlateDecode(SS); // applies decompression to stream if needed
+    FlateDecode(SS); // applies decompression to stream if needed
   std::vector<uint8_t> conv(SS.begin(), SS.end());  // convert string to bytes..
   std::vector<int> intstrm(conv.begin(), conv.end()); // and bytes to ints
   // read the /W entry to get the width in bytes of each column in the table

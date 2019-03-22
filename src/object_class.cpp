@@ -62,7 +62,7 @@ object_class::object_class(shared_ptr<const xref> Xref, int objnum) :
       if(XR->isEncrypted()) // decrypt if necessary
         XR->decrypt(stream, number, 0);
       if(header.get("/Filter").find("/FlateDecode", 0) != string::npos)
-        stream = FlateDecode(stream); // de-deflate if necessary
+        FlateDecode(stream); // de-deflate if necessary
       indexObjectStream();
     }
   }
@@ -168,7 +168,7 @@ std::string object_class::getStream()
   if(XR->isEncrypted()) // decrypt if necessary
     XR->decrypt(stream, number, 0);
   if(header.get("/Filter").find("/FlateDecode", 0) != string::npos)
-    stream = FlateDecode(stream); // de-deflate if necessary
+    FlateDecode(stream); // de-deflate if necessary
   return stream;
 }
 
