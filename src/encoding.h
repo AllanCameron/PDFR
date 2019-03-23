@@ -98,7 +98,7 @@ public:
 
   // public member functions
   Unicode Interpret(RawChar);       // Maps given code point to Unicode
-  std::vector<RawChar> encKeys();   // Returns all input code points
+  std::shared_ptr<std::unordered_map<RawChar, Unicode>> encKeys();
 
 private:
   // data lookup tables - defined as static, which means only a single

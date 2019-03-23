@@ -73,14 +73,19 @@ public:
 private:
   // private data members
   const std::string& s;// the input string itself
-  char j;
   std::string::const_iterator i;// The iterator that moves through the string
   std::string buf;     // a string buffer to hold chars until pushed to result
   Token::TState state; // The current state of the finite state machine
   parser* gs;   // The graphic state to which instructions are sent
   static std::string inloop; // keep track of whether we are in an xobject
                              // - this prevents an infinite loop
-
+  enum chartype
+  {
+    LAB, LET, DIG, USC, LSB, FSL, AST, LCB,
+    SUB, BSL, SPC, RAB, PER, ADD, QOT, RCB, RSB, SQO, OTH
+  };
+  char j;
+  static std::array<chartype, 256> char_lookup;
   // private methods
 
   void tokenize();                  // chooses state subroutine based on state

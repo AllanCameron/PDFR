@@ -87,17 +87,19 @@ void font::makeGlyphTable()
   // Create glyphwidth object
   glyphwidths Wid = glyphwidths(this->fontref, this->d);
   // get all the mapped RawChars from the Encoding object
-  vector<RawChar> inkeys = Enc.encKeys();
+  std::shared_ptr<std::unordered_map<RawChar, Unicode>> inkeys = Enc.encKeys();
 
   // We need to know whether the width code points refer to the width of raw
   // character codes or to the final Unicode translations
   if(Wid.widthsAreForRaw()) // The widths refer to RawChar code points
-    for(auto& i : inkeys) // map every mapped RawChar to a width
-      glyphmap[i] = make_pair(Enc.Interpret(i), Wid.getwidth(i));
+    for(auto& i : *inkeys) // map every mapped RawChar to a width
+      glyphmap[i.first] = make_pair(Enc.Interpret(i.first),
+                                    Wid.getwidth(i.first));
 
   else // The widths refer to Unicode glyphs
-    for(auto& i : inkeys) // map every mapped Unicode to a width
-      glyphmap[i] = make_pair(Enc.Interpret(i), Wid.getwidth(Enc.Interpret(i)));
+    for(auto& i : *inkeys) // map every mapped Unicode to a width
+      glyphmap[i.first] = make_pair(Enc.Interpret(i.first),
+                                    Wid.getwidth(Enc.Interpret(i.first)));
 }
 
 /*---------------------------------------------------------------------------*/

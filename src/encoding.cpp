@@ -240,7 +240,7 @@ Unicode Encoding::Interpret(RawChar raw)
 // Public function to return a vector that enumerates all the keys in the main
 // Rawchar - Unicode map
 
-vector<RawChar> Encoding::encKeys()
+std::shared_ptr<std::unordered_map<RawChar, Unicode>> Encoding::encKeys()
 {
-  return getKeys(this->EncodingMap); // getKeys is a template function in utils
+  return std::make_shared<std::unordered_map<RawChar, Unicode>>(EncodingMap);
 }

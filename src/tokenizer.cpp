@@ -32,6 +32,40 @@ using namespace Token;
 
 std::string tokenizer::inloop = "none";
 
+std::array<tokenizer::chartype, 256> tokenizer::char_lookup = {
+  OTH, OTH, OTH, OTH, OTH, OTH, OTH, OTH,
+  OTH, OTH, SPC, OTH, OTH, SPC, OTH, OTH,
+  OTH, OTH, OTH, OTH, OTH, OTH, OTH, OTH,
+  OTH, OTH, OTH, OTH, OTH, OTH, OTH, OTH,
+  SPC, OTH, QOT, OTH, OTH, OTH, SQO, OTH,
+  LCB, RCB, AST, ADD, OTH, SUB, PER, FSL,
+  DIG, DIG, DIG, DIG, DIG, DIG, DIG, DIG,
+  DIG, DIG, OTH, OTH, LAB, OTH, RAB, OTH,
+  OTH, LET, LET, LET, LET, LET, LET, LET,
+  LET, LET, LET, LET, LET, LET, LET, LET,
+  LET, LET, LET, LET, LET, LET, LET, LET,
+  LET, LET, LET, LSB, BSL, RSB, OTH, USC,
+  OTH, LET, LET, LET, LET, LET, LET, LET,
+  LET, LET, LET, LET, LET, LET, LET, LET,
+  LET, LET, LET, LET, LET, LET, LET, LET,
+  LET, LET, LET, OTH, OTH, OTH, OTH, OTH,
+  OTH, OTH, OTH, OTH, OTH, OTH, OTH, OTH,
+  OTH, OTH, OTH, OTH, OTH, OTH, OTH, OTH,
+  OTH, OTH, OTH, OTH, OTH, OTH, OTH, OTH,
+  OTH, OTH, OTH, OTH, OTH, OTH, OTH, OTH,
+  OTH, OTH, OTH, OTH, OTH, OTH, OTH, OTH,
+  OTH, OTH, OTH, OTH, OTH, OTH, OTH, OTH,
+  OTH, OTH, OTH, OTH, OTH, OTH, OTH, OTH,
+  OTH, OTH, OTH, OTH, OTH, OTH, OTH, OTH,
+  OTH, OTH, OTH, OTH, OTH, OTH, OTH, OTH,
+  OTH, OTH, OTH, OTH, OTH, OTH, OTH, OTH,
+  OTH, OTH, OTH, OTH, OTH, OTH, OTH, OTH,
+  OTH, OTH, OTH, OTH, OTH, OTH, OTH, OTH,
+  OTH, OTH, OTH, OTH, OTH, OTH, OTH, OTH,
+  OTH, OTH, OTH, OTH, OTH, OTH, OTH, OTH,
+  OTH, OTH, OTH, OTH, OTH, OTH, OTH, OTH,
+  OTH, OTH, OTH, OTH, OTH, OTH, OTH, OTH
+};
 /*---------------------------------------------------------------------------*/
 // constructor of tokenizer - initializes members and starts main
 // lexer function
@@ -41,6 +75,7 @@ tokenizer::tokenizer(string&& input, parser* GS) :
 {
   tokenize();       // instigate lexer
 }
+
 
 /*---------------------------------------------------------------------------*/
 // This pattern, of switching state, creating a token / type pair, pushing it
@@ -98,19 +133,20 @@ void tokenizer::tokenize()
 
 void tokenizer::resourceState()
 {
-  switch(symbol_type(j))
+  switch(char_lookup[j])
   {
-    case 'L':   buf += j;                        break;
-    case 'D':   buf += j;                        break;
-    case '-':   buf += '-';                       break;
-    case '+':   buf += '+';                       break;
-    case '_':   buf += '_';                       break;
-    case '*':   buf += '*';                       break;
-    case '/':   pushbuf(RESOURCE, RESOURCE);      break;
-    case ' ':   pushbuf(RESOURCE, NEWSYMBOL);     break;
-    case '[':   pushbuf(RESOURCE, ARRAY);         break;
-    case '(':   pushbuf(RESOURCE, STRING);        break;
-    case '<':   pushbuf(RESOURCE, HEXSTRING);     break;
+    case LET:   buf += j;                        break;
+    case DIG:   buf += j;                        break;
+    case SUB:   buf += '-';                       break;
+    case ADD:   buf += '+';                       break;
+    case USC:   buf += '_';                       break;
+    case AST:   buf += '*';                       break;
+    case FSL:   pushbuf(RESOURCE, RESOURCE);      break;
+    case SPC:   pushbuf(RESOURCE, NEWSYMBOL);     break;
+    case LSB:   pushbuf(RESOURCE, ARRAY);         break;
+    case LCB:   pushbuf(RESOURCE, STRING);        break;
+    case LAB:   pushbuf(RESOURCE, HEXSTRING);     break;
+  default: throw runtime_error("illegal character");
   }
 }
 
@@ -120,19 +156,19 @@ void tokenizer::resourceState()
 void tokenizer::newsymbolState()
 {
   // get symbol_type of current char
-  switch(symbol_type(j))
+  switch(char_lookup[j])
   {
-    case 'L':   buf += j;    state = IDENTIFIER;  break;
-    case 'D':   buf += j;    state = NUMBER;      break;
-    case '-':   buf += j;    state = NUMBER;      break;
-    case '_':   buf += j;    state = IDENTIFIER;  break;
-    case '*':   buf += j;    state = IDENTIFIER;  break;
-    case '\'':  buf += j;    state = IDENTIFIER;  break;
-    case '/':   buf += j;    state = RESOURCE;    break;
-    case '.':   buf +=  "0."; state = NUMBER;      break;
-    case '[':                 state = ARRAY;       break;
-    case '(':                 state = STRING;      break;
-    case '<':                 state = HEXSTRING;   break;
+    case LET:   buf += j;    state = IDENTIFIER;  break;
+    case DIG:   buf += j;    state = NUMBER;      break;
+    case SUB:   buf += j;    state = NUMBER;      break;
+    case USC:   buf += j;    state = IDENTIFIER;  break;
+    case AST:   buf += j;    state = IDENTIFIER;  break;
+    case SQO:  buf += j;    state = IDENTIFIER;  break;
+    case FSL:   buf += j;    state = RESOURCE;    break;
+    case PER:   buf +=  "0."; state = NUMBER;      break;
+    case LSB:                 state = ARRAY;       break;
+    case LCB:                 state = STRING;      break;
+    case LAB:                 state = HEXSTRING;   break;
     default : buf = "";       state = NEWSYMBOL;   break;
   }
 }
@@ -143,20 +179,20 @@ void tokenizer::newsymbolState()
 void tokenizer::identifierState()
 {
   // get symbol_type of current char
-  switch(symbol_type(j))
+  switch(char_lookup[j])
   {
-    case 'L':   buf += j;                      break;
-    case ' ':   if (buf == "BI") state = WAIT;  else // BI == inline image
+    case LET:   buf += j;                      break;
+    case SPC:   if (buf == "BI") state = WAIT;  else // BI == inline image
                 pushbuf(IDENTIFIER, NEWSYMBOL); break;
-    case '/':   pushbuf(IDENTIFIER, RESOURCE);
+    case FSL:   pushbuf(IDENTIFIER, RESOURCE);
                 buf = "/";                      break;
-    case '[':   pushbuf(IDENTIFIER, ARRAY);     break;
-    case '(':   pushbuf(IDENTIFIER, STRING);    break;
-    case '<':   pushbuf(IDENTIFIER, HEXSTRING); break;
-    case 'D':   buf += j;                      break;
-    case '-':   buf += j;                      break;
-    case '_':   buf += j;                      break;
-    case '*':   buf += j;                      break;
+    case LSB:   pushbuf(IDENTIFIER, ARRAY);     break;
+    case LCB:   pushbuf(IDENTIFIER, STRING);    break;
+    case LAB:   pushbuf(IDENTIFIER, HEXSTRING); break;
+    case DIG:   buf += j;                      break;
+    case SUB:   buf += j;                      break;
+    case USC:   buf += j;                      break;
+    case AST:   buf += j;                      break;
     default:                                    break;
   }
 }
@@ -167,19 +203,19 @@ void tokenizer::identifierState()
 void tokenizer::numberState()
 {
   // get symbol_type of current char
-  switch(symbol_type(j))
+  switch(char_lookup[j])
   {
-    case 'D':   buf += j;                         break;
-    case ' ':   pushbuf(NUMBER, NEWSYMBOL);        break;
-    case '.':   buf += j;                         break;
-    case '(':   pushbuf(NUMBER, STRING);           break;
-    case '<':   pushbuf(NUMBER, HEXSTRING);        break;
-    case 'L':   buf += j;                         break;
-    case '_':   buf += j;                         break;
-    case '-':   pushbuf(NUMBER, NUMBER); buf = ""; break;
-    case '*':   pushbuf(NUMBER, NUMBER); buf = ""; break;
-    case '/':   pushbuf(NUMBER, NUMBER); buf = ""; break;
-    case '[':   pushbuf(NUMBER, ARRAY);            break;
+    case DIG:   buf += j;                         break;
+    case SPC:   pushbuf(NUMBER, NEWSYMBOL);        break;
+    case PER:   buf += j;                         break;
+    case LCB:   pushbuf(NUMBER, STRING);           break;
+    case LAB:   pushbuf(NUMBER, HEXSTRING);        break;
+    case LET:   buf += j;                         break;
+    case USC:   buf += j;                         break;
+    case SUB:   pushbuf(NUMBER, NUMBER); buf = ""; break;
+    case AST:   pushbuf(NUMBER, NUMBER); buf = ""; break;
+    case FSL:   pushbuf(NUMBER, NUMBER); buf = ""; break;
+    case LSB:   pushbuf(NUMBER, ARRAY);            break;
     default:    pushbuf(NUMBER, NEWSYMBOL);
   }
 }
@@ -190,10 +226,10 @@ void tokenizer::numberState()
 void tokenizer::stringState()
 {
   // get symbol_type of current char
-  switch(symbol_type(j))
+  switch(char_lookup[j])
   {
-    case ')':   pushbuf(STRING, NEWSYMBOL);       break;
-    case '\\':  escapeState();                    break;
+    case RCB:   pushbuf(STRING, NEWSYMBOL);       break;
+    case BSL:  escapeState();                    break;
     default:    buf += j;                      break;
   }
 }
@@ -213,13 +249,13 @@ void tokenizer::arrayState()
 void tokenizer::hexstringState()
 {
   // get symbol_type of current char
-  switch(symbol_type(j))
+  switch(char_lookup[j])
   {
-    case '>':   if (!buf.empty())
+    case RAB:   if (!buf.empty())
                   pushbuf(HEXSTRING, NEWSYMBOL);
                 state = NEWSYMBOL;                break;
-    case '<':   buf = ""; state = DICT;           break;
-    case '\\':  buf += j; i++; buf += j;        break;
+    case LAB:   buf = ""; state = DICT;           break;
+    case BSL:  buf += j; i++; buf += j;        break;
     default:    buf += j;                        break;
   }
 }
@@ -231,10 +267,10 @@ void tokenizer::hexstringState()
 void tokenizer::dictState()
 {
   // get symbol_type of current char
-  switch(symbol_type(j))
+  switch(char_lookup[j])
   {
-    case '\\':  buf += j; i++; buf += j;        break;
-    case '>':   pushbuf(DICT, HEXSTRING);         break;
+    case BSL:  buf += j; i++; buf += j;        break;
+    case RAB:   pushbuf(DICT, HEXSTRING);         break;
     default:    buf += j;                        break;
   }
 }
@@ -246,11 +282,11 @@ void tokenizer::escapeState()
 {
   i++;
    // read the next char
-  if (symbol_type(j) == 'D') // if it's a digit it's likely an octal
+  if (char_lookup[j] == DIG) // if it's a digit it's likely an octal
   {
     int octcount = 0;
     pushbuf(STRING, STRING);
-    while(symbol_type(j) == 'D' && octcount < 3)
+    while(char_lookup[j] == DIG && octcount < 3)
     {// add consecutive chars to octal (up to 3)
       buf += j; i++;
       octcount++;
@@ -270,9 +306,9 @@ void tokenizer::escapeState()
 void tokenizer::waitState()
 {
   // the lexer
-  buf = j; i++; buf += j; i++;
-  buf += symbol_type(j); i--; i--;
-  if(buf == "EI ") // look for EI with any whitespace char following
+  buf = j; i++; buf += *i; i++;
+  buf += *i; i--; i--;
+  if(buf == "EI " || buf == "EI\n" || buf == "EI\r") // look for EI and WS
   {
     buf.clear();
     state = NEWSYMBOL; // only break out of wait state by finding EI (or EOF)
