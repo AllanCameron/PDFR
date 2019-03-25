@@ -274,19 +274,20 @@ vector<string> page::getFontNames()
 /*--------------------------------------------------------------------------*/
 // Simple getter for the content string of a page
 
-string page::pageContents()
+shared_ptr<string> page::pageContents()
 {
-  return this->contentstring;
+  return make_shared<string>(this->contentstring);
 }
 
 /*--------------------------------------------------------------------------*/
 // Finds and returns a particular XObject used on the page
 
-string page::getXobject(const string& objID)
+shared_ptr<string> page::getXobject(const string& objID)
 {
   // Use a non-inserting finder. If object not found return empty string
-  if(XObjects.find(objID) == XObjects.end()) return "";
-  return XObjects[objID]; // else return the Xobject
+  if(XObjects.find(objID) == XObjects.end())
+    return make_shared<string>(string(""));
+  return make_shared<string>(XObjects[objID]); // else return the Xobject
 }
 
 /*--------------------------------------------------------------------------*/

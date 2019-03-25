@@ -372,9 +372,11 @@ crypto::crypto(dictionary enc, dictionary trail) :
   encdict(enc), trailer(trail), revision(2)
 {
   // Unless specified, the revision number used for encryption is 2
-  if(encdict.hasInts("/R")) revision = encdict.getInts("/R")[0];
+  if(encdict.hasInts("/R"))
+    revision = encdict.getInts("/R")[0];
   getFilekey();
-  if(revision == 2) checkKeyR2(); // if rnum 2, check it and we're done
+  if(revision == 2)
+    checkKeyR2(); // if rnum 2, check it and we're done
   else
   {//  Otherwise we're going to md5 and trim the filekey 50 times
     size_t cryptlen = filekey.size();

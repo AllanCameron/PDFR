@@ -301,7 +301,7 @@ std::string pagestring(const std::string& s, int pagenum)
   if(pagenum < 1) Rcpp::stop("Invalid page number");
   std::shared_ptr<document> myfile = std::make_shared<document>(s);
   std::shared_ptr<page> p = std::make_shared<page>(myfile, pagenum - 1);
-  std::string res = p->pageContents();
+  std::string res = *(p->pageContents());
   p->clearFontMap();
   return res;
 }
@@ -313,9 +313,8 @@ std::string pagestringraw(const std::vector<uint8_t>& rawfile, int pagenum)
   if(pagenum < 1) Rcpp::stop("Invalid page number");
   std::shared_ptr<document> myfile = std::make_shared<document>(rawfile);
   std::shared_ptr<page> p = std::make_shared<page>(myfile, pagenum - 1);
-  std::string s = p->pageContents();
   p->clearFontMap();
-  return s;
+  return *(p->pageContents());
 }
 
 //---------------------------------------------------------------------------//

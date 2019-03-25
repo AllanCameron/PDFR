@@ -85,9 +85,12 @@ void word_grouper::tabulate(const vector<float>& a,
       b[j] = 1; // if that value has not already been found, add it with count 1
     else b[j]++; // otherwise increment its count
   }
-  for(auto& i : getKeys(b)) // for each key in the resulting table
-    if(b[i] < EDGECOUNT) // if its value is below the number needed for a column
-      b.erase(b.find(i)) ;// delete it
+  for(auto i = b.begin(); i != b.end(); ) // for each key in the resulting table
+  {
+    if(i->second < EDGECOUNT) // if its value is below the number needed for a column
+      b.erase(i++) ;// delete it
+    else ++i;
+  }
 }
 
 //---------------------------------------------------------------------------//

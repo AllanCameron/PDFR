@@ -71,8 +71,8 @@ public:
 
   // public methods
   std::vector<std::string> getFontNames();  // Returns PostScript font names
-  std::string pageContents(); // Returns page description program as string
-  std::string getXobject(const std::string&); // Return specified XObject string
+  std::shared_ptr<std::string> pageContents(); // Returns page description program as string
+  std::shared_ptr<std::string> getXobject(const std::string&); // Return specified XObject string
   std::shared_ptr<font> getFont(const std::string&);  // Get pointer to font
   std::vector<float> getminbox();
   void clearFontMap();

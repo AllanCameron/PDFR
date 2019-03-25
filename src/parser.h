@@ -220,7 +220,7 @@ public:
   // access results
   textrows& output();
   std::string getOperand();
-  std::string getXobject(std::string inloop) const {
+  std::shared_ptr<std::string> getXobject(const std::string& inloop) const {
     return p->getXobject(inloop);
   };
 

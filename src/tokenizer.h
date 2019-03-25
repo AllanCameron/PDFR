@@ -68,11 +68,11 @@ class tokenizer
 {
 public:
   // constructor
-  tokenizer(std::string&& s, parser* GS);
+  tokenizer(std::shared_ptr<std::string> s, parser* GS);
 
 private:
   // private data members
-  const std::string& s;// the input string itself
+  std::shared_ptr<std::string> s;// the input string itself
   std::string::const_iterator i;// The iterator that moves through the string
   std::string buf;     // a string buffer to hold chars until pushed to result
   Token::TState state; // The current state of the finite state machine
