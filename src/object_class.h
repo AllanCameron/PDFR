@@ -84,7 +84,7 @@ private:
   dictionary header;              // The object's dictionary
   std::string stream;             // The object's stream or contents
   bool has_stream;                // Records whether stream is zero length
-  std::vector<size_t> streampos;  // start/stop file offsets for stream position
+  std::array<size_t, 2> streampos; // start/stop offsets for stream position
 
   // index for object stream holders
   std::unordered_map<int, std::pair<int, int>> objstmIndex;

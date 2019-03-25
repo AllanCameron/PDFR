@@ -26,7 +26,7 @@
 //---------------------------------------------------------------------------//
 
 #include "xref.h"
-
+#include<iostream>
 //---------------------------------------------------------------------------//
 
 using namespace std;
@@ -81,12 +81,8 @@ xref::xref(shared_ptr<const std::string> s) :  fs(s), encrypted(false)
 {
   locateXrefs();           // find all xrefs
   xrefstrings();           // get the strings containing all xrefs
-  xrefIsstream();          // find which are streams
-  buildXRtable();          // create the xrefs from strings and / or streams
   get_crypto();          // get the file key, needed for decryption of streams
   Xreflocations.clear();   //-----//
-  Xrefstrings.clear();            //--> clear data used only in construction
-  XrefsAreStreams.clear(); //-----//
 }
 
 /*---------------------------------------------------------------------------*/
@@ -131,30 +127,21 @@ void xref::locateXrefs()
 
 void xref::xrefstrings()
 {
-  // get a string from each xref location or die
-  for(auto i : Xreflocations)
+  for(auto i : Xreflocations) // get a string from each xref location or die
   {
     int len = fs->find("startxref", i) - i; // length of xref in chars
-
-    // Throw error if no xref found
-    if (len <= 0) throw std::runtime_error("No object found at location");
-
+    if (len <= 0) // Throw error if no xref found
+      throw std::runtime_error("No object found at location");
     // extract the xref string from the file string
     string&& fullxref = fs->substr(i, len);
-
-    // stick a trimmed version of the xref onto Xrefstrings
-    // Note the carveout should leave xrefstreams unaltered
-    Xrefstrings.emplace_back(carveout(move(fullxref), "xref", "trailer"));
+    // Carve out the actual string
+    string xrefstring = carveout(move(fullxref), "xref", "trailer");
+    // if it contains a dictionary, process as stream, otherwise process string
+    if(xrefstring.substr(0, 15).find("<<", 0) != string::npos)
+      xrefFromStream(i);
+    else
+      xrefFromString(xrefstring);
   }
-}
-
-/*---------------------------------------------------------------------------*/
-// Simple check of whether each xref string is a stream or a plaintext
-
-void xref::xrefIsstream()
-{
-  for(auto& i : Xrefstrings) // If first 15 chars contains << it's a stream
-    XrefsAreStreams.emplace_back(i.substr(0, 15).find("<<", 0) != string::npos);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -170,16 +157,17 @@ void xref::xrefFromStream(int xrefloc)
   // Throws if something's broken
   if(xreftable.empty())
     throw std::runtime_error("xreftable empty");
-  // Fills the main data map from the table ---------------------------------//
-  size_t xrts = xreftable[0].size();                                         //
-  for (size_t j = 0; j < xrts; j++)                                          //
-  {                                                                          //
-    xrefrow txr {xreftable[3][j], xreftable[1][j], 0, xreftable[1][j]};      //
-    if (xreftable[0][j] == 1) txr.in_object = 0;                             //
-    if (xreftable[0][j] == 2) txr.startbyte = 0; // if isinobj, no startbyte //
-    objenum.emplace_back(txr.object);                                        //
-    xreftab[txr.object] = move(txr);             // write to main map        //
-  }                                              //--------------------------//
+  // Fills the main data map from the table ------------------//
+  size_t xrts = xreftable[0].size();                          //
+  for (size_t j = 0; j < xrts; j++)                           //
+  {                                                           //
+    int& objnum = xreftable[3][j];                            //
+    int& position =  xreftable[1][j];                         //
+    bool inobj = xreftable[0][j] == 2;                        //
+    xreftab[objnum] = xrefrow {position, 0, position};        //
+    if(!inobj) xreftab[objnum].in_object = 0;                 //
+    if (inobj) xreftab[objnum].startbyte = 0;                 //
+  }                                                    //-----//
 }
 
 /*---------------------------------------------------------------------------*/
@@ -198,8 +186,7 @@ void xref::xrefFromString(std::string& xstr)
   if(allints.size() < 4) return;            // valid xref has >= 4 ints in it
   int startingobj = allints[0];             // the first object == first int
 
-  // The number of ints must be even or the xref is malformed
-  if(allints.size() % 2)
+  if(allints.size() % 2) // Number of ints must be even or the xref is malformed
     throw runtime_error("Malformed xref");
 
   // This loop starts on the second row of the table. Even numbers are the
@@ -210,42 +197,9 @@ void xref::xrefFromString(std::string& xstr)
     if(i % 2 == 0)
       bytestore = allints[i]; // store byte offsets
     else
-    {
       if(allints[i] < 65535) // indicates object in use
-      {
-        xrefrow txr; // the map is of object numbers to xrefrow
-        txr.object = startingobj + (i / 2) - 1; // zero-indexed row + start
-        txr.startbyte = bytestore; // use number from last loop
-        txr.in_object = 0;         // not in an objectstream
-        objenum.push_back(txr.object); // write to object enumerator
-        xreftab[txr.object] = move(txr);     // write to main data map
-      }
-    }
+        xreftab[startingobj + (i / 2) - 1] = xrefrow {bytestore, 0, 0};
   }
-}
-
-/*---------------------------------------------------------------------------*/
-// This is the main loop that co-ordinates parsing of the xrefs once they have
-// been located and extracted. It checks each location to decide whether it is
-// a stream or plaintext and calls the correct parser once it knows
-
-void xref::buildXRtable()
-{
-  for(size_t i = 0; i < Xreflocations.size(); i++) // for each location
-  {
-    if(XrefsAreStreams[i])
-      xrefFromStream(Xreflocations[i]);   //----------------------------------//
-    else                                  // Parse string or stream as needed //
-      xrefFromString(Xrefstrings[i]);     //----------------------------------//
-  }
-}
-
-/*---------------------------------------------------------------------------*/
-// Simple determiner of whether an object is present in the built xref
-
-bool xref::objectExists(int objnum) const
-{
-  return xreftab.find(objnum) != xreftab.end();
 }
 
 /*---------------------------------------------------------------------------*/
@@ -253,7 +207,8 @@ bool xref::objectExists(int objnum) const
 
 size_t xref::getStart(int objnum) const
 {
-  if(!objectExists(objnum)) throw std::runtime_error("Object does not exist");
+  if(xreftab.find(objnum) == xreftab.end())
+    throw std::runtime_error("Object does not exist");
   return (size_t) xreftab.at(objnum).startbyte;
 }
 
@@ -264,22 +219,15 @@ size_t xref::getStart(int objnum) const
 size_t xref::getEnd(int objnum) const
 {
   // throw an error if objnum isn't a valid object
-  if(!objectExists(objnum)) throw std::runtime_error("Object does not exist");
+  if(xreftab.find(objnum) == xreftab.end())
+    throw std::runtime_error("Object does not exist");
 
   // If the object is in an object stream, return 0;
-  if(xreftab.at(objnum).in_object) return 0;
+  if(xreftab.at(objnum).in_object)
+    return 0;
 
   // else find the first match of "endobj" and return
   return (int) fs->find("endobj", xreftab.at(objnum).startbyte);
-}
-
-/*---------------------------------------------------------------------------*/
-// Returns whether the requested object is located in another object's stream
-
-bool xref::isInObject(int objnum) const
-{
-  if(!objectExists(objnum)) throw std::runtime_error("Object does not exist");
-  return xreftab.at(objnum).in_object != 0;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -288,7 +236,8 @@ bool xref::isInObject(int objnum) const
 
 size_t xref::inObject(int objnum) const
 {
-  if(!objectExists(objnum)) throw std::runtime_error("Object does not exist");
+  if(xreftab.find(objnum) == xreftab.end())
+    throw std::runtime_error("Object does not exist");
   return (size_t) xreftab.at(objnum).in_object;
 }
 
@@ -297,14 +246,14 @@ size_t xref::inObject(int objnum) const
 
 std::vector<int> xref::getObjects() const
 {
-  return objenum;
+  return getKeys(this->xreftab);
 }
 
 /*---------------------------------------------------------------------------*/
 // returns the offset of the start and stop locations relative to the file
 // start, of the stream belonging to the given object
 
-vector<size_t> xref::getStreamLoc(int objstart) const
+array<size_t, 2> xref::getStreamLoc(int objstart) const
 {
   dictionary dict = dictionary(fs, objstart); // get the object dictionary
   if(dict.has("stream") && dict.has("/Length")) // only if stream exists...
@@ -320,9 +269,9 @@ vector<size_t> xref::getStreamLoc(int objstart) const
     } // thankfully though most lengths are just direct ints
     else streamlen = dict.getInts("/Length")[0];
     int strmstart = dict.getInts("stream")[0]; // now get stream's start
-    return vector<size_t>{(size_t) strmstart, (size_t) strmstart + streamlen};
+    return array<size_t, 2>{(size_t) strmstart, (size_t) strmstart + streamlen};
   }
-  return vector<size_t> {0,0}; // if no length, return empty length-2 vector
+  return array<size_t, 2> {0,0}; // if no length, return empty length-2 array
 }
 
 /*---------------------------------------------------------------------------*/
@@ -330,7 +279,7 @@ vector<size_t> xref::getStreamLoc(int objstart) const
 
 void xref::decrypt(std::string& s, int obj, int gen) const
 {
-  encryption.decryptStream(s, obj, gen);
+  encryption->decryptStream(s, obj, gen);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -358,12 +307,12 @@ void xref::get_crypto()
    // if there's no encryption dictionary, there's nothing else to do
   if(!TrailerDictionary.has("/Encrypt")) return;
   int encnum = TrailerDictionary.getRefs("/Encrypt").at(0);
-  if(!objectExists(encnum)) return; // No encryption dict - should be exception
+  if(xreftab.find(encnum) == xreftab.end()) // No encryption dict - exception?
+    return;
 
-  // mark the file as encrypted and read the encryption dictionary
-  encrypted = true;
+  encrypted = true; // mark file as encrypted and read the encryption dictionary
   dictionary&& encdict = dictionary(fs, getStart(encnum));
-  encryption = crypto(move(encdict), TrailerDictionary);
+  encryption = make_shared<crypto>(move(encdict), TrailerDictionary);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -462,7 +411,7 @@ void xrefstream::getParms()
 
 void xrefstream::getRawMatrix()
 {
-  std::vector<size_t> sl = XR->getStreamLoc(objstart);  // finds stream location
+  std::array<size_t, 2> sl = XR->getStreamLoc(objstart);// finds stream location
   std::string SS = XR->file()->substr(sl[0], sl[1] - sl[0]); // get stream
   dictionary dict = dictionary(XR->file(), objstart); // containing object
   if(dict.get("/Filter").find("/FlateDecode", 0) != string::npos)

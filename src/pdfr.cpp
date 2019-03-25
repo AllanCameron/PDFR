@@ -70,7 +70,7 @@ Rcpp::DataFrame getglyphmap(const std::string& s, int pagenum)
 
 Rcpp::DataFrame xrefcreator(std::shared_ptr<const std::string> fs)
 {
-  xref Xref = xref(fs); // create the xref from the given string pointer
+  xref Xref(fs); // create the xref from the given string pointer
 
   // containers used to fill dataframe
   std::vector<int> ob, startb, inob;

@@ -75,6 +75,17 @@
 #include "crypto.h"
 
 /*---------------------------------------------------------------------------*/
+// The main xref data member is an unordered map with the key being the object
+// number and the value being a struct of named ints as defined here
+
+struct xrefrow
+{
+  int startbyte,  // Its byte offset
+      stopbyte,   // The offset of the corresponding endobj marker
+      in_object;  // If this is a stream object, in which other object is it
+};                // located? Has value of 0 if the object is not in a stream
+
+/*---------------------------------------------------------------------------*/
 // The main xref class definition. Since this is the main "skeleton" of the pdf
 // which is used by other classes to negotiate and parse the pdf, and because it
 // can be complex to construct, it is a fairly large and complex class.
@@ -85,7 +96,7 @@
 class xref
 {
 public:
-  // constructor
+  // constructors
   xref(){};
   xref(std::shared_ptr<const std::string>); // Constructor
 
@@ -94,51 +105,26 @@ public:
   dictionary trailer() const;         // Get the trailer dictionary
   size_t getStart(int) const;         // Byyte offset of a given object
   size_t getEnd(int) const;           // Byte offset of end of given object
-  bool isInObject(int) const;         // Is given object is part of a stream
   size_t inObject(int) const;         // The object that the given object is in
   std::vector<int> getObjects() const;// List all objects recorded in xref
-  bool objectExists(int) const;       // check for an object's existence
-
-  // finds start and stop of the first stream after the given byte offset
-  std::vector<size_t> getStreamLoc(int) const;
+  std::array<size_t, 2> getStreamLoc(int) const; // finds start / stop of stream
   void decrypt(std::string&, int, int) const; // Decrypt a stream
-  std::shared_ptr<const std::string> file() const; // pointer to main file string
+  std::shared_ptr<const std::string> file() const;// pointer to main file string
 
 private:
-// private data
-  std::shared_ptr<const std::string> fs;  // a pointer to the creating file string
-
-  // The main xref data member is an unordered map with the key being the object
-  // number and the value being a struct of named ints as defined here
-
-  struct xrefrow
-  {
-    int object,     // The object number itself
-        startbyte,  // Its byte offset
-        stopbyte,   // The offset of the corresponding endobj marker
-        in_object;  // If this is a stream object, in which other object is it
-  };                // located? Has value of 0 if the object is not in a stream
-
-  // This is the main data member used for accessing xref and negotiating pdf
-  std::unordered_map<int, xrefrow> xreftab;
-
-  std::vector<int> Xreflocations,         // vector of offsets of xref starts
-                   objenum;               // All object numbers found in xref
-  std::vector<std::string>  Xrefstrings;  // The actual strings of xref tables
-  std::vector<bool> XrefsAreStreams;      // records if each xref is stream
+  std::shared_ptr<const std::string> fs;  // pointer to the creating file string
+  std::unordered_map<int, xrefrow> xreftab; // This is the main data member
+  std::vector<int> Xreflocations;         // vector of offsets of xref starts
   dictionary TrailerDictionary;           // Canonical trailer dictionary
   bool encrypted;                         // Flag to indicate if encryption used
-  crypto encryption;                      // crypto object for decrypting files
-
+  std::shared_ptr<crypto> encryption;     // crypto object for decrypting files
 
 // private methods
-
+  xref& operator=(const xref&);
   void locateXrefs();                     // Finds xref locations
   void xrefstrings();                     // Gets strings from xref locations
-  void xrefIsstream();                    // fills XrefsAreStreams vector
   void xrefFromStream(int);               // Uses xrefstream class to get xref
   void xrefFromString(std::string&);      // parses xref directly
-  void buildXRtable();                    // constructs main data member
   void get_crypto();                      // Allows decryption of encrypted docs
 };
 

@@ -81,7 +81,7 @@ public:
   std::unordered_map<std::string, std::string>&& get();
 
 private:
-  enum DState     {PREENTRY,
+  enum DState   {PREENTRY,
                  QUERYCLOSE,
                  VALUE,
                  MAYBE,
@@ -405,21 +405,28 @@ dict_builder::dict_builder()
   Map = Empty;
 }
 
+/*---------------------------------------------------------------------------*/
+
 dictionary::dictionary(shared_ptr<const string> s)
 {
   Map = move(dict_builder(s).get());
 }
+
+/*---------------------------------------------------------------------------*/
 
 dictionary::dictionary(shared_ptr<const string> s, size_t pos)
 {
   Map = move(dict_builder(s, pos).get());
 }
 
+/*---------------------------------------------------------------------------*/
+
 dictionary::dictionary()
 {
   unordered_map<string, string> Empty;
   Map = Empty;
 }
+
 /*---------------------------------------------------------------------------*/
 // A dictionary can be created from an existing map. Not used but appears
 // in case required for future feature development
