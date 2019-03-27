@@ -38,8 +38,8 @@
  * actual spaces are included as glyphs then grouped strings of words will be
  * included in the output.
  *
- * This is the first step of a "bottom-up" document reconstruction, which
- * will use these strings as the atoms from which to form structures such
+ * This is the first step of a "meet-in-the-middle" document reconstruction,
+ * which will use these strings as the atoms from which to form structures such
  * as paragraphs, headers and tables.
  */
 
@@ -47,14 +47,16 @@
 
 
 //---------------------------------------------------------------------------//
-// Simple struct that acts as a method for sorting a vector of textrows
-// left-to-right
+// Simple structs that acts as a method for sorting a vector of textrows
+// left-to-right and top-to-bottom
 
-struct sort_left_right
+struct reading_order
 {
   inline bool operator() (text_ptr row1, text_ptr row2)
   {
-      return (row1->left < row2->left);
+     if (row1->bottom > row2->bottom) return true;
+     if (row1->bottom == row2->bottom && row1->left < row2->left) return true;
+     return false;
   }
 };
 

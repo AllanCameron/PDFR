@@ -76,7 +76,7 @@ std::vector<K> getKeys(const std::unordered_map<K, V>& Map)
   result.reserve(Map.size()); // Ensure it is big enough
   typename std::unordered_map<K, V>::const_iterator i; // declare map iterator
   // the following loop iterates through the map, gets the key and stores it
-  for(i = Map.begin(); i != Map.end(); i++)
+  for(i = Map.begin(); i != Map.end(); ++i)
     result.push_back(i->first);
   return result;
 }
@@ -124,6 +124,89 @@ void sortby(std::vector<Ta>& vec, const std::vector<Tb>& data)
   std::swap(res, vec); // replace vec by the stored results
 }
 
+//---------------------------------------------------------------------------//
+// class template for tree structure
+
+template <class T>
+class tree_node
+{
+public:
+  tree_node<T>(T o, tree_node<T>* par):parent(par), isLeaf(true), obj(o) {};
+  tree_node<T>(T o) : parent(nullptr),  isLeaf(true), obj(o){};
+  tree_node<T>(){};
+  ~tree_node<T>(){ parent = nullptr; for(auto& i : kids) delete i; }
+
+  void add_kids(std::vector<T> obs)
+  {
+    isLeaf = false;
+    for(auto i : obs)
+      kids.push_back(new tree_node<T>(i, this));
+  };
+
+  T get() const {return obj;}
+
+  tree_node<T>* top_node()
+  {
+    if(!parent) return this;
+    tree_node<T>* next_node_up = parent;
+    while(next_node_up->parent) next_node_up = next_node_up->parent;
+    return next_node_up;
+  }
+
+  std::vector<tree_node<T>*> getkids(){return kids;};
+
+  std::vector<T> getAncestors() const
+  {
+    std::vector<T> res {obj};
+    if(parent == nullptr) return res;
+    tree_node<T>* next_parent = parent;
+    while(next_parent)
+    {
+      res.push_back(next_parent->objnum);
+      next_parent = next_parent->parent;
+    }
+    return res;
+  }
+
+  std::vector<T> getDescendants() const
+  {
+    std::vector<T> res;
+    for(auto& i : kids)
+    {
+      res.push_back(i->obj);
+      if(!i->kids.empty())
+      {
+        std::vector<T> tmp = i->getDescendants();
+        res.reserve(tmp.size() + res.size());
+        res.insert(res.end(), tmp.begin(), tmp.end());
+      }
+    }
+    return(res);
+  }
+
+  std::vector<T> getLeafs()
+  {
+    std::vector<T> res;
+    for(auto& i : kids)
+    {
+      if(i->isLeaf)
+        res.push_back(i->obj);
+      else
+      {
+        std::vector<T> tmp = i->getLeafs();
+        res.reserve(tmp.size() + res.size());
+        res.insert(res.end(), tmp.begin(), tmp.end());
+      }
+    }
+    return(res);
+  }
+
+private:
+  tree_node<T>* parent;
+  bool isLeaf;
+  std::vector<tree_node<T>*> kids;
+  T obj;
+};
 
 
 //---------------------------------------------------------------------------//

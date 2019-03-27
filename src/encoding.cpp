@@ -201,7 +201,7 @@ void Encoding::getEncoding(dictionary& fontref, shared_ptr<document> d)
   else if(encname == "/PDFDocEncoding")               // encoding. If none is
     EncodingMap = Encoding::pdfDocEncodingToUnicode;  // specified, fill map
   else                                                // with 1:1 Raw : Unicode
-    for(RawChar i = 0; i < 256; i++)                  //
+    for(RawChar i = 0; i < 256; ++i)                  //
       EncodingMap[i] = (Unicode) i;             //---------------------------//
   if(encref.has("/Differences"))
   {// call Differences() if a /Differences entry is found to modify encoding

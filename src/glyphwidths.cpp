@@ -91,7 +91,7 @@ void glyphwidths::parseWidths()
   if (!widtharray.empty())
   {
     this->widthFromCharCodes = true; // widths are given pre-Unicode translation
-    for (size_t i = 0; i < widtharray.size(); i++)
+    for (size_t i = 0; i < widtharray.size(); ++i)
       Width[firstchr + i] = (int) widtharray[i]; // fill width map from array
   }
 }
@@ -267,7 +267,7 @@ void glyphwidths::parsewidtharray(const string& s)
   // to the number of width arrays, and that neither is empty
   if((resultint.size() == resultvec.size()) && !resultint.empty() )
     // now loop through the vectors and marry char codes to widths
-    for(size_t i = 0; i < resultint.size(); i++)
+    for(size_t i = 0; i < resultint.size(); ++i)
       // Skip any character code that doesn't have an associated width array
       if(!resultvec[i].empty())
         // Now for each member of the width array...

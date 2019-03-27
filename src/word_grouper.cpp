@@ -42,6 +42,7 @@ constexpr int EDGECOUNT = 4;
 
 word_grouper::word_grouper(textrows&& g): allRows(move(g))
 {
+   //PROFC_NODE("word_grouper creation");
   findEdges();
   assignEdges();
   findRightMatch();
@@ -108,7 +109,7 @@ void word_grouper::findEdges()
   tabulate(left, leftEdges); // use tabulate to get left edges
   tabulate(right, rightEdges); // use tabulate to get right edges
   vector<float> midvec; //  create a vector of midpoints of text element --//
-  for(size_t i = 0; i < right.size(); i++)                              //
+  for(size_t i = 0; i < right.size(); ++i)                              //
     midvec.emplace_back((right[i] + left[i])/2);  //-----------------//
   tabulate(midvec, mids); // use tabulate to find centre-aligned items
 }

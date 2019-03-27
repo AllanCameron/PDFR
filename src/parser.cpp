@@ -68,7 +68,8 @@ parser::parser(shared_ptr<page> pag) : // long initializer list...
   Tw(0), // word spacing
   Th(100), // horizontal scaling
   Tc(0) // character spacing
-{}
+{ //PROFC_NODE("Parser creation");
+  }
 
 //---------------------------------------------------------------------------//
 // To allow recursive parsing of form xobjects, the tokenizer needs to access
@@ -393,7 +394,7 @@ void parser::reader(string& token, TState state)
 void parser::matmul(const array<float, 9>& b, array<float, 9>& a)
 {
   array<float, 9> newmat;
-  for(size_t i = 0; i < 9; i++) //clever use of indices to allow fill by loop
+  for(size_t i = 0; i < 9; ++i) //clever use of indices to allow fill by loop
     newmat[i] = (a[i % 3 + 0] * b[3 * (i / 3) + 0] +
                  a[i % 3 + 3] * b[3 * (i / 3) + 1] +
                  a[i % 3 + 6] * b[3 * (i / 3) + 2] );

@@ -380,7 +380,7 @@ crypto::crypto(dictionary enc, dictionary trail) :
   else
   {//  Otherwise we're going to md5 and trim the filekey 50 times
     size_t cryptlen = filekey.size();
-    for(int i = 0; i < 50; i++)
+    for(int i = 0; i < 50; ++i)
     {
       filekey = md5(filekey);
       filekey.resize(cryptlen);

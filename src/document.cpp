@@ -26,7 +26,8 @@
 //---------------------------------------------------------------------------//
 
 #include "document.h"
-
+#include<list>
+#include<iostream>
 //---------------------------------------------------------------------------//
 // See the document.h file for comments regarding the rationale and use of this
 // class. The comments here are for descriptions of the functions themselves.
@@ -42,6 +43,7 @@ using namespace std;
 document::document(const string& filename) :
   file(filename), filestring(get_file(file))
 {
+  //PROFC_NODE("Document creation");
   buildDoc(); // Call constructor helper to build document
 }
 
@@ -63,7 +65,7 @@ document::document(const vector<uint8_t>& bytevector) :
 
 void document::buildDoc()
 {
-  Xref = make_shared<const xref>(make_shared<string>(filestring)); // Creates the xref
+  Xref = make_shared<const xref>(make_shared<string>(filestring));
   getCatalog();             // Gets the catalog dictionary
   getPageDir();             // Gets the /Pages dictionary
   getPageHeaders();         // Finds all descendant leaf nodes of /Pages
@@ -78,6 +80,7 @@ void document::buildDoc()
 
 shared_ptr<object_class> document::getobject(int n)
 {
+  //PROFC_NODE("getobject()");
   if(objects.find(n) == objects.end())    // check if object is stored
   {
     size_t holder = Xref->inObject(n); // ensure no holding object
@@ -101,11 +104,13 @@ shared_ptr<object_class> document::getobject(int n)
 
 void document::getCatalog()
 {
+  //PROFC_NODE("getCatalog()");
   // The pointer to the catalog is given under /Root in the trailer dictionary
   vector<int> rootnums = Xref->trailer().getRefs("/Root");
 
   // This is the only place we look for the catalog, so it better be here...
-  if (rootnums.empty()) throw runtime_error("Couldn't find catalog dictionary");
+  if (rootnums.empty())
+    throw runtime_error("Couldn't find catalog dictionary");
 
   // With errors handled, we can now just get the pointed-to object's dictionary
   catalog = getobject(rootnums[0])->getDict();
@@ -118,6 +123,7 @@ void document::getCatalog()
 
 void document::getPageDir()
 {
+  //PROFC_NODE("getPageDir()");
   // Throw an error if catalog has no /Pages entry
   if(!catalog.hasRefs("/Pages")) throw runtime_error("No valid /Pages entry");
 
@@ -125,6 +131,7 @@ void document::getPageDir()
   int pagesobject = catalog.getRefs("/Pages")[0];
 
   // Now fetch that object and store it
+  root = new tree_node<int>(pagesobject);
   pagedir = getobject(pagesobject)->getDict();
 }
 
@@ -135,69 +142,50 @@ void document::getPageDir()
 // the pointers do not point directly to page descriptors, but to further
 // /Pages dictionaries with /Kids entries that act as parent nodes for further
 // /Pages dictionaries and so on. This is a tree structure, and for our purposes
-// we only want the leaf nodes of the tree. This function is an algorithm for
-// finding and storing the leaf nodes in the correct order in a vector, given
-// only the array of pointers from the root node.
+// we only want the leaf nodes of the tree. This algorithm uses recursion to
+// populate the nodes of the tree class defined in utilities.h.
+//
+// This function takes a lot of the time needed for document creation. It is
+// not that the algorithm is particularly slow; rather, it has to create all the
+// objects it comes across, and there are at least as many of these are there
+// are pages. Options for speeding this up include getting only the objects
+// needed for a particular page's creation, which would mean a major change to
+// the way the program works depending on user input, and only getting object
+// streams for an object when they are requested. This second way is more
+// promising, but it is likely to be complex, and it is not clear that it would
+// lead to a major speedup. Getting an object at present takes about 36us.
 
-vector <int> document::expandKids(vector<int> objnums)
+void document::expandKids(const vector<int>& obs, tree_node<int>* tree)
 {
-  // If there are no objects fed to the function, no pages can be found - halt
-  if(objnums.empty()) throw runtime_error("No pages found");
-
-  size_t i = 0;                 // initialize iterator
-  vector<int> res;              // container for result
-
-  // The given vector of descendant object numbers will grow as the child nodes
-  // are expanded, until all leaf nodes have been found. If there are only leaf
-  // nodes to begin with, then the tree will stay the same size. In either case,
-  // for each node that we assess, we test whether it is a leaf, in which case
-  // we push it to our final result. Otherwise, we get its /Kids entry and
-  // replace the node with its children. Because we are using a vector, this
-  // is not a very efficient process for deeply nested trees, but it does
-  // not make any assumptions about the nodes being balanced, and profiling
-  // suggests it makes little or no difference to other quicker but less safe
-  // alternatives
-
-  while (i < objnums.size())
-  {
-    shared_ptr<object_class> o = getobject(objnums[i]); // get the node object
-    if (o->getDict().hasRefs("/Kids"))       // if it has Kids, its not a leaf
+  // This function is only called from a single point that is already range
+  // checked, so does not need error checked.
+  tree->add_kids(obs); // create new children tree nodes with this one as parent
+  auto kidnodes = tree->getkids(); // get a vector of pointers to the new nodes
+  for(auto& i : kidnodes)  // now for each...
+  {                        // get a vector of ints for its kid nodes
+    vector<int> newnodes = getobject(i->get())->getDict().getRefs("/Kids");
+    if (!newnodes.empty())
     {
-      vector<int> newnodes = o->getDict().getRefs("/Kids"); // store kids
-      objnums.erase(objnums.begin() + i);                  // delete parent node
-      // inset kids to replace deleted parent node
-      objnums.insert(objnums.begin() + i, newnodes.begin(), newnodes.end());
-      // The next cycle of the loo will start at the first child node, so
-      // it is not correct to increment unless a leaf node has been reached
+      expandKids(newnodes, i); // if it has children, use recursion to get them
     }
-    else // this is a leaf node
-    {
-      res.push_back(objnums[i]); // store them in the order we find them
-      i++;  // and increment the loop to the next node
-    }
+    // Otherwise it's a leaf node. Move on to the next node.
   }
-  return res;
 }
 
 /*---------------------------------------------------------------------------*/
 // In order to construct the document class, we need to build its vector of page
-// header dictionaries. This simply uses the expandKids algorithm to get all
-// the leaf nodes from the root /Pages dictionary
+// header object. This simply uses the expandKids algorithm to get all
+// the leaf nodes from the root /Pages dictionary. It stores the results as
+// object indices to save memory and copying.
 
 void document::getPageHeaders()
 {
   // Ensure /Pages has /kids entry
   if (!pagedir.hasRefs("/Kids"))
     throw runtime_error("No /Kids entry in /Pages dictionary.");
-
-    // use expandKids() to get page header object numbers
-    std::vector<int> kids = expandKids(pagedir.getRefs("/Kids"));
-
-    // ensure we have enough room for the page headers in our vector
-    pageheaders.reserve(kids.size());
-
-    // Now we can just fill up our pageheader vector
-    for (auto i : kids) pageheaders.emplace_back(objects[i]->getDict());
+  // use expandKids() to get page header object numbers
+  expandKids(pagedir.getRefs("/Kids"), root);
+  pageheaders = root->getLeafs();
 }
 
 /*---------------------------------------------------------------------------*/
@@ -209,13 +197,7 @@ dictionary document::pageHeader(int pagenumber)
   if((pageheaders.size() < (size_t) pagenumber) || pagenumber < 0)
     throw runtime_error("Invalid page number");
   // All good - return the requested header
-  return pageheaders.at(pagenumber);
+  return objects[pageheaders[pagenumber]]->getDict();
 }
 
-/*---------------------------------------------------------------------------*/
-// Public function that gets the number of pages in a document
 
-size_t document::pagecount()
-{
-  return pageheaders.size();
-}

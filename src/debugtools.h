@@ -25,7 +25,7 @@
 //                                                                           //
 //---------------------------------------------------------------------------//
 // uncomment these lines for debugger and profiler
-// #define PDFR_DEBUG
+//#define PDFR_DEBUG
 //#define PROFILER_PDFR
 #include "external/Profiler.h"
 #ifdef PDFR_DEBUG
@@ -59,7 +59,7 @@ void printvec(std::vector<T> x)
   // In the special case of an empty vector, make this explicit
   if(s == 0) std::cout << "[empty vector]" << std::endl;
   // print the contents of the vector followed by a comma for all but last
-  if(s > 1) for(size_t i = 0; i < (s - 1); i++) std::cout << x[i] << ", ";
+  if(s > 1) for(size_t i = 0; i < (s - 1); ++i) std::cout << x[i] << ", ";
   // the last entry doesn't need a comma after it
   if(s > 0) std::cout << x[s - 1] << std::endl;
 }

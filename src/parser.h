@@ -150,7 +150,7 @@ struct GSoutput
   {
     std::vector<textrow> res;
     if(!left.empty())
-      for(size_t i = 0; i < left.size(); i++)
+      for(size_t i = 0; i < left.size(); ++i)
         res.emplace_back(textrow(left[i], right[i], width[i], bottom[i],
                                  size[i], fonts[i], text[i]));
     return res;

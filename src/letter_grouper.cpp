@@ -39,7 +39,7 @@ GSoutput letter_grouper::out()
   std::vector<float> left, right, width, bottom, size; // these vectors are
   std::vector<std::string> font;                       // components of GSoutput
   std::vector<std::vector<Unicode>> text;
-  for(uint8_t i = 0; i < 256; i++)
+  for(uint8_t i = 0; i < 256; ++i)
   {// for each cell in the grid...
     for(auto& j : gridmap[i])
     {// for each textrow in the cell...
@@ -96,9 +96,9 @@ void letter_grouper::makegrid()
     gridmap[((uint8_t)(i->left / dx))  |
             ((uint8_t)(15 - (i->bottom / dy)) << 4 )].push_back(i);
   }
-  // sort the contents of the cell from left to right
+  // sort the contents of the cell
   for(auto& vec : gridmap)
-    std::sort(vec.second.begin(), vec.second.end(), sort_left_right());
+    std::sort(vec.second.begin(), vec.second.end(), reading_order());
 }
 
 //---------------------------------------------------------------------------//
@@ -110,7 +110,7 @@ textrows letter_grouper::output()
   // placing each word with its associated size and position (a textrow) from it
   // into a vector
   vector<text_ptr> tmpvecx, tmpvecy;
-  for(uint8_t i = 0; i < 255; i++)
+  for(uint8_t i = 0; i < 255; ++i)
     concat(tmpvecx, gridmap[i]);
   concat(tmpvecx, gridmap[0xff]); // otherwise loop will overflow infinitely
 
@@ -130,9 +130,9 @@ textrows letter_grouper::output()
 
 void letter_grouper::compareCells()
 {
-  for(uint8_t i = 0; i < 16; i++) // for each of 16 columns of cells on page
+  for(uint8_t i = 0; i < 16; ++i) // for each of 16 columns of cells on page
   {
-    for(uint8_t j = 0; j < 16; j++) // for each cell in the column
+    for(uint8_t j = 0; j < 16; ++j) // for each cell in the column
     {
       uint8_t key = i | (j << 4);   // get the address of the cell
       vector<text_ptr> maingroup = gridmap[key]; // get the cell's contents
@@ -162,7 +162,7 @@ void letter_grouper::matchRight(text_ptr row, uint8_t key)
   // The key is the address of the cell in the gridmap
   std::vector<text_ptr>& cell = gridmap[key]; // get the vector of matching cell
   if(cell.empty()) return; // some cells are empty - nothing to do
-  for(uint16_t i = 0; i < cell.size(); i++) // for each glyph in the cell...
+  for(uint16_t i = 0; i < cell.size(); ++i) // for each glyph in the cell...
     if (cell[i]->left > row->left &&
         abs(cell[i]->bottom - row->bottom) < (CLUMP_V * row->size) &&
         (abs(cell[i]->left  -  row->right ) < (CLUMP_H * row->size) ||
@@ -189,9 +189,9 @@ void letter_grouper::matchRight(text_ptr row, uint8_t key)
 
 void letter_grouper::merge()
 {
-  for(uint8_t i = 0; i < 16; i++)  // for each column in the x-axis
+  for(uint8_t i = 0; i < 16; ++i)  // for each column in the x-axis
   {
-    for(uint8_t j = 0; j < 16; j++) // for each cell in that column
+    for(uint8_t j = 0; j < 16; ++j) // for each cell in that column
     {
       uint8_t key = i | (j << 4);         // get the cell's address
       vector<text_ptr>& cell = gridmap[key]; // get the cell's contents

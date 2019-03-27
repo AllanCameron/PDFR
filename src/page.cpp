@@ -45,25 +45,17 @@ void page::boxes()
 {
   // sometimes the box dimensions are inherited from an ancestor node of the
   // page header. We therefore need to look for the boxes in the page header,
-  // then, if they are not found, iteratively search the parent nodes until
-  // they are
-  // start with the page header as the boxheader - this can change in the loop
+  // then, if they are not found, iteratively search the parent nodes
   dictionary boxheader = header;
+  vector<string> boxnames {"/BleedBox", "/CropBox", "/MediaBox",
+                           "/ArtBox", "/TrimBox"};
   bool hasparent = true;  // need to keep track of whether node has a parent
-  // Note this is a do...while loop - I don't use these much so pay attention!
-  do
-  {
-    vector<float>&& bleedbox = boxheader.getNums("/BleedBox");  //--//
-    vector<float>&& cropbox  = boxheader.getNums("/CropBox");       //    find &
-    vector<float>&& mediabox = boxheader.getNums("/MediaBox");      //--> store
-    vector<float>&& artbox   = boxheader.getNums("/ArtBox");        //    boxes
-    vector<float>&& trimbox  = boxheader.getNums("/TrimBox");   //--//
-    if (!bleedbox.empty()) minbox = bleedbox;   //--//
-    if (!mediabox.empty()) minbox = mediabox;       //    iterate logically
-    if (!cropbox.empty())  minbox = cropbox;        //--> nested boxes to find
-    if (!trimbox.empty())  minbox = trimbox;        //    the smallest one
-    if (!artbox.empty())   minbox = artbox;     //--//
-
+  do{
+    for(auto& i : boxnames)
+    {
+      vector<float>&& thisbox = boxheader.getNums(i);
+      if (!thisbox.empty()) minbox = thisbox;
+    }
     if(minbox.empty()) // if no boxes found
     {
       if(boxheader.hasRefs("/Parent"))  // find the parent
@@ -74,8 +66,7 @@ void page::boxes()
       else hasparent = false; // didn't find any parent node - loop will exit
     }
   } while (minbox.empty() && hasparent); // stop loop if we have minbox or
-                // there are no more parent nodes
-
+                                        // there are no more parent nodes
   // Get the "rotate" value - will need in future feature development
   if (header.has("/Rotate")) rotate = header.getNums("/Rotate").at(0);
 }
@@ -136,7 +127,6 @@ void page::getFonts()
     string fontdict = resources.get("/Font");
     fonts = dictionary(make_shared<string>(fontdict)); // create font dict
   }
-
   // We can now iterate through the font names using getFontNames(), create
   // each font in turn and store it in the fontmap
   for(auto h : getFontNames())
@@ -158,7 +148,6 @@ void page::getContents()
   {                 // - though this is not necessarily an error
      // get all leaf nodes of the contents tree using expandContents()
     vector<int> contents = expandContents(cts);
-
     // get the contents from each object stream and paste them at the bottom
     // of the pagestring with a line break after each one
     contentstring.reserve(35000);
@@ -180,38 +169,24 @@ void page::getContents()
 
 void page::parseXObjStream()
 {
-  string xobjstring;
-
+  string xobjstring {};
   // first find any xobject entries in the resource dictionary
   if (resources.has("/XObject")) xobjstring = resources.get("/XObject");
-
-  // Sanity check - the entry shouldn't be empty
-  if(xobjstring.empty()) return;
-
+  if(xobjstring.empty()) return; // Sanity check - the entry shouldn't be empty
   dictionary objdict; // declare xobject dictionary to be filled when found
-
-  // Look to see if the /xobject entry is a dictionary
-  if(xobjstring.find("<<") != string::npos)
-  {
-    objdict = dictionary(make_shared<string>(xobjstring));
-  }
+  if(xobjstring.find("<<") != string::npos) // Is /xobject entry a dictionary?
+    objdict = dictionary(make_shared<string>(xobjstring)); // if so, make it
   else
-  {
-    // If the /XObject string is a reference, follow the reference and get dict
+  { // If the /XObject string is a reference, follow the reference and get dict
     std::vector<int> xos = resources.getRefs("/XObject");
     if (xos.size() == 1)
       objdict = d->getobject(xos.at(0))->getDict();
   }
-
-  // Now we can get the dictionary's keys ...
   std::vector<std::string> dictkeys = objdict.getDictKeys();
-
-  // ...and get the stream contents of all the references pointed to
   for(auto& i : dictkeys)
   {
     std::vector<int> refints = objdict.getRefs(i);
-    if(!refints.empty())
-      // map xobject strings to the xobject names
+    if(!refints.empty()) // map xobject strings to the xobject names
       XObjects[i] = d->getobject(refints.at(0))->getStream();
   }
 }
@@ -241,7 +216,7 @@ vector <int> page::expandContents(vector<int> objnums)
     else // this is a leaf node - store it and move to next node
     {
       res.push_back(objnums[i]);
-      i++;
+      ++i;
     }
   }
   return res;
@@ -254,7 +229,6 @@ vector <int> page::expandContents(vector<int> objnums)
 page::page(shared_ptr<document> doc, int pagenum) :
   d(doc), pagenumber(pagenum), rotate(0)
 {
-  PROFC_NODE("Page creation");
   getHeader();        // find the page header
   getResources();     // find the resource header
   parseXObjStream();  // identify, parse and store XObjects
@@ -304,12 +278,17 @@ shared_ptr<font> page::getFont(const string& fontID)
   return (fontmap[fontID]);
 }
 
+/*--------------------------------------------------------------------------*/
+// simple getter for page margins
+
 std::vector<float> page::getminbox()
 {
   return minbox;
 }
 
 /*--------------------------------------------------------------------------*/
+// Important! Run this function when a document is destroyed or else the font
+// map may accrue name clashes which will screw up encoding
 
 void page::clearFontMap()
 {

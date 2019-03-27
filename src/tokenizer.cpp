@@ -73,6 +73,7 @@ std::array<tokenizer::chartype, 256> tokenizer::char_lookup = {
 tokenizer::tokenizer(shared_ptr<string> input, parser* GS) :
  s(input), i(s->begin()), state(NEWSYMBOL), gs(GS)
 {
+  //PROFC_NODE("Tokenizer creation");
   tokenize();       // instigate lexer
 }
 
@@ -258,8 +259,8 @@ void tokenizer::hexstringState()
                   pushbuf(HEXSTRING, NEWSYMBOL);
                 state = NEWSYMBOL;                break;
     case LAB:   buf = ""; state = DICT;           break;
-    case BSL:  buf += j; i++; buf += j;        break;
-    default:    buf += j;                        break;
+    case BSL:  buf += j; ++i; buf += j;           break;
+    default:   buf += j;                          break;
   }
 }
 
@@ -272,7 +273,7 @@ void tokenizer::dictState()
   // get symbol_type of current char
   switch(char_lookup[j])
   {
-    case BSL:  buf += j; i++; buf += j;        break;
+    case BSL:  buf += j; ++i; buf += j;        break;
     case RAB:   pushbuf(DICT, HEXSTRING);         break;
     default:    buf += j;                        break;
   }
@@ -283,7 +284,7 @@ void tokenizer::dictState()
 
 void tokenizer::escapeState()
 {
-  i++;
+  ++i;
   j = *i;
    // read the next char
   if (char_lookup[j] == DIG) // if it's a digit it's likely an octal
@@ -292,7 +293,7 @@ void tokenizer::escapeState()
     pushbuf(STRING, STRING);
     while(char_lookup[j] == DIG && octcount < 3)
     {// add consecutive chars to octal (up to 3)
-      buf += j; i++; j = *i;
+      buf += j; ++i; j = *i;
       octcount++;
     }
     int newint = stoi(buf, nullptr, 8); // convert octal string to int

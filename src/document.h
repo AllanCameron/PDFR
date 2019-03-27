@@ -70,6 +70,7 @@
 #include "object_class.h"
 #include<memory>
 
+
 //---------------------------------------------------------------------------//
 // The public interface of the document class comprises constructors and two
 // member functions - one to return any object from the pdf and one to retrieve
@@ -84,20 +85,21 @@ public:
   document(const std::vector<uint8_t>& rawfile);  // create doc from raw data
   document();                                     // default constructor
 
-
   // public member functions
-  std::shared_ptr<object_class> getobject(int objnum); // creates object and returns pointer
+  std::shared_ptr<object_class> getobject(int objnum); // creates object and
+                                                       // returns pointer
   dictionary pageHeader(int p);       // returns header dictionary for page p
-  size_t pagecount();
+  std::vector<int> pagenums(){return pageheaders;};
 
 private:
   // private data members
+  tree_node<int>* root;
   std::string file;                   // Path used to create file (if used)
   const std::string filestring;       // Full contents of file
   std::shared_ptr<const xref> Xref;   // Contains the xref object for navigation
   dictionary pagedir;                 // dict containing pointers to pages
   dictionary catalog;                 // The pdf catalog dictionary
-  std::vector<dictionary> pageheaders;// A vector containing page dictionaries
+  std::vector<int> pageheaders;       // A vector containing page dictionaries
 
   // This map holds object_class objects. Since some objects may be read
   // multiple times, it is best to store them when they are first created,
@@ -111,9 +113,11 @@ private:
   void getPageDir();    // finds and stores the /Pages dictionary
   void buildDoc();      // the constructors use this as a common pathway
   void getPageHeaders();// finds and stores all /Page dictionaries in document
-  std::vector<int> expandKids(std::vector<int> objnums); // finds descendants
-};                                                       // of /Pages object
+  void expandKids(const std::vector<int>&, tree_node<int>*); // descendants
+};                                                          // of /Pages object
 
 //---------------------------------------------------------------------------//
+
+
 
 #endif

@@ -158,7 +158,7 @@ void Whitespace::makeStrips()
   float pixwidth = (pageright - pageleft) / DIVISIONS; // find strip widths
   float L_Edge = pageleft;              // first strip starts at left edge
   float R_Edge = pageleft + pixwidth;  // and stops one stripwidth to right
-  for(size_t i = 0; i < DIVISIONS; i++) // for each of our divisions
+  for(size_t i = 0; i < DIVISIONS; ++i) // for each of our divisions
   {
     vector<float> tops = {pagetop};       // create top/bottom bounds for boxes.
     vector<float> bottoms = {pagebottom}; // First box starts at top of the page
@@ -188,8 +188,8 @@ void Whitespace::makeStrips()
 void Whitespace::mergeStrips()
 {
   size_t nboxes = ws_boxes.size();  // count the boxes
-  for(size_t i = 0; i < nboxes; i++) // for each box
-    for(size_t j = i; j < nboxes; j++) // compare to every other box
+  for(size_t i = 0; i < nboxes; ++i) // for each box
+    for(size_t j = i; j < nboxes; ++j) // compare to every other box
     { // if its right edge matches the left edge of the compared box
       auto& m = ws_boxes[j];
       auto& c = ws_boxes[i];
@@ -338,7 +338,7 @@ void Whitespace::tracePolygons()
 void Whitespace::makePolygonMap()
 {
   size_t polygonNumber = 1; // we'll label our polygons with size_t's
-  for(size_t i = 0 ; i < vertices.size(); i++) // for each vertex...
+  for(size_t i = 0 ; i < vertices.size(); ++i) // for each vertex...
   {
     if(vertices[i].group != 0) continue; // this vertex is taken. Move along...
     size_t j = i; // we're starting at the first unlabelled vertex

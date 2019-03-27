@@ -71,10 +71,8 @@ Rcpp::DataFrame getglyphmap(const std::string& s, int pagenum)
 Rcpp::DataFrame xrefcreator(std::shared_ptr<const std::string> fs)
 {
   xref Xref(fs); // create the xref from the given string pointer
-
   // containers used to fill dataframe
   std::vector<int> ob, startb, inob;
-
   if(!Xref.getObjects().empty()) // if the xref has entries...
   {
     std::vector<int>&& allobs = Xref.getObjects(); // get all of its object #s
@@ -160,6 +158,7 @@ Rcpp::List getatomic(std::shared_ptr<page> p)
   auto GS = TR.transpose();
   std::vector<std::string> glyph;     // Container for utf-glyphs
   for(auto& i : GS.text) glyph.push_back(utf({i})); // Unicode to utf8
+  p->clearFontMap();
   // Now create the data frame
   Rcpp::DataFrame db =  Rcpp::DataFrame::create(
                         Rcpp::Named("text") = glyph,
@@ -200,6 +199,7 @@ Rcpp::List getgrid(std::shared_ptr<page> p)
     }
     polygonNumber++;
   }
+  p->clearFontMap();
   Rcpp::DataFrame db =  Rcpp::DataFrame::create(
                         Rcpp::Named("text") = std::move(glyph),
                         Rcpp::Named("left") = std::move(left),
@@ -220,11 +220,8 @@ Rcpp::List pdfpage(const std::string& s, int pagenum, bool g)
   if(pagenum < 1) Rcpp::stop("Invalid page number");
   std::shared_ptr<document> myfile = std::make_shared<document>(s);
   std::shared_ptr<page> p = std::make_shared<page>(myfile, pagenum - 1);
-  Rcpp::List res;
-  if(!g) res = getgrid(p);
-  else res = getatomic(p);
-  p->clearFontMap();
-  return res;
+  if(!g) return getgrid(p);
+  else return getatomic(p);
 }
 
 //---------------------------------------------------------------------------//
@@ -245,7 +242,8 @@ Rcpp::List pdfpageraw(const std::vector<uint8_t>& rawfile, int pagenum, bool g)
 
 Rcpp::DataFrame pdfdoc_common(std::shared_ptr<document> myfile)
 {
-  size_t npages = myfile->pagecount();
+  auto pagenumbers = myfile->pagenums();
+  auto npages = pagenumbers.size();
   std::vector<float> left, right, size, bottom;
   std::vector<std::string> glyph, font;
   std::vector<int> pagenums;
@@ -359,13 +357,14 @@ Rcpp::DataFrame pdfboxesString(const std::string& s, int pagenum)
   return pdfboxescommon(myfile, pagenum - 1);
 }
 
+//---------------------------------------------------------------------------//
+
 Rcpp::DataFrame pdfboxesRaw(const std::vector<uint8_t>& s, int pagenum)
 {
   if(pagenum < 1) Rcpp::stop("Invalid page number");
   std::shared_ptr<document> myfile = std::make_shared<document>(s);
   return pdfboxescommon(myfile, pagenum - 1);
 }
-
 
 //---------------------------------------------------------------------------//
 

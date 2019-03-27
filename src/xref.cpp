@@ -79,6 +79,7 @@ class xrefstream
 
 xref::xref(shared_ptr<const std::string> s) :  fs(s), encrypted(false)
 {
+  //PROFC_NODE("Xref creation");
   locateXrefs();           // find all xrefs
   xrefstrings();           // get the strings containing all xrefs
   get_crypto();          // get the file key, needed for decryption of streams
@@ -192,7 +193,7 @@ void xref::xrefFromString(std::string& xstr)
   // This loop starts on the second row of the table. Even numbers are the
   // byte offsets and odd numbers are the in_use numbers
   int bytestore = 0;
-  for(size_t i = 2; i < allints.size(); i++)
+  for(size_t i = 2; i < allints.size(); ++i)
   {
     if(i % 2 == 0)
       bytestore = allints[i]; // store byte offsets
@@ -381,12 +382,12 @@ void xrefstream::getIndex()
   {
     int firstObject = 0;
     // Loop to expand the shorthand list of objects into a vector
-    for(size_t i = 0; i < indexEntries.size(); i++)
+    for(size_t i = 0; i < indexEntries.size(); ++i)
     {   // even indices represent the first object being described in a group
       if(i % 2 == 0) firstObject = indexEntries[i];
       else // odd indices are the number of objects present
         // This subloop just adds sequentially to the first object in the group
-        for(auto j = 0; j < indexEntries[i]; j++)
+        for(auto j = 0; j < indexEntries[i]; ++j)
           objectNumbers.emplace_back(firstObject + j);
     }
   }
@@ -429,7 +430,7 @@ void xrefstream::getRawMatrix()
   int nrows = intstrm.size() / ncols; // get number of rows
   if ((size_t)(nrows * ncols) != intstrm.size()) // ensure rectangular table
     throw runtime_error("Unmatched row and column numbers");
-  for(int i = 0; i < nrows; i++) // now fill the raw matrix with stream data
+  for(int i = 0; i < nrows; ++i) // now fill the raw matrix with stream data
     rawMatrix.emplace_back(intstrm.begin() + ncols * i,
                            intstrm.begin() + ncols * (i + 1));
 }
@@ -441,8 +442,8 @@ void xrefstream::getRawMatrix()
 
 void xrefstream::diffup()
 {
-  for(size_t i = 1; i < rawMatrix.size(); i++ )          // for each row...
-    for(size_t j = 0; j < rawMatrix.at(i).size(); j++)   // take each entry...
+  for(size_t i = 1; i < rawMatrix.size(); ++i )          // for each row...
+    for(size_t j = 0; j < rawMatrix.at(i).size(); ++j)   // take each entry...
       rawMatrix.at(i).at(j) += rawMatrix.at(i - 1).at(j);// & add the one above
 }
 
@@ -451,7 +452,7 @@ void xrefstream::diffup()
 
 void xrefstream::modulotranspose()
 {
-  for(size_t i = 0; i < rawMatrix.at(0).size(); i++)  // for each row...
+  for(size_t i = 0; i < rawMatrix.at(0).size(); ++i)  // for each row...
   {
     std::vector<int> tempcol;   // create a new column vector
      // then for each entry in the row make it modulo 256 and push to new column
@@ -479,7 +480,7 @@ void xrefstream::expandbytes()
     columnConst.insert(columnConst.end(), byteVals.end() - i, byteVals.end());
 
   // now multiply the entries cell-by-cell
-  for(size_t i = 0; i < finalArray.size(); i++)
+  for(size_t i = 0; i < finalArray.size(); ++i)
     for(auto &j : finalArray.at(i))
       j *= columnConst.at(i);
 }
