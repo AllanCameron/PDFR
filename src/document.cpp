@@ -68,7 +68,6 @@ void document::buildDoc()
   Xref = make_shared<const xref>(make_shared<string>(filestring));
   getCatalog();             // Gets the catalog dictionary
   getPageDir();             // Gets the /Pages dictionary
-  getPageHeaders();         // Finds all descendant leaf nodes of /Pages
 }
 
 /*---------------------------------------------------------------------------*/
@@ -131,8 +130,14 @@ void document::getPageDir()
   int pagesobject = catalog.getRefs("/Pages")[0];
 
   // Now fetch that object and store it
-  root = new tree_node<int>(pagesobject);
   pagedir = getobject(pagesobject)->getDict();
+    // Ensure /Pages has /kids entry
+  if (!pagedir.hasRefs("/Kids"))
+    throw runtime_error("No /Kids entry in /Pages dictionary.");
+  shared_ptr<tree_node<int>> root = make_shared<tree_node<int>>(pagesobject);
+  // use expandKids() to get page header object numbers
+  expandKids(pagedir.getRefs("/Kids"), root);
+  pageheaders = root->getLeafs();
 }
 
 /*---------------------------------------------------------------------------*/
@@ -155,7 +160,8 @@ void document::getPageDir()
 // promising, but it is likely to be complex, and it is not clear that it would
 // lead to a major speedup. Getting an object at present takes about 36us.
 
-void document::expandKids(const vector<int>& obs, tree_node<int>* tree)
+void document::expandKids(const vector<int>& obs,
+                          shared_ptr<tree_node<int>> tree)
 {
   // This function is only called from a single point that is already range
   // checked, so does not need error checked.
@@ -170,22 +176,6 @@ void document::expandKids(const vector<int>& obs, tree_node<int>* tree)
     }
     // Otherwise it's a leaf node. Move on to the next node.
   }
-}
-
-/*---------------------------------------------------------------------------*/
-// In order to construct the document class, we need to build its vector of page
-// header object. This simply uses the expandKids algorithm to get all
-// the leaf nodes from the root /Pages dictionary. It stores the results as
-// object indices to save memory and copying.
-
-void document::getPageHeaders()
-{
-  // Ensure /Pages has /kids entry
-  if (!pagedir.hasRefs("/Kids"))
-    throw runtime_error("No /Kids entry in /Pages dictionary.");
-  // use expandKids() to get page header object numbers
-  expandKids(pagedir.getRefs("/Kids"), root);
-  pageheaders = root->getLeafs();
 }
 
 /*---------------------------------------------------------------------------*/

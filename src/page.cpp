@@ -77,16 +77,16 @@ void page::boxes()
 
 void page::getHeader()
 {
-  // create an error message in case of missing page
-  std::string E = "No header found for page ";
-  E += std::to_string(pagenumber);
-
   // uses public member of document class to get the appropriate header
   header = d->pageHeader(pagenumber);
-
   // if the header is not of /type /page, throw an error
-  if (!header.has("/Type")) throw runtime_error(E);
-  if(header.get("/Type") != "/Page") throw runtime_error(E);
+  if (header.get("/Type") != "/Page")
+  {
+    // create an error message in case of missing page
+    std::string E = "No header found for page ";
+    E += std::to_string(pagenumber);
+    throw runtime_error(E);
+  }
 }
 
 /*--------------------------------------------------------------------------*/
@@ -143,21 +143,17 @@ void page::getFonts()
 
 void page::getContents()
 {
-  std::vector<int> cts = header.getRefs("/Contents"); // get content refs
-  if (!cts.empty()) // If the contents are empty, the page string will be empty
-  {                 // - though this is not necessarily an error
      // get all leaf nodes of the contents tree using expandContents()
-    vector<int> contents = expandContents(cts);
+    auto root = make_shared<tree_node<int>>(0);
+    // use expandKids() to get page header object numbers
+    expandContents(header.getRefs("/Contents"), root);
+    auto contents = root->getLeafs();
     // get the contents from each object stream and paste them at the bottom
     // of the pagestring with a line break after each one
     contentstring.reserve(35000);
     for (auto m : contents)
-    {
-      contentstring += d->getobject(m)->getStream();
-      contentstring += std::string("\n");
-    }
+      contentstring += d->getobject(m)->getStream() + std::string("\n");
     contentstring.shrink_to_fit();
-  }
 }
 
 /*---------------------------------------------------------------------------*/
@@ -198,28 +194,19 @@ void page::parseXObjStream()
 // but it is possible to have nested content trees. In any case we only want
 // the leaves of the content tree, which are found by this algorithm
 
-vector <int> page::expandContents(vector<int> objnums)
+void page::expandContents(vector<int> obs,
+                                  shared_ptr<tree_node<int>> tree)
 {
-  if(objnums.empty()) return objnums; // no contents - nothing to do!
-  size_t i = 0;
-  vector<int> res; // container for results
-  while (i < objnums.size())
-  {
-    shared_ptr<object_class> o = d->getobject(objnums[i]);
-    if (o->getDict().hasRefs("/Contents"))
+  tree->add_kids(obs); // create new children tree nodes with this one as parent
+  auto kidnodes = tree->getkids(); // get a vector of pointers to the new nodes
+  for(auto& i : kidnodes)  // now for each...
+  {                        // get a vector of ints for its kid nodes
+    vector<int> nodes = d->getobject(i->get())->getDict().getRefs("/Contents");
+    if (!nodes.empty())
     {
-      vector<int> newnodes = o->getDict().getRefs("/Contents"); // store refs
-      objnums.erase(objnums.begin() + i); // delete parent node
-      // write new nodes
-      objnums.insert(objnums.begin() + i, newnodes.begin(), newnodes.end());
-    }
-    else // this is a leaf node - store it and move to next node
-    {
-      res.push_back(objnums[i]);
-      ++i;
+      expandContents(nodes, i); // if it has kids, use recursion to get them
     }
   }
-  return res;
 }
 
 /*--------------------------------------------------------------------------*/
@@ -271,11 +258,12 @@ shared_ptr<string> page::getXobject(const string& objID)
 shared_ptr<font> page::getFont(const string& fontID)
 {
   // If no fonts on the page, throw an error
-  if(fontmap.size() == 0) throw runtime_error("No fonts available for page");
+  if(fontmap.empty()) throw runtime_error("No fonts available for page");
   // If we can't find a specified font, return the first font in the map
-  if(fontmap.find(fontID) == fontmap.end()) return (fontmap.begin()->second);
+  auto f = fontmap.find(fontID);
+  if(f == fontmap.end()) return (fontmap.begin()->second);
   // Otherwise we're all good and return the requested font
-  return (fontmap[fontID]);
+  return f->second;
 }
 
 /*--------------------------------------------------------------------------*/

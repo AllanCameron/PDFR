@@ -79,6 +79,8 @@ class font;
 
 class document
 {
+  using Node = std::shared_ptr<tree_node<int>>;
+
 public:
   // constructors
   document(const std::string& filename);          // create doc from filepath
@@ -93,7 +95,6 @@ public:
 
 private:
   // private data members
-  tree_node<int>* root;
   std::string file;                   // Path used to create file (if used)
   const std::string filestring;       // Full contents of file
   std::shared_ptr<const xref> Xref;   // Contains the xref object for navigation
@@ -112,9 +113,8 @@ private:
   void getCatalog();    // finds and stores the catalog dictionary
   void getPageDir();    // finds and stores the /Pages dictionary
   void buildDoc();      // the constructors use this as a common pathway
-  void getPageHeaders();// finds and stores all /Page dictionaries in document
-  void expandKids(const std::vector<int>&, tree_node<int>*); // descendants
-};                                                          // of /Pages object
+  void expandKids(const std::vector<int>&, Node); // descendants
+};                                                // of /Pages object
 
 //---------------------------------------------------------------------------//
 

@@ -230,8 +230,9 @@ Encoding::Encoding(const dictionary& fontdict, shared_ptr<document> doc):
 
 Unicode Encoding::Interpret(RawChar raw)
 {
-  if(EncodingMap.find(raw) != EncodingMap.end()) // non-inserting lookup
-    return EncodingMap[raw];  // found entry
+  auto found = EncodingMap.find(raw);
+  if(found != EncodingMap.end()) // non-inserting lookup
+    return found->second;  // found entry
   else
     return raw;               // no entry - have your char back untranslated
 }

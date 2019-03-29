@@ -103,7 +103,8 @@ private:
   void getContents();     // find content objects to Write contentstring
 
   // Gets the leaf nodes of a content tree
-  std::vector<int> expandContents(std::vector<int> objnums);
+  void expandContents(std::vector<int> obs,
+                      std::shared_ptr<tree_node<int>> tree);
 };
 
 //---------------------------------------------------------------------------//

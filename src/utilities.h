@@ -131,35 +131,36 @@ template <class T>
 class tree_node
 {
 public:
-  tree_node<T>(T o, tree_node<T>* par):parent(par), isLeaf(true), obj(o) {};
-  tree_node<T>(T o) : parent(nullptr),  isLeaf(true), obj(o){};
+  using Node = std::shared_ptr<tree_node<T>>;
+  tree_node<T>(T o, Node par):parent(par), isLeaf(true), obj(o) {};
+  tree_node<T>(T o) : parent(Node(nullptr)),  isLeaf(true), obj(o){};
   tree_node<T>(){};
-  ~tree_node<T>(){ parent = nullptr; for(auto& i : kids) delete i; }
 
   void add_kids(std::vector<T> obs)
   {
     isLeaf = false;
     for(auto i : obs)
-      kids.push_back(new tree_node<T>(i, this));
+      kids.push_back(std::make_shared<tree_node<T>>
+        (i, std::shared_ptr<tree_node<T>>(this)));
   };
 
   T get() const {return obj;}
 
-  tree_node<T>* top_node()
+  Node top_node()
   {
-    if(!parent) return this;
-    tree_node<T>* next_node_up = parent;
+    if(!parent) return Node(this);
+    Node next_node_up = parent;
     while(next_node_up->parent) next_node_up = next_node_up->parent;
     return next_node_up;
   }
 
-  std::vector<tree_node<T>*> getkids(){return kids;};
+  std::vector<Node> getkids(){return kids;};
 
   std::vector<T> getAncestors() const
   {
     std::vector<T> res {obj};
-    if(parent == nullptr) return res;
-    tree_node<T>* next_parent = parent;
+    if(!parent) return res;
+    Node next_parent = parent;
     while(next_parent)
     {
       res.push_back(next_parent->objnum);
@@ -202,9 +203,9 @@ public:
   }
 
 private:
-  tree_node<T>* parent;
+  Node parent;
   bool isLeaf;
-  std::vector<tree_node<T>*> kids;
+  std::vector<Node> kids;
   T obj;
 };
 
