@@ -153,8 +153,11 @@ vector<uint8_t> bytesFromArray(const string& s)
   vector<uint8_t> resvec, tmpvec; // vectors to store results
   if(s.empty()) return resvec; // if string is empty, return empty vector;
   for(auto a : s) // convert hex characters to numerical values using hexmap
-    if(hexmap.find(a) != hexmap.end())
-      tmpvec.push_back(hexmap[a]);
+  {
+    auto& b = hexmap.find(a);
+    if(b != hexmap.end())
+      tmpvec.push_back(b->second);
+  }
   if(tmpvec.empty()) return resvec; // No hex characters - return empty vector;
   if(tmpvec.size() % 2 == 1) tmpvec.push_back(0); // No odd-length strings!
   for(size_t i = 0; i < tmpvec.size(); i += 2)

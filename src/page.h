@@ -66,8 +66,9 @@ class page
 public:
   // constructor
   page(std::shared_ptr<document>, int this_is_the_page_number);
+  page(page&& p) noexcept {*this = std::move(p);}
   page& operator=(const page& p){ *this = p; return *this; }
-  page& operator=(page&& p){ *this = std::move(p); return *this;}
+  page& operator=(page&& p) noexcept { *this = std::move(p); return *this;}
 
   // public methods
   std::vector<std::string> getFontNames();  // Returns PostScript font names

@@ -89,6 +89,7 @@ letter_grouper::letter_grouper(textrows&& GS) :
 
 void letter_grouper::makegrid()
 {
+  //PROFC_NODE("makegrid()");
   float dx = (minbox[2] - minbox[0])/16; // calculate width of cells
   float dy = (minbox[3] - minbox[1])/16; // calculate height of cells
   for(auto& i : gslist) // for each glyph...
@@ -106,6 +107,7 @@ void letter_grouper::makegrid()
 
 textrows letter_grouper::output()
 {
+  //PROFC_NODE("output()");
   // This block fills "allRows" by taking the ouput from letter_grouper and
   // placing each word with its associated size and position (a textrow) from it
   // into a vector
@@ -130,12 +132,13 @@ textrows letter_grouper::output()
 
 void letter_grouper::compareCells()
 {
+  //PROFC_NODE("comparecells()");
   for(uint8_t i = 0; i < 16; ++i) // for each of 16 columns of cells on page
   {
     for(uint8_t j = 0; j < 16; ++j) // for each cell in the column
     {
       uint8_t key = i | (j << 4);   // get the address of the cell
-      vector<text_ptr> maingroup = gridmap[key]; // get the cell's contents
+      vector<text_ptr>& maingroup = gridmap[key]; // get the cell's contents
       if(maingroup.empty()) continue;  // empty cell - nothing to be done
       for(auto& k : maingroup) // for each glyph in the cell
       {
@@ -143,9 +146,13 @@ void letter_grouper::compareCells()
         if(j < 15) matchRight(k, (i) | ((j + 1) << 4)); // and cell to North
         if(j > 0) matchRight(k, (i) | ((j - 1) << 4)); // and cell to South
         if(k->rightjoin.first != -1) continue; // If match, look no further
-        if(i < 15) matchRight(k, (i + 1) | (j << 4)); // else check to the East,
-        if(i < 15 && j < 15) matchRight(k, (i + 1) | ((j + 1) << 4)); // NE,
-        if(i < 15 && j > 0) matchRight(k, (i + 1) | ((j - 1) << 4)); // and SE
+
+        if(i < 15)
+        {
+          matchRight(k, (i + 1) | (j << 4)); // else check to the East,
+          if(j < 15) matchRight(k, (i + 1) | ((j + 1) << 4)); // NE,
+          if(j > 0) matchRight(k, (i + 1) | ((j - 1) << 4)); // and SE
+        }
       }
     }
   }

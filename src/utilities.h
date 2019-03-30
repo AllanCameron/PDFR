@@ -49,6 +49,7 @@
 #include<unordered_map>
 #include<numeric>
 #include<algorithm>
+#include<iostream>
 #include "debugtools.h"
 
 /* The characters in pdf strings are most portably interpreted as uint16_t.
@@ -132,6 +133,7 @@ class tree_node
 {
 public:
   using Node = std::shared_ptr<tree_node<T>>;
+
   tree_node<T>(T o, Node par):parent(par), isLeaf(true), obj(o) {};
   tree_node<T>(T o) : parent(Node(nullptr)),  isLeaf(true), obj(o){};
   tree_node<T>(){};

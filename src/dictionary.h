@@ -76,8 +76,9 @@ class dictionary
   dictionary(std::shared_ptr<const std::string>, size_t); // dict from pos + str
   dictionary(std::unordered_map<std::string, std::string>); // create from map
   dictionary(const dictionary& d): Map(d.Map){};
-  dictionary(dictionary&& d){std::swap(this->Map, d.Map);};
-  dictionary& operator=(dictionary&& d){std::swap(Map, d.Map); return *this;}
+  dictionary(dictionary&& d) noexcept {std::swap(this->Map, d.Map);};
+  dictionary& operator=(dictionary&& d) noexcept {
+    std::swap(Map, d.Map); return *this;}
   dictionary(); // empty dictionary
   dictionary& operator=(const dictionary& d){Map = d.Map; return *this;}
 

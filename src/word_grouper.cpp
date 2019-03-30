@@ -79,16 +79,14 @@ GSoutput word_grouper::out()
 void word_grouper::tabulate(const vector<float>& a,
                             unordered_map<int, size_t>& b)
 {
-  for (auto i : a) // for each member of supplied vector
+  for (const auto& i : a) // for each member of supplied vector
   {
-    int j = 10 * i;   // multiply by 10
-    if(b.find(j) == b.end())
-      b[j] = 1; // if that value has not already been found, add it with count 1
-    else b[j]++; // otherwise increment its count
+    auto k = b.insert(std::pair<int, size_t>((int) 10 * i, 1));
+    if(!k.second) k.first->second++;
   }
   for(auto i = b.begin(); i != b.end(); ) // for each key in the resulting table
   {
-    if(i->second < EDGECOUNT) // if its value is below the number needed for a column
+    if(i->second < EDGECOUNT) // if value is below the number needed for column
       b.erase(i++) ;// delete it
     else ++i;
   }
@@ -146,8 +144,8 @@ void word_grouper::findRightMatch()
   {
     auto& i = allRows._data[k];
     if( i->consumed) continue; // check elligible
-
-    for(int m = 0; m < (int) allRows._data.size(); m++) // if so, look at every other word for a match
+// if so, look at every other word for a match
+    for(int m = 0; m < (int) allRows._data.size(); m++)
     {
       if(m == k) continue;
       auto& j = allRows._data[m];
@@ -158,7 +156,7 @@ void word_grouper::findRightMatch()
       if(j->left - i->right > 2 * i->size) continue; // ignore if too far right
       if((j->isLeftEdge || j->isMid) && (j->left - i->right > 0.51 * i->size))
         continue; // ignore if not elligble for join
-      if((i->isRightEdge || i->isMid ) &&  (j->left - i->right > 0.51 * i->size))
+      if((i->isRightEdge || i->isMid ) && (j->left - i->right > 0.51 * i->size))
         continue;
       // The element is elligible for joining
       i->glyph.push_back(0x0020); // add a space

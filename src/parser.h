@@ -166,9 +166,15 @@ struct textrows
     _data(t), minbox(m), data_size(t.size()) {}
   textrows(const textrows& t):
     _data(t._data), minbox(t.minbox), data_size(t._data.size()) {}
-  textrows(textrows&& t):
+  textrows(textrows&& t) noexcept :
     _data(std::move(t._data)), minbox(std::move(t.minbox)),
     data_size(_data.size()) {}
+  textrows& operator=(textrows&& t) noexcept
+  {
+    std::swap(this->_data, t._data);
+    std::swap(this->minbox, t.minbox);
+    return *this;
+  }
   textrows& operator=(const textrows& t)
   {
     this->_data = t._data;
@@ -210,7 +216,7 @@ public:
   // constructor
   parser(std::shared_ptr<page>);
   parser(const parser& prs): db(prs.db){}
-  parser(parser&& prs): db(std::move(prs.db)){  }
+  parser(parser&& prs) noexcept : db(std::move(prs.db)){  }
   parser& operator=(const parser& prs){
     this->db = std::move(prs.db);
     return *this;
