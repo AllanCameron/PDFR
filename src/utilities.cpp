@@ -154,7 +154,7 @@ vector<uint8_t> bytesFromArray(const string& s)
   if(s.empty()) return resvec; // if string is empty, return empty vector;
   for(auto a : s) // convert hex characters to numerical values using hexmap
   {
-    auto& b = hexmap.find(a);
+    const auto& b = hexmap.find(a);
     if(b != hexmap.end())
       tmpvec.push_back(b->second);
   }

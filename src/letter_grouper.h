@@ -52,10 +52,12 @@
 
 struct reading_order
 {
-  inline bool operator() (text_ptr row1, text_ptr row2)
+  bool operator() (const text_ptr& row1, const text_ptr& row2) const
   {
-     if (row1->bottom > row2->bottom) return true;
-     if (row1->bottom == row2->bottom && row1->left < row2->left) return true;
+     if (row1->bottom > row2->bottom )
+       return true;
+     if (row1->bottom == row2->bottom && row1->left < row2->left)
+       return true;
      return false;
   }
 };
