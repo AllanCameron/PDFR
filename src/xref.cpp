@@ -43,18 +43,16 @@ using namespace std;
 class xrefstream
 {
   friend class xref;  // This class is only constructible from xref...
-  shared_ptr<xref> XR;  // ...to which it needs a pointer
-  dictionary dict,    // The dictionary of the object containing the xrefstream
-             subdict; // The decode parameters dictionary, an entry in dict
-  vector<vector<int>> rawMatrix,  // Holds the raw data in r x c vecs
-                      finalArray, // transposed, modulo 256 table
-                      result;     // The main results table
-  vector<int> arrayWidths,   // bytes per column from /w
-              objectNumbers; // vector of object numbers.
-  int ncols,       // columns in table
-      nrows,       // rows in table
-      predictor,   // predictor number - specifies decoding algorithm
-      objstart;    // byte offset of the xrefstream's containing object
+  shared_ptr<xref> m_XR;  // ...to which it needs a pointer
+  dictionary m_dict;  // The dictionary of the object containing the xrefstream
+  vector<vector<int>> m_rawMatrix,  // Holds the raw data in r x c vecs
+                      m_finalArray, // transposed, modulo 256 table
+                      m_result;     // The main results table
+  vector<int> m_arrayWidths,   // bytes per column from /w
+              m_objectNumbers; // vector of object numbers.
+  int m_ncols,       // columns in table
+      m_predictor,   // predictor number - specifies decoding algorithm
+      m_objstart;    // byte offset of the xrefstream's containing object
 
   void getIndex();          // reads the index entry of main dict
   void getParms();          // reads the PNG decoding parameters
@@ -66,7 +64,7 @@ class xrefstream
   void numberRows();        // merge object numbers with data table
 
   // private constructor
-  xrefstream(shared_ptr<xref>, int objstart);
+  xrefstream(shared_ptr<xref>, int);
 
   // getter of final result
   vector<vector<int>> table();
@@ -133,13 +131,16 @@ void xref::xrefstrings()
   for(auto i : Xreflocations) // get a string from each xref location or die
   {
     int len = fs->find("startxref", i) - i; // length of xref in chars
+
     if (len <= 0) // Throw error if no xref found
     {
       throw std::runtime_error("No object found at location");
     }
     string&& fullxref = fs->substr(i, len); // extract the xref string
+
     // Carve out the actual string
     string xrefstring = carveout(move(fullxref), "xref", "trailer");
+
     // if it contains a dictionary, process as stream, otherwise process string
     if(xrefstring.substr(0, 15).find("<<", 0) != string::npos)
     {
@@ -161,11 +162,13 @@ void xref::xrefFromStream(int xrefloc)
 {
   // Gets the table from the stream
   auto xreftable = xrefstream(make_shared<xref>(*this), xrefloc).table();
+
   // Throws if something's broken
   if(xreftable.empty())
   {
     throw std::runtime_error("xreftable empty");
   }
+
   // Fills the main data map from the table ------------------//
   for (size_t j = 0; j < xreftable[0].size(); j++)            //
   {                                                           //
@@ -218,9 +221,12 @@ void xref::xrefFromString(std::string& xstr)
       bytestore = allints[i]; // store byte offsets
     }
     else
-
+    {
       if(allints[i] < 65535) // indicates object in use
+      {
         xreftab[startingobj + (i / 2) - 1] = xrefrow {bytestore, 0, 0};
+      }
+    }
   }
 }
 
@@ -362,7 +368,7 @@ void xref::get_crypto()
 
 std::vector<std::vector<int>> xrefstream::table()
 {
-  return result;
+  return m_result;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -380,28 +386,20 @@ std::shared_ptr<const std::string> xref::file() const
 // hairball function being created that is difficult to debug.
 
 xrefstream::xrefstream(shared_ptr<xref> Xref, int starts) :
-  XR(Xref), ncols(0), predictor(0), objstart(starts)
+  m_XR(Xref), m_ncols(0), m_predictor(0), m_objstart(starts)
 {
-  dict = dictionary(XR->file(), objstart);    // get the xrefstream dict
+  m_dict = dictionary(m_XR->file(), m_objstart);    // get the xrefstream dict
 
     // If there is no /W entry, we don't know how to interpret the stream.
-  if(!dict.hasInts("/W"))
+  if(!m_dict.hasInts("/W"))
   {
     throw std::runtime_error("Malformed xref stream");
   }
-
-  string decodestring = "<<>>";
-  if(dict.has("/DecodeParms"))
-  {
-    decodestring = dict.get("/DecodeParms"); // string for subdict
-  }
-
-  subdict = dictionary(make_shared<string>(decodestring));// get param (subdict)
   getIndex(); // read Index entry of dict so we know which objects are in stream
   getParms(); // read the PNG decoding parameters
   getRawMatrix(); // arrange the raw data in the stream into correct table form
 
-  if(predictor == 12)
+  if(m_predictor == 12)
   {
     diffup(); // Undiff the raw data
   }
@@ -430,13 +428,13 @@ xrefstream::xrefstream(shared_ptr<xref> Xref, int starts) :
 
 void xrefstream::getIndex()
 {
-  auto indexEntries = dict.getInts("/Index");  // Gets the numbers in the entry
+  auto indexEntries = m_dict.getInts("/Index"); // Gets the numbers in the entry
   if(!indexEntries.empty())
   {
     for(size_t i = 0; i < indexEntries.size(); i += 2)
     {   // even indices represent the first object being described in a group
-      objectNumbers.resize(indexEntries[i + 1]);
-      iota(objectNumbers.begin(), objectNumbers.end(), indexEntries[i]);
+      m_objectNumbers.resize(indexEntries[i + 1]);
+      iota(m_objectNumbers.begin(), m_objectNumbers.end(), indexEntries[i]);
     }
   }
 }
@@ -448,14 +446,23 @@ void xrefstream::getIndex()
 
 void xrefstream::getParms()
 {
+  string decodestring = "<<>>";
+
+  if(m_dict.has("/DecodeParms"))
+  {
+    decodestring = m_dict.get("/DecodeParms"); // string for subdict
+  }
+
+  dictionary subdict(make_shared<string>(decodestring));
+
   if(subdict.hasInts("/Columns"))
   {
-    ncols = subdict.getInts("/Columns")[0];
+    m_ncols = subdict.getInts("/Columns")[0];
   }
 
   if(subdict.hasInts("/Predictor"))
   {
-    predictor = subdict.getInts("/Predictor")[0];
+    m_predictor = subdict.getInts("/Predictor")[0];
   }
 }
 
@@ -465,11 +472,10 @@ void xrefstream::getParms()
 
 void xrefstream::getRawMatrix()
 {
-  auto sl = XR->getStreamLoc(objstart);// finds stream location
-  std::string SS = XR->file()->substr(sl[0], sl[1] - sl[0]); // get stream
-  dictionary dict = dictionary(XR->file(), objstart); // containing object
+  auto sl = m_XR->getStreamLoc(m_objstart);// finds stream location
+  std::string SS = m_XR->file()->substr(sl[0], sl[1] - sl[0]); // get stream
 
-  if(dict.get("/Filter").find("/FlateDecode", 0) != string::npos)
+  if(m_dict.get("/Filter").find("/FlateDecode", 0) != string::npos)
   {
     FlateDecode(SS); // applies decompression to stream if needed
   }
@@ -477,44 +483,43 @@ void xrefstream::getRawMatrix()
   std::vector<uint8_t> conv(SS.begin(), SS.end());  // convert string to bytes..
   std::vector<int> intstrm(conv.begin(), conv.end()); // and bytes to ints
 
-
   // read the /W entry to get the width in bytes of each column in the table
   // check the widths for any zero values and skip them if present
-  for (auto&& i : dict.getInts("/W"))
+  for (auto&& i : m_dict.getInts("/W"))
   {
     if (i > 0)
     {
-      arrayWidths.push_back(i);
+      m_arrayWidths.push_back(i);
     }
   }
 
   // if no record of column numbers, infer from number of /W entries >0
-  if(ncols == 0)
+  if(m_ncols == 0)
   {
-    ncols = arrayWidths.size();
+    m_ncols = m_arrayWidths.size();
   }
 
-  if(predictor > 9)
+  if(m_predictor > 9)
   {
-    ncols++; // Predictors above 10 require an extra column
+    m_ncols++; // Predictors above 10 require an extra column
   }
 
-  if(ncols == 0)
+  if(m_ncols == 0)
   {
     throw runtime_error("divide by zero error"); // sanity check
   }
 
-  int nrows = intstrm.size() / ncols; // get number of rows
+  int nrows = intstrm.size() / m_ncols; // get number of rows
 
-  if ((size_t)(nrows * ncols) != intstrm.size()) // ensure rectangular table
+  if ((size_t)(nrows * m_ncols) != intstrm.size()) // ensure rectangular table
   {
     throw runtime_error("Unmatched row and column numbers");
   }
 
   for(int i = 0; i < nrows; ++i) // now fill the raw matrix with stream data
   {
-    rawMatrix.emplace_back(intstrm.begin() + ncols * i,
-                           intstrm.begin() + ncols * (i + 1));
+    m_rawMatrix.emplace_back(intstrm.begin() + m_ncols * i,
+                             intstrm.begin() + m_ncols * (i + 1));
   }
 }
 
@@ -525,11 +530,13 @@ void xrefstream::getRawMatrix()
 
 void xrefstream::diffup()
 {
-  for(size_t i = 1; i < rawMatrix.size(); ++i )          // for each row...
+  // For each row
+  for(size_t i = 1; i < m_rawMatrix.size(); ++i )
   {
-    for(size_t j = 0; j < rawMatrix.at(i).size(); ++j)   // take each entry...
+    // Take each entry & add the one above
+    for(size_t j = 0; j < m_rawMatrix.at(i).size(); ++j)
     {
-      rawMatrix.at(i).at(j) += rawMatrix.at(i - 1).at(j);// & add the one above
+      m_rawMatrix.at(i).at(j) += m_rawMatrix.at(i - 1).at(j);
     }
   }
 }
@@ -539,19 +546,19 @@ void xrefstream::diffup()
 
 void xrefstream::modulotranspose()
 {
-  for(size_t i = 0; i < rawMatrix.at(0).size(); ++i)  // for each row...
+  for(size_t i = 0; i < m_rawMatrix.at(0).size(); ++i)  // for each row...
   {
     std::vector<int> tempcol;   // create a new column vector
-     // then for each entry in the row make it modulo 256 and push to new column
-    for(auto& j : rawMatrix)
+    // then for each entry in the row make it modulo 256 and push to new column
+    for(auto& j : m_rawMatrix)
     {
       tempcol.push_back(j.at(i) % 256);
     }
     // the new column is pushed to the final array unless it is the first
     // column (which is skipped when the predictor is > 9)
-    if(predictor < 10 || i > 0)
+    if(m_predictor < 10 || i > 0)
     {
-      finalArray.push_back(tempcol);
+      m_finalArray.push_back(tempcol);
     }
   }
 }
@@ -564,12 +571,12 @@ void xrefstream::expandbytes()
 {
   // Calculate the byte shift for each column (with 1:1 correspondence);
   int ncol = 0;
-  for(auto i : arrayWidths)
+  for(auto i : m_arrayWidths)
   {
     while(i)
     {
       int shift = 8 * (i-- - 1);
-      for(auto &j : finalArray.at(ncol))
+      for(auto &j : m_finalArray.at(ncol))
       {
         j <<= shift;
       }
@@ -585,27 +592,31 @@ void xrefstream::expandbytes()
 void xrefstream::mergecolumns()
 {
   int cumsum = 0;
-  for(auto i : arrayWidths) // for each of the final columns
-  { // take the next column from the unmerged array
-    std::vector<int> newcolumn = finalArray.at(cumsum);
-    if(i > 1) // if the final column is more than 1 byte wide...
+
+  // For each of the final columns
+  for(auto i : m_arrayWidths)
+  {
+    // take the next column from the unmerged array
+    std::vector<int> newcolumn = m_finalArray.at(cumsum);
+
+    // if the final column is more than 1 byte wide
+    if(i > 1)
     {
-      for(int j = 1; j < i; j++) // for each width value above 1
+      // for each width value above 1
+      for(int j = 1; j < i; j++)
       {
-        auto& finCol = finalArray.at(cumsum + j); // take another column
-        for(size_t k = 0; k < finCol.size(); k++) // add it to the previous one
-        {
-          newcolumn.at(k) += finCol.at(k);
-        }
+        std::transform (newcolumn.begin(), newcolumn.end(),
+                        m_finalArray[cumsum + j].begin(),
+                        newcolumn.begin(), std::plus<int>());
       }
     }
-    result.push_back(newcolumn); // This is a final column - push it to result
+    m_result.push_back(newcolumn); // This is a final column - push it to result
     cumsum += i;     // move to the next column in the final result
   }
 
-  if(result.size() == 2) // if there are only two columns add a zero filled col
+  if(m_result.size() == 2) // if there are only 2 columns add a zero filled col
   {
-    result.emplace_back(std::vector<int>(result.at(0).size(), 0));
+    m_result.emplace_back(std::vector<int>(m_result.at(0).size(), 0));
   }
 }
 
@@ -615,12 +626,12 @@ void xrefstream::mergecolumns()
 
 void xrefstream::numberRows()
 {
-  if(objectNumbers.empty()) // if no index entries, assume start at object 0
+  if(m_objectNumbers.empty()) // if no index entries, assume start at object 0
   {// create extra column numbered sequentially from first of objectNumbers
-    objectNumbers.resize(result[0].size());
-    iota(objectNumbers.begin(), objectNumbers.end(), 0);
+    m_objectNumbers.resize(m_result[0].size());
+    iota(m_objectNumbers.begin(), m_objectNumbers.end(), 0);
   }
-  result.push_back(objectNumbers);
+  m_result.push_back(m_objectNumbers);
 }
 
 
