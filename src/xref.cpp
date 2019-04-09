@@ -42,45 +42,41 @@ using namespace std;
 
 class xrefstream
 {
-  friend class xref;  // This class is only constructible from xref...
-  shared_ptr<xref> m_XR;  // ...to which it needs a pointer
-  dictionary m_dict;  // The dictionary of the object containing the xrefstream
-  vector<vector<int>> m_rawMatrix,  // Holds the raw data in r x c vecs
-                      m_finalArray, // transposed, modulo 256 table
-                      m_result;     // The main results table
-  vector<int> m_arrayWidths,   // bytes per column from /w
-              m_objectNumbers; // vector of object numbers.
-  int m_ncols,       // columns in table
-      m_predictor,   // predictor number - specifies decoding algorithm
-      m_objstart;    // byte offset of the xrefstream's containing object
+  friend class xref;                // This class is only constructible via xref
 
-  void getIndex();          // reads the index entry of main dict
-  void getParms();          // reads the PNG decoding parameters
-  void getRawMatrix();      // reads the stream into appropriately-sized table
-  void diffup();            // un-diffs the table
-  void modulotranspose();   // transposes the table and makes entries modulo 256
-  void expandbytes();       // multiply bytes by correct powers of 256
-  void mergecolumns();      // add adjacent colums as guided by parameters
-  void numberRows();        // merge object numbers with data table
+  shared_ptr<xref>    m_XR;         // Pointer to creating xref
+  vector<vector<int>> m_rawMatrix,  // Holds the raw data in (row x column) vecs
+                      m_finalArray, // Transposed, modulo 256 table
+                      m_result;     // The main results table for export
+  vector<int> m_arrayWidths,        // Bytes per column from /w entry
+              m_objectNumbers;      // vector of object numbers inside stream.
+  int         m_ncols,              // Number of Columns in table
+              m_predictor,          // Specifies decoding algorithm
+              m_objstart;           // Byte offset of the xrefstream's container
+  dictionary  m_dict;               // Dictionary of object containing stream
 
-  // private constructor
-  xrefstream(shared_ptr<xref>, int);
-
-  // getter of final result
-  vector<vector<int>> table();
+  xrefstream(shared_ptr<xref>, int);// private constructor
+  void getIndex();                  // Reads the index entry of main dict
+  void getParms();                  // Reads the PNG decoding parameters
+  void getRawMatrix();              // Reads the stream into data table
+  void diffup();                    // Un-diffs the table
+  void modulotranspose();           // Transposes table and makes it modulo 256
+  void expandbytes();               // Multiply bytes by correct powers of 256
+  void mergecolumns();              // Adds adjacent columns as per parameters
+  void numberRows();                // Merges object numbers with data table
+  vector<vector<int>> table();      // Getter for final result
 };
 
 /*---------------------------------------------------------------------------*/
-// the xref creator function. It takes the entire file contents as a string
+// The xref constructor. It takes the entire file contents as a string
 // then sequentially runs the steps in creation of an xref master map
 
 xref::xref(shared_ptr<const std::string> s) :  fs(s), encrypted(false)
 {
-  //PROFC_NODE("Xref creation");
-  locateXrefs();           // find all xrefs
-  xrefstrings();           // get the strings containing all xrefs
-  get_crypto();          // get the file key, needed for decryption of streams
-  Xreflocations.clear();   //-----//
+  locateXrefs();           // Find all xrefs
+  xrefstrings();           // Get the strings containing all xrefs
+  get_crypto();            // Get the file key, needed for decryption of streams
+  Xreflocations.clear();   // Clear the large string vector to save memory
 }
 
 /*---------------------------------------------------------------------------*/
@@ -97,24 +93,28 @@ xref::xref(shared_ptr<const std::string> s) :  fs(s), encrypted(false)
 
 void xref::locateXrefs()
 {
-  // get last 50 chars of the file
-  string&& partial = fs->substr(fs->size() - 50, 50);
-  // use carveout() from utilities.h to find the first xref offset
-  string&& xrefstring =  carveout(partial, "startxref", "%%EOF");
-  // convert the number string to an int
+  // Get last 50 chars of the file
+  string&& last_50_chars = fs->substr(fs->size() - 50, 50);
+
+  // Use carveout() from utilities.h to find the first xref offset
+  string&& xrefstring =  carveout(last_50_chars, "startxref", "%%EOF");
+
+  // Convert the number string to an int
   Xreflocations.emplace_back(stoi(xrefstring));
 
+  // If no xref location is found, then we're stuck. Throw an error.
   if(Xreflocations.empty())
   {
     throw runtime_error("No xref entry found");
   }
 
-  // the first dictionary found after any xref offset is always a trailer
+  // The first dictionary found after any xref offset is always a trailer
   // dictionary, though sometimes it doubles as an xrefstream dictionary.
-  // We make the first one found the canonical trailer dictionary
+  // We make this first one found the canonical trailer dictionary
   TrailerDictionary = dictionary(fs, Xreflocations[0]);
+
+  // Now we follow the pointers to all xrefs sequentially.
   dictionary tempdict = TrailerDictionary;
-  // Follow pointers to all xrefs sequentially.
   while (tempdict.hasInts("/Prev"))
   {
     Xreflocations.emplace_back(tempdict.getInts("/Prev")[0]);
@@ -128,20 +128,25 @@ void xref::locateXrefs()
 
 void xref::xrefstrings()
 {
-  for(auto i : Xreflocations) // get a string from each xref location or die
+  // Get a string from each xref location or throw exception
+  for(auto i : Xreflocations)
   {
-    int len = fs->find("startxref", i) - i; // length of xref in chars
+    // Find the length of xref in chars
+    int len = fs->find("startxref", i) - i;
 
-    if (len <= 0) // Throw error if no xref found
+    // Throw error if no xref found
+    if (len <= 0)
     {
       throw std::runtime_error("No object found at location");
     }
-    string&& fullxref = fs->substr(i, len); // extract the xref string
+
+    // Extract the xref string
+    string&& fullxref = fs->substr(i, len);
 
     // Carve out the actual string
     string xrefstring = carveout(move(fullxref), "xref", "trailer");
 
-    // if it contains a dictionary, process as stream, otherwise process string
+    // If it contains a dictionary, process as a stream, otherwise as a string
     if(xrefstring.substr(0, 15).find("<<", 0) != string::npos)
     {
       xrefFromStream(i);
@@ -160,16 +165,16 @@ void xref::xrefstrings()
 
 void xref::xrefFromStream(int xrefloc)
 {
-  // Gets the table from the stream
+  // Calls xrefstream constructor to make the data table from the stream
   auto xreftable = xrefstream(make_shared<xref>(*this), xrefloc).table();
 
-  // Throws if something's broken
+  // Throws if xrefstream returns an empty table
   if(xreftable.empty())
   {
     throw std::runtime_error("xreftable empty");
   }
 
-  // Fills the main data map from the table ------------------//
+  // Fill the xref data map from the table -------------------//
   for (size_t j = 0; j < xreftable[0].size(); j++)            //
   {                                                           //
     int& objnum = xreftable[3][j];                            //
@@ -198,16 +203,10 @@ void xref::xrefFromStream(int xrefloc)
 
 void xref::xrefFromString(std::string& xstr)
 {
-  std::vector<int> inuse, byteloc, objnumber;
-  std::vector<int> allints = getints(xstr); // use getints() from utilities
+  auto allints = getints(xstr);
 
-  if(allints.size() < 4)
-  {
-    return;                                 // valid xref has >= 4 ints in it
-  }
-  int startingobj = allints[0];             // the first object == first int
-
-  if(allints.size() % 2) // Number of ints must be even or the xref is malformed
+  // A valid xref has >= 4 ints in it and must have an even number of ints
+  if(allints.size() < 4 || allints.size() % 2 != 0)
   {
     throw runtime_error("Malformed xref");
   }
@@ -216,15 +215,16 @@ void xref::xrefFromString(std::string& xstr)
   // byte offsets and odd numbers are the in_use numbers
   for(int bytestore = 0, i = 2; i < (int) allints.size(); ++i)
   {
+    // Store byte offsets if the
     if(i % 2 == 0)
     {
-      bytestore = allints[i]; // store byte offsets
+      bytestore = allints[i];
     }
     else
     {
       if(allints[i] < 65535) // indicates object in use
       {
-        xreftab[startingobj + (i / 2) - 1] = xrefrow {bytestore, 0, 0};
+        xreftab[allints[0] + (i / 2) - 1] = xrefrow {bytestore, 0, 0};
       }
     }
   }
@@ -248,20 +248,22 @@ size_t xref::getStart(int objnum) const
 
 size_t xref::getEnd(int objnum) const
 {
+  auto obj_row = xreftab.find(objnum);
+
   // throw an error if objnum isn't a valid object
-  if(xreftab.find(objnum) == xreftab.end())
+  if(obj_row == xreftab.end())
   {
     throw std::runtime_error("Object does not exist");
   }
 
   // If the object is in an object stream, return 0;
-  if(xreftab.at(objnum).in_object)
+  if(obj_row->second.in_object)
   {
     return 0;
   }
 
   // else find the first match of "endobj" and return
-  return (int) fs->find("endobj", xreftab.at(objnum).startbyte);
+  return (int) fs->find("endobj", obj_row->second.startbyte);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -270,12 +272,13 @@ size_t xref::getEnd(int objnum) const
 
 size_t xref::inObject(int objnum) const
 {
-  if(xreftab.find(objnum) == xreftab.end())
+  auto obj_row = xreftab.find(objnum);
+  if(obj_row == xreftab.end())
   {
     throw std::runtime_error("Object does not exist");
   }
 
-  return (size_t) xreftab.at(objnum).in_object;
+  return (size_t) obj_row->second.in_object;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -284,6 +287,25 @@ size_t xref::inObject(int objnum) const
 std::vector<int> xref::getObjects() const
 {
   return getKeys(this->xreftab);
+}
+
+
+/*---------------------------------------------------------------------------*/
+
+int xref::streamLength(const dictionary& dict) const
+{
+  if(dict.hasRefs("/Length"))
+  {
+    int lengthob = dict.getRefs("/Length")[0]; // finds reference
+    size_t firstpos = getStart(lengthob);      // gets start of length obj
+    size_t len = fs->find("endobj", firstpos) - firstpos; // and its length
+    string objstr = fs->substr(firstpos, len); // from which we get a string
+    return getints(move(objstr)).back(); // from which we get a number
+  } // thankfully though most lengths are just direct ints
+  else
+  {
+    return dict.getInts("/Length")[0];
+  }
 }
 
 /*---------------------------------------------------------------------------*/
@@ -295,19 +317,7 @@ array<size_t, 2> xref::getStreamLoc(int objstart) const
   dictionary dict = dictionary(fs, objstart); // get the object dictionary
   if(dict.has("stream") && dict.has("/Length")) // only if stream exists...
   {
-    int streamlen;
-    if(dict.hasRefs("/Length")) // sometimes length is given as another object
-    {
-      int lengthob = dict.getRefs("/Length")[0]; // finds reference
-      size_t firstpos = getStart(lengthob);      // gets start of length obj
-      size_t len = fs->find("endobj", firstpos) - firstpos; // and its length
-      string objstr = fs->substr(firstpos, len); // from which we get a string
-      streamlen = getints(move(objstr)).back(); // from which we get a number
-    } // thankfully though most lengths are just direct ints
-    else
-    {
-      streamlen = dict.getInts("/Length")[0];
-    }
+    int streamlen = streamLength(dict);
     int strmstart = dict.getInts("stream")[0]; // now get stream's start
     return array<size_t, 2>{(size_t) strmstart, (size_t) strmstart + streamlen};
   }
@@ -386,15 +396,15 @@ std::shared_ptr<const std::string> xref::file() const
 // hairball function being created that is difficult to debug.
 
 xrefstream::xrefstream(shared_ptr<xref> Xref, int starts) :
-  m_XR(Xref), m_ncols(0), m_predictor(0), m_objstart(starts)
+  m_XR(Xref), m_ncols(0), m_predictor(0), m_objstart(starts),
+  m_dict(dictionary(m_XR->file(), m_objstart))
 {
-  m_dict = dictionary(m_XR->file(), m_objstart);    // get the xrefstream dict
-
-    // If there is no /W entry, we don't know how to interpret the stream.
+  // If there is no /W entry, we don't know how to interpret the stream.
   if(!m_dict.hasInts("/W"))
   {
     throw std::runtime_error("Malformed xref stream");
   }
+
   getIndex(); // read Index entry of dict so we know which objects are in stream
   getParms(); // read the PNG decoding parameters
   getRawMatrix(); // arrange the raw data in the stream into correct table form
@@ -429,10 +439,13 @@ xrefstream::xrefstream(shared_ptr<xref> Xref, int starts) :
 void xrefstream::getIndex()
 {
   auto indexEntries = m_dict.getInts("/Index"); // Gets the numbers in the entry
+
   if(!indexEntries.empty())
   {
     for(size_t i = 0; i < indexEntries.size(); i += 2)
-    {   // even indices represent the first object being described in a group
+    {
+      // Fill object numbers with consecutive ints starting at the even index
+      // entries for a length specified by the odd index entries
       m_objectNumbers.resize(indexEntries[i + 1]);
       iota(m_objectNumbers.begin(), m_objectNumbers.end(), indexEntries[i]);
     }
@@ -485,13 +498,9 @@ void xrefstream::getRawMatrix()
 
   // read the /W entry to get the width in bytes of each column in the table
   // check the widths for any zero values and skip them if present
-  for (auto&& i : m_dict.getInts("/W"))
-  {
-    if (i > 0)
-    {
-      m_arrayWidths.push_back(i);
-    }
-  }
+  m_arrayWidths = std::move(m_dict.getInts("/W"));
+  auto i = remove(m_arrayWidths.begin(), m_arrayWidths.end(), 0);
+  m_arrayWidths.erase(i, m_arrayWidths.end());
 
   // if no record of column numbers, infer from number of /W entries >0
   if(m_ncols == 0)
@@ -591,32 +600,26 @@ void xrefstream::expandbytes()
 
 void xrefstream::mergecolumns()
 {
-  int cumsum = 0;
-
   // For each of the final columns
-  for(auto i : m_arrayWidths)
+  for(int k = 0, cumsum = 0; k < (int) m_arrayWidths.size(); ++k)
   {
-    // take the next column from the unmerged array
-    std::vector<int> newcolumn = m_finalArray.at(cumsum);
+    // take a zero-filled column the size of those in the unmerged array
+    std::vector<int> newCol(m_finalArray[0].size(), 0);
 
-    // if the final column is more than 1 byte wide
-    if(i > 1)
+    // for each width value
+    for(int j = 0; j < m_arrayWidths[k]; j++)
     {
-      // for each width value above 1
-      for(int j = 1; j < i; j++)
-      {
-        std::transform (newcolumn.begin(), newcolumn.end(),
-                        m_finalArray[cumsum + j].begin(),
-                        newcolumn.begin(), std::plus<int>());
-      }
+      // Add the column to be merged to the new column
+      std::transform(newCol.begin(), newCol.end(),
+                     m_finalArray[cumsum + j].begin(),
+                     newCol.begin(), std::plus<int>());
     }
-    m_result.push_back(newcolumn); // This is a final column - push it to result
-    cumsum += i;     // move to the next column in the final result
-  }
 
-  if(m_result.size() == 2) // if there are only 2 columns add a zero filled col
-  {
-    m_result.emplace_back(std::vector<int>(m_result.at(0).size(), 0));
+    // This is a final column - push it to result
+    m_result.emplace_back(std::move(newCol));
+
+    // move to the next column in the final result
+    cumsum += m_arrayWidths[k];
   }
 }
 
@@ -626,8 +629,17 @@ void xrefstream::mergecolumns()
 
 void xrefstream::numberRows()
 {
-  if(m_objectNumbers.empty()) // if no index entries, assume start at object 0
-  {// create extra column numbered sequentially from first of objectNumbers
+
+  // If there are only two columns append a zero filled column of the same size
+  if(m_result.size() == 2)
+  {
+    m_result.emplace_back(std::vector<int>(m_result.at(0).size(), 0));
+  }
+
+  // if no index entries, assume start at object 0
+  if(m_objectNumbers.empty())
+  {
+    // create extra column numbered sequentially from first of objectNumbers
     m_objectNumbers.resize(m_result[0].size());
     iota(m_objectNumbers.begin(), m_objectNumbers.end(), 0);
   }

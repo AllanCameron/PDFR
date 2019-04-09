@@ -121,6 +121,7 @@ private:
 
 // private methods
   xref& operator=(const xref&);
+  int streamLength(const dictionary& dict) const;
   void locateXrefs();                     // Finds xref locations
   void xrefstrings();                     // Gets strings from xref locations
   void xrefFromStream(int);               // Uses xrefstream class to get xref
