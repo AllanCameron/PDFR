@@ -104,8 +104,7 @@ void page::getResources()
   }
   else // Resources contains a subdictionary
   {
-    string resdict = header.get("/Resources");
-    resources = dictionary(make_shared<string>(resdict)); // create dictionary
+    resources = header.getDictionary("/Resources");
   }
 }
 
@@ -118,21 +117,29 @@ void page::getFonts()
 {
   if (!resources.hasDictionary("/Font")) // if it isn't a dictionary...
   {
-    // ...it must be a reference. This loop ensures only one is used (the last)
+    // ...it must be a reference.
     std::vector<int> fontobjs = resources.getRefs("/Font");
-    if (fontobjs.size() == 1) fonts = d->getobject(fontobjs.at(0))->getDict();
+    if (fontobjs.size() == 1)
+    {
+      fonts = d->getobject(fontobjs.at(0))->getDict();
+    }
   }
   else // it's a subdictionary
   {
-    string fontdict = resources.get("/Font");
-    fonts = dictionary(make_shared<string>(fontdict)); // create font dict
+    fonts = resources.getDictionary("/Font");
   }
   // We can now iterate through the font names using getFontNames(), create
   // each font in turn and store it in the fontmap
   for(auto h : getFontNames())
+  {
     if(fontmap.find(h) == fontmap.end()) // fontmap is static
+    {
       for(auto hh : fonts.getRefs(h)) // find the ref for each font name
+      {
         fontmap[h] = make_shared<font>(d, d->getobject(hh)->getDict(), h);
+      }
+    }
+  }
 }
 
 /*--------------------------------------------------------------------------*/
@@ -145,14 +152,20 @@ void page::getContents()
 {
      // get all leaf nodes of the contents tree using expandContents()
     auto root = make_shared<tree_node<int>>(0);
-    // use expandKids() to get page header object numbers
+
+    // use expandContents() to get page header object numbers
     expandContents(header.getRefs("/Contents"), root);
     auto contents = root->getLeafs();
-    // get the contents from each object stream and paste them at the bottom
+
+    // Get the contents from each object stream and paste them at the bottom
     // of the pagestring with a line break after each one
     contentstring.reserve(35000);
+
     for (auto m : contents)
+    {
       contentstring += d->getobject(m)->getStream() + std::string("\n");
+    }
+
     contentstring.shrink_to_fit();
 }
 
@@ -167,16 +180,28 @@ void page::parseXObjStream()
 {
   string xobjstring {};
   // first find any xobject entries in the resource dictionary
-  if (resources.has("/XObject")) xobjstring = resources.get("/XObject");
-  if(xobjstring.empty()) return; // Sanity check - the entry shouldn't be empty
+  if (resources.has("/XObject"))
+  {
+    xobjstring = resources.get("/XObject");
+  }
+
+  if(xobjstring.empty())
+  {
+    return; // Sanity check - the entry shouldn't be empty
+  }
+
   dictionary objdict; // declare xobject dictionary to be filled when found
   if(xobjstring.find("<<") != string::npos) // Is /xobject entry a dictionary?
+  {
     objdict = dictionary(make_shared<string>(xobjstring)); // if so, make it
+  }
   else
   { // If the /XObject string is a reference, follow the reference and get dict
     std::vector<int> xos = resources.getRefs("/XObject");
     if (xos.size() == 1)
+    {
       objdict = d->getobject(xos.at(0))->getDict();
+    }
   }
   std::vector<std::string> dictkeys = objdict.getDictKeys();
   for(auto& i : dictkeys)
@@ -194,11 +219,13 @@ void page::parseXObjStream()
 // but it is possible to have nested content trees. In any case we only want
 // the leaves of the content tree, which are found by this algorithm
 
-void page::expandContents(vector<int> obs,
-                                  shared_ptr<tree_node<int>> tree)
+void page::expandContents(vector<int> obs, shared_ptr<tree_node<int>> tree)
 {
-  tree->add_kids(obs); // create new children tree nodes with this one as parent
+  // Create new children tree nodes with this one as parent
+  tree->add_kids(obs);
+
   auto kidnodes = tree->getkids(); // get a vector of pointers to the new nodes
+
   for(auto& i : kidnodes)  // now for each...
   {                        // get a vector of ints for its kid nodes
     vector<int> nodes = d->getobject(i->get())->getDict().getRefs("/Contents");
@@ -247,7 +274,10 @@ shared_ptr<string> page::getXobject(const string& objID)
 {
   // Use a non-inserting finder. If object not found return empty string
   if(XObjects.find(objID) == XObjects.end())
+  {
     return make_shared<string>(string(""));
+  }
+
   return make_shared<string>(XObjects[objID]); // else return the Xobject
 }
 
@@ -258,10 +288,18 @@ shared_ptr<string> page::getXobject(const string& objID)
 shared_ptr<font> page::getFont(const string& fontID)
 {
   // If no fonts on the page, throw an error
-  if(fontmap.empty()) throw runtime_error("No fonts available for page");
+  if(fontmap.empty())
+  {
+    throw runtime_error("No fonts available for page");
+  }
+
   // If we can't find a specified font, return the first font in the map
   auto f = fontmap.find(fontID);
-  if(f == fontmap.end()) return (fontmap.begin()->second);
+  if(f == fontmap.end())
+  {
+    return (fontmap.begin()->second);
+  }
+
   // Otherwise we're all good and return the requested font
   return f->second;
 }

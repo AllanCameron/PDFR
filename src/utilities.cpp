@@ -27,6 +27,7 @@
 
 #include "utilities.h"
 #include <fstream>   // for get_file - uses ifstream
+#include <iostream>
 
 using namespace std;
 
@@ -95,13 +96,33 @@ static std::array<uint8_t, 256> sym_t =
 
 string carveout(const string& s, const string& pre, const string& post)
 {
+  // Find the starting point of first 'pre'
   int start =  s.find(pre);
-  if (start == -1) start++; // if pre not found in s, start at beginning of s
-  else start += pre.size(); // otherwise start at end of first pre
-  string str = s.substr(start, s.size() - start); // trim start of s
+
+  // If pre not found in s, start at s[0], otherwise start at end of first pre
+  if (start)
+  {
+    start += pre.size();
+  }
+  else
+  {
+    start = 0;
+  }
+
+  // Trim the start of s
+  string str = s.substr(start, s.size() - start);
+
+  // Now find the starting point of 'post'
   int stp = str.find(post);
-  if(stp == -1) return str; // if post not found, finish at end of string
-  return str.substr(0, stp);// discard end of string starting at end of post
+
+  if(stp)
+  {
+    // If post found, discard the end of the string starting at start of post
+    return str.substr(0, stp);
+  }
+
+  // if post not found, finish at the end of the string
+  return str;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -111,25 +132,37 @@ string carveout(const string& s, const string& pre, const string& post)
 
 vector<string> multicarve(const string& s, const string& a, const string& b)
 {
-  std::vector<std::string> res; // vector to store results
+  // vector to store results
+  std::vector<std::string> res;
+
   // if any of the strings are length 0 then return an empty vector
-  if(a.empty() || b.empty() || s.empty()) return res;
-  std::string str = s; // makes a copy to allow const correctness
+  if(a.empty() || b.empty() || s.empty())
+  {
+    return res;
+  }
+
+  // makes a copy to allow const correctness
+  std::string str = s;
+
+  // This loop progressively finds matches in s and removes from the start
+  // of the string all characters up to the end of matched b.
+  // It does this until there are no paired matches left in the string
   while(true)
   {
-    // this loop progressively finds matches in s and removes from the start
-    // of the string all characters up to the end of matched b.
-    // It does this until there are no paired matches left in the string
     int start = str.find(a);
     if(start == -1) break; // no more matched pairs so halt
+
     // chop start off string up to end of first match of a
     str = str.substr(start + a.size(), str.size() - (start + a.size()));
+
     int stop = str.find(b);
     if(stop == -1) break; // no more matched pairs so halt
     res.push_back(str.substr(0, stop)); // target found - push to result
+
     // Now discard the target plus the following instance of b
     str = str.substr(stop + b.size(), str.size() - (stop + b.size()));
   }
+
   return res;
 }
 
@@ -139,30 +172,75 @@ vector<string> multicarve(const string& s, const string& a, const string& b)
 
 bool IsAscii(const string& s)
 {
-  if(s.empty()) return false;
-  auto i = minmax_element(s.begin(), s.end()); // pair of iterators, minmax char
-  return *(i.first) > 7 && *(i.second) < 127; // none outside the ascii range?
+  if(s.empty())
+  {
+    return false;
+  }
+
+  // Use minmax to get a pair of iterators pointing to min & max char values
+  auto i = minmax_element(s.begin(), s.end());
+
+  // If any are outside the ascii range return false, otherwise return true
+  return *(i.first) > 7 && *(i.second) < 127;
 }
 
 /*---------------------------------------------------------------------------*/
-//Takes a string of bytes represented in ASCII and converts to actual bytes
-// eg "48656c6c6f20576f726c6421" -> "Hello World!"
 
-vector<uint8_t> bytesFromArray(const string& s)
+void fourBitsToBytes(std::vector<uint8_t>& tmpvec)
 {
-  vector<uint8_t> resvec, tmpvec; // vectors to store results
-  if(s.empty()) return resvec; // if string is empty, return empty vector;
-  for(auto a : s) // convert hex characters to numerical values using hexmap
+    // We cannot allow odd-length vectors;
+  if(tmpvec.size() % 2 == 1)
   {
-    const auto& b = hexmap.find(a);
-    if(b != hexmap.end())
-      tmpvec.push_back(b->second);
+    tmpvec.push_back(0);
   }
-  if(tmpvec.empty()) return resvec; // No hex characters - return empty vector;
-  if(tmpvec.size() % 2 == 1) tmpvec.push_back(0); // No odd-length strings!
+
+  // Now take each pair of four-bit bytes, left shift the first by four bits
+  // and add them together using a bitwise OR, overwriting the source as we go
   for(size_t i = 0; i < tmpvec.size(); i += 2)
-    resvec.emplace_back( (0xf0 & (tmpvec[i] << 4)) |(0x0f & tmpvec[i + 1]));
-  return resvec;
+  {
+    tmpvec[i / 2] = (0xf0 & (tmpvec[i] << 4)) | (0x0f & tmpvec[i + 1]);
+  }
+
+  // Remove the non-overwritten part of the vector.
+  tmpvec.resize(tmpvec.size()/2);
+}
+
+/*---------------------------------------------------------------------------*/
+// Takes a string of bytes represented in ASCII and converts to actual numbers
+// in the form of 4-bit bytes eg ("AB23") -> {0x0a, 0x0b, 0x02, 0x03}
+
+std::vector<uint8_t> fourBitsFromHexString(const std::string& s)
+{
+  // Vector to store results
+  std::vector<uint8_t> tmpvec;
+
+  // If s is empty, return an empty vector;
+  if(s.empty())
+  {
+    return tmpvec;
+  }
+
+  // Convert hex characters to vector of four-bit values using hexmap
+  for(size_t i = 0; i < s.size(); ++i)
+  {
+    const auto& b = hexmap.find(s[i]); // Only need to find s[i] once this way
+    if(b != hexmap.end())
+    {
+      tmpvec.push_back(b->second);
+    }
+  }
+
+  return tmpvec;
+}
+
+/*---------------------------------------------------------------------------*/
+// Converts an Ascii-encoded string of bytes to a vector of bytes
+
+std::vector<uint8_t> bytesFromArray(const std::string& s)
+{
+  auto b = fourBitsFromHexString(s);
+  fourBitsToBytes(b);
+  return b;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -381,16 +459,27 @@ std::vector<float> getnums(const std::string& s)
 
 std::string get_file(const std::string& file)
 {
-  string filestring; // a new string in which to store file contents.
-  ifstream in(file.c_str(), ios::in | ios::binary); // open connection to file
-  auto fileCon = &in;
-  fileCon->seekg(0, ios::end); // move to end of file
-  size_t filesize = fileCon->tellg(); // reads position
-  filestring.resize(filesize); // ensure string is big enough
-  fileCon->seekg(0, ios::beg); // move to start of file
-  fileCon->read(&filestring[0], filestring.size()); // copy contents
-  fileCon->seekg(0, ios::beg); // move back to start of file
-  fileCon->close(); // Ensure the connection is closed before proceeding
+  // A new string in which to store file contents.
+  string filestring;
+
+  // Open connection to file
+  ifstream fileCon(file.c_str(), ios::in | ios::binary);
+
+  // Move to end of file
+  fileCon.seekg(0, ios::end);
+
+  // Ensure string is big enough
+  filestring.resize(fileCon.tellg());
+
+  // Move to start of file
+  fileCon.seekg(0, ios::beg);
+
+  // Copy contents
+  fileCon.read(&filestring[0], filestring.size());
+
+  // Ensure the connection is closed before proceeding
+  fileCon.close();
+
   return filestring;
 }
 
@@ -399,7 +488,7 @@ std::string get_file(const std::string& file)
 
 std::string utf(const std::vector<uint16_t>& Unicode_points)
 {
-  std::string result_string = ""; // empty string for results
+  std::string result_string {}; // empty string for results
   for(auto& point : Unicode_points) // for each uint16_t in the input vector...
   {
     // values less than 128 are just single-byte ASCII
@@ -408,6 +497,7 @@ std::string utf(const std::vector<uint16_t>& Unicode_points)
       result_string.push_back(point & 0x007f);
       continue;
     }
+
     // values of 128 - 2047 are two bytes. The first byte starts 110xxxxx
     // and the second starts 10xxxxxx. The remaining 11 x's are filled with the
     // 11 bits representing a number between 128 and 2047. e.g. Unicode point
@@ -420,6 +510,7 @@ std::string utf(const std::vector<uint16_t>& Unicode_points)
     {
       // construct byte with bits 110 and first 5 bits of unicode point number
       result_string.push_back((0x00c0 | ((point >> 6) & 0x001f)));
+
       // construct byte with bits 10 and final 6 bits of unicode point number
       result_string.push_back(0x0080 | (point & 0x003f));
       continue;
@@ -431,16 +522,19 @@ std::string utf(const std::vector<uint16_t>& Unicode_points)
     // the 16 bits representing 2048 - 65535.
     if(point > 0x07ff)
     {
-      // convert ligatures
+      // First we specifically change ligatures to appropriate Ascii values
       if(point == 0xFB00) {result_string += "ff"; continue;}
       if(point == 0xFB01) {result_string += "fi"; continue;}
       if(point == 0xFB02) {result_string += "fl"; continue;}
       if(point == 0xFB03) {result_string += "ffi"; continue;}
       if(point == 0xFB04) {result_string += "ffl"; continue;}
+
       // construct byte with 1110 and first 4 bits of unicode point number
       result_string.push_back(0x00e0 | ((point >> 12) & 0x000f));
+
       // construct byte with 10 and bits 5-10 of unicode point number
       result_string.push_back(0x0080 | ((point >> 6) & 0x003f));
+
       // construct byte with bits 10 and final 6 bits of unicode point number
       result_string.push_back(0x0080 | ((point) & 0x003f));
     }

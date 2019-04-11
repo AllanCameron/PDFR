@@ -400,24 +400,16 @@ xrefstream::xrefstream(shared_ptr<xref> Xref, int starts) :
   m_dict(dictionary(m_XR->file(), m_objstart))
 {
   // If there is no /W entry, we don't know how to interpret the stream.
-  if(!m_dict.hasInts("/W"))
-  {
-    throw std::runtime_error("Malformed xref stream");
-  }
+  if(!m_dict.hasInts("/W")) throw std::runtime_error("No /W entry for stream.");
 
-  getIndex(); // read Index entry of dict so we know which objects are in stream
-  getParms(); // read the PNG decoding parameters
-  getRawMatrix(); // arrange the raw data in the stream into correct table form
-
-  if(m_predictor == 12)
-  {
-    diffup(); // Undiff the raw data
-  }
-
-  modulotranspose(); // transposes table which ensuring all numbers are <256
-  expandbytes(); // multiply numbers to intended size based on their position
-  mergecolumns(); // add up adjacent columns that represent large numbers
-  numberRows(); // marry the rows to the object numbers from the /Index entry
+  getIndex();         // Read Index so we know which objects are in stream
+  getParms();         // Read the PNG decoding parameters
+  getRawMatrix();     // Arrange the raw data in stream into correct table form
+  diffup();           // Undiff the raw data
+  modulotranspose();  // Transposes table which ensuring all numbers are <256
+  expandbytes();      // Multiply bytes to intended size based on their position
+  mergecolumns();     // Sum adjacent columns that represent large numbers
+  numberRows();       // Marry rows to the object numbers from the /Index entry
 }
 
 /*---------------------------------------------------------------------------*/
@@ -539,13 +531,16 @@ void xrefstream::getRawMatrix()
 
 void xrefstream::diffup()
 {
-  // For each row
-  for(size_t i = 1; i < m_rawMatrix.size(); ++i )
+  if(m_predictor == 12)
   {
-    // Take each entry & add the one above
-    for(size_t j = 0; j < m_rawMatrix.at(i).size(); ++j)
+    // For each row
+    for(size_t i = 1; i < m_rawMatrix.size(); ++i )
     {
-      m_rawMatrix.at(i).at(j) += m_rawMatrix.at(i - 1).at(j);
+      // Take each entry & add the one above
+      for(size_t j = 0; j < m_rawMatrix.at(i).size(); ++j)
+      {
+        m_rawMatrix.at(i).at(j) += m_rawMatrix.at(i - 1).at(j);
+      }
     }
   }
 }
@@ -561,7 +556,7 @@ void xrefstream::modulotranspose()
     // then for each entry in the row make it modulo 256 and push to new column
     for(auto& j : m_rawMatrix)
     {
-      tempcol.push_back(j.at(i) % 256);
+      tempcol.push_back(j[i] & 0x00ff);
     }
     // the new column is pushed to the final array unless it is the first
     // column (which is skipped when the predictor is > 9)

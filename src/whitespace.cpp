@@ -83,7 +83,7 @@ bool Whitespace::eq(float a, float b)
 // then trace round all the vertices, storing every connected loop as a
 // polygon surrounding a text element.
 
-Whitespace::Whitespace(textrows wgo): WGO(wgo._data), minbox(wgo.minbox)
+Whitespace::Whitespace(textrows wgo): WGO(wgo.m_data), minbox(wgo.minbox)
 {
   std::vector<float> fontsizes;
   for(auto& i : WGO) fontsizes.push_back(i->size);

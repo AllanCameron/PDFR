@@ -37,7 +37,7 @@ using namespace std;
 // to create the main data member
 
 font::font(shared_ptr<document> doc, dictionary Fontref, const string& fontid) :
-d(doc), fontref(Fontref), FontID(fontid)
+m_d(doc), m_fontref(Fontref), m_FontID(fontid)
 {
   getFontName();
   makeGlyphTable();
@@ -48,14 +48,16 @@ d(doc), fontref(Fontref), FontID(fontid)
 
 void font::getFontName()
 {
-  string BaseFont = fontref.get("/BaseFont"); // reads BaseFont entry
-  size_t BaseFont_start = 1;  //-----//
-  if(BaseFont.size() > 7)            // The basefont name sometimes has a suffix
-    if(BaseFont[7] == '+')           // following a '+' at position 7. This
-      BaseFont_start = 8;     //-----// conditional expression removes it
+  string BaseFont(m_fontref.get("/BaseFont")); // reads BaseFont entry
 
-  // Store to private data member
-  FontName = BaseFont.substr(BaseFont_start, BaseFont.size() - BaseFont_start);
+  if(BaseFont.size() > 7 && BaseFont[7] == '+')
+  {
+    m_FontName = BaseFont.substr(8, BaseFont.size() - 8);
+  }
+  else
+  {
+    m_FontName = BaseFont.substr(1, BaseFont.size() - 1);
+  }
 }
 
 /*---------------------------------------------------------------------------*/
@@ -69,9 +71,15 @@ void font::getFontName()
 vector<pair<Unicode, int>> font::mapRawChar(vector<RawChar> raw)
 {
   vector<pair<Unicode, int>> res; // container for results
+  res.reserve(raw.size());
   for(auto i : raw)
-    if(glyphmap.find(i) != glyphmap.end()) // safe range checker
-      res.push_back(glyphmap[i]);          // push found result
+  {
+    auto g = m_glyphmap.find(i);
+    if(g != m_glyphmap.end()) // safe range checker
+    {
+      res.push_back(g->second);          // push found result
+    }
+  }
   return res;
 }
 
@@ -83,9 +91,9 @@ vector<pair<Unicode, int>> font::mapRawChar(vector<RawChar> raw)
 void font::makeGlyphTable()
 {
   // Create Encoding object
-  Encoding Enc = Encoding(this->fontref, this->d);
+  Encoding Enc(m_fontref, m_d);
   // Create glyphwidth object
-  glyphwidths Wid = glyphwidths(this->fontref, this->d);
+  glyphwidths Wid(m_fontref, m_d);
   // get all the mapped RawChars from the Encoding object
   std::shared_ptr<std::unordered_map<RawChar, Unicode>> inkeys = Enc.encKeys();
 
@@ -93,12 +101,12 @@ void font::makeGlyphTable()
   // character codes or to the final Unicode translations
   if(Wid.widthsAreForRaw()) // The widths refer to RawChar code points
     for(auto& i : *inkeys) // map every mapped RawChar to a width
-      glyphmap[i.first] = make_pair(Enc.Interpret(i.first),
+      m_glyphmap[i.first] = make_pair(Enc.Interpret(i.first),
                                     Wid.getwidth(i.first));
 
   else // The widths refer to Unicode glyphs
     for(auto& i : *inkeys) // map every mapped Unicode to a width
-      glyphmap[i.first] = make_pair(Enc.Interpret(i.first),
+      m_glyphmap[i.first] = make_pair(Enc.Interpret(i.first),
                                     Wid.getwidth(Enc.Interpret(i.first)));
 }
 
@@ -107,7 +115,7 @@ void font::makeGlyphTable()
 
 std::string font::fontname()
 {
-  return this->FontName;
+  return m_FontName;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -116,5 +124,5 @@ std::string font::fontname()
 
 std::vector<RawChar> font::getGlyphKeys()
 {
-  return getKeys(this->glyphmap); // Uses getKeys() from utilities.h
+  return getKeys(m_glyphmap); // Uses getKeys() from utilities.h
 }

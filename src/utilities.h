@@ -73,12 +73,21 @@ typedef uint16_t Unicode;
 template< typename K, typename V > // K, V stand for key, value
 std::vector<K> getKeys(const std::unordered_map<K, V>& Map)
 {
-  std::vector<K> result; // vector to store results
-  result.reserve(Map.size()); // Ensure it is big enough
-  typename std::unordered_map<K, V>::const_iterator i; // declare map iterator
-  // the following loop iterates through the map, gets the key and stores it
+  // vector to store results
+  std::vector<K> result;
+
+  // Ensure it is big enough
+  result.reserve(Map.size());
+
+  // Declare map iterator according to its type
+  typename std::unordered_map<K, V>::const_iterator i;
+
+  // The following loop iterates through the map, gets the key and stores it
   for(i = Map.begin(); i != Map.end(); ++i)
+  {
     result.push_back(i->first);
+  }
+
   return result;
 }
 
@@ -126,57 +135,121 @@ void sortby(std::vector<Ta>& vec, const std::vector<Tb>& data)
 }
 
 //---------------------------------------------------------------------------//
-// class template for tree structure
+// Class template for a tree structure, to expand the nodes of tree-like
+// reference groups (e.g. pages in large documents or contents in complex ones)
+// Each node contains a pointer to its parent (unless it is the root node
+// in which case this variable is nullptr). It also contains a vector of
+// pointers to child nodes. If the vector of child nodes is empty, then this
+// is a leaf node. For simplicity, this is recorded using the boolean isLeaf.
+// Finally, each node contains an arbitrary object of type T.
+//
+// The reason for using a tree structure is that we can use recursion to
+// navigate an otherwise complex and arbitrary branching structure. In
+// particular, we can build the tree quickly using recursion and find all
+// the leaf nodes using recursion
 
 template <class T>
 class tree_node
 {
 public:
+  // std::shared_ptr<tree_node<T>> looks messy, so we'll abbreviate it to Node
   using Node = std::shared_ptr<tree_node<T>>;
 
+  // The standard constructor takes an object and a parent node
   tree_node<T>(T o, Node par):parent(par), isLeaf(true), obj(o) {};
+
+  // However, to start a new tree, create a node without passing a parent node
   tree_node<T>(T o) : parent(Node(nullptr)),  isLeaf(true), obj(o){};
+
+  // The blank constructor might be needed in copy construction
   tree_node<T>(){};
+
+  //-------------------------------------------------------------------------//
+  // This function adds child nodes to a given tree node
 
   void add_kids(std::vector<T> obs)
   {
+    // If this node is going to have children, it will no longer be a leaf
     isLeaf = false;
+
+    // For each object, make a new tree_node with it using 'this' as parent
     for(auto i : obs)
-      kids.push_back(std::make_shared<tree_node<T>>
-        (i, std::shared_ptr<tree_node<T>>(this)));
+    {
+      kids.push_back(std::make_shared<tree_node<T>>(i, Node(this)));
+    }
   };
+
+  //-------------------------------------------------------------------------//
+  // Simple getter for the object contained in the node
 
   T get() const {return obj;}
 
+  //-------------------------------------------------------------------------//
+  // Follows parent pointers sequentially to get to the root node and returns
+  // a pointer to it.
+
   Node top_node()
   {
-    if(!parent) return Node(this);
+    if(!parent) // If parent node is nullptr then !parent will resolve to true.
+    {
+      return Node(this);
+    }
+
+    // Get the parent node of the current node
     Node next_node_up = parent;
-    while(next_node_up->parent) next_node_up = next_node_up->parent;
+
+    // While next_node_up has a valid parent, make its parent next_node_up
+    while(next_node_up->parent)
+    {
+      next_node_up = next_node_up->parent;
+    }
+
+    // Since current next_node_up has no parent (nullptr), it must be the root
     return next_node_up;
   }
 
-  std::vector<Node> getkids(){return kids;};
+  //-------------------------------------------------------------------------//
+  // simple getter for child nodes
+
+  std::vector<Node> getkids() const {return kids;};
+
+  //-------------------------------------------------------------------------//
+  // Returns a vector of all objects contained in ancestor nodes
 
   std::vector<T> getAncestors() const
   {
+    // Start the vector with the object contained in this node
     std::vector<T> res {obj};
-    if(!parent) return res;
+
+    // Otherwise, we get the parent node (or nullptr if this is the root)
     Node next_parent = parent;
+
+    // Now for the parent node, we append its object to our result, and repeat
+    // the process until we hit a nullptr, at which point we're done
     while(next_parent)
     {
       res.push_back(next_parent->objnum);
       next_parent = next_parent->parent;
     }
+
     return res;
   }
 
+  //-------------------------------------------------------------------------//
+  // Similar to getting the objects from all ancestors, we might want to get
+  // objects from all descendant nodes. We can do this with recursion.
+
   std::vector<T> getDescendants() const
   {
+    // Vector to store results
     std::vector<T> res;
+
+    // For each child node, put its object in our vector
     for(auto& i : kids)
     {
       res.push_back(i->obj);
+      // If the child node has its own child nodes, we just want to call the
+      // function recursively and append each new result to our vector
       if(!i->kids.empty())
       {
         std::vector<T> tmp = i->getDescendants();
@@ -187,13 +260,24 @@ public:
     return(res);
   }
 
-  std::vector<T> getLeafs()
+  //-------------------------------------------------------------------------//
+  // An important use of the tree structure is to get all the objects contained
+  // in its leaf nodes. Again, we use recursion to do this
+
+  std::vector<T> getLeafs() const
   {
+    // Vector to store results
     std::vector<T> res;
+
+    // For each child node, if it is a leaf, append to our vector
     for(auto& i : kids)
     {
       if(i->isLeaf)
+      {
         res.push_back(i->obj);
+      }
+      // If its not a leaf, call this function recursively until we get leaves.
+      // Append the result of the recursively called function to our vector.
       else
       {
         std::vector<T> tmp = i->getLeafs();
@@ -201,14 +285,15 @@ public:
         res.insert(res.end(), tmp.begin(), tmp.end());
       }
     }
-    return(res);
+    return res;
   }
+  //-------------------------------------------------------------------------//
 
 private:
-  Node parent;
-  bool isLeaf;
-  std::vector<Node> kids;
-  T obj;
+  Node parent;            // Shared pointer to parent tree_node<T>
+  bool isLeaf;            // This will be false if the node has children
+  std::vector<Node> kids; // Contains vector of shared pointers to child nodes
+  T obj;                  // The object contained in this tree node itself
 };
 
 

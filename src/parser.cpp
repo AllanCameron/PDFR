@@ -41,12 +41,14 @@ typedef void (parser::*fptr)();
 // This statically-declared map allows functions to be called based on strings
 // passed to it from the tokenizer
 
-std::unordered_map<std::string, fptr> parser::fmap =
+std::unordered_map<std::string, fptr> parser::sm_fmap =
 {
   {"Q",   &Q}, {"q",   &q}, {"BT", &BT}, {"ET", &ET}, {"cm", &cm}, {"Tm", &Tm},
   {"Tf", &Tf}, {"Td", &Td}, {"Th", &TH}, {"Tw", &TW}, {"Tc", &TC}, {"TL", &TL},
   {"T*", &T_}, {"TD", &TD}, {"'",  &Ap}, {"TJ", &TJ}, {"Tj", &TJ}
 };
+
+const std::array<float, 9> parser::sm_initstate = {1, 0, 0, 0, 1, 0, 0, 0, 1};
 
 //---------------------------------------------------------------------------//
 // The parser constructor has to initialize many variables that allow
@@ -54,22 +56,20 @@ std::unordered_map<std::string, fptr> parser::fmap =
 // it does no work unless passed instructions by the tokenizer
 
 parser::parser(shared_ptr<page> pag) : // long initializer list...
-  p(pag), // pointer to page of interest
-  currfontsize(0), // pointsize specified by page program
-  initstate({1, 0, 0, 0, 1, 0, 0, 0, 1}), // 3x3 identity matrix
-  fontsizestack({currfontsize}), // history of pointsize
-  Tmstate(initstate), // text transformation matrix
-  Tdstate(initstate), // Tm modifier
-  gs({initstate}), // graphics state history
-  currentfont(""), // name of current font
-  fontstack({currentfont}), // font history
-  PRstate(0), // kerning
-  Tl(1), // leading
-  Tw(0), // word spacing
-  Th(100), // horizontal scaling
-  Tc(0) // character spacing
-{ //PROFC_NODE("Parser creation");
-  }
+  m_p(pag),                            // pointer to page of interest
+  m_currfontsize(0),                   // pointsize specified by page program
+  m_fontsizestack({m_currfontsize}),   // history of pointsize
+  m_Tmstate(sm_initstate),             // text transformation matrix
+  m_Tdstate(sm_initstate),             // Tm modifier
+  m_gs({sm_initstate}),                // graphics state history
+  m_currentfont(""),                   // name of current font
+  m_fontstack({m_currentfont}),        // font history
+  m_PRstate(0),                        // kerning
+  m_Tl(1),                             // leading
+  m_Tw(0),                             // word spacing
+  m_Th(100),                           // horizontal scaling
+  m_Tc(0)                              // character spacing
+{}
 
 //---------------------------------------------------------------------------//
 // To allow recursive parsing of form xobjects, the tokenizer needs to access
@@ -79,8 +79,14 @@ parser::parser(shared_ptr<page> pag) : // long initializer list...
 
 std::string parser::getOperand()
 {
-  if(Operands.empty()) return string("");
-  return Operands[0];
+  if(m_Operands.empty())
+  {
+    return string {};
+  }
+  else
+  {
+    return m_Operands[0];
+  }
 }
 
 //---------------------------------------------------------------------------//
@@ -88,8 +94,8 @@ std::string parser::getOperand()
 
 textrows& parser::output()
 {
-  db.minbox = p->getminbox();
-  return db;
+  m_db.minbox = m_p->getminbox();
+  return m_db;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -97,10 +103,9 @@ textrows& parser::output()
 
 void parser::q()
 {
-    ////PROFC_NODE("q");
-  gs.emplace_back(gs.back());               // push transformation matrix
-  fontstack.emplace_back(currentfont);      // push font name
-  fontsizestack.emplace_back(currfontsize); // push pointsize
+  m_gs.emplace_back(m_gs.back());               // push transformation matrix
+  m_fontstack.emplace_back(m_currentfont);      // push font name
+  m_fontsizestack.emplace_back(m_currfontsize); // push pointsize
 }
 
 /*---------------------------------------------------------------------------*/
@@ -108,17 +113,21 @@ void parser::q()
 
 void parser::Q()
 {
-    //PROFC_NODE("Q");
-  if (gs.size() > 1) // Empty graphics state is undefined but gs[0] is identity
-    gs.pop_back();
-  if (fontstack.size() > 1) // Empty fontstack is undefined
+  // Empty graphics state is undefined but m_gs[0] is identity
+  if (m_gs.size() > 1)
   {
-    fontstack.pop_back();
-    fontsizestack.pop_back();         // pop the font & fontsize stacks
-    currentfont = fontstack.back();
-    currfontsize = fontsizestack.back(); // read the top font & size from stack
+    m_gs.pop_back();
   }
-  wfont = p->getFont(currentfont); // the top of stack is now working font
+
+  if (m_fontstack.size() > 1) // Empty m_fontstack is undefined
+  {
+    m_fontstack.pop_back();
+    m_fontsizestack.pop_back();         // pop the font & fontsize stacks
+    m_currentfont = m_fontstack.back(); // read the top font & size from stack
+    m_currfontsize = m_fontsizestack.back();
+  }
+  // The top of stack is now working font
+  m_wfont = m_p->getFont(m_currentfont);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -126,13 +135,15 @@ void parser::Q()
 
 void parser::Td()
 {
-    //PROFC_NODE("Td");
-  array<float, 9> Tds = initstate;                  //------------------------
-                                                    //  create translation
-  Tds[6] = stof(Operands[0]);                       //  matrix (3x3)
-  Tds[7] = stof(Operands[1]);                       //------------------------
-  matmul(Tds, Tdstate); // multiply translation and text matrices
-  PRstate = 0; // Td resets kerning
+  array<float, 9> Tds = sm_initstate;     //---------------------------------
+  Tds[6] = stof(m_Operands[0]);           //  create 3 x 3 translation matrix
+  Tds[7] = stof(m_Operands[1]);           //---------------------------------
+
+  // Multiply translation and text matrices
+  matmul(Tds, m_Tdstate);
+
+  // Td resets kerning
+  m_PRstate = 0;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -140,14 +151,10 @@ void parser::Td()
 
 void parser::TD()
 {
-    //PROFC_NODE("TD");
-  array<float, 9> Tds = initstate;                  //------------------------
-                                                    //  create translation
-  Tds[6] = stof(Operands[0]);                       //  matrix (3x3)
-  Tds[7] = stof(Operands[1]);                       //------------------------
-  matmul(Tds, Tdstate); // multiply translation and text matrices
-  PRstate = 0; // TD resets kerning
-  Tl = -Tds[7]; // set text leading to new value
+  Td();
+
+  // Set text leading to new value
+  m_Tl = -stof(m_Operands[1]);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -155,10 +162,12 @@ void parser::TD()
 
 void parser::BT()
 {
-    //PROFC_NODE("BT");
-  Tmstate = Tdstate = initstate; // Reset text matrix to identity matrix
-  Tw = Tc = 0; // reset word spacing and character spacing
-  Th = 100; // reset horizontal spacing
+  // Reset text matrix to identity matrix
+  m_Tmstate = m_Tdstate = sm_initstate;
+
+  // Reset word spacing and character spacing
+  m_Tw = m_Tc = 0;
+  m_Th = 100; // reset horizontal spacing
 }
 
 /*---------------------------------------------------------------------------*/
@@ -166,24 +175,22 @@ void parser::BT()
 
 void parser::ET()
 {
-    //PROFC_NODE("ET");
-  Tmstate = Tdstate = initstate; // Reset text matrix to identity matrix
-  Tw = Tc = 0; // reset word spacing and character spacing
-  Th = 100; // reset horizontal spacing
+  BT();
 }
 
 /*---------------------------------------------------------------------------*/
 // Tf operator - specifies font and pointsize
+
 void parser::Tf()
 {
-    //PROFC_NODE("Tf");
-  if(Operands.size() > 1) // Should be 2 operators: 1 is not defined
+  // Should be 2 operators: 1 is not defined
+  if(m_Operands.size() > 1)
   {
-    currentfont = Operands[0];        // read fontID
-    wfont = p->getFont(currentfont);  // get font from fontID
-    currfontsize = stof(Operands[1]); // get font size
-    fontsizestack.back() = currfontsize; // remember changes to current state
-    fontstack.back() = currentfont;
+    m_currentfont = m_Operands[0];           // Read fontID
+    m_wfont = m_p->getFont(m_currentfont);   // Get font from fontID
+    m_currfontsize = stof(m_Operands[1]);    // Get font size
+    m_fontsizestack.back() = m_currfontsize; // Remember changes to state
+    m_fontstack.back() = m_currentfont;      // Remember changes to state
   }
 }
 
@@ -192,8 +199,8 @@ void parser::Tf()
 
 void parser::TH()
 {
-    //PROFC_NODE("TH");
-  Th = stof(Operands.at(0)); // simply reads operand as new Th value
+  // Reads operand as new horizontal spacing value
+  m_Th = stof(m_Operands.at(0));
 }
 
 /*---------------------------------------------------------------------------*/
@@ -201,8 +208,8 @@ void parser::TH()
 
 void parser::TC()
 {
-    //PROFC_NODE("TC");
-  Tc = stof(Operands.at(0)); // simply reads operand as new Tc value
+  // Reads operand as new character spacing value
+  m_Tc = stof(m_Operands.at(0));
 }
 
 /*---------------------------------------------------------------------------*/
@@ -210,7 +217,8 @@ void parser::TC()
 
 void parser::TW()
 {
-  Tw = stof(Operands.at(0));  // simply reads operand as new Tw value
+  // Reads operand as new word spacing value
+  m_Tw = stof(m_Operands.at(0));
 }
 
 /*---------------------------------------------------------------------------*/
@@ -218,8 +226,8 @@ void parser::TW()
 
 void parser::TL()
 {
-    //PROFC_NODE("TL");
-  Tl = stof(Operands.at(0));  // simply reads operand as new Tl value
+  // Reads operand as new text leading value
+  m_Tl = stof(m_Operands.at(0));
 }
 
 /*---------------------------------------------------------------------------*/
@@ -227,9 +235,11 @@ void parser::TL()
 
 void parser::T_()
 {
-    //PROFC_NODE("T*");
-  Tdstate.at(7) = Tdstate.at(7) - Tl; // decrease y value of text matrix by Tl
-  PRstate = 0; // reset kerning
+  // Decrease y value of text matrix by amount specified by text leading param
+  m_Tdstate.at(7) = m_Tdstate.at(7) - m_Tl;
+
+  // This also resets the kerning
+  m_PRstate = 0;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -237,10 +247,14 @@ void parser::T_()
 
 void parser::Tm()
 {
-    //PROFC_NODE("Tm");
-  Tmstate = stringvectomat(move(Operands)); // Reads operands as a 3x3 matrix
-  Tdstate = initstate; // reset the Td modifier matrix
-  PRstate = 0; // reset kerning
+  // Reads operands as a 3x3 matrix
+  m_Tmstate = stringvectomat(move(m_Operands));
+
+  // Reset the Td modifier matrix to identity matrix
+  m_Tdstate = sm_initstate;
+
+  // Reset the kerning
+  m_PRstate = 0;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -248,10 +262,9 @@ void parser::Tm()
 
 void parser::cm()
 {
-    //PROFC_NODE("cm");
-  // read the operands as a matrix, multiply by top of graphics state stack
+  // Read the operands as a matrix, multiply by top of graphics state stack
   // and replace the top of the stack with the result
-  matmul(stringvectomat(move(Operands)), gs.back());
+  matmul(stringvectomat(move(m_Operands)), m_gs.back());
 }
 
 /*---------------------------------------------------------------------------*/
@@ -260,9 +273,8 @@ void parser::cm()
 
 void parser::Ap()
 {
-  //PROFC_NODE("TJ");
   // the "'" operator is the same as Tj except it moves to the next line first
-  Tdstate[7] -= Tl;
+  m_Tdstate[7] -= m_Tl;
   TJ();
 }
 
@@ -280,39 +292,71 @@ void parser::Ap()
 void parser::TJ()
 {
   // We create a text space that is the product of Tm and cm matrices
-  array<float, 9> textspace = gs.back();
-  matmul(Tmstate, textspace);
+  array<float, 9> textspace = m_gs.back();
+  matmul(m_Tmstate, textspace);
 
   // we now use the translation-only Td matrix to get our final text space
-  matmul(Tdstate, textspace);
+  matmul(m_Tdstate, textspace);
 
   // now we can set the starting x value of our string
   float txtspcinit = textspace[6];
 
   // The overall size of text is the font size times the textspace scale
-  float scale = currfontsize * textspace[0];
+  float scale = m_currfontsize * textspace[0];
 
   // We now iterate through our operands, paying attention to their types to
   // perform the correct operations
-  size_t otsize = OperandTypes.size();
-  for (size_t z = 0; z < otsize; z++)
+  for (size_t z = 0; z < m_OperandTypes.size(); z++)
   {
-    if (OperandTypes[z] == NUMBER) // Numbers represent kerning
+    // If the operand type is a number, it is a kerning adjustment
+    if (m_OperandTypes[z] == NUMBER)
     {
-      PRstate -= stof(Operands[z]); // PR (pushright) state is kerning * -1
-      float PRscaled = PRstate * scale / 1000; // scale to user space
-      textspace[6] = PRscaled + txtspcinit; // translate user space per PRstate
-      continue; // skip to the next operand - important!
-    }
-    float PRscaled = PRstate * scale / 1000; // scale kerning to user space
-    textspace[6] = PRscaled + txtspcinit; // translate user space per kerning
-    if (Operands[z] == "") continue; // empty string; ignore & get next operand
+      // PR (pushright) state is kerning * -1
+      m_PRstate -= stof(m_Operands[z]);
 
-    vector<RawChar> raw; // container for rawchar vector (cast from strings)
+      // Translate user space per m_PRstate
+      textspace[6] = m_PRstate * scale / 1000 + txtspcinit;
+
+      // skip to the next operand - important!
+      continue;
+    }
+    float PRscaled = m_PRstate * scale / 1000; // scale kerning to user space
+    textspace[6] = PRscaled + txtspcinit; // translate user space per kerning
+
+    // If string is empty, ignore it and get the next operand.
+    if (m_Operands[z] == "")
+    {
+      continue;
+    }
+
+    // Container for rawchar vector (cast from strings)
+    vector<RawChar> raw;
+
     // cast "<001F00AA>" style hexstring to vector of RawChar (uint16_t)
-    if (OperandTypes[z] == HEXSTRING) raw = HexstringToRawChar(Operands[z]);
+    if (m_OperandTypes[z] == HEXSTRING)
+    {
+      // scale kerning to user space
+      float PRscaled = m_PRstate * scale / 1000;
+
+      // translate user space per kerning
+      textspace[6] = PRscaled + txtspcinit;
+
+      // Convert the hexstring to raw char
+      raw = HexstringToRawChar(m_Operands[z]);
+    }
+
     // cast "(cat on mat)" style string to vector of RawChar (uint16_t)
-    if (OperandTypes[z] == STRING) raw = StringToRawChar(Operands[z]);
+    if (m_OperandTypes[z] == STRING)
+    {
+      // scale kerning to user space
+      float PRscaled = m_PRstate * scale / 1000;
+
+      // translate user space per kerning
+      textspace[6] = PRscaled + txtspcinit;
+
+      raw = StringToRawChar(m_Operands[z]);
+    }
+
     // Now we can process the string given the current user space and font
     processRawChar(raw, scale, textspace, txtspcinit);
   }
@@ -327,30 +371,47 @@ void parser::processRawChar(vector<RawChar>& raw, float& scale,
                              array<float, 9>& textspace, float& txtspcinit)
 {
   // look up the RawChars in the font to get their Unicode values and widths
-  vector<pair<Unicode, int>>&& glyphpairs = wfont->mapRawChar(raw);
+  vector<pair<Unicode, int>>&& glyphpairs = m_wfont->mapRawChar(raw);
 
-  for (auto& j : glyphpairs) // Now, for each character...
+  // Now, for each character...
+  for (auto& j : glyphpairs)
   {
     float glyphwidth, left, right, bottom, width;
+
+    // If the first character is not a space, record its position as is
     if(j.first != 0x0020)
     {
-      left = textspace[6];                  //
-      bottom = textspace[7];                //
+      left = textspace[6];
+      bottom = textspace[7];
     }
-    if (j.first == 0x0020) // if this is a space factor in word & char spacing
-      glyphwidth = j.second + 1000 * (Tc + Tw)/currfontsize;
+
+    // if this is a space, just adjust word & char spacing
+    if (j.first == 0x0020)
+    {
+      glyphwidth = j.second + 1000 * (m_Tc + m_Tw)/m_currfontsize;
+    }
+    // Else just char spacing
     else
-      glyphwidth = j.second + Tc * 1000/currfontsize; // else just char spacing
-    PRstate += glyphwidth; // adjust the pushright in text space by char width
-    // move user space right by the (converted to user space) width of the char
-    textspace[6] =  PRstate * scale / 1000 + txtspcinit;
+    {
+      glyphwidth = j.second + m_Tc * 1000/m_currfontsize;
+    }
+
+    // Adjust the pushright in text space by character width
+    m_PRstate += glyphwidth;
+
+    // Move user space right by the (converted to user space) width of the char
+    textspace[6] =  m_PRstate * scale / 1000 + txtspcinit;
+
     if (j.first != 0x0020)
     {
-    // record width of char taking Th (horizontal scaling) into account
-    width = scale * glyphwidth/1000 * Th/100;
-    right = left + width;
-    db.push_back(make_shared<textrow>(left, right, width, bottom, scale,
-                             wfont->fontname(), vector<Unicode>{j.first}));
+      // record width of char taking Th (horizontal scaling) into account
+      width = scale * glyphwidth/1000 * m_Th/100;
+      right = left + width;
+      m_db.push_back(make_shared<textrow>(left, right, width, bottom, scale,
+                                          m_wfont->fontname(),
+                                          vector<Unicode>{j.first}
+                                          )
+                    );
     }
   }
 }
@@ -365,17 +426,23 @@ void parser::processRawChar(vector<RawChar>& raw, float& scale,
 
 void parser::reader(string& token, TState state)
 {
-  if (state == IDENTIFIER) // if it's an identifier, call the operator,
-  {                           // passing any stored operands on the stack
-    if (fmap.find(token) != fmap.end()) (this->*fmap[token])();
-    OperandTypes.clear(); // clear the stack since an operator has been called
-    Operands.clear(); // clear the stack since an operator has been called
+  // if it's an identifier, call the operator
+  if (state == IDENTIFIER)
+  {
+    // Pass any stored operands on the stack
+    if (sm_fmap.find(token) != sm_fmap.end())
+    {
+      (this->*sm_fmap[token])();
+    }
+    // Clear the stack since an operator has been called
+    m_OperandTypes.clear();
+    m_Operands.clear();
   }
   else
   {
-    // push operands and their types on stack, awaiting operator
-    OperandTypes.push_back(state);
-    Operands.push_back(token);
+    // Push operands and their types on stack, awaiting operator
+    m_OperandTypes.push_back(state);
+    m_Operands.push_back(token);
   }
 }
 
@@ -394,10 +461,15 @@ void parser::reader(string& token, TState state)
 void parser::matmul(const array<float, 9>& b, array<float, 9>& a)
 {
   array<float, 9> newmat;
-  for(size_t i = 0; i < 9; ++i) //clever use of indices to allow fill by loop
+
+  // Clever use of indices to allow fill by loop
+  for(size_t i = 0; i < 9; ++i)
+  {
     newmat[i] = (a[i % 3 + 0] * b[3 * (i / 3) + 0] +
                  a[i % 3 + 3] * b[3 * (i / 3) + 1] +
                  a[i % 3 + 6] * b[3 * (i / 3) + 2] );
+  }
+
   swap(a, newmat);
 }
 

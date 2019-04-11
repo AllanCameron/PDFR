@@ -110,7 +110,6 @@ void tokenizer::tokenize()
 {
   while(i != s->end()) // ensure the iterator doesn't exceed string length
   {
-    j = *i;
     switch(state)
     {
       // Each state has its own handler subroutine - self explanatory
@@ -134,11 +133,11 @@ void tokenizer::tokenize()
 
 void tokenizer::resourceState()
 {
-  switch(char_lookup[j])
+  switch(char_lookup[*i])
   {
     case LAB:   pushbuf(RESOURCE, HEXSTRING);     break;
-    case LET:   buf += j;                        break;
-    case DIG:   buf += j;                        break;
+    case LET:   buf += *i;                        break;
+    case DIG:   buf += *i;                        break;
     case USC:   buf += '_';                       break;
     case LSB:   pushbuf(RESOURCE, ARRAY);         break;
     case FSL:   pushbuf(RESOURCE, RESOURCE);      break;
@@ -160,19 +159,19 @@ void tokenizer::resourceState()
 void tokenizer::newsymbolState()
 {
   // get symbol_type of current char
-  switch(char_lookup[j])
+  switch(char_lookup[*i])
   {
     case LAB:                state = HEXSTRING;   break;
-    case LET:   buf += j;    state = IDENTIFIER;  break;
-    case DIG:   buf += j;    state = NUMBER;      break;
-    case USC:   buf += j;    state = IDENTIFIER;  break;
+    case LET:   buf += *i;    state = IDENTIFIER;  break;
+    case DIG:   buf += *i;    state = NUMBER;      break;
+    case USC:   buf += *i;    state = IDENTIFIER;  break;
     case LSB:                state = ARRAY;       break;
-    case FSL:   buf += j;    state = RESOURCE;    break;
-    case AST:   buf += j;    state = IDENTIFIER;  break;
+    case FSL:   buf += *i;    state = RESOURCE;    break;
+    case AST:   buf += *i;    state = IDENTIFIER;  break;
     case LCB:                 state = STRING;      break;
-    case SUB:   buf += j;    state = NUMBER;      break;
+    case SUB:   buf += *i;    state = NUMBER;      break;
     case PER:   buf +=  "0."; state = NUMBER;      break;
-    case SQO:  buf += j;    state = IDENTIFIER;  break;
+    case SQO:  buf += *i;    state = IDENTIFIER;  break;
     default : buf = "";       state = NEWSYMBOL;   break;
   }
 }
@@ -183,20 +182,20 @@ void tokenizer::newsymbolState()
 void tokenizer::identifierState()
 {
   // get symbol_type of current char
-  switch(char_lookup[j])
+  switch(char_lookup[*i])
   {
     case LAB:   pushbuf(IDENTIFIER, HEXSTRING); break;
-    case LET:   buf += j;                      break;
-    case DIG:   buf += j;                      break;
+    case LET:   buf += *i;                      break;
+    case DIG:   buf += *i;                      break;
     case SPC:   if (buf == "BI") state = WAIT;  else // BI == inline image
                 pushbuf(IDENTIFIER, NEWSYMBOL); break;
     case FSL:   pushbuf(IDENTIFIER, RESOURCE);
                 buf = "/";                      break;
     case LSB:   pushbuf(IDENTIFIER, ARRAY);     break;
     case LCB:   pushbuf(IDENTIFIER, STRING);    break;
-    case SUB:   buf += j;                      break;
-    case USC:   buf += j;                      break;
-    case AST:   buf += j;                      break;
+    case SUB:   buf += *i;                      break;
+    case USC:   buf += *i;                      break;
+    case AST:   buf += *i;                      break;
     default:                                    break;
   }
 }
@@ -207,15 +206,15 @@ void tokenizer::identifierState()
 void tokenizer::numberState()
 {
   // get symbol_type of current char
-  switch(char_lookup[j])
+  switch(char_lookup[*i])
   {
     case LAB:   pushbuf(NUMBER, HEXSTRING);        break;
-    case DIG:   buf += j;                         break;
+    case DIG:   buf += *i;                         break;
     case SPC:   pushbuf(NUMBER, NEWSYMBOL);        break;
-    case PER:   buf += j;                         break;
+    case PER:   buf += *i;                         break;
     case LCB:   pushbuf(NUMBER, STRING);           break;
-    case LET:   buf += j;                         break;
-    case USC:   buf += j;                         break;
+    case LET:   buf += *i;                         break;
+    case USC:   buf += *i;                         break;
     case SUB:   pushbuf(NUMBER, NUMBER); buf = ""; break;
     case AST:   pushbuf(NUMBER, NUMBER); buf = ""; break;
     case FSL:   pushbuf(NUMBER, NUMBER); buf = ""; break;
@@ -230,11 +229,11 @@ void tokenizer::numberState()
 void tokenizer::stringState()
 {
   // get symbol_type of current char
-  switch(char_lookup[j])
+  switch(char_lookup[*i])
   {
     case RCB:   pushbuf(STRING, NEWSYMBOL);       break;
     case BSL:   escapeState();                    break;
-    default:    buf += j;                         break;
+    default:    buf += *i;                         break;
   }
 }
 
@@ -253,14 +252,14 @@ void tokenizer::arrayState()
 void tokenizer::hexstringState()
 {
   // get symbol_type of current char
-  switch(char_lookup[j])
+  switch(char_lookup[*i])
   {
     case RAB:   if (!buf.empty())
                   pushbuf(HEXSTRING, NEWSYMBOL);
                 state = NEWSYMBOL;                break;
     case LAB:   buf = ""; state = DICT;           break;
-    case BSL:  buf += j; ++i; buf += j;           break;
-    default:   buf += j;                          break;
+    case BSL:  buf += *i; ++i; buf += *i;           break;
+    default:   buf += *i;                          break;
   }
 }
 
@@ -271,11 +270,11 @@ void tokenizer::hexstringState()
 void tokenizer::dictState()
 {
   // get symbol_type of current char
-  switch(char_lookup[j])
+  switch(char_lookup[*i])
   {
-    case BSL:  buf += j; ++i; buf += j;        break;
+    case BSL:  buf += *i; ++i; buf += *i;        break;
     case RAB:   pushbuf(DICT, HEXSTRING);         break;
-    default:    buf += j;                        break;
+    default:    buf += *i;                        break;
   }
 }
 
@@ -285,15 +284,14 @@ void tokenizer::dictState()
 void tokenizer::escapeState()
 {
   ++i;
-  j = *i;
    // read the next char
-  if (char_lookup[j] == DIG) // if it's a digit it's likely an octal
+  if (char_lookup[*i] == DIG) // if it's a digit it's likely an octal
   {
     int octcount = 0;
     pushbuf(STRING, STRING);
-    while(char_lookup[j] == DIG && octcount < 3)
+    while(char_lookup[*i] == DIG && octcount < 3)
     {// add consecutive chars to octal (up to 3)
-      buf += j; ++i; j = *i;
+      buf += *i; ++i;
       octcount++;
     }
     int newint = stoi(buf, nullptr, 8); // convert octal string to int
@@ -301,7 +299,7 @@ void tokenizer::escapeState()
     pushbuf(HEXSTRING, STRING);
     i--;                                // decrement to await next char
   }
-  else buf += j;                       // if not a digit, get escaped char
+  else buf += *i;                       // if not a digit, get escaped char
 }
 
 /*---------------------------------------------------------------------------*/

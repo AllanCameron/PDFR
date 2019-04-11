@@ -68,19 +68,19 @@
 
 class dictionary
 {
-  std::unordered_map<std::string, std::string> Map; // data holder
+  std::unordered_map<std::string, std::string> m_Map; // data holder
 
   public:
   // Constructors
   dictionary(std::shared_ptr<const std::string>); // make dictionary from string
   dictionary(std::shared_ptr<const std::string>, size_t); // dict from pos + str
   dictionary(std::unordered_map<std::string, std::string>); // create from map
-  dictionary(const dictionary& d): Map(d.Map){};
-  dictionary(dictionary&& d) noexcept {std::swap(this->Map, d.Map);};
+  dictionary(const dictionary& d): m_Map(d.m_Map){};
+  dictionary(dictionary&& d) noexcept {std::swap(this->m_Map, d.m_Map);};
   dictionary& operator=(dictionary&& d) noexcept {
-    std::swap(Map, d.Map); return *this;}
+    std::swap(m_Map, d.m_Map); return *this;}
   dictionary(); // empty dictionary
-  dictionary& operator=(const dictionary& d){Map = d.Map; return *this;}
+  dictionary& operator=(const dictionary& d){m_Map = d.m_Map; return *this;}
 
   // Public member functions
   std::string get(const std::string&) const;  // get value as string given name

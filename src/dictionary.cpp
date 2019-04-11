@@ -105,7 +105,7 @@ private:
   std::string buf;  // string to hold the read characters in memory until needed
   std::string pendingKey; // name of key waiting for a value
   DState state;     // current state of fsm
-  std::unordered_map<std::string, std::string> Map; // data holder
+  std::unordered_map<std::string, std::string> m_Map; // data holder
 
   // Private functions
   void tokenize_dict(); // co-ordinates the lexer
@@ -175,7 +175,7 @@ void dict_builder::setkey(string b, DState st)
   if(!keyPending)
     pendingKey = buf; // If no key is awaiting a value, store the name as a key
   else
-    Map[pendingKey] = buf; // else the name is a value so store it
+    m_Map[pendingKey] = buf; // else the name is a value so store it
   keyPending = !keyPending; // flip the buffer flag in either case
   buf = b;
   state = st;  // set buffer and state as needed
@@ -187,7 +187,7 @@ void dict_builder::setkey(string b, DState st)
 
 void dict_builder::assignValue(string b, DState st)
 {
-  Map[pendingKey] = buf; // Contents of buffer assigned to key name
+  m_Map[pendingKey] = buf; // Contents of buffer assigned to key name
   keyPending = false;              // No key pending - ready for a new key
   buf = b;                         //
   state = st;                      // Defined values of buf and state set
@@ -356,7 +356,7 @@ void dict_builder::handleClose(char n)
                   while(symbol_type((*s)[i + ex]) == ' ')
                     ex++; // read the whitespace characters after word "stream"
                   // Now store the location of the start of the stream
-                  Map["stream"] = to_string(i + ex);
+                  m_Map["stream"] = to_string(i + ex);
                 }
               }
               state = THE_END; // stream or not, we are done
@@ -393,7 +393,7 @@ dict_builder::dict_builder(shared_ptr<const string> str, size_t pos) :
 
 unordered_map<string, string>&& dict_builder::get()
 {
-  return move(Map);
+  return move(m_Map);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -402,21 +402,21 @@ unordered_map<string, string>&& dict_builder::get()
 dict_builder::dict_builder()
 {
   unordered_map<string, string> Empty;
-  Map = Empty;
+  m_Map = Empty;
 }
 
 /*---------------------------------------------------------------------------*/
 
 dictionary::dictionary(shared_ptr<const string> s)
 {
-  Map = move(dict_builder(s).get());
+  m_Map = move(dict_builder(s).get());
 }
 
 /*---------------------------------------------------------------------------*/
 
 dictionary::dictionary(shared_ptr<const string> s, size_t pos)
 {
-  Map = move(dict_builder(s, pos).get());
+  m_Map = move(dict_builder(s, pos).get());
 }
 
 /*---------------------------------------------------------------------------*/
@@ -424,7 +424,7 @@ dictionary::dictionary(shared_ptr<const string> s, size_t pos)
 dictionary::dictionary()
 {
   unordered_map<string, string> Empty;
-  Map = Empty;
+  m_Map = Empty;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -433,7 +433,7 @@ dictionary::dictionary()
 
 dictionary::dictionary(std::unordered_map<string, string> dict)
 {
-  Map = dict;
+  m_Map = dict;
 };
 
 /*---------------------------------------------------------------------------*/
@@ -442,9 +442,10 @@ dictionary::dictionary(std::unordered_map<string, string> dict)
 string dictionary::get(const string& Key) const
 {
   // A simple map index lookup with square brackets adds the key to
-  // Map, which we don't want. Using find(key) leaves it unaltered
-  if(Map.find(Key) != Map.end())
-    return Map.at(Key);
+  // m_Map, which we don't want. Using find(key) leaves it unaltered
+  auto g = m_Map.find(Key);
+  if(g != m_Map.end())
+    return g->second;
   // We want an empty string rather than an error if the key isn't found.
   // This allows functions that try to return references, ints, floats etc
   // to return an empty vector so a boolean test of their presence is
@@ -457,7 +458,7 @@ string dictionary::get(const string& Key) const
 
 bool dictionary::has(const string& Key) const
 {
-  return Map.find(Key) != Map.end();
+  return m_Map.find(Key) != m_Map.end();
 }
 
 /*---------------------------------------------------------------------------*/
@@ -512,10 +513,18 @@ vector<float> dictionary::getNums(const string& Key) const
 
 dictionary dictionary::getDictionary(const string& Key) const
 {
-  string dict = this->get(Key);       // Get the value string
-  if(dict.find("<<") != string::npos) // Test that it is a dictionary
-    return dictionary(make_shared<string> (dict));// if so, create a new dict
-  return dictionary();                // Otherwise return an empty dictionary
+  // Get the value string
+  string dict = this->get(Key);
+
+  // Test that it is a dictionary
+  if(dict.find("<<") != string::npos)
+  {
+    // If so, create a new dictionary
+    return dictionary(make_shared<string> (dict));
+  }
+
+  // Otherwise return an empty dictionary
+  return dictionary();
 }
 
 /*---------------------------------------------------------------------------*/
@@ -534,7 +543,7 @@ bool dictionary::hasDictionary(const string& Key) const
 
 vector<string> dictionary::getDictKeys() const
 {
-  return getKeys(this->Map);
+  return getKeys(this->m_Map);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -543,5 +552,5 @@ vector<string> dictionary::getDictKeys() const
 
 const std::unordered_map<string, string>& dictionary::R_out() const
 {
-  return this->Map;
+  return this->m_Map;
 }

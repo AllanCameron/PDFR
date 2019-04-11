@@ -64,7 +64,6 @@
  * to reduce the passing around of several parameters.
  */
 
-
 #include "page.h"
 #include<functional>
 #include<iostream>
@@ -79,16 +78,8 @@ namespace Token
 {
   enum TState
   {
-    NEWSYMBOL,
-    IDENTIFIER,
-    NUMBER,
-    RESOURCE,
-    STRING,
-    HEXSTRING,
-    ARRAY,
-    DICT,
-    WAIT,
-    OPERATOR
+    NEWSYMBOL,  IDENTIFIER, NUMBER, RESOURCE, STRING,
+    HEXSTRING,  ARRAY,      DICT,   WAIT,     OPERATOR
   };
 };
 
@@ -157,38 +148,59 @@ struct GSoutput
   }
 };
 
+//---------------------------------------------------------------------------//
+// The textrows struct will be the main data repository for our output.
+// It is essentially a vector of textrows which also houses the page dimensions
+// as a seperate vector. To make it easy to work with, it contains functions
+// that allow us to use it as if it was just a vector of textrows. This allows
+// for easy iteration.
+
 struct textrows
 {
-  std::vector<text_ptr>::iterator begin(){return _data.begin();}
-  std::vector<text_ptr>::iterator end(){return _data.end();}
-  text_ptr operator[](int n){return _data[n];}
+  // Standard constructor - takes vector of textrow pointers and the minbox
   textrows(std::vector<text_ptr> t, std::vector<float> m):
-    _data(t), minbox(m), data_size(t.size()) {}
+    m_data(t), minbox(m), data_size(t.size()) {}
+
+  // Copy contructor
   textrows(const textrows& t):
-    _data(t._data), minbox(t.minbox), data_size(t._data.size()) {}
+    m_data(t.m_data), minbox(t.minbox), data_size(t.m_data.size()) {}
+
+  // Move constructor
   textrows(textrows&& t) noexcept :
-    _data(std::move(t._data)), minbox(std::move(t.minbox)),
-    data_size(_data.size()) {}
+    m_data(std::move(t.m_data)), minbox(std::move(t.minbox)),
+    data_size(m_data.size()) {}
+
+  // Rvalue assignment constructor
   textrows& operator=(textrows&& t) noexcept
   {
-    std::swap(this->_data, t._data);
+    std::swap(this->m_data, t.m_data);
     std::swap(this->minbox, t.minbox);
     return *this;
   }
+
+  // Lvalue assignment constructor
   textrows& operator=(const textrows& t)
   {
-    this->_data = t._data;
+    this->m_data = t.m_data;
     this->minbox = t.minbox;
     return *this;
   }
-  textrows() = default;
-  void push_back(text_ptr t){_data.push_back(t); data_size++;}
-  size_t size(){return data_size;}
 
+  // Default constructor
+  textrows() = default;
+
+  // Functions to copy the methods of vectors to access main data object
+  inline std::vector<text_ptr>::iterator begin(){return m_data.begin();}
+  inline std::vector<text_ptr>::iterator end(){return m_data.end();}
+  inline text_ptr operator[](int n){return m_data[n];}
+  inline void push_back(text_ptr t){m_data.push_back(t); data_size++;}
+  inline size_t size(){return data_size;}
+
+  // Converts textrows to GSoutput
   GSoutput transpose(){
     GSoutput res;
     res.minbox = this->minbox;
-    for(auto i : this->_data)
+    for(auto i : this->m_data)
     {
       if(!i->consumed)
       {
@@ -203,7 +215,9 @@ struct textrows
     }
     return res;
   }
-  std::vector<text_ptr> _data;
+
+  // The data members
+  std::vector<text_ptr> m_data;
   std::vector<float> minbox;
   size_t data_size;
 };
@@ -213,48 +227,56 @@ struct textrows
 class parser
 {
 public:
-  // constructor
+  // Basic constructor
   parser(std::shared_ptr<page>);
-  parser(const parser& prs): db(prs.db){}
-  parser(parser&& prs) noexcept : db(std::move(prs.db)){  }
-  parser& operator=(const parser& prs){
-    this->db = std::move(prs.db);
-    return *this;
-  }
+
+  // Copy constructor
+  parser(const parser& prs): m_db(prs.m_db){}
+
+  // Move constructor
+  parser(parser&& prs) noexcept : m_db(std::move(prs.m_db)){}
+
+  // Assignment constructor
+  parser& operator=(const parser& pr){m_db = std::move(pr.m_db); return *this;}
+
+  // Public function called by tokenizer to update graphics state
   void reader(std::string&, Token::TState);
 
-  // access results
+  // Access results
   textrows& output();
+
+  // To recursively pass xobjects, we need to be able to see the operand
   std::string getOperand();
+
+  // This allows us to process an xObject
   std::shared_ptr<std::string> getXobject(const std::string& inloop) const {
-    return p->getXobject(inloop);
+    return m_p->getXobject(inloop);
   };
 
 private:
   //private data members - used to maintain state between calls to parser
+  std::shared_ptr<page>           m_p;              // pointer to creating page
+  std::shared_ptr<font>           m_wfont;          // pointer to "working" font
+  float                           m_currfontsize;   // Current font size
+  std::vector<float>              m_fontsizestack;  // stack of font size
+  std::array<float, 9>            m_Tmstate,        // Text matrix state
+                                  m_Tdstate;        // Temp modification to Tm
+  std::vector<std::array<float, 9>> m_gs;           // stack of graphics state
+  std::string                     m_currentfont;    // Name of current font
+  std::vector<std::string>        m_fontstack,      // stack of font history
+                                  m_Operands;       // The actual data read
+  std::vector<Token::TState>      m_OperandTypes;   // The type of data read
+  int                             m_PRstate;        // current kerning state
+  float                           m_Tl,             // Leading (line spacing)
+                                  m_Tw,             // Word spacing
+                                  m_Th,             // Horizontal scaling
+                                  m_Tc;             // Character spacing
+  textrows                        m_db;             // The main output struct
+
+  // Static private members
   typedef void (parser::*fptr)();
-
-  std::shared_ptr<page>           p;              // pointer to creating page
-  std::shared_ptr<font>           wfont;          // pointer to "working" font
-  float                           currfontsize;   // Current font size
-  std::array<float, 9>            initstate;      // Identity 3x3 matrix as vec9
-  std::vector<float>              fontsizestack;  // stack of current font size
-  std::array<float, 9>            Tmstate,        // Text matrix state
-                                  Tdstate;        // Temp modification to Tm
-  std::vector<std::array<float, 9>> gs;           // stack of graphics state
-  std::string                     currentfont;    // Name of current font
-  std::vector<std::string>        fontstack,      // stack of font history
-                                  Operands;
-  std::vector<Token::TState>      OperandTypes;
-  int                             PRstate;        // current kerning state
-  float                           Tl,             // Leading (line spacing)
-                                  Tw,             // Word spacing
-                                  Th,             // Horizontal scaling
-                                  Tc;             // Character spacing
-
-  // The main output struct
-
-  textrows db;
+  static std::unordered_map<std::string, fptr> sm_fmap;
+  static const std::array<float, 9> sm_initstate;
 
   // Private methods
 
@@ -277,7 +299,7 @@ private:
   void TD();              //  on the stack. Each is named
   void BT();              //  for the operator it enacts.
   void ET();              //  These functions use private
-  void Tf();              //  data members to maintain
+  void Tf();              //  data members to maintain state
   void TJ();              //
   void Ap();              //---------------------------------//
 
@@ -286,15 +308,13 @@ private:
   // state to identify the intended glyph, size and position from a character
   // in a pdf string object
   void processRawChar(std::vector<RawChar>&, float&,
-                      std::array<float, 9>&,   float&);
+                      std::array<float, 9>&, float&);
 
   // Multiplies to 3x3 matrices represented as length-9 vector floats
   void matmul(const std::array<float, 9>& , std::array<float, 9>&);
 
   // Converts pdfs' 6-token string representation of matrices to a 3x3 matrix
   std::array<float, 9> stringvectomat(const std::vector<std::string>&);
-
-  static std::unordered_map<std::string, fptr> fmap;
 };
 
 

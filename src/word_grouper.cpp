@@ -139,16 +139,16 @@ void word_grouper::assignEdges()
 
 void word_grouper::findRightMatch()
 {
-  if(allRows._data.empty()) throw runtime_error("empty data");
-  for(int k = 0; k < (int) allRows._data.size(); k++) // for each word
+  if(allRows.m_data.empty()) throw runtime_error("empty data");
+  for(int k = 0; k < (int) allRows.m_data.size(); k++) // for each word
   {
-    auto& i = allRows._data[k];
+    auto& i = allRows.m_data[k];
     if( i->consumed) continue; // check elligible
 // if so, look at every other word for a match
-    for(int m = 0; m < (int) allRows._data.size(); m++)
+    for(int m = 0; m < (int) allRows.m_data.size(); m++)
     {
       if(m == k) continue;
-      auto& j = allRows._data[m];
+      auto& j = allRows.m_data[m];
       if(j->consumed) continue; // ignore words that have already been joined
       if(j->left < i->right) continue; // ignore words to the left
       if(j->bottom - i->bottom > 0.7 * i->size) continue; // only match elements

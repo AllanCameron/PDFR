@@ -83,7 +83,7 @@ void glyphwidths::parseWidths()
   if (fontref.hasRefs("/Widths")) // test if widths is a reference
   {
     shared_ptr<object_class> o = d->getobject(fontref.getRefs("/Widths").at(0));
-    string ostring = o->getStream(); // get stream from ref
+    string ostring(o->getStream()); // get stream from ref
     widtharray = getnums(ostring);   // get numbers from stream
   }
   else  // not a reference - get widths directly
@@ -108,7 +108,7 @@ void glyphwidths::parseDescendants()
   shared_ptr<object_class> desc =
     d->getobject(fontref.getRefs("/DescendantFonts")[0]);
   dictionary descdict = desc->getDict(); // extract its dictionary...
-  string descstream = desc->getStream(); // ...and its stream
+  string descstream(desc->getStream()); // ...and its stream
   // sometimes the descendantfonts object is just a reference to another object
   if(!getObjRefs(descstream).empty())
     descdict = d->getobject(getObjRefs(descstream)[0])->getDict(); // so use it

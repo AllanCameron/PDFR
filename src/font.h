@@ -87,11 +87,11 @@ public:
 
 private:
   // private data members
-  std::shared_ptr<document> d;  // pointer to the containing document
-  dictionary fontref;   // the font dictionary
-  std::string FontID,   // The name the font is given in the PDF
-              FontName; // The actual name of the font
-  GlyphMap glyphmap;    // Main data member, mapping RawChar to {Unicode, width}
+  std::shared_ptr<document> m_d;  // pointer to the containing document
+  dictionary m_fontref;   // the font dictionary
+  std::string m_FontID,   // The name the font is given in the PDF
+              m_FontName; // The actual name of the font
+  GlyphMap m_glyphmap;    // Main data member, mapping RawChar to {Unicode, width}
 
   // private methods
   void getFontName();   // Finds the postscript font name
