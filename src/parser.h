@@ -255,26 +255,28 @@ public:
 
 private:
   //private data members - used to maintain state between calls to parser
-  std::shared_ptr<page>           m_p;              // pointer to creating page
-  std::shared_ptr<font>           m_wfont;          // pointer to "working" font
-  float                           m_currfontsize;   // Current font size
-  std::vector<float>              m_fontsizestack;  // stack of font size
-  std::array<float, 9>            m_Tmstate,        // Text matrix state
-                                  m_Tdstate;        // Temp modification to Tm
-  std::vector<std::array<float, 9>> m_gs;           // stack of graphics state
-  std::string                     m_currentfont;    // Name of current font
-  std::vector<std::string>        m_fontstack,      // stack of font history
-                                  m_Operands;       // The actual data read
-  std::vector<Token::TState>      m_OperandTypes;   // The type of data read
-  int                             m_PRstate;        // current kerning state
-  float                           m_Tl,             // Leading (line spacing)
-                                  m_Tw,             // Word spacing
-                                  m_Th,             // Horizontal scaling
-                                  m_Tc;             // Character spacing
-  textrows                        m_db;             // The main output struct
+  std::shared_ptr<page>             m_p;              // pointer to this page
+  std::shared_ptr<font>             m_wfont;          // pointer to working font
+  float                             m_currfontsize;   // Current font size
+  std::vector<float>                m_fontsizestack;  // stack of font size
+  std::array<float, 9>              m_Tmstate,        // Text matrix state
+                                    m_Tdstate;        // Temp modification to Tm
+  std::vector<std::array<float, 9>> m_gs;             // stack of graphics state
+  std::string                       m_currentfont;    // Name of current font
+  std::vector<std::string>          m_fontstack,      // stack of font history
+                                    m_Operands;       // The actual data read
+  std::vector<Token::TState>        m_OperandTypes;   // The type of data read
+  int                               m_PRstate;        // current kerning state
+  float                             m_Tl,             // Leading (line spacing)
+                                    m_Tw,             // Word spacing
+                                    m_Th,             // Horizontal scaling
+                                    m_Tc;             // Character spacing
+  textrows                          m_db;             // The main output struct
+
+  // This typedef allows us to create a map of function pointers
+  typedef void (parser::*fptr)();
 
   // Static private members
-  typedef void (parser::*fptr)();
   static std::unordered_map<std::string, fptr> sm_fmap;
   static const std::array<float, 9> sm_initstate;
 

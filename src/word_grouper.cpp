@@ -42,7 +42,6 @@ constexpr int EDGECOUNT = 4;
 
 word_grouper::word_grouper(textrows&& g): allRows(move(g))
 {
-   //PROFC_NODE("word_grouper creation");
   findEdges();
   assignEdges();
   findRightMatch();
@@ -64,7 +63,6 @@ textrows& word_grouper::output()
 
 GSoutput word_grouper::out()
 {
-  // and return them in an API-consumable format
   return allRows.transpose();
 }
 
@@ -79,15 +77,24 @@ GSoutput word_grouper::out()
 void word_grouper::tabulate(const vector<float>& a,
                             unordered_map<int, size_t>& b)
 {
-  for (const auto& i : a) // for each member of supplied vector
+  // Take each member of the supplied vector
+  for (const auto& i : a)
   {
+    // Multiply it by 10 and use it as a key in the map with value 1
     auto k = b.insert(std::pair<int, size_t>((int) 10 * i, 1));
+
+    // If the key already exists in the map, increment the value by 1
     if(!k.second) k.first->second++;
   }
-  for(auto i = b.begin(); i != b.end(); ) // for each key in the resulting table
+
+  // Now take each key in the resulting map
+  for(auto i = b.begin(); i != b.end(); )
   {
-    if(i->second < EDGECOUNT) // if value is below the number needed for column
-      b.erase(i++) ;// delete it
+    // if value is below the number needed to declare a column, delete it
+    if(i->second < EDGECOUNT)
+    {
+      b.erase(i++);
+    }
     else ++i;
   }
 }
@@ -98,18 +105,25 @@ void word_grouper::tabulate(const vector<float>& a,
 
 void word_grouper::findEdges()
 {
+  // Create vectors of left and right edges of text elements
   vector<float> left, right;
   for(auto& i : allRows)
   {
     left.push_back(i->left);
     right.push_back(i->right);
   }
-  tabulate(left, leftEdges); // use tabulate to get left edges
-  tabulate(right, rightEdges); // use tabulate to get right edges
-  vector<float> midvec; //  create a vector of midpoints of text element --//
-  for(size_t i = 0; i < right.size(); ++i)                              //
-    midvec.emplace_back((right[i] + left[i])/2);  //-----------------//
-  tabulate(midvec, mids); // use tabulate to find centre-aligned items
+
+  // Create a vector of midpoints of text elements
+  vector<float> midvec;
+  for(size_t i = 0; i < right.size(); ++i)
+  {
+    midvec.emplace_back((right[i] + left[i])/2);
+  }
+
+  // Use tabulate to find left and right edges as well as midpoints
+  tabulate(left, leftEdges);
+  tabulate(right, rightEdges);
+  tabulate(midvec, mids);
 }
 
 //---------------------------------------------------------------------------//
@@ -119,14 +133,25 @@ void word_grouper::findEdges()
 
 void word_grouper::assignEdges()
 {
-  for(auto& i : allRows) // for each word
+  for(auto& i : allRows)
   {
+    // Non-unique left edge - assume column edge
     if(leftEdges.find((int) (i->left * 10)) != leftEdges.end())
-      i->isLeftEdge = true; // Non-unique left edge - assume column edge
+    {
+      i->isLeftEdge = true;
+    }
+
+    // Non-unique right edge - assume column edge
     if(rightEdges.find((int) (i->right * 10)) != rightEdges.end())
-      i->isRightEdge = true; // Non-unique right edge - assume column edge
+    {
+      i->isRightEdge = true;
+    }
+
+    // Non-unique centre value - assume centred column
     if(mids.find((int) ((i->right + i->left) * 5)) != mids.end())
-      i->isMid = true; // Non-unique centre value - assume centred column
+    {
+      i->isMid = true;
+    }
   }
 }
 
@@ -139,38 +164,77 @@ void word_grouper::assignEdges()
 
 void word_grouper::findRightMatch()
 {
-  if(allRows.m_data.empty()) throw runtime_error("empty data");
-  for(int k = 0; k < (int) allRows.m_data.size(); k++) // for each word
+  // Handle empty data
+  if(allRows.m_data.empty())
   {
+    throw runtime_error("empty data");
+  }
+
+  for(int k = 0; k < (int) allRows.m_data.size(); k++)
+  {
+    // Create a reference name for the row in question
     auto& i = allRows.m_data[k];
-    if( i->consumed) continue; // check elligible
-// if so, look at every other word for a match
+
+    // Check the row is elligible for matching
+    if( i->consumed)
+    {
+      continue;
+    }
+
+    // If elligible, check every other word for the best match
     for(int m = 0; m < (int) allRows.m_data.size(); m++)
     {
+      // Dont' match against itself
       if(m == k) continue;
+
+      // Create a reference name for the row in question
       auto& j = allRows.m_data[m];
-      if(j->consumed) continue; // ignore words that have already been joined
-      if(j->left < i->right) continue; // ignore words to the left
-      if(j->bottom - i->bottom > 0.7 * i->size) continue; // only match elements
-      if(i->bottom - j->bottom > 0.7 * i->size) continue; // on the same "line"
-      if(j->left - i->right > 2 * i->size) continue; // ignore if too far right
-      if((j->isLeftEdge || j->isMid) && (j->left - i->right > 0.51 * i->size))
-        continue; // ignore if not elligble for join
-      if((i->isRightEdge || i->isMid ) && (j->left - i->right > 0.51 * i->size))
+
+      // Ignore words that have already been joined
+      if(j->consumed) continue;
+
+      // Ignore words to the left
+      if(j->left < i->right) continue;
+
+      // Only match elements on the same "line"
+      if(j->bottom - i->bottom > 0.7 * i->size) continue;
+      if(i->bottom - j->bottom > 0.7 * i->size) continue;
+
+      // Ignore if too far right
+      if(j->left - i->right > 2 * i->size) continue;
+
+      // Ignore if not elligble for join
+      if((j->isLeftEdge  || j->isMid) && (j->left - i->right > 0.51 * i->size)||
+         (i->isRightEdge || i->isMid) && (j->left - i->right > 0.51 * i->size))
         continue;
-      // The element is elligible for joining
-      i->glyph.push_back(0x0020); // add a space
-      // if the gap is wide enough, add two spaces
+
+      // The element is elligible for joining - start by adding a space to i
+      i->glyph.push_back(0x0020);
+
+      // If the gap is wide enough, add two spaces
       if(j->left - i->right > 1 * i->size) i->glyph.push_back(0x0020);
-      concat(i->glyph, j->glyph); // stick contents together
-      i->right = j->right; // the right edge is now the rightmost edge
-      i->isRightEdge = j->isRightEdge; // as are the right edge's properties
-      if(i->size < j->size) i->size = j->size;
-      i->width = i->right - i->left; // update the width
-      j->consumed = true; // the element on the right is now consumed
-      k--; // The element we have just matched now has different characteristics
-           // so may be matched by a different element - match it again until
-           // no further matches are found.
+
+      // Stick contents together
+      concat(i->glyph, j->glyph);
+
+      // The rightmost glyph's right edge properties are also copied over
+      i->right = j->right;
+      i->isRightEdge = j->isRightEdge;
+
+      // The word will take up the size of its largest glyph
+      i->size = max(i->size, j->size);
+
+      // Update the width
+      i->width = i->right - i->left;
+
+      // The element on the right is now consumed
+      j->consumed = true;
+
+      // The element we have just matched now has different characteristics
+      // so may be matched by a different element - match it again until
+      // no further matches are found.
+      --k;
+
       break;
     }
   }
