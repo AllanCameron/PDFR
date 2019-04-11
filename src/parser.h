@@ -192,9 +192,10 @@ struct textrows
   // Functions to copy the methods of vectors to access main data object
   inline std::vector<text_ptr>::iterator begin(){return m_data.begin();}
   inline std::vector<text_ptr>::iterator end(){return m_data.end();}
-  inline text_ptr operator[](int n){return m_data[n];}
+  inline text_ptr& operator[](int n){return m_data[n];}
   inline void push_back(text_ptr t){m_data.push_back(t); data_size++;}
   inline size_t size(){return data_size;}
+  inline bool empty(){return data_size == 0;}
 
   // Converts textrows to GSoutput
   GSoutput transpose(){

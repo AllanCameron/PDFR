@@ -40,7 +40,7 @@ constexpr int EDGECOUNT = 4;
 // and finds its column edges, then joins elligible words together as long as
 // they do not belong to different columns.
 
-word_grouper::word_grouper(textrows&& g): allRows(move(g))
+word_grouper::word_grouper(textrows&& g): m_allRows(move(g))
 {
   findEdges();
   assignEdges();
@@ -52,7 +52,7 @@ word_grouper::word_grouper(textrows&& g): allRows(move(g))
 
 textrows& word_grouper::output()
 {
-  return allRows;
+  return m_allRows;
 }
 
 //---------------------------------------------------------------------------//
@@ -63,7 +63,7 @@ textrows& word_grouper::output()
 
 GSoutput word_grouper::out()
 {
-  return allRows.transpose();
+  return m_allRows.transpose();
 }
 
 //---------------------------------------------------------------------------//
@@ -107,7 +107,7 @@ void word_grouper::findEdges()
 {
   // Create vectors of left and right edges of text elements
   vector<float> left, right;
-  for(auto& i : allRows)
+  for(auto& i : m_allRows)
   {
     left.push_back(i->left);
     right.push_back(i->right);
@@ -121,9 +121,9 @@ void word_grouper::findEdges()
   }
 
   // Use tabulate to find left and right edges as well as midpoints
-  tabulate(left, leftEdges);
-  tabulate(right, rightEdges);
-  tabulate(midvec, mids);
+  tabulate(left, m_leftEdges);
+  tabulate(right, m_rightEdges);
+  tabulate(midvec, m_mids);
 }
 
 //---------------------------------------------------------------------------//
@@ -133,22 +133,22 @@ void word_grouper::findEdges()
 
 void word_grouper::assignEdges()
 {
-  for(auto& i : allRows)
+  for(auto& i : m_allRows)
   {
     // Non-unique left edge - assume column edge
-    if(leftEdges.find((int) (i->left * 10)) != leftEdges.end())
+    if(m_leftEdges.find((int) (i->left * 10)) != m_leftEdges.end())
     {
       i->isLeftEdge = true;
     }
 
     // Non-unique right edge - assume column edge
-    if(rightEdges.find((int) (i->right * 10)) != rightEdges.end())
+    if(m_rightEdges.find((int) (i->right * 10)) != m_rightEdges.end())
     {
       i->isRightEdge = true;
     }
 
     // Non-unique centre value - assume centred column
-    if(mids.find((int) ((i->right + i->left) * 5)) != mids.end())
+    if(m_mids.find((int) ((i->right + i->left) * 5)) != m_mids.end())
     {
       i->isMid = true;
     }
@@ -165,15 +165,15 @@ void word_grouper::assignEdges()
 void word_grouper::findRightMatch()
 {
   // Handle empty data
-  if(allRows.m_data.empty())
+  if(m_allRows.empty())
   {
     throw runtime_error("empty data");
   }
 
-  for(int k = 0; k < (int) allRows.m_data.size(); k++)
+  for(int k = 0; k < (int) m_allRows.size(); k++)
   {
     // Create a reference name for the row in question
-    auto& i = allRows.m_data[k];
+    auto& i = m_allRows[k];
 
     // Check the row is elligible for matching
     if( i->consumed)
@@ -182,13 +182,13 @@ void word_grouper::findRightMatch()
     }
 
     // If elligible, check every other word for the best match
-    for(int m = 0; m < (int) allRows.m_data.size(); m++)
+    for(int m = 0; m < (int) m_allRows.size(); m++)
     {
       // Dont' match against itself
       if(m == k) continue;
 
       // Create a reference name for the row in question
-      auto& j = allRows.m_data[m];
+      auto& j = m_allRows[m];
 
       // Ignore words that have already been joined
       if(j->consumed) continue;
@@ -204,9 +204,10 @@ void word_grouper::findRightMatch()
       if(j->left - i->right > 2 * i->size) continue;
 
       // Ignore if not elligble for join
-      if((j->isLeftEdge  || j->isMid) && (j->left - i->right > 0.51 * i->size)||
-         (i->isRightEdge || i->isMid) && (j->left - i->right > 0.51 * i->size))
-        continue;
+      if(((j->isLeftEdge  || j->isMid)           &&
+          (j->left - i->right > 0.51 * i->size)) ||
+         ((i->isRightEdge || i->isMid)           &&
+          (j->left - i->right > 0.51 * i->size))  )  continue;
 
       // The element is elligible for joining - start by adding a space to i
       i->glyph.push_back(0x0020);

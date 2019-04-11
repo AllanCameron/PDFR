@@ -68,28 +68,36 @@
 class word_grouper
 {
 public:
-  // constructor
+  // Constructor
   word_grouper(textrows&&);
 
-  // access results
-  textrows& output(); // output individual text elements for next
-                                 // phase of layout analysis
-  GSoutput out(); // Output text elements with sizes, fonts, positions to API
+  // Output individual text elements for next phase of layout analysis
+  textrows& output();
+
+  // Output text elements with sizes, fonts, positions to API
+  GSoutput out();
 
 private:
   // Make a table of values in a vector of floats rounded to one decimal place
   void tabulate(const std::vector<float>&, std::unordered_map<int, size_t>&);
+
   // Use tabulate function to find likely left, right or mid-aligned columns
   void findEdges();
+
   // Tell the text elements whether they form an edge or not
   void assignEdges();
+
   // Join elligible adjacent glyphs together and merge their properties
   void findRightMatch();
-  // tables of edges
-  std::unordered_map<int, size_t> leftEdges, rightEdges, mids, Bottoms;
+
+// private data members
+
+  // The tables of edges
+  std::unordered_map<int, size_t> m_leftEdges, m_rightEdges, m_mids;
+
   // The main data member: a vector of textrows, each containing a word with
   // its associated size, font and position
-  textrows allRows;
+  textrows m_allRows;
 };
 
 //---------------------------------------------------------------------------//
