@@ -119,6 +119,12 @@ struct WSbox
 
   inline float width() const { return right - left;}
   inline float height() const { return top - bottom;}
+
+  inline bool shares_edge(const WSbox& other) const
+  {
+    return top == other.top || bottom == other.bottom ||
+           left == other.left || right == other.right;
+  }
 };
 
 //---------------------------------------------------------------------------//
@@ -161,7 +167,7 @@ private:
   std::vector<float> minbox;
   std::unordered_map<size_t, std::vector<Vertex>> polygonMap;// main polygon map
   WSbox m_page;
-  float midfontsize;  // The average font size on the page
+  float max_line_space;  // The average font size on the page
   std::vector<WSbox> ws_boxes; // used in whitespace construction AND output
   std::vector<Vertex> vertices; // The vertices used to make polygons
   static const size_t DIVISIONS = 200; // number of strips used for whitespace

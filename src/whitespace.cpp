@@ -89,7 +89,7 @@ Whitespace::Whitespace(textrows wgo): WGO(wgo.m_data), minbox(wgo.minbox),
   std::vector<float> fontsizes;
   for(auto& i : WGO) fontsizes.push_back(i->size);
   sort(fontsizes.begin(), fontsizes.end());
-  midfontsize = fontsizes[fontsizes.size()/2];
+  max_line_space = fontsizes[fontsizes.size()/2] * 0.3;
   pageDimensions();
   makeStrips();
   mergeStrips();
@@ -114,7 +114,7 @@ void Whitespace::pageDimensions()
   for(auto& i : WGO)
   {
     if(i->right > m_page.right) m_page.right += 10.0;
-    if(i->left < m_page.left) m_page.left -= 10.0;
+    if(i->left < m_page.left)   m_page.left -= 10.0;
     if((i->bottom + i->size) > m_page.top) m_page.top += 10.0;
     if(i->bottom < m_page.bottom) m_page.bottom -= 10.0;
   }
@@ -229,13 +229,15 @@ void Whitespace::mergeStrips()
 
 void Whitespace::removeSmall()
 {
-  for(auto& i : ws_boxes) // for each box
-    if(!i.deletionFlag &&
-       i.top != m_page.top && i.bottom != m_page.bottom && // if not at the edge
-       i.left != m_page.left && i.right != m_page.right && // of a page and less than
-       i.height() < 0.3 * (midfontsize))     // a rule-of-thumb constant
-      i.remove();                         // mark for deletion...
-  clearDeletedBoxes();                               // ...and delete
+  for(auto& i : ws_boxes)
+  {
+    // Remove only undeleted boxes who are not at the page border and are short
+    if(!i.deletionFlag && !i.shares_edge(m_page) && i.height() < max_line_space)
+    {
+      i.remove();
+    }
+  }
+  clearDeletedBoxes();
 }
 
 //---------------------------------------------------------------------------//
