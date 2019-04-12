@@ -86,10 +86,7 @@ bool Whitespace::eq(float a, float b)
 Whitespace::Whitespace(textrows wgo): WGO(wgo.m_data), minbox(wgo.minbox),
     m_page({minbox[West], minbox[East], minbox[North], minbox[South], false})
 {
-  std::vector<float> fontsizes;
-  for(auto& i : WGO) fontsizes.push_back(i->size);
-  sort(fontsizes.begin(), fontsizes.end());
-  max_line_space = fontsizes[fontsizes.size()/2] * 0.3;
+  getMaxLineSize();
   pageDimensions();
   makeStrips();
   mergeStrips();
@@ -101,6 +98,20 @@ Whitespace::Whitespace(textrows wgo): WGO(wgo.m_data), minbox(wgo.minbox),
   polygonMax();
   removeEngulfed();
   groupText();
+}
+
+
+//---------------------------------------------------------------------------//
+
+void Whitespace::getMaxLineSize()
+{
+  std::vector<float> fontsizes;
+  for(auto& i : WGO)
+  {
+    fontsizes.push_back(i->size);
+  }
+  sort(fontsizes.begin(), fontsizes.end());
+  max_line_space = fontsizes[fontsizes.size()/2] * 0.3;
 }
 
 //---------------------------------------------------------------------------//
@@ -223,7 +234,7 @@ void Whitespace::mergeStrips()
       auto& c = ws_boxes[i];
 
       // If tested box is adjacent to test box, merge left edges and delete
-      if(m.left == c.right && m.top == c.top && m.bottom == c.bottom)
+      if(m.is_adjacent(c))
       {
         m.left = c.left;
         c.remove();
@@ -343,7 +354,7 @@ void Whitespace::tidyVertices()
 
 void Whitespace::tracePolygons()
 {
-  for(auto& i : vertices) // for every vertex
+  for(auto& i : vertices)
   {
     // Use the Direction enum as an int to get points beyond page edges
     float initialEdge = minbox[i.Out] + (2 * (i.Out / 2) - 1) * 100;
@@ -351,20 +362,23 @@ void Whitespace::tracePolygons()
     // "edge" keeps track of the nearest vertex
     float edge = initialEdge;
 
-    for(auto& j : vertices)  // now for every other vertex
+    // Now for every other vertex
+    for(auto& j : vertices)
     {
-      if((i.Out == North && j.x == i.x && // if North of North-pointing vertex
-          j.In  == North && j.y >  i.y && j.y < edge) || // and closest yet or
-         (i.Out == South && j.x == i.x && // South of South-pointing vertex
-          j.In  == South && j.y <  i.y && j.y > edge) || // and closest yet or
-         (i.Out == East  && j.y == i.y && // if East of East-pointing vertex
-          j.In  == East  && j.x >  i.x && j.x < edge) ||// and closest yet or
-         (i.Out == West  && j.y == i.y && // if West of West-pointing vertex
-          j.In  == West  && j.x <  i.x && j.x > edge)  ) // and closest yet
+      if(i.is_closer_than(j, edge))
       {
-        i.points_to = &j - &(vertices[0]); // i provisionally points to j
+        // i provisionally points to j
+        i.points_to = &j - &(vertices[0]);
+
         // Now we update "edge" to make it the closest yet
-        if(i.Out == North || i.Out == South) edge = j.y; else edge = j.x;
+        if(i.Out == North || i.Out == South)
+        {
+          edge = j.y;
+        }
+        else
+        {
+          edge = j.x;
+        }
       }
     }
     // If the closest yet is not on the page, mark vertex for deletion

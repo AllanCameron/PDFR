@@ -118,12 +118,18 @@ struct WSbox
   }
 
   inline float width() const { return right - left;}
+
   inline float height() const { return top - bottom;}
 
   inline bool shares_edge(const WSbox& other) const
   {
-    return top == other.top || bottom == other.bottom ||
-           left == other.left || right == other.right;
+    return top  == other.top  || bottom == other.bottom ||
+           left == other.left || right  == other.right  ;
+  }
+
+  inline bool is_adjacent(const WSbox& j)
+  {
+    return left == j.right && top == j.top && bottom == j.bottom;
   }
 };
 
@@ -139,10 +145,18 @@ struct WSbox
 struct Vertex
 {
   float x, y;
-  uint8_t flags; // delete-void-void-void-NW-NE-SE-SW
+  uint8_t flags; // bits denote delete-void-void-void-NW-NE-SE-SW
   Direction In, Out;
   size_t points_to, group;
 
+  inline bool is_closer_than(const Vertex& j, const float& edge)
+  {
+    return
+    (Out == North && j.x == x && j.In  == North && j.y >  y && j.y < edge) ||
+    (Out == South && j.x == x && j.In  == South && j.y <  y && j.y > edge) ||
+    (Out == East  && j.y == y && j.In  == East  && j.x >  x && j.x < edge) ||
+    (Out == West  && j.y == y && j.In  == West  && j.x <  x && j.x > edge) ;
+  }
 };
 
 //---------------------------------------------------------------------------//
@@ -173,7 +187,7 @@ private:
   static const size_t DIVISIONS = 200; // number of strips used for whitespace
   // we use this to map directions to vertices
   static std::unordered_map<uint8_t, std::pair<Direction, Direction>> arrows;
-
+  void getMaxLineSize();
   void pageDimensions();    // Gets page margins
   void cleanAndSortBoxes(); // Helper to remove WSboxes flagged for deletion
   void makeStrips();        // Cover the whitespace with tall thin strips
