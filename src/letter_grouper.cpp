@@ -107,7 +107,6 @@ void letter_grouper::makegrid()
 
 textrows letter_grouper::output()
 {
-  //PROFC_NODE("output()");
   // This block fills "allRows" by taking the ouput from letter_grouper and
   // placing each word with its associated size and position (a textrow) from it
   // into a vector
@@ -178,14 +177,22 @@ void letter_grouper::matchRight(text_ptr row, uint8_t key)
       // mark row for deletion if it is identical
       if(*cell[i] == *row) row->consumed = true;
       if(cell[i]->consumed) continue; // ignore if marked for deletion
-      if(row->rightjoin.first == -1) // if no previous match found
+
+
+      if(row->rightjoin.first == -1)
       {
-        row->rightjoin = make_pair((int) key, (int) i); // store match address
+        row->rightjoin.first = key;
+        row->rightjoin.second = i; // store match address
         continue; // don't bother checking next statement
       }
+
+      // If already a match but this one is better...
       if(gridmap[row->rightjoin.first][row->rightjoin.second]->left >
-           cell[i]->left) // if already a match but this one is better...
-        row->rightjoin = make_pair((int) key, (int) i); // ...store match address
+           cell[i]->left)
+      {
+        row->rightjoin.first = key;
+        row->rightjoin.second = i; // store match address
+      }
     }
 }
 

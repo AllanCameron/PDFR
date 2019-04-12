@@ -83,7 +83,8 @@ bool Whitespace::eq(float a, float b)
 // then trace round all the vertices, storing every connected loop as a
 // polygon surrounding a text element.
 
-Whitespace::Whitespace(textrows wgo): WGO(wgo.m_data), minbox(wgo.minbox)
+Whitespace::Whitespace(textrows wgo): WGO(wgo.m_data), minbox(wgo.minbox),
+    m_page({minbox[West], minbox[East], minbox[North], minbox[South], false})
 {
   std::vector<float> fontsizes;
   for(auto& i : WGO) fontsizes.push_back(i->size);
@@ -110,16 +111,12 @@ Whitespace::Whitespace(textrows wgo): WGO(wgo.m_data), minbox(wgo.minbox)
 
 void Whitespace::pageDimensions()
 {
-  pageleft   = minbox[West];
-  pageright  = minbox[East];
-  pagebottom = minbox[South];
-  pagetop    = minbox[North];
   for(auto& i : WGO)
   {
-    if(i->right > pageright) pageright += 10.0;
-    if(i->left < pageleft) pageleft -= 10.0;
-    if((i->bottom + i->size) > pagetop) pagetop += 10.0;
-    if(i->bottom < pagebottom) pagebottom -= 10.0;
+    if(i->right > m_page.right) m_page.right += 10.0;
+    if(i->left < m_page.left) m_page.left -= 10.0;
+    if((i->bottom + i->size) > m_page.top) m_page.top += 10.0;
+    if(i->bottom < m_page.bottom) m_page.bottom -= 10.0;
   }
 }
 
@@ -155,13 +152,13 @@ void Whitespace::clearDeletedBoxes()
 
 void Whitespace::makeStrips()
 {
-  float pixwidth = (pageright - pageleft) / DIVISIONS; // find strip widths
-  float L_Edge = pageleft;              // first strip starts at left edge
-  float R_Edge = pageleft + pixwidth;  // and stops one stripwidth to right
+  float pixwidth = (m_page.right - m_page.left) / DIVISIONS; // find strip widths
+  float L_Edge = m_page.left;              // first strip starts at left edge
+  float R_Edge = m_page.left + pixwidth;  // and stops one stripwidth to right
   for(size_t i = 0; i < DIVISIONS; ++i) // for each of our divisions
   {
-    vector<float> tops = {pagetop};       // create top/bottom bounds for boxes.
-    vector<float> bottoms = {pagebottom}; // First box starts at top of the page
+    vector<float> tops = {m_page.top};       // create top/bottom bounds for boxes.
+    vector<float> bottoms = {m_page.bottom}; // First box starts at top of the page
     for(const auto& j : WGO)     // Now for each text element on the page
       if(j->left < R_Edge && j->right > L_Edge) // if it obstructs our strip,
       {
@@ -196,7 +193,7 @@ void Whitespace::mergeStrips()
       if(m.left == c.right && m.top == c.top && m.bottom == c.bottom)
       {
         m.left = c.left; // merge the left edges
-        c.deletionFlag = true; // ... and delete the leftmost box
+        c.remove(); // ... and delete the leftmost box
         break; // There can be only one match - skip to next iteration
       }
       // since boxes are ordered, if no adjacent boxes match this, skip to next
@@ -212,10 +209,10 @@ void Whitespace::mergeStrips()
 void Whitespace::removeSmall()
 {
   for(auto& i : ws_boxes) // for each box
-    if(i.top != pagetop && i.bottom != pagebottom && // if not at the edge
-       i.left != pageleft && i.right != pageright && // of a page and less than
+    if(i.top != m_page.top && i.bottom != m_page.bottom && // if not at the edge
+       i.left != m_page.left && i.right != m_page.right && // of a page and less than
        (i.top - i.bottom) < 0.3 * (midfontsize))     // a rule-of-thumb constant
-      i.deletionFlag = true;                         // mark for deletion...
+      i.remove();                         // mark for deletion...
   clearDeletedBoxes();                               // ...and delete
 }
 
@@ -239,23 +236,22 @@ void Whitespace::makeVertices()
     {
       float x, y;        // empty x, y co-ordinates of vertex
       uint8_t flags = 0; // create an empty flag byte
-      // we know at least one direction has whitespace by virtue of the
+
+      // We know at least one direction has whitespace by virtue of the
       // position of the vertex on the box, so we populate the flag with it,
       // along with the x, y co-ordinates of the vertex
-      if(j == 0){x = i.left; y = i.top; flags = 0x02;} // top left vertex
-      if(j == 1){x = i.right; y = i.top; flags = 0x01;} // top right vertex
-      if(j == 2){x = i.left; y = i.bottom; flags = 0x04;} // bottom right vertex
+      if(j == 0){x = i.left;  y = i.top;    flags = 0x02;} // top left vertex
+      if(j == 1){x = i.right; y = i.top;    flags = 0x01;} // top right vertex
+      if(j == 2){x = i.left;  y = i.bottom; flags = 0x04;} // bottom right vertex
       if(j == 3){x = i.right; y = i.bottom; flags = 0x08;} // bottom left vertex
-      for(auto& k : ws_boxes) // now compare the other boxes to find neighbours
-      {                       // and add the flags as needed
-        if(k.right >= x && k.left < x && k.top > y && k.bottom <= y)
-          flags = flags | 0x08; // NW
-        if(k.right > x && k.left <= x && k.top > y && k.bottom <= y)
-          flags = flags | 0x04; // NE
-        if(k.right > x && k.left <= x && k.top >= y && k.bottom < y)
-          flags = flags | 0x02; // SE
-        if(k.right >= x && k.left < x && k.top >= y && k.bottom < y)
-          flags = flags | 0x01; // SW
+
+      // Now compare the other boxes to find neighbours and flag as needed
+      for(auto& k : ws_boxes)
+      {
+        if(k.is_NW_of(x, y)) flags |= 0x08; // NW
+        if(k.is_NE_of(x, y)) flags |= 0x04; // NE
+        if(k.is_SE_of(x, y)) flags |= 0x02; // SE
+        if(k.is_SW_of(x, y)) flags |= 0x01; // SW
       }
       // Now we can create our vertex object and add it to the list
       vertices.emplace_back(Vertex{x, y, flags, None, None, 0, 0});
@@ -390,8 +386,8 @@ void Whitespace::polygonMax()
       if(j.y < ymin) ymin = j.y;  // move bottom edge to lowest point
       if(j.y > ymax) ymax = j.y;  // move top edge to highest point
     }
-    if(!(eq(xmin, pageleft) && eq(xmax, pageright) &&
-       eq(ymax, pagetop) && eq(ymin, pagebottom))) // if box != page itself
+    if(!(eq(xmin, m_page.left) && eq(xmax, m_page.right) &&
+       eq(ymax, m_page.top) && eq(ymin, m_page.bottom))) // if box != page itself
       ws_boxes.push_back(WSbox{xmin, xmax, ymax, ymin, false}); // create box
   }
 }
@@ -409,7 +405,7 @@ void Whitespace::removeEngulfed()
          i.left >= j.left && i.right <= j.right &&
          !(i.bottom == j.bottom && i.top == j.top &&
          i.left == j.left && i.right == j.right ))
-        i.deletionFlag = true; // if so, mark for deletion
+        i.remove(); // if so, mark for deletion
   clearDeletedBoxes(); // deleted boxes marked for deletion
 }
 

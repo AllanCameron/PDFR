@@ -88,6 +88,34 @@ struct WSbox
 {
   float left, right, top, bottom;
   bool deletionFlag;
+
+  inline bool operator==(const WSbox& other) const
+  {
+    return left == other.left && right  == other.right &&
+           top  == other.top  && bottom == other.bottom;
+  }
+
+  inline void remove() {deletionFlag = true;}
+
+  inline bool is_NW_of(float x, float y) const
+  {
+    return right >= x && left < x && top > y && bottom <= y;
+  }
+
+  inline bool is_NE_of(float x, float y) const
+  {
+    return right > x && left <= x && top > y && bottom <= y;
+  }
+
+  inline bool is_SE_of(float x, float y) const
+  {
+    return right > x && left <= x && top >= y && bottom < y;
+  }
+
+  inline bool is_SW_of(float x, float y) const
+  {
+    return right >= x && left < x && top >= y && bottom < y;
+  }
 };
 
 //---------------------------------------------------------------------------//
@@ -129,7 +157,7 @@ private:
   std::vector<text_ptr> WGO; // a copy of wgo's output
   std::vector<float> minbox;
   std::unordered_map<size_t, std::vector<Vertex>> polygonMap;// main polygon map
-  float pageleft, pageright, pagetop, pagebottom; // taken from crop box
+  WSbox m_page;
   float midfontsize;  // The average font size on the page
   std::vector<WSbox> ws_boxes; // used in whitespace construction AND output
   std::vector<Vertex> vertices; // The vertices used to make polygons
