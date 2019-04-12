@@ -128,11 +128,20 @@ void Whitespace::pageDimensions()
 
 void Whitespace::clearDeletedBoxes()
 {
-  ws_boxes.erase(std::remove_if(ws_boxes.begin(), ws_boxes.end(),
-    [&](WSbox x)
-    {
-      return x.deletionFlag;
-    }), ws_boxes.end());
+  // lambda to identify boxes flagged for deletion
+  auto del = [&](WSbox x){return x.deletionFlag;};
+
+  // lambda to sort boxes left to right
+  auto l = [](const WSbox& a, const WSbox& b) -> bool {return a.left < b.left;};
+
+  // Move boxes for deletion to back of vector, starting at returned iterator
+  auto junk = remove_if(ws_boxes.begin(), ws_boxes.end(), del);
+
+  // Erase the back of the vector containing the boxes flagged for deletion
+  ws_boxes.erase(junk, ws_boxes.end());
+
+  // Sort the remaining boxes left to right
+  sort(ws_boxes.begin(), ws_boxes.end(), l);
 }
 
 //---------------------------------------------------------------------------//
@@ -199,7 +208,7 @@ void Whitespace::mergeStrips()
       // since boxes are ordered, if no adjacent boxes match this, skip to next
       if(m.left > c.right) break;
     }
-  clearDeletedBoxes(); // now we can remove boxes flagged for deletion
+    clearDeletedBoxes();
 }
 
 //---------------------------------------------------------------------------//
@@ -209,7 +218,8 @@ void Whitespace::mergeStrips()
 void Whitespace::removeSmall()
 {
   for(auto& i : ws_boxes) // for each box
-    if(i.top != m_page.top && i.bottom != m_page.bottom && // if not at the edge
+    if(!i.deletionFlag &&
+       i.top != m_page.top && i.bottom != m_page.bottom && // if not at the edge
        i.left != m_page.left && i.right != m_page.right && // of a page and less than
        (i.top - i.bottom) < 0.3 * (midfontsize))     // a rule-of-thumb constant
       i.remove();                         // mark for deletion...
@@ -240,10 +250,13 @@ void Whitespace::makeVertices()
       // We know at least one direction has whitespace by virtue of the
       // position of the vertex on the box, so we populate the flag with it,
       // along with the x, y co-ordinates of the vertex
-      if(j == 0){x = i.left;  y = i.top;    flags = 0x02;} // top left vertex
-      if(j == 1){x = i.right; y = i.top;    flags = 0x01;} // top right vertex
-      if(j == 2){x = i.left;  y = i.bottom; flags = 0x04;} // bottom right vertex
-      if(j == 3){x = i.right; y = i.bottom; flags = 0x08;} // bottom left vertex
+      switch(j)
+      {
+        case 0 : x = i.left;  y = i.top;    flags = 0x02; break;
+        case 1 : x = i.right; y = i.top;    flags = 0x01; break;
+        case 2 : x = i.left;  y = i.bottom; flags = 0x04; break;
+        case 3 : x = i.right; y = i.bottom; flags = 0x08; break;
+      }
 
       // Now compare the other boxes to find neighbours and flag as needed
       for(auto& k : ws_boxes)
@@ -252,6 +265,7 @@ void Whitespace::makeVertices()
         if(k.is_NE_of(x, y)) flags |= 0x04; // NE
         if(k.is_SE_of(x, y)) flags |= 0x02; // SE
         if(k.is_SW_of(x, y)) flags |= 0x01; // SW
+        if(k.left > i.right) continue;
       }
       // Now we can create our vertex object and add it to the list
       vertices.emplace_back(Vertex{x, y, flags, None, None, 0, 0});
