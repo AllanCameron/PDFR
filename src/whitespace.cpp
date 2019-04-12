@@ -161,21 +161,32 @@ void Whitespace::clearDeletedBoxes()
 
 void Whitespace::makeStrips()
 {
-  float pixwidth = (m_page.right - m_page.left) / DIVISIONS; // find strip widths
+  float pixwidth = m_page.width() / DIVISIONS; // find strip widths
   float L_Edge = m_page.left;              // first strip starts at left edge
-  float R_Edge = m_page.left + pixwidth;  // and stops one stripwidth to right
+  float R_Edge = L_Edge + pixwidth;  // and stops one stripwidth to right
+
   for(size_t i = 0; i < DIVISIONS; ++i) // for each of our divisions
   {
-    vector<float> tops = {m_page.top};       // create top/bottom bounds for boxes.
-    vector<float> bottoms = {m_page.bottom}; // First box starts at top of the page
-    for(const auto& j : WGO)     // Now for each text element on the page
-      if(j->left < R_Edge && j->right > L_Edge) // if it obstructs our strip,
+    // Create top/bottom bounds for boxes at top/bottom of page.
+    vector<float> tops = {m_page.top};
+    vector<float> bottoms = {m_page.bottom};
+
+    // Now for each text element on the page
+    for(const auto& j : WGO)
+    {
+      // If it obstructs our strip, store its upper and lower bounds
+      if(j->left < R_Edge && j->right > L_Edge)
       {
-        bottoms.push_back(j->bottom + j->size);   // store its upper and lower
-        tops.push_back(j->bottom);               // bounds as bottom and top of
-      }                                        // whitespace boxes
-    sort(tops.begin(), tops.end(), greater<float>()); // reverse sort the tops
-    sort(bottoms.begin(), bottoms.end(), greater<float>()); // and the bottoms
+        bottoms.push_back(j->bottom + j->size);
+        tops.push_back(j->bottom);
+      }
+    }
+
+    // Reverse sort the tops and bottoms
+    sort(tops.begin(), tops.end(), greater<float>());
+    sort(bottoms.begin(), bottoms.end(), greater<float>());
+
+
     for(size_t j = 0; j < tops.size(); j++) // Now create boxes for our strip
       ws_boxes.emplace_back(WSbox{L_Edge, R_Edge, tops[j], bottoms[j], false});
     L_Edge = R_Edge;    // move along to next strip
@@ -208,7 +219,8 @@ void Whitespace::mergeStrips()
       // since boxes are ordered, if no adjacent boxes match this, skip to next
       if(m.left > c.right) break;
     }
-    clearDeletedBoxes();
+
+  clearDeletedBoxes();
 }
 
 //---------------------------------------------------------------------------//
@@ -221,7 +233,7 @@ void Whitespace::removeSmall()
     if(!i.deletionFlag &&
        i.top != m_page.top && i.bottom != m_page.bottom && // if not at the edge
        i.left != m_page.left && i.right != m_page.right && // of a page and less than
-       (i.top - i.bottom) < 0.3 * (midfontsize))     // a rule-of-thumb constant
+       i.height() < 0.3 * (midfontsize))     // a rule-of-thumb constant
       i.remove();                         // mark for deletion...
   clearDeletedBoxes();                               // ...and delete
 }

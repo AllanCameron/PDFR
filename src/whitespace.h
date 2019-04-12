@@ -116,6 +116,9 @@ struct WSbox
   {
     return right >= x && left < x && top >= y && bottom < y;
   }
+
+  inline float width() const { return right - left;}
+  inline float height() const { return top - bottom;}
 };
 
 //---------------------------------------------------------------------------//
