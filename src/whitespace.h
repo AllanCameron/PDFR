@@ -175,7 +175,7 @@ private:
   static std::unordered_map<uint8_t, std::pair<Direction, Direction>> arrows;
 
   void pageDimensions();    // Gets page margins
-  void clearDeletedBoxes(); // Helper to remove WSboxes flagged for deletion
+  void cleanAndSortBoxes(); // Helper to remove WSboxes flagged for deletion
   void makeStrips();        // Cover the whitespace with tall thin strips
   void mergeStrips();       // merge adjacent strips into boxes
   void removeSmall();       // remove insufficiently tall boxes
