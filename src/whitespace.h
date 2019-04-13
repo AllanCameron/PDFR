@@ -79,6 +79,61 @@
 enum Direction {North = 3, South = 1, East = 2, West = 0, None = 4};
 
 //---------------------------------------------------------------------------//
+// A lot of the work of Whitespace.cpp is done by identifying and manipulating
+// rectangles of whitespace. These are simply a struct of 4 co-ordinates and
+// an additional deletion flag that allows a vector of WSbox to be iterated and
+// allowing deletions without removing iterator validity.
+
+struct WSbox
+{
+  float left, right, top, bottom;
+  bool deletionFlag;
+
+  inline bool operator==(const WSbox& other) const
+  {
+    return left == other.left && right  == other.right &&
+           top  == other.top  && bottom == other.bottom;
+  }
+
+  inline void remove() {deletionFlag = true;}
+
+  inline bool is_NW_of(float x, float y) const
+  {
+    return right >= x && left < x && top > y && bottom <= y;
+  }
+
+  inline bool is_NE_of(float x, float y) const
+  {
+    return right > x && left <= x && top > y && bottom <= y;
+  }
+
+  inline bool is_SE_of(float x, float y) const
+  {
+    return right > x && left <= x && top >= y && bottom < y;
+  }
+
+  inline bool is_SW_of(float x, float y) const
+  {
+    return right >= x && left < x && top >= y && bottom < y;
+  }
+
+  inline float width() const { return right - left;}
+
+  inline float height() const { return top - bottom;}
+
+  inline bool shares_edge(const WSbox& other) const
+  {
+    return top  == other.top  || bottom == other.bottom ||
+           left == other.left || right  == other.right  ;
+  }
+
+  inline bool is_adjacent(const WSbox& j)
+  {
+    return left == j.right && top == j.top && bottom == j.bottom;
+  }
+};
+
+//---------------------------------------------------------------------------//
 // Each vertex starts life at the corner of a whitespace box, then most are
 // pruned until only those forming the vertices of text boxes remain. Along the
 // way a Vertex has to know in which direction whitespace lies, which directions
@@ -101,74 +156,6 @@ struct Vertex
     (Out == South && j.x == x && j.In  == South && j.y <  y && j.y > edge) ||
     (Out == East  && j.y == y && j.In  == East  && j.x >  x && j.x < edge) ||
     (Out == West  && j.y == y && j.In  == West  && j.x <  x && j.x > edge) ;
-  }
-};
-
-//---------------------------------------------------------------------------//
-// A lot of the work of Whitespace.cpp is done by identifying and manipulating
-// rectangles of whitespace. These are simply a struct of 4 co-ordinates and
-// an additional deletion flag that allows a vector of WSbox to be iterated and
-// allowing deletions without removing iterator validity.
-
-struct WSbox
-{
-  float left, right, top, bottom;
-  bool deletionFlag;
-
-  inline bool operator==(const WSbox& other) const
-  {
-    return left == other.left && right  == other.right &&
-           top  == other.top  && bottom == other.bottom;
-  }
-
-  inline void remove() {deletionFlag = true;}
-
-  inline bool is_NW_of(Vertex& v) const
-  {
-    return right >= v.x && left < v.x && top > v.y && bottom <= v.y;
-  }
-
-  inline bool is_NE_of(Vertex& v) const
-  {
-    return right > v.x && left <= v.x && top > v.y && bottom <= v.y;
-  }
-
-  inline bool is_SE_of(Vertex& v) const
-  {
-    return right > v.x && left <= v.x && top >= v.y && bottom < v.y;
-  }
-
-  inline bool is_SW_of(Vertex& v) const
-  {
-    return right >= v.x && left < v.x && top >= v.y && bottom < v.y;
-  }
-
-  inline float width() const { return right - left;}
-
-  inline float height() const { return top - bottom;}
-
-  inline bool shares_edge(const WSbox& other) const
-  {
-    return top  == other.top  || bottom == other.bottom ||
-           left == other.left || right  == other.right  ;
-  }
-
-  inline bool is_adjacent(const WSbox& j) const
-  {
-    return left == j.right && top == j.top && bottom == j.bottom;
-  }
-
-  inline bool is_engulfed_by(const WSbox& j) const
-  {
-    return !(*this == j) && bottom >= j.bottom && top <= j.top &&
-            left >= j.left && right <= j.right;
-  }
-
-  inline bool contains_text(text_ptr& j) const
-  {
-    return j->left   >= left   && j->right  <= right &&
-           j->bottom >= bottom && j->bottom <= top   &&
-           !j->consumed;
   }
 };
 
@@ -213,10 +200,7 @@ private:
   void polygonMax();        // find bounding boxes of polygons
   void removeEngulfed();    // remove boxes within other boxes
   void groupText();         // Adds each text element to correct box
-  inline void reverse_sort(std::vector<float>& v)
-  {
-     std::sort(v.begin(),    v.end(),    std::greater<float>());
-  }
+
   bool eq(float a, float b);// compare floats for close equality
 };
 
