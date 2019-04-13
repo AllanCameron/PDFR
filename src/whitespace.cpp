@@ -83,8 +83,10 @@ bool Whitespace::eq(float a, float b)
 // then trace round all the vertices, storing every connected loop as a
 // polygon surrounding a text element.
 
-Whitespace::Whitespace(textrows wgo): WGO(wgo.m_data), minbox(wgo.minbox),
-    m_page({minbox[West], minbox[East], minbox[North], minbox[South], false})
+Whitespace::Whitespace(textrows wgo):
+  WGO(wgo.m_data),
+  minbox(wgo.minbox),
+  m_page({minbox[West], minbox[East], minbox[North], minbox[South], false})
 {
   getMaxLineSize();
   pageDimensions();
@@ -183,7 +185,7 @@ void Whitespace::makeStrips()
   for(size_t i = 0; i < DIVISIONS; ++i)
   {
     // Create top/bottom bounds for boxes at top/bottom of page.
-    vector<float> tops = {m_page.top};
+    vector<float> tops =    {m_page.top};
     vector<float> bottoms = {m_page.bottom};
 
     // Now for each text element on the page
@@ -198,8 +200,8 @@ void Whitespace::makeStrips()
     }
 
     // Reverse sort the tops and bottoms
-    sort(tops.begin(), tops.end(), greater<float>());
-    sort(bottoms.begin(), bottoms.end(), greater<float>());
+    reverse_sort(tops);
+    reverse_sort(bottoms);
 
     // Now create boxes from our strip
     for(size_t j = 0; j < tops.size(); j++)
@@ -245,6 +247,7 @@ void Whitespace::mergeStrips()
       if(m.left > c.right) break;
     }
   }
+
   cleanAndSortBoxes();
 }
 
@@ -262,6 +265,7 @@ void Whitespace::removeSmall()
       i.remove();
     }
   }
+
   cleanAndSortBoxes();
 }
 
@@ -283,31 +287,30 @@ void Whitespace::makeVertices()
   {
     for(int j = 0; j < 4; j++) // for each of its four vertices
     {
-      float x, y;        // empty x, y co-ordinates of vertex
-      uint8_t flags = 0; // create an empty flag byte
+      Vertex v;
 
       // We know at least one direction has whitespace by virtue of the
       // position of the vertex on the box, so we populate the flag with it,
       // along with the x, y co-ordinates of the vertex
       switch(j)
       {
-        case 0 : x = i.left;  y = i.top;    flags = 0x02; break;
-        case 1 : x = i.right; y = i.top;    flags = 0x01; break;
-        case 2 : x = i.left;  y = i.bottom; flags = 0x04; break;
-        case 3 : x = i.right; y = i.bottom; flags = 0x08; break;
+        case 0 : v.x = i.left;  v.y = i.top;    v.flags = 0x02; break;
+        case 1 : v.x = i.right; v.y = i.top;    v.flags = 0x01; break;
+        case 2 : v.x = i.left;  v.y = i.bottom; v.flags = 0x04; break;
+        case 3 : v.x = i.right; v.y = i.bottom; v.flags = 0x08; break;
       }
 
       // Now compare the other boxes to find neighbours and flag as needed
       for(auto& k : ws_boxes)
       {
-        if(k.is_NW_of(x, y)) flags |= 0x08; // NW
-        if(k.is_NE_of(x, y)) flags |= 0x04; // NE
-        if(k.is_SE_of(x, y)) flags |= 0x02; // SE
-        if(k.is_SW_of(x, y)) flags |= 0x01; // SW
+        if(k.is_NW_of(v)) v.flags |= 0x08; // NW
+        if(k.is_NE_of(v)) v.flags |= 0x04; // NE
+        if(k.is_SE_of(v)) v.flags |= 0x02; // SE
+        if(k.is_SW_of(v)) v.flags |= 0x01; // SW
         if(k.left > i.right) continue;
       }
       // Now we can create our vertex object and add it to the list
-      vertices.emplace_back(Vertex{x, y, flags, None, None, 0, 0});
+      vertices.emplace_back(v);
     }
   }
 }
@@ -323,19 +326,14 @@ void Whitespace::makeVertices()
 
 void Whitespace::tidyVertices()
 {
-  std::vector<Vertex> res;
+  // Lambda - returns true if vertex has 0, 2 or 4 surrounding white quadrants
+  auto not_a_corner = [](const Vertex& x) -> bool { return x.flags % 3 == 0;};
 
-  // For each vertex, if 1 or 3 corners have whitespace, push to result
-  for(auto& i : vertices)
-  {
-    if((i.flags % 3) != 0)
-    {
-      res.push_back(i);
-    }
-  }
+  // Move non corners to back of vector and return iterator to first non corner
+  auto junk = remove_if(vertices.begin(), vertices.end(), not_a_corner);
 
-  // Swap rather than copy vector into vertices member
-  swap(res, vertices);
+  // Erase non-corner vertices
+  vertices.erase(junk, vertices.end());
 
   // Look up the implied direction of the edges that enter and exit the vertex
   for(auto& i : vertices)
@@ -354,35 +352,35 @@ void Whitespace::tidyVertices()
 
 void Whitespace::tracePolygons()
 {
-  for(auto& i : vertices)
+  for(auto i = vertices.begin(); i != vertices.end(); ++i)
   {
     // Use the Direction enum as an int to get points beyond page edges
-    float initialEdge = minbox[i.Out] + (2 * (i.Out / 2) - 1) * 100;
+    float initialEdge = minbox[i->Out] + (2 * (i->Out / 2) - 1) * 100;
 
     // "edge" keeps track of the nearest vertex
     float edge = initialEdge;
 
     // Now for every other vertex
-    for(auto& j : vertices)
+    for(auto j = vertices.begin(); j != vertices.end(); ++j)
     {
-      if(i.is_closer_than(j, edge))
+      if(i->is_closer_than(*j, edge))
       {
         // i provisionally points to j
-        i.points_to = &j - &(vertices[0]);
+        i->points_to = distance(vertices.begin(), j);
 
         // Now we update "edge" to make it the closest yet
-        if(i.Out == North || i.Out == South)
+        if(i->Out == North || i->Out == South)
         {
-          edge = j.y;
+          edge = j->y;
         }
         else
         {
-          edge = j.x;
+          edge = j->x;
         }
       }
     }
     // If the closest yet is not on the page, mark vertex for deletion
-    if(eq(edge, initialEdge)) i.flags = i.flags | 0x80;
+    if(eq(edge, initialEdge)) i->flags |= 0x80;
   }
 }
 
@@ -503,13 +501,15 @@ void Whitespace::removeEngulfed()
   {
     for(auto & j : ws_boxes)
     {
-      if(i.bottom >= j.bottom && i.top <= j.top &&
-         i.left >= j.left && i.right <= j.right &&
-         !(i.bottom == j.bottom && i.top == j.top &&
-         i.left == j.left && i.right == j.right ))
+      if(i.is_engulfed_by(j))
       {
         i.remove(); // if so, mark for deletion
+        break;      // No need to look further
       }
+
+      // Since ws_boxes is ordered left to right, skip once out of range
+      if(j.left > i.right) continue;
+
     }
   }
 
@@ -522,16 +522,20 @@ void Whitespace::removeEngulfed()
 
 void Whitespace::groupText()
 {
+  // For each polygon
   for(auto& i : ws_boxes)
   {
     vector<text_ptr> textcontent;
+
+    //
     for(auto& j : WGO)
     {
-      if(j->left >= i.left && j->right <= i.right &&
-         j->bottom >= i.bottom && (j->bottom ) <= i.top &&
-         !j->consumed)
+      if(i.contains_text(j))
+      {
         textcontent.push_back(j);
+      }
     }
-    groups.emplace_back(pair<WSbox, vector<text_ptr>>(i, textcontent));
+
+    groups.emplace_back(pair<WSbox, vector<text_ptr>>(i, move(textcontent)));
   }
 }
