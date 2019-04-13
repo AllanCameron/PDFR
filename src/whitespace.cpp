@@ -69,8 +69,7 @@ unordered_map<uint8_t, pair<Direction, Direction>> Whitespace::arrows =
 
 bool Whitespace::eq(float a, float b)
 {
-  float d = b - a;
-  return (d > (-0.1) && d < 0.1);
+  return (a - b < 0.1 && b - a < 0.1);
 }
 //---------------------------------------------------------------------------//
 // The constructor takes a const word grouper object. It calls all its
@@ -223,26 +222,21 @@ void Whitespace::makeStrips()
 
 void Whitespace::mergeStrips()
 {
-  size_t nboxes = ws_boxes.size();
-
-  for(size_t i = 0; i < nboxes; ++i)
+  for(auto left_box = ws_boxes.begin(); left_box != ws_boxes.end(); ++left_box)
   {
-    for(size_t j = i; j < nboxes; ++j)
+    for(auto right_box = left_box; right_box != ws_boxes.end(); ++right_box)
     {
-      // if its right edge matches the left edge of the compared box
-      auto& m = ws_boxes[j];
-      auto& c = ws_boxes[i];
+      // Since boxes are ordered, if right_box is beyond left_box, break inner
+      // loop and move to next left_box
+      if(right_box->left > left_box->right) break;
 
       // If tested box is adjacent to test box, merge left edges and delete
-      if(m.is_adjacent(c))
+      if(right_box->is_adjacent(*left_box))
       {
-        m.left = c.left;
-        c.remove();
-        break; // There can be only one match - skip to next iteration
+        right_box->left = left_box->left;
+        left_box->remove();
+        break; // There can be only one match - skip to next left_box
       }
-
-      // since boxes are ordered, if no adjacent boxes match this, skip to next
-      if(m.left > c.right) break;
     }
   }
   cleanAndSortBoxes();
@@ -283,31 +277,22 @@ void Whitespace::makeVertices()
   {
     for(int j = 0; j < 4; j++) // for each of its four vertices
     {
-      float x, y;        // empty x, y co-ordinates of vertex
-      uint8_t flags = 0; // create an empty flag byte
-
       // We know at least one direction has whitespace by virtue of the
       // position of the vertex on the box, so we populate the flag with it,
       // along with the x, y co-ordinates of the vertex
-      switch(j)
-      {
-        case 0 : x = i.left;  y = i.top;    flags = 0x02; break;
-        case 1 : x = i.right; y = i.top;    flags = 0x01; break;
-        case 2 : x = i.left;  y = i.bottom; flags = 0x04; break;
-        case 3 : x = i.right; y = i.bottom; flags = 0x08; break;
-      }
+      Vertex v = i.get_vertex(j);
 
       // Now compare the other boxes to find neighbours and flag as needed
       for(auto& k : ws_boxes)
       {
-        if(k.is_NW_of(x, y)) flags |= 0x08; // NW
-        if(k.is_NE_of(x, y)) flags |= 0x04; // NE
-        if(k.is_SE_of(x, y)) flags |= 0x02; // SE
-        if(k.is_SW_of(x, y)) flags |= 0x01; // SW
+        if(k.is_NW_of(v)) v.flags |= 0x08; // NW
+        if(k.is_NE_of(v)) v.flags |= 0x04; // NE
+        if(k.is_SE_of(v)) v.flags |= 0x02; // SE
+        if(k.is_SW_of(v)) v.flags |= 0x01; // SW
         if(k.left > i.right) continue;
       }
-      // Now we can create our vertex object and add it to the list
-      vertices.emplace_back(Vertex{x, y, flags, None, None, 0, 0});
+      // Now we can push our vertex to the list
+      vertices.emplace_back(move(v));
     }
   }
 }
@@ -486,9 +471,11 @@ void Whitespace::polygonMax()
     if(!(eq(xmin, m_page.left) && eq(xmax, m_page.right) &&
          eq(ymax, m_page.top) && eq(ymin, m_page.bottom)))
     {
-      ws_boxes.push_back(WSbox{xmin, xmax, ymax, ymin, false});
+      ws_boxes.emplace_back(WSbox{xmin, xmax, ymax, ymin, false});
     }
   }
+
+  cleanAndSortBoxes();
 }
 
 //---------------------------------------------------------------------------//
@@ -503,10 +490,10 @@ void Whitespace::removeEngulfed()
   {
     for(auto & j : ws_boxes)
     {
+      if(j.left > i.left) break;
       if(i.bottom >= j.bottom && i.top <= j.top &&
          i.left >= j.left && i.right <= j.right &&
-         !(i.bottom == j.bottom && i.top == j.top &&
-         i.left == j.left && i.right == j.right ))
+         !(i == j))
       {
         i.remove(); // if so, mark for deletion
       }
@@ -532,6 +519,6 @@ void Whitespace::groupText()
          !j->consumed)
         textcontent.push_back(j);
     }
-    groups.emplace_back(pair<WSbox, vector<text_ptr>>(i, textcontent));
+    groups.emplace_back(pair<WSbox, vector<text_ptr>>(move(i), move(textcontent)));
   }
 }

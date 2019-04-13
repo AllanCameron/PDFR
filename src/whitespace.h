@@ -79,6 +79,39 @@
 enum Direction {North = 3, South = 1, East = 2, West = 0, None = 4};
 
 //---------------------------------------------------------------------------//
+// Each vertex starts life at the corner of a whitespace box, then most are
+// pruned until only those forming the vertices of text boxes remain. Along the
+// way a Vertex has to know in which direction whitespace lies, which directions
+// the edges of the text box enter and leave it, which other Vertex this one
+// points to, and which group of vertices it belongs to. It also needs a
+// deletion flad - hence the relatively large number of member variables. Some
+// of these have been compressed into a flag byte to save space.
+
+struct Vertex
+{
+  float x, y;
+  uint8_t flags; // bits denote delete-void-void-void-NW-NE-SE-SW
+  Direction In, Out;
+  size_t points_to, group;
+
+  Vertex(float a, float b, uint8_t c):
+    x(a), y(b), flags(c), In(None), Out(None), points_to(0), group(0) {}
+
+  Vertex(const Vertex& v) = default;
+  Vertex& operator=(const Vertex& v) = default;
+  Vertex& operator=(Vertex&& v){std::swap(v, *this); return *this;}
+
+  inline bool is_closer_than(const Vertex& j, const float& edge)
+  {
+    return
+    (Out == North && j.x == x && j.In  == North && j.y >  y && j.y < edge) ||
+    (Out == South && j.x == x && j.In  == South && j.y <  y && j.y > edge) ||
+    (Out == East  && j.y == y && j.In  == East  && j.x >  x && j.x < edge) ||
+    (Out == West  && j.y == y && j.In  == West  && j.x <  x && j.x > edge) ;
+  }
+};
+
+//---------------------------------------------------------------------------//
 // A lot of the work of Whitespace.cpp is done by identifying and manipulating
 // rectangles of whitespace. These are simply a struct of 4 co-ordinates and
 // an additional deletion flag that allows a vector of WSbox to be iterated and
@@ -97,24 +130,24 @@ struct WSbox
 
   inline void remove() {deletionFlag = true;}
 
-  inline bool is_NW_of(float x, float y) const
+  inline bool is_NW_of(Vertex& v) const
   {
-    return right >= x && left < x && top > y && bottom <= y;
+    return right >= v.x && left < v.x && top > v.y && bottom <= v.y;
   }
 
-  inline bool is_NE_of(float x, float y) const
+  inline bool is_NE_of(Vertex& v) const
   {
-    return right > x && left <= x && top > y && bottom <= y;
+    return right > v.x && left <= v.x && top > v.y && bottom <= v.y;
   }
 
-  inline bool is_SE_of(float x, float y) const
+  inline bool is_SE_of(Vertex& v) const
   {
-    return right > x && left <= x && top >= y && bottom < y;
+    return right > v.x && left <= v.x && top >= v.y && bottom < v.y;
   }
 
-  inline bool is_SW_of(float x, float y) const
+  inline bool is_SW_of(Vertex& v) const
   {
-    return right >= x && left < x && top >= y && bottom < y;
+    return right >= v.x && left < v.x && top >= v.y && bottom < v.y;
   }
 
   inline float width() const { return right - left;}
@@ -131,32 +164,20 @@ struct WSbox
   {
     return left == j.right && top == j.top && bottom == j.bottom;
   }
-};
 
-//---------------------------------------------------------------------------//
-// Each vertex starts life at the corner of a whitespace box, then most are
-// pruned until only those forming the vertices of text boxes remain. Along the
-// way a Vertex has to know in which direction whitespace lies, which directions
-// the edges of the text box enter and leave it, which other Vertex this one
-// points to, and which group of vertices it belongs to. It also needs a
-// deletion flad - hence the relatively large number of member variables. Some
-// of these have been compressed into a flag byte to save space.
-
-struct Vertex
-{
-  float x, y;
-  uint8_t flags; // bits denote delete-void-void-void-NW-NE-SE-SW
-  Direction In, Out;
-  size_t points_to, group;
-
-  inline bool is_closer_than(const Vertex& j, const float& edge)
+  Vertex get_vertex(int j)
   {
-    return
-    (Out == North && j.x == x && j.In  == North && j.y >  y && j.y < edge) ||
-    (Out == South && j.x == x && j.In  == South && j.y <  y && j.y > edge) ||
-    (Out == East  && j.y == y && j.In  == East  && j.x >  x && j.x < edge) ||
-    (Out == West  && j.y == y && j.In  == West  && j.x <  x && j.x > edge) ;
+    switch(j)
+    {
+      case 0 : return Vertex  (left, top, 0x02);
+      case 1 : return Vertex  (right, top, 0x01);
+      case 2 : return Vertex  (left, bottom, 0x04);
+      case 3 : return Vertex  (right, bottom, 0x08);
+      default: return Vertex  (0, 0, 0);
+    }
+    return Vertex  (0, 0, 0);
   }
+
 };
 
 //---------------------------------------------------------------------------//
