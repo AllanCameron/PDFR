@@ -43,7 +43,7 @@ GSoutput letter_grouper::out()
   {// for each cell in the grid...
     for(auto& j : gridmap[i])
     {// for each textrow in the cell...
-      if(!j->consumed) //if it isn't marked for deletion...
+      if(!j->is_consumed()) //if it isn't marked for deletion...
       {// copy its contents over
         text.push_back(j->glyph);
         left.push_back(j->left);
@@ -97,9 +97,6 @@ void letter_grouper::makegrid()
     gridmap[((uint8_t)(i->left / dx))  |
             ((uint8_t)(15 - (i->bottom / dy)) << 4 )].push_back(i);
   }
-  // sort the contents of the cell
-  for(auto& vec : gridmap)
-    std::sort(vec.second.begin(), vec.second.end(), reading_order());
 }
 
 //---------------------------------------------------------------------------//
@@ -107,17 +104,26 @@ void letter_grouper::makegrid()
 
 textrows letter_grouper::output()
 {
-  // This block fills "allRows" by taking the ouput from letter_grouper and
-  // placing each word with its associated size and position (a textrow) from it
-  // into a vector
-  vector<text_ptr> tmpvecx, tmpvecy;
-  for(uint8_t i = 0; i < 255; ++i)
-    concat(tmpvecx, gridmap[i]);
-  concat(tmpvecx, gridmap[0xff]); // otherwise loop will overflow infinitely
+  // This lambda is used to find text_ptrs that aren't flagged for deletion
+  auto extant = [&](const text_ptr& elem) -> bool
+                        {return !(elem->is_consumed());};
 
-  for(auto& i : tmpvecx)
-    if(!i->consumed) tmpvecy.emplace_back(i); // no consumed entries please
-  return textrows{tmpvecy, minbox};
+  // This lambda defines a text_ptr sort from left to right
+  auto left_sort = [](const text_ptr& a, const text_ptr& b) -> bool
+                     { return a->left < b->left;};
+
+  // Now copy all the text_ptrs from the grid to a vector
+  vector<text_ptr> v;
+  for(auto& grid : gridmap)
+  {
+    copy_if(grid.second.begin(), grid.second.end(), back_inserter(v), extant);
+  }
+
+  // Sort left to right
+  sort(v.begin(), v.end(), left_sort);
+
+  return textrows(v, minbox);
+
 }
 
 //---------------------------------------------------------------------------//
@@ -175,9 +181,8 @@ void letter_grouper::matchRight(text_ptr row, uint8_t key)
         (cell[i]->left < row->right)) )
     {// if in good position to be next glyph
       // mark row for deletion if it is identical
-      if(*cell[i] == *row) row->consumed = true;
-      if(cell[i]->consumed) continue; // ignore if marked for deletion
-
+      if(*cell[i] == *row) row->consume();
+      if(cell[i]->is_consumed()) continue; // ignore if marked for deletion
 
       if(row->rightjoin.first == -1)
       {
@@ -212,7 +217,7 @@ void letter_grouper::merge()
       if(cell.size() == 0) continue;      // Cell empty - nothing to do
       for(auto& k : cell)                 // for each glyph in the cell
       {
-        if(k->consumed || k->rightjoin.first == -1) continue; // nothing joins
+        if(k->is_consumed() || k->rightjoin.first == -1) continue; // no joins
         // look up the right-matching glyph
         auto& matcher = gridmap[k->rightjoin.first][k->rightjoin.second];
         // paste the left glyph to the right glyph
@@ -224,7 +229,7 @@ void letter_grouper::merge()
         // Ensure bottom is the lowest value of the two glyphs
         if(k->bottom < matcher->bottom) matcher->bottom = k->bottom;
         // The checked glyph is now consumed - move to the next
-        k->consumed = true;
+        k->consume();
       }
     }
   }

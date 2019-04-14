@@ -100,15 +100,22 @@ struct textrow
               size;             // point size of font used to draw text
   std::string font;             // Name of font used to draw text
   std::vector<Unicode> glyph;   // The actual Unicode glyphs encoded
-  bool        consumed;         // Should element be ignored in output?
   std::pair<int, int> rightjoin;// address of closest adjacent element
-  bool isLeftEdge, isRightEdge, isMid;
+  uint8_t flags;
+
+  inline void make_left_edge()      { flags |= 0x08; }
+  inline void make_right_edge()     { flags |= 0x02; }
+  inline void make_centred()        { flags |= 0x04; }
+  inline void consume()             { flags |= 0x01; }
+  inline bool is_left_edge()  const { return (flags & 0x08) == 0x08; }
+  inline bool is_right_edge() const { return (flags & 0x02) == 0x02; }
+  inline bool is_centred()    const { return (flags & 0x04) == 0x04; }
+  inline bool is_consumed()   const { return (flags & 0x01) == 0x01; }
 
   textrow(float l, float r, float b, float s,
           std::string f, std::vector<Unicode> g): left(l), right(r),
-          bottom(b), size(s), font(f), glyph(g), consumed(false),
-          rightjoin(std::make_pair(-1, -1)), isLeftEdge(false),
-          isRightEdge(false), isMid(false) {};
+          bottom(b), size(s), font(f), glyph(g),
+          rightjoin(std::make_pair(-1, -1)), flags(0) {};
 
   bool operator ==(const textrow& a) const
   {
@@ -116,23 +123,23 @@ struct textrow
             a.size == this->size && a.glyph  == this->glyph);
   }
 
-    bool is_elligible_to_join(const textrow& j) const
+  bool is_elligible_to_join(const textrow& j) const
   {
-    if(j.consumed ||
+    if(j.is_consumed() ||
        (j.left < this->right) ||
        (j.bottom - this->bottom > 0.7 * this->size) ||
        (this->bottom - j.bottom > 0.7 * this->size) ||
        (j.left - this->right > 2 * this->size) ||
-        ((j.isLeftEdge  || j.isMid)           &&
+        ((j.is_left_edge()  || j.is_centred())           &&
         (j.left - this->right > 0.51 * this->size)) ||
-       ((this->isRightEdge || this->isMid)           &&
+       ((this->is_right_edge() || this->is_centred())   &&
         (j.left - this->right > 0.51 * this->size))  )  return false;
     else return true;
   }
 
   void join_words(textrow& j)
   {
-          // The element is elligible for joining - start by adding a space to i
+      // This element is elligible for joining - start by adding a space to it
       this->glyph.push_back(0x0020);
 
       // If the gap is wide enough, add two spaces
@@ -143,13 +150,13 @@ struct textrow
 
       // The rightmost glyph's right edge properties are also copied over
       this->right = j.right;
-      this->isRightEdge = j.isRightEdge;
+      if(j.is_right_edge()) this->make_right_edge();
 
       // The word will take up the size of its largest glyph
       this->size = std::max(this->size, j.size);
 
       // The element on the right is now consumed
-      j.consumed = true;
+      j.consume();
   }
 
 };
@@ -238,7 +245,7 @@ struct textrows
     res.minbox = this->minbox;
     for(auto i : this->m_data)
     {
-      if(!i->consumed)
+      if(!i->is_consumed())
       {
         res.text.push_back(i->glyph);
         res.left.push_back(i->left);

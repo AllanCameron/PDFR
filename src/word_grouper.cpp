@@ -138,19 +138,19 @@ void word_grouper::assignEdges()
     // Non-unique left edge - assume column edge
     if(m_leftEdges.find((int) (i->left * 10)) != m_leftEdges.end())
     {
-      i->isLeftEdge = true;
+      i->make_left_edge();
     }
 
     // Non-unique right edge - assume column edge
     if(m_rightEdges.find((int) (i->right * 10)) != m_rightEdges.end())
     {
-      i->isRightEdge = true;
+      i->make_right_edge();
     }
 
     // Non-unique centre value - assume centred column
     if(m_mids.find((int) ((i->right + i->left) * 5)) != m_mids.end())
     {
-      i->isMid = true;
+      i->make_centred();
     }
   }
 }
@@ -170,12 +170,12 @@ void word_grouper::findRightMatch()
   for(auto i = m_allRows.begin(); i != m_allRows.end(); ++i)
   {
     // Check the row is elligible for matching
-    if( (*i)->consumed) continue;
+    if( (*i)->is_consumed()) continue;
 
     // If elligible, check every other word for the best match
     for(auto j = m_allRows.begin(); j != m_allRows.end(); ++j)
     {
-      // Dont' match against itself
+      // Don't match against itself
       if(i == j) continue;
 
       // These textrow functions are quite complex in themselves

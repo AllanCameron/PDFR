@@ -217,7 +217,7 @@ struct WSbox
   inline bool contains_text(text_ptr& j)
   {
     return  j->left >= left && j->right <= right &&
-            j->bottom >= bottom && j->bottom <= top && !j->consumed;
+            j->bottom >= bottom && j->bottom <= top && !j->is_consumed();
   }
 };
 
