@@ -96,7 +96,6 @@ Whitespace::Whitespace(textrows wgo): WGO(wgo.m_data), minbox(wgo.minbox),
   makePolygonMap();
   polygonMax();
   removeEngulfed();
-  groupText();
 }
 
 
@@ -428,14 +427,6 @@ void Whitespace::makePolygonMap()
 }
 
 //---------------------------------------------------------------------------//
-// Simple getter for the output vector
-
-vector<pair<WSbox, vector<text_ptr>>> Whitespace::output() const
-{
-  return groups;
-}
-
-//---------------------------------------------------------------------------//
 // Simple getter for the whitespace boxes - useful for debugging
 
 std::vector<WSbox> Whitespace::ws_box_out() const
@@ -507,8 +498,9 @@ void Whitespace::removeEngulfed()
 // Finally we need to group our text items together in the text boxes for
 // joining and analysis.
 
-void Whitespace::groupText()
+vector<pair<WSbox, vector<text_ptr>>> Whitespace::output()
 {
+  vector<pair<WSbox, vector<text_ptr>>> res;
   for(auto& i : ws_boxes)
   {
     vector<text_ptr> textcontent;
@@ -519,6 +511,8 @@ void Whitespace::groupText()
          !j->consumed)
         textcontent.push_back(j);
     }
-    groups.emplace_back(pair<WSbox, vector<text_ptr>>(move(i), move(textcontent)));
+    res.emplace_back(pair<WSbox, vector<text_ptr>>(move(i), move(textcontent)));
   }
+
+  return res;
 }

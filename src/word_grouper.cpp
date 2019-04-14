@@ -225,9 +225,6 @@ void word_grouper::findRightMatch()
       // The word will take up the size of its largest glyph
       i->size = max(i->size, j->size);
 
-      // Update the width
-      i->width = i->right - i->left;
-
       // The element on the right is now consumed
       j->consumed = true;
 

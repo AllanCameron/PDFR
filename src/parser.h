@@ -96,7 +96,6 @@ struct textrow
 {
   float       left,             // position of left edge of text on page
               right,            // position of right edge of text on page
-              width,            // width of text element
               bottom,           // y position of bottom edge of text
               size;             // point size of font used to draw text
   std::string font;             // Name of font used to draw text
@@ -105,8 +104,8 @@ struct textrow
   std::pair<int, int> rightjoin;// address of closest adjacent element
   bool isLeftEdge, isRightEdge, isMid;
 
-  textrow(float l, float r, float w, float b, float s,
-          std::string f, std::vector<Unicode> g): left(l), right(r), width(w),
+  textrow(float l, float r, float b, float s,
+          std::string f, std::vector<Unicode> g): left(l), right(r),
           bottom(b), size(s), font(f), glyph(g), consumed(false),
           rightjoin(std::make_pair(-1, -1)), isLeftEdge(false),
           isRightEdge(false), isMid(false) {};
@@ -134,7 +133,6 @@ struct GSoutput
   std::vector<float> right;       // vector of glyphs' right edges
   std::vector<std::string> fonts; // vector of glyphs' font names
   std::vector<float> size;        // vector of glyphs' point size
-  std::vector<float> width;       // vector of glyphs' widths in text space
   std::vector<float> minbox;
 
   std::vector<textrow> transpose()
@@ -142,7 +140,7 @@ struct GSoutput
     std::vector<textrow> res;
     if(!left.empty())
       for(size_t i = 0; i < left.size(); ++i)
-        res.emplace_back(textrow(left[i], right[i], width[i], bottom[i],
+        res.emplace_back(textrow(left[i], right[i], bottom[i],
                                  size[i], fonts[i], text[i]));
     return res;
   }
@@ -211,7 +209,6 @@ struct textrows
         res.right.push_back(i->right);
         res.fonts.push_back(i->font);
         res.size.push_back(i->size);
-        res.width.push_back(i->width);
       }
     }
     return res;

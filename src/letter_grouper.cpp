@@ -57,7 +57,7 @@ GSoutput letter_grouper::out()
     if(i == 255) break; // prevent overflow back to 0 and endless loop
   }
   return GSoutput{move(text), move(left), move(bottom), move(right),
-                  move(font), move(size), move(width), move(minbox)};
+                  move(font), move(size), move(minbox)};
 }
 
 //---------------------------------------------------------------------------//
@@ -221,8 +221,6 @@ void letter_grouper::merge()
         matcher->glyph = k->glyph;
         // make the right glyph now start where the left glyph started
         matcher->left = k->left;
-        // and ensure the width is correct
-        matcher->width = matcher->right - matcher->left;
         // Ensure bottom is the lowest value of the two glyphs
         if(k->bottom < matcher->bottom) matcher->bottom = k->bottom;
         // The checked glyph is now consumed - move to the next

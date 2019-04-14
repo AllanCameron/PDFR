@@ -191,13 +191,12 @@ public:
   // constructor
   Whitespace(textrows);
   //  Output the text element groups directly
-  std::vector<std::pair<WSbox, std::vector<text_ptr>>> output() const;
+  std::vector<std::pair<WSbox, std::vector<text_ptr>>> output();
   // Output the final text box co-ordinates
   std::vector<WSbox> ws_box_out() const;
 
 private:
   //The main output is a collection of pairs of text boxes with their elements
-  std::vector<std::pair<WSbox, std::vector<text_ptr>>> groups;
   std::vector<text_ptr> WGO; // a copy of wgo's output
   std::vector<float> minbox;
   std::unordered_map<size_t, std::vector<Vertex>> polygonMap;// main polygon map
@@ -220,7 +219,6 @@ private:
   void makePolygonMap();    // map polygons to size_t keys
   void polygonMax();        // find bounding boxes of polygons
   void removeEngulfed();    // remove boxes within other boxes
-  void groupText();         // Adds each text element to correct box
 
   bool eq(float a, float b);// compare floats for close equality
 };
