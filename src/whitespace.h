@@ -120,7 +120,10 @@ struct Vertex
 struct WSbox
 {
   float left, right, top, bottom;
-  bool deletionFlag;
+  bool is_deleted;
+
+  WSbox(float a, float b, float c, float d):
+    left(a), right(b), top(c), bottom(d), is_deleted(false) {}
 
   inline bool operator==(const WSbox& other) const
   {
@@ -128,7 +131,26 @@ struct WSbox
            top  == other.top  && bottom == other.bottom;
   }
 
-  inline void remove() {deletionFlag = true;}
+  inline bool eq(const float& a, const float& b) const
+  {
+    return a - b < 0.1 && b - a < 0.1;
+  }
+
+  inline void expand_box_to_include_vertex(const Vertex& corner)
+  {
+      if(corner.x < left)    left   = corner.x;
+      if(corner.x > right)   right  = corner.x;
+      if(corner.y < bottom)  bottom = corner.y;
+      if(corner.y > top)     top    = corner.y;
+  }
+
+  inline bool is_approximately_same_as(const WSbox& other) const
+  {
+    return eq(left, other.left) && eq(right, other.right) &&
+           eq(top, other.top)  && eq(bottom, other.bottom);
+  }
+
+  inline void remove() {is_deleted = true;}
 
   inline bool is_NW_of(Vertex& v) const
   {
@@ -178,6 +200,25 @@ struct WSbox
     return Vertex  (0, 0, 0);
   }
 
+  void record_impingement_on(Vertex& v)
+  {
+    if(is_NW_of(v)) v.flags |= 0x08; // NW
+    if(is_NE_of(v)) v.flags |= 0x04; // NE
+    if(is_SE_of(v)) v.flags |= 0x02; // SE
+    if(is_SW_of(v)) v.flags |= 0x01; // SW
+  }
+
+  inline bool engulfs(const WSbox& j)
+  {
+    return  j.bottom >= bottom && j.top <= top &&
+            j.left >= left && j.right <= right && !(*this == j);
+  }
+
+  inline bool contains_text(text_ptr& j)
+  {
+    return  j->left >= left && j->right <= right &&
+            j->bottom >= bottom && j->bottom <= top && !j->consumed;
+  }
 };
 
 //---------------------------------------------------------------------------//
@@ -189,7 +230,7 @@ class Whitespace
 {
 public:
   // constructor
-  Whitespace(textrows);
+  Whitespace(textrows&&);
   //  Output the text element groups directly
   std::vector<std::pair<WSbox, std::vector<text_ptr>>> output();
   // Output the final text box co-ordinates
@@ -197,7 +238,7 @@ public:
 
 private:
   //The main output is a collection of pairs of text boxes with their elements
-  std::vector<text_ptr> WGO; // a copy of wgo's output
+  std::vector<text_ptr> m_text_elements; // a copy of word grouper's output
   std::vector<float> minbox;
   std::unordered_map<size_t, std::vector<Vertex>> polygonMap;// main polygon map
   WSbox m_page;
@@ -207,6 +248,7 @@ private:
   static const size_t DIVISIONS = 200; // number of strips used for whitespace
   // we use this to map directions to vertices
   static std::unordered_map<uint8_t, std::pair<Direction, Direction>> arrows;
+
   void getMaxLineSize();
   void pageDimensions();    // Gets page margins
   void cleanAndSortBoxes(); // Helper to remove WSboxes flagged for deletion
@@ -219,8 +261,6 @@ private:
   void makePolygonMap();    // map polygons to size_t keys
   void polygonMax();        // find bounding boxes of polygons
   void removeEngulfed();    // remove boxes within other boxes
-
-  bool eq(float a, float b);// compare floats for close equality
 };
 
 

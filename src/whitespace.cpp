@@ -31,6 +31,7 @@
 using namespace std;
 
 static const float MAXPAGE = 30000;
+static const float MAX_LINE_FACTOR = 0.3;
 
 //---------------------------------------------------------------------------//
 // Every vertex of the final polygon surrounding each text element contains
@@ -63,15 +64,6 @@ unordered_map<uint8_t, pair<Direction, Direction>> Whitespace::arrows =
 };
 
 //---------------------------------------------------------------------------//
-// We want to be able to test for equality of spatial positions, but I don't
-// trust comparison of floats. This allows a small margin of error when testing
-// equality between two floats
-
-bool Whitespace::eq(float a, float b)
-{
-  return (a - b < 0.1 && b - a < 0.1);
-}
-//---------------------------------------------------------------------------//
 // The constructor takes a const word grouper object. It calls all its
 // constructor helpers to get the page dimensions, construct a large number of
 // tall vertical strips across the page which do not cross any text elements,
@@ -82,8 +74,10 @@ bool Whitespace::eq(float a, float b)
 // then trace round all the vertices, storing every connected loop as a
 // polygon surrounding a text element.
 
-Whitespace::Whitespace(textrows wgo): WGO(wgo.m_data), minbox(wgo.minbox),
-    m_page({minbox[West], minbox[East], minbox[North], minbox[South], false})
+Whitespace::Whitespace(textrows&& word_grouper_output):
+  m_text_elements(move(word_grouper_output.m_data)),
+  minbox(move(word_grouper_output.minbox)),
+  m_page(WSbox(minbox[West], minbox[East], minbox[North], minbox[South]))
 {
   getMaxLineSize();
   pageDimensions();
@@ -104,12 +98,12 @@ Whitespace::Whitespace(textrows wgo): WGO(wgo.m_data), minbox(wgo.minbox),
 void Whitespace::getMaxLineSize()
 {
   std::vector<float> fontsizes;
-  for(auto& i : WGO)
+  for(auto& i : m_text_elements)
   {
     fontsizes.push_back(i->size);
   }
   sort(fontsizes.begin(), fontsizes.end());
-  max_line_space = fontsizes[fontsizes.size()/2] * 0.3;
+  max_line_space = fontsizes[fontsizes.size()/2] * MAX_LINE_FACTOR;
 }
 
 //---------------------------------------------------------------------------//
@@ -120,7 +114,7 @@ void Whitespace::getMaxLineSize()
 
 void Whitespace::pageDimensions()
 {
-  for(auto& i : WGO)
+  for(auto& i : m_text_elements)
   {
     if(i->right > m_page.right) m_page.right += 10.0;
     if(i->left < m_page.left) m_page.left -= 10.0;
@@ -138,7 +132,7 @@ void Whitespace::pageDimensions()
 void Whitespace::cleanAndSortBoxes()
 {
   // Define a lambda to identify boxes flagged for deletion
-  auto del = [&](WSbox x){return x.deletionFlag;};
+  auto del = [&](WSbox x){return x.is_deleted;};
 
   // Define a lambda to sort boxes left to right
   auto l = [](const WSbox& a, const WSbox& b) -> bool {return a.left < b.left;};
@@ -185,7 +179,7 @@ void Whitespace::makeStrips()
     vector<float> bottoms = {m_page.bottom};
 
     // Now for each text element on the page
-    for(const auto& j : WGO)
+    for(const auto& j : m_text_elements)
     {
       // If it obstructs our strip, store its upper and lower bounds
       if(j->left < R_Edge && j->right > L_Edge)
@@ -202,7 +196,7 @@ void Whitespace::makeStrips()
     // Now create boxes from our strip
     for(size_t j = 0; j < tops.size(); j++)
     {
-      ws_boxes.emplace_back(WSbox{L_Edge, R_Edge, tops[j], bottoms[j], false});
+      ws_boxes.emplace_back(WSbox(L_Edge, R_Edge, tops[j], bottoms[j]));
     }
 
     // Move along to next strip.
@@ -250,7 +244,7 @@ void Whitespace::removeSmall()
   for(auto& i : ws_boxes)
   {
     // Remove only undeleted boxes who are not at the page border and are short
-    if(!i.deletionFlag && !i.shares_edge(m_page) && i.height() < max_line_space)
+    if(!i.is_deleted && !i.shares_edge(m_page) && i.height() < max_line_space)
     {
       i.remove();
     }
@@ -272,26 +266,25 @@ void Whitespace::removeSmall()
 
 void Whitespace::makeVertices()
 {
-  for(auto& i : ws_boxes) // for each whitespace box
+   // For each whitespace box
+  for(auto& owner_box : ws_boxes)
   {
-    for(int j = 0; j < 4; j++) // for each of its four vertices
+    // For each of its four vertices
+    for(int corner_number = 0; corner_number < 4; ++corner_number)
     {
-      // We know at least one direction has whitespace by virtue of the
-      // position of the vertex on the box, so we populate the flag with it,
-      // along with the x, y co-ordinates of the vertex
-      Vertex v = i.get_vertex(j);
+      // Create a vertex object at this corner
+      Vertex this_corner = owner_box.get_vertex(corner_number);
 
       // Now compare the other boxes to find neighbours and flag as needed
-      for(auto& k : ws_boxes)
+      for(auto& other_box : ws_boxes)
       {
-        if(k.is_NW_of(v)) v.flags |= 0x08; // NW
-        if(k.is_NE_of(v)) v.flags |= 0x04; // NE
-        if(k.is_SE_of(v)) v.flags |= 0x02; // SE
-        if(k.is_SW_of(v)) v.flags |= 0x01; // SW
-        if(k.left > i.right) continue;
+        other_box.record_impingement_on(this_corner);
+
+        // Since ws_boxes are sorted, skip to next corner if no effect possible.
+        if(other_box.left > owner_box.right) continue;
       }
       // Now we can push our vertex to the list
-      vertices.emplace_back(move(v));
+      vertices.emplace_back(move(this_corner));
     }
   }
 }
@@ -366,7 +359,7 @@ void Whitespace::tracePolygons()
       }
     }
     // If the closest yet is not on the page, mark vertex for deletion
-    if(eq(edge, initialEdge)) i.flags = i.flags | 0x80;
+    if(edge - initialEdge < 0.1 && initialEdge - edge < 0.1) i.flags |= 0x80;
   }
 }
 
@@ -395,7 +388,7 @@ void Whitespace::makePolygonMap()
   for(size_t i = 0 ; i < vertices.size(); ++i)
   {
     // If this vertex is taken, move along.
-    if(vertices[i].group != 0) continue;
+    if(vertices[i].group) continue;
 
     // we now know we're at the first unlabelled vertex
     size_t j = i;
@@ -412,10 +405,7 @@ void Whitespace::makePolygonMap()
         polygonMap[polygonNumber] = {vertices[j]};
       }
       // Otherwise we append it to the set we are creating
-      else
-      {
-        polygonMap[polygonNumber].push_back(vertices[j]);
-      }
+      else polygonMap[polygonNumber].push_back(vertices[j]);
 
       // Our loop now jumps to next clockwise vertex
       j = vertices[j].points_to;
@@ -444,25 +434,21 @@ void Whitespace::polygonMax()
   ws_boxes.clear();
 
   // For each polygon
-  for(auto& i : polygonMap)
+  for(auto& shape : polygonMap)
   {
     // Define floats that will shrink and invert to fit our text box
-    float xmin = MAXPAGE, xmax = -MAXPAGE, ymin = MAXPAGE, ymax = -MAXPAGE;
+    WSbox bounding_box(MAXPAGE, -MAXPAGE, -MAXPAGE, MAXPAGE);
 
     // Shrink and invert the edges of our bounding box
-    for(auto& j : i.second)
+    for(auto& corner : shape.second)
     {
-      if(j.x < xmin) xmin = j.x;  // move left edge to leftmost point
-      if(j.x > xmax) xmax = j.x;  // move right edge to rightmost point
-      if(j.y < ymin) ymin = j.y;  // move bottom edge to lowest point
-      if(j.y > ymax) ymax = j.y;  // move top edge to highest point
+      bounding_box.expand_box_to_include_vertex(corner);
     }
 
     // if the box is not the page itself, append this polygon to our result
-    if(!(eq(xmin, m_page.left) && eq(xmax, m_page.right) &&
-         eq(ymax, m_page.top) && eq(ymin, m_page.bottom)))
+    if(!bounding_box.is_approximately_same_as(m_page))
     {
-      ws_boxes.emplace_back(WSbox{xmin, xmax, ymax, ymin, false});
+      ws_boxes.emplace_back(move(bounding_box));
     }
   }
 
@@ -476,18 +462,16 @@ void Whitespace::polygonMax()
 
 void Whitespace::removeEngulfed()
 {
-  // For each box check whether another box engulfs it
-  for(auto & i : ws_boxes)
+  // For each box check whether it engulfs another box
+  for(auto i = ws_boxes.begin(); i != ws_boxes.end(); ++i)
   {
-    for(auto & j : ws_boxes)
+    if(i->is_deleted) continue;
+
+    for(auto j = i; j != ws_boxes.end(); ++j)
     {
-      if(j.left > i.left) break;
-      if(i.bottom >= j.bottom && i.top <= j.top &&
-         i.left >= j.left && i.right <= j.right &&
-         !(i == j))
-      {
-        i.remove(); // if so, mark for deletion
-      }
+      if(j->left > i->right) break;
+      if(j->is_deleted) continue;
+      if(i->engulfs(*j)) j->remove();
     }
   }
 
@@ -504,12 +488,12 @@ vector<pair<WSbox, vector<text_ptr>>> Whitespace::output()
   for(auto& i : ws_boxes)
   {
     vector<text_ptr> textcontent;
-    for(auto& j : WGO)
+    for(auto& text_element : m_text_elements)
     {
-      if(j->left >= i.left && j->right <= i.right &&
-         j->bottom >= i.bottom && (j->bottom ) <= i.top &&
-         !j->consumed)
-        textcontent.push_back(j);
+      if(i.contains_text(text_element))
+      {
+        textcontent.push_back(text_element);
+      }
     }
     res.emplace_back(pair<WSbox, vector<text_ptr>>(move(i), move(textcontent)));
   }

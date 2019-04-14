@@ -165,75 +165,26 @@ void word_grouper::assignEdges()
 void word_grouper::findRightMatch()
 {
   // Handle empty data
-  if(m_allRows.empty())
-  {
-    throw runtime_error("empty data");
-  }
+  if(m_allRows.empty()) throw runtime_error("empty data");
 
-  for(int k = 0; k < (int) m_allRows.size(); k++)
+  for(auto i = m_allRows.begin(); i != m_allRows.end(); ++i)
   {
-    // Create a reference name for the row in question
-    auto& i = m_allRows[k];
-
     // Check the row is elligible for matching
-    if( i->consumed)
-    {
-      continue;
-    }
+    if( (*i)->consumed) continue;
 
     // If elligible, check every other word for the best match
-    for(int m = 0; m < (int) m_allRows.size(); m++)
+    for(auto j = m_allRows.begin(); j != m_allRows.end(); ++j)
     {
       // Dont' match against itself
-      if(m == k) continue;
+      if(i == j) continue;
 
-      // Create a reference name for the row in question
-      auto& j = m_allRows[m];
-
-      // Ignore words that have already been joined
-      if(j->consumed) continue;
-
-      // Ignore words to the left
-      if(j->left < i->right) continue;
-
-      // Only match elements on the same "line"
-      if(j->bottom - i->bottom > 0.7 * i->size) continue;
-      if(i->bottom - j->bottom > 0.7 * i->size) continue;
-
-      // Ignore if too far right
-      if(j->left - i->right > 2 * i->size) continue;
-
-      // Ignore if not elligble for join
-      if(((j->isLeftEdge  || j->isMid)           &&
-          (j->left - i->right > 0.51 * i->size)) ||
-         ((i->isRightEdge || i->isMid)           &&
-          (j->left - i->right > 0.51 * i->size))  )  continue;
-
-      // The element is elligible for joining - start by adding a space to i
-      i->glyph.push_back(0x0020);
-
-      // If the gap is wide enough, add two spaces
-      if(j->left - i->right > 1 * i->size) i->glyph.push_back(0x0020);
-
-      // Stick contents together
-      concat(i->glyph, j->glyph);
-
-      // The rightmost glyph's right edge properties are also copied over
-      i->right = j->right;
-      i->isRightEdge = j->isRightEdge;
-
-      // The word will take up the size of its largest glyph
-      i->size = max(i->size, j->size);
-
-      // The element on the right is now consumed
-      j->consumed = true;
-
-      // The element we have just matched now has different characteristics
-      // so may be matched by a different element - match it again until
-      // no further matches are found.
-      --k;
-
-      break;
+      // These textrow functions are quite complex in themselves
+      if((*i)->is_elligible_to_join(**j))
+      {
+        (*i)->join_words(**j);
+        --i;  // Keep matching same textrow until no further matches are found
+        break;
+      }
     }
   }
 }

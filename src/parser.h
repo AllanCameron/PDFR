@@ -113,8 +113,45 @@ struct textrow
   bool operator ==(const textrow& a) const
   {
     return (a.left == this->left && a.bottom == this->bottom &&
-            a.size == this->size && a.glyph == this->glyph);
+            a.size == this->size && a.glyph  == this->glyph);
   }
+
+    bool is_elligible_to_join(const textrow& j) const
+  {
+    if(j.consumed ||
+       (j.left < this->right) ||
+       (j.bottom - this->bottom > 0.7 * this->size) ||
+       (this->bottom - j.bottom > 0.7 * this->size) ||
+       (j.left - this->right > 2 * this->size) ||
+        ((j.isLeftEdge  || j.isMid)           &&
+        (j.left - this->right > 0.51 * this->size)) ||
+       ((this->isRightEdge || this->isMid)           &&
+        (j.left - this->right > 0.51 * this->size))  )  return false;
+    else return true;
+  }
+
+  void join_words(textrow& j)
+  {
+          // The element is elligible for joining - start by adding a space to i
+      this->glyph.push_back(0x0020);
+
+      // If the gap is wide enough, add two spaces
+      if(j.left - this->right > 1 * this->size) this->glyph.push_back(0x0020);
+
+      // Stick contents together
+      concat(this->glyph, j.glyph);
+
+      // The rightmost glyph's right edge properties are also copied over
+      this->right = j.right;
+      this->isRightEdge = j.isRightEdge;
+
+      // The word will take up the size of its largest glyph
+      this->size = std::max(this->size, j.size);
+
+      // The element on the right is now consumed
+      j.consumed = true;
+  }
+
 };
 
 typedef std::shared_ptr<textrow> text_ptr;
