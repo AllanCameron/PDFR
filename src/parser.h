@@ -100,8 +100,11 @@ struct textrow
               size;             // point size of font used to draw text
   std::string font;             // Name of font used to draw text
   std::vector<Unicode> glyph;   // The actual Unicode glyphs encoded
-  std::pair<int, int> rightjoin;// address of closest adjacent element
+  std::pair<int, int> r_join;   // address of closest adjacent element
   uint8_t flags;
+
+  constexpr static float CLUMP_H = 0.1; // horizontal clumping, high = sticky
+  constexpr static float CLUMP_V = 0.1; // vertical clumping, high = sticky
 
   inline void make_left_edge()      { flags |= 0x08; }
   inline void make_right_edge()     { flags |= 0x02; }
@@ -115,12 +118,38 @@ struct textrow
   textrow(float l, float r, float b, float s,
           std::string f, std::vector<Unicode> g): left(l), right(r),
           bottom(b), size(s), font(f), glyph(g),
-          rightjoin(std::make_pair(-1, -1)), flags(0) {};
+          r_join(std::make_pair(-1, -1)), flags(0) {};
 
   bool operator ==(const textrow& a) const
   {
     return (a.left == this->left && a.bottom == this->bottom &&
             a.size == this->size && a.glyph  == this->glyph);
+  }
+
+  inline bool is_adjoining_letter(const textrow& cell) const
+  {
+       return (cell.left > this->left &&
+        abs(cell.bottom - this->bottom) < (CLUMP_V * this->size) &&
+        (abs(cell.left  -  this->right ) < (CLUMP_H * this->size) ||
+        (cell.left < this->right)) );
+  }
+
+  void merge_letters(textrow& matcher)
+  {
+     // paste the left glyph to the right glyph
+    concat(this->glyph, matcher.glyph);
+
+    // make the right glyph now contain both glyphs
+    matcher.glyph = this->glyph;
+
+    // make the right glyph now start where the left glyph started
+    matcher.left = this->left;
+
+    // Ensure bottom is the lowest value of the two glyphs
+    if(this->bottom < matcher.bottom) matcher.bottom = this->bottom;
+
+    // The checked glyph is now consumed - move to the next
+    this->consume();
   }
 
   bool is_elligible_to_join(const textrow& j) const

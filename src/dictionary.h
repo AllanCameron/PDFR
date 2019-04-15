@@ -94,6 +94,14 @@ class dictionary
   std::vector<std::string> getDictKeys() const; // gets all keys from dictionary
   dictionary getDictionary(const std::string&) const; // gets sub-dict from key
   const std::unordered_map<std::string, std::string>& R_out() const;
+  std::unordered_map<std::string, std::string>::const_iterator begin()
+  {
+    return m_Map.cbegin();
+  }
+  std::unordered_map<std::string, std::string>::const_iterator end()
+  {
+    return m_Map.cend();
+  }
 };
 
 //---------------------------------------------------------------------------//

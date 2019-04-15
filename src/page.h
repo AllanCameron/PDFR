@@ -80,20 +80,20 @@ public:
 
 private:
   // private data members
-  std::shared_ptr<document> d;        // Pointer to containing document
-  int                 pagenumber;     // [Zero-indexed] page number
-  dictionary          header,         // The page's header dictionary
-                      resources,      // Resource sub-dictionary
-                      fonts;          // Font sub-dictionary
-  std::vector<float>  minbox;
-  std::string         contentstring;  // The page description program as string
-  double              rotate;         // Intended page rotation in degrees
+  std::shared_ptr<document> m_doc;        // Pointer to containing document
+  int                 m_page_number;     // [Zero-indexed] page number
+  dictionary          m_header,         // The page's header dictionary
+                      m_resources,      // Resource sub-dictionary
+                      m_fonts;          // Font sub-dictionary
+  std::vector<float>  m_minbox;
+  std::string         m_content_string;  // The page PostScript program
+  double              m_rotate;         // Intended page rotation in degrees
 
   // A map of Xobject strings, which are fragments of page description programs
-  std::unordered_map<std::string, std::string> XObjects;
+  std::unordered_map<std::string, std::string> m_XObjects;
 
   // The actual storage container for fonts, mapped to their pdf names
-  static std::unordered_map<std::string, std::shared_ptr<font>> fontmap;
+  static std::unordered_map<std::string, std::shared_ptr<font>> sm_fontmap;
 
   // private methods
   void parseXObjStream(); // Write form XObjects to the xobject map

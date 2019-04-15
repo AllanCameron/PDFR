@@ -32,7 +32,22 @@
 
 using namespace std;
 
-std::unordered_map<std::string, shared_ptr<font>> page::fontmap;
+std::unordered_map<std::string, shared_ptr<font>> page::sm_fontmap;
+
+/*--------------------------------------------------------------------------*/
+// The page constructor calls private methods to build its data members after
+// its initializer list
+
+page::page(shared_ptr<document> doc, int pagenum) :
+  m_doc(doc), m_page_number(pagenum), m_rotate(0)
+{
+  getHeader();        // find the page header
+  getResources();     // find the resource header
+  parseXObjStream();  // identify, parse and store XObjects
+  getFonts();         // find the fonts dictionaries and build the fontmap
+  getContents();      // Find the contents entries and build the content string
+  boxes();            // Find the bouding box of the page
+}
 
 /*---------------------------------------------------------------------------*/
 // The various "boxes" in a page header file define the maximum extent of the
@@ -46,29 +61,41 @@ void page::boxes()
   // sometimes the box dimensions are inherited from an ancestor node of the
   // page header. We therefore need to look for the boxes in the page header,
   // then, if they are not found, iteratively search the parent nodes
-  dictionary boxheader = header;
-  vector<string> boxnames {"/BleedBox", "/CropBox", "/MediaBox",
+  dictionary box_header = m_header;
+  vector<string> box_names {"/BleedBox", "/CropBox", "/MediaBox",
                            "/ArtBox", "/TrimBox"};
-  bool hasparent = true;  // need to keep track of whether node has a parent
+
+  // Need to keep track of whether node has a parent
+  bool has_parent = true;
+
+  // This do...while loop allows upwards iteration through /Pages nodes
   do{
-    for(auto& i : boxnames)
+    // For each of the box names
+    for(auto& i : box_names)
     {
-      vector<float>&& thisbox = boxheader.getNums(i);
-      if (!thisbox.empty()) minbox = thisbox;
+      vector<float>&& this_box = box_header.getNums(i);
+      if (!this_box.empty()) m_minbox = this_box;
     }
-    if(minbox.empty()) // if no boxes found
+
+    // If no boxes found
+    if(m_minbox.empty())
     {
-      if(boxheader.hasRefs("/Parent"))  // find the parent
+      // Find the parent object number and get its object dictionary
+      if(box_header.hasRefs("/Parent"))
       {
-        int parent = boxheader.getRefs("/Parent").at(0); // get the object
-        boxheader = d->getobject(parent)->getDict(); // make it the boxheader
+        int parent = box_header.getRefs("/Parent").at(0);
+        box_header = m_doc->getobject(parent)->getDict();
       }
-      else hasparent = false; // didn't find any parent node - loop will exit
+
+      // The loop will exit if it doesn't find a parent node
+      else has_parent = false;
     }
-  } while (minbox.empty() && hasparent); // stop loop if we have minbox or
-                                        // there are no more parent nodes
+
+    // stop loop if we have minbox or there are no more parent nodes
+  } while (m_minbox.empty() && has_parent);
+
   // Get the "rotate" value - will need in future feature development
-  if (header.has("/Rotate")) rotate = header.getNums("/Rotate").at(0);
+  if (m_header.has("/Rotate")) m_rotate = m_header.getNums("/Rotate").at(0);
 }
 
 /*--------------------------------------------------------------------------*/
@@ -78,14 +105,15 @@ void page::boxes()
 void page::getHeader()
 {
   // uses public member of document class to get the appropriate header
-  header = d->pageHeader(pagenumber);
+  m_header = m_doc->pageHeader(m_page_number);
+
   // if the header is not of /type /page, throw an error
-  if (header.get("/Type") != "/Page")
+  if (m_header.get("/Type") != "/Page")
   {
     // create an error message in case of missing page
-    std::string E = "No header found for page ";
-    E += std::to_string(pagenumber);
-    throw runtime_error(E);
+    std::string error_message("No header found for page ");
+    error_message += std::to_string(m_page_number);
+    throw runtime_error(error_message);
   }
 }
 
@@ -96,15 +124,20 @@ void page::getHeader()
 
 void page::getResources()
 {
-  if (!header.hasDictionary("/Resources")) // if it isn't a dictionary...
+  // If /Resources doesn't contain a dictionary it must be a reference
+  if (!m_header.hasDictionary("/Resources"))
   {
-    // ...it must be a reference. This loop ensures only one is used (the last)
-    vector<int> resourceobjs = header.getRefs("/Resources");
-    for (auto q : resourceobjs) resources = d->getobject(q)->getDict();
+    // Ensure it's only one resource reference
+    vector<int> resource_objs = m_header.getRefs("/Resources");
+
+    if(!resource_objs.empty())
+    {
+      m_resources = m_doc->getobject(resource_objs[0])->getDict();
+    }
   }
   else // Resources contains a subdictionary
   {
-    resources = header.getDictionary("/Resources");
+    m_resources = m_header.getDictionary("/Resources");
   }
 }
 
@@ -115,28 +148,36 @@ void page::getResources()
 
 void page::getFonts()
 {
-  if (!resources.hasDictionary("/Font")) // if it isn't a dictionary...
+  // If /Font entry of m_resources isn't a dictionary
+  if (!m_resources.hasDictionary("/Font"))
   {
-    // ...it must be a reference.
-    std::vector<int> fontobjs = resources.getRefs("/Font");
-    if (fontobjs.size() == 1)
+    // It must be a reference - follow this to get the dictionary
+    std::vector<int> font_objs = m_resources.getRefs("/Font");
+    if (font_objs.size() == 1)
     {
-      fonts = d->getobject(fontobjs.at(0))->getDict();
+      m_fonts = m_doc->getobject(font_objs.at(0))->getDict();
     }
   }
-  else // it's a subdictionary
+  // Otherwise, it is a dictionary, so we get the result
+  else
   {
-    fonts = resources.getDictionary("/Font");
+    m_fonts = m_resources.getDictionary("/Font");
   }
   // We can now iterate through the font names using getFontNames(), create
   // each font in turn and store it in the fontmap
-  for(auto h : getFontNames())
+  for(auto font_label : m_fonts)
   {
-    if(fontmap.find(h) == fontmap.end()) // fontmap is static
+    auto found_font = sm_fontmap.find(font_label.first);
+
+    // If the font is not in the fontmap, insert it
+    if(found_font == sm_fontmap.end())
     {
-      for(auto hh : fonts.getRefs(h)) // find the ref for each font name
+      // Find the reference for each font name
+      for(auto reference : m_fonts.getRefs(font_label.first))
       {
-        fontmap[h] = make_shared<font>(d, d->getobject(hh)->getDict(), h);
+        sm_fontmap[font_label.first] =  make_shared<font>(m_doc,
+                                        m_doc->getobject(reference)->getDict(),
+                                        font_label.first);
       }
     }
   }
@@ -154,19 +195,16 @@ void page::getContents()
     auto root = make_shared<tree_node<int>>(0);
 
     // use expandContents() to get page header object numbers
-    expandContents(header.getRefs("/Contents"), root);
+    expandContents(m_header.getRefs("/Contents"), root);
     auto contents = root->getLeafs();
 
     // Get the contents from each object stream and paste them at the bottom
     // of the pagestring with a line break after each one
-    contentstring.reserve(35000);
-
     for (auto m : contents)
     {
-      contentstring += d->getobject(m)->getStream() + std::string("\n");
+      m_content_string.append(m_doc->getobject(m)->getStream());
+      m_content_string.append(std::string("\n"));
     }
-
-    contentstring.shrink_to_fit();
 }
 
 /*---------------------------------------------------------------------------*/
@@ -178,37 +216,41 @@ void page::getContents()
 
 void page::parseXObjStream()
 {
-  string xobjstring {};
+  string xobject_string {};
+
   // first find any xobject entries in the resource dictionary
-  if (resources.has("/XObject"))
+  if (m_resources.has("/XObject")) xobject_string = m_resources.get("/XObject");
+
+  // Sanity check - the entry shouldn't be empty
+  if(xobject_string.empty()) return;
+
+  // If /xobject entry is a dictionary, create a dictionary object
+  dictionary xobject_dict;
+  if(xobject_string.find("<<") != string::npos)
   {
-    xobjstring = resources.get("/XObject");
+    xobject_dict = dictionary(make_shared<string>(xobject_string));
   }
 
-  if(xobjstring.empty())
-  {
-    return; // Sanity check - the entry shouldn't be empty
-  }
-
-  dictionary objdict; // declare xobject dictionary to be filled when found
-  if(xobjstring.find("<<") != string::npos) // Is /xobject entry a dictionary?
-  {
-    objdict = dictionary(make_shared<string>(xobjstring)); // if so, make it
-  }
+  // If the /XObject string is a reference, follow the reference to dictionary
   else
-  { // If the /XObject string is a reference, follow the reference and get dict
-    std::vector<int> xos = resources.getRefs("/XObject");
-    if (xos.size() == 1)
+  {
+    std::vector<int> xobject_refs = m_resources.getRefs("/XObject");
+    if (xobject_refs.size() == 1)
     {
-      objdict = d->getobject(xos.at(0))->getDict();
+      xobject_dict = m_doc->getobject(xobject_refs[0])->getDict();
     }
   }
-  std::vector<std::string> dictkeys = objdict.getDictKeys();
-  for(auto& i : dictkeys)
+
+  // We now have a dictionary of {xobject name: ref} from which to get xobjects
+  for(auto& i : xobject_dict)
   {
-    std::vector<int> refints = objdict.getRefs(i);
-    if(!refints.empty()) // map xobject strings to the xobject names
-      XObjects[i] = d->getobject(refints.at(0))->getStream();
+    std::vector<int> xobj_objs = xobject_dict.getRefs(i.first);
+
+    // map xobject strings to the xobject names
+    if(!xobj_objs.empty())
+    {
+      m_XObjects[i.first] = m_doc->getobject(xobj_objs[0])->getStream();
+    }
   }
 }
 
@@ -219,36 +261,23 @@ void page::parseXObjStream()
 // but it is possible to have nested content trees. In any case we only want
 // the leaves of the content tree, which are found by this algorithm
 
-void page::expandContents(vector<int> obs, shared_ptr<tree_node<int>> tree)
+void page::expandContents(vector<int> objs, shared_ptr<tree_node<int>> tree)
 {
   // Create new children tree nodes with this one as parent
-  tree->add_kids(obs);
+  tree->add_kids(objs);
 
-  auto kidnodes = tree->getkids(); // get a vector of pointers to the new nodes
+  // Get a vector of pointers to the new nodes
+  auto kidnodes = tree->getkids();
 
-  for(auto& i : kidnodes)  // now for each...
-  {                        // get a vector of ints for its kid nodes
-    vector<int> nodes = d->getobject(i->get())->getDict().getRefs("/Contents");
-    if (!nodes.empty())
-    {
-      expandContents(nodes, i); // if it has kids, use recursion to get them
-    }
+  // Now for each get a vector of ints for its kid nodes
+  for(auto& kid : kidnodes)
+  {
+    // Read the contents from the dictionary entry
+    auto nodes = m_doc->getobject(kid->get())->getDict().getRefs("/Contents");
+
+    // If it has kids, use recursion to get them
+    if (!nodes.empty()) expandContents(nodes, kid);
   }
-}
-
-/*--------------------------------------------------------------------------*/
-// The page constructor calls private methods to build its data members after
-// its initializer list
-
-page::page(shared_ptr<document> doc, int pagenum) :
-  d(doc), pagenumber(pagenum), rotate(0)
-{
-  getHeader();        // find the page header
-  getResources();     // find the resource header
-  parseXObjStream();  // identify, parse and store XObjects
-  getFonts();         // find the fonts dictionaries and build the fontmap
-  getContents();      // Find the contents entries and build the content string
-  boxes();            // Find the bouding box of the page
 }
 
 /*--------------------------------------------------------------------------*/
@@ -256,7 +285,7 @@ page::page(shared_ptr<document> doc, int pagenum) :
 
 vector<string> page::getFontNames()
 {
-  return this->fonts.getDictKeys();
+  return this->m_fonts.getDictKeys();
 }
 
 /*--------------------------------------------------------------------------*/
@@ -264,21 +293,22 @@ vector<string> page::getFontNames()
 
 shared_ptr<string> page::pageContents()
 {
-  return make_shared<string>(this->contentstring);
+  return make_shared<string>(this->m_content_string);
 }
 
 /*--------------------------------------------------------------------------*/
 // Finds and returns a particular XObject used on the page
 
-shared_ptr<string> page::getXobject(const string& objID)
+shared_ptr<string> page::getXobject(const string& object_ID)
 {
   // Use a non-inserting finder. If object not found return empty string
-  if(XObjects.find(objID) == XObjects.end())
+  if(m_XObjects.find(object_ID) == m_XObjects.end())
   {
     return make_shared<string>(string(""));
   }
 
-  return make_shared<string>(XObjects[objID]); // else return the Xobject
+  // Else return the Xobject
+  return make_shared<string>(m_XObjects[object_ID]);
 }
 
 /*--------------------------------------------------------------------------*/
@@ -288,17 +318,11 @@ shared_ptr<string> page::getXobject(const string& objID)
 shared_ptr<font> page::getFont(const string& fontID)
 {
   // If no fonts on the page, throw an error
-  if(fontmap.empty())
-  {
-    throw runtime_error("No fonts available for page");
-  }
+  if(sm_fontmap.empty()) throw runtime_error("No fonts available for page");
 
   // If we can't find a specified font, return the first font in the map
-  auto f = fontmap.find(fontID);
-  if(f == fontmap.end())
-  {
-    return (fontmap.begin()->second);
-  }
+  auto f = sm_fontmap.find(fontID);
+  if(f == sm_fontmap.end()) return (sm_fontmap.begin()->second);
 
   // Otherwise we're all good and return the requested font
   return f->second;
@@ -309,7 +333,7 @@ shared_ptr<font> page::getFont(const string& fontID)
 
 std::vector<float> page::getminbox()
 {
-  return minbox;
+  return m_minbox;
 }
 
 /*--------------------------------------------------------------------------*/
@@ -318,5 +342,5 @@ std::vector<float> page::getminbox()
 
 void page::clearFontMap()
 {
-  this->fontmap.clear();
+  this->sm_fontmap.clear();
 }

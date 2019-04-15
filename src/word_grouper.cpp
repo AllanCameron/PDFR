@@ -173,7 +173,7 @@ void word_grouper::findRightMatch()
     if( (*i)->is_consumed()) continue;
 
     // If elligible, check every other word for the best match
-    for(auto j = m_allRows.begin(); j != m_allRows.end(); ++j)
+    for(auto j = i; j != m_allRows.end(); ++j)
     {
       // Don't match against itself
       if(i == j) continue;

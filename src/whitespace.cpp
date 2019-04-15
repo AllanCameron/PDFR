@@ -485,17 +485,21 @@ void Whitespace::removeEngulfed()
 vector<pair<WSbox, vector<text_ptr>>> Whitespace::output()
 {
   vector<pair<WSbox, vector<text_ptr>>> res;
-  for(auto& i : ws_boxes)
+  for(auto& box : ws_boxes)
   {
-    vector<text_ptr> textcontent;
-    for(auto& text_element : m_text_elements)
+    vector<text_ptr> text_vec;
+    int start_at = 0;
+    for(auto text_it = m_text_elements.begin() + start_at;
+             text_it != m_text_elements.end(); ++text_it)
     {
-      if(i.contains_text(text_element))
+      if(box.contains_text(*text_it))
       {
-        textcontent.push_back(text_element);
+        text_vec.push_back(*text_it);
+        start_at = distance(m_text_elements.begin(), text_it);
       }
+      if(box.right < (*text_it)->left) break;
     }
-    res.emplace_back(pair<WSbox, vector<text_ptr>>(move(i), move(textcontent)));
+    res.emplace_back(pair<WSbox, vector<text_ptr>>(move(box), move(text_vec)));
   }
 
   return res;

@@ -84,13 +84,11 @@ public:
 
 private:
   // private data members
-  constexpr static float CLUMP_H = 0.1; // horizontal clumping, high = sticky
-  constexpr static float CLUMP_V = 0.1; // vertical clumping, high = sticky
   textrows gslist;            // a copy of the parser output used to create grid
   std::vector<float> minbox;
 
   // the main data member. A 16 x 16 grid of cells, each with textrow vector
-  std::unordered_map<uint8_t, std::vector<text_ptr>> gridmap;
+  std::unordered_map<uint8_t, std::vector<text_ptr>> m_grid;
 
   // private methods
   void makegrid();                    // assigns each glyph to a 16 x 16 grid

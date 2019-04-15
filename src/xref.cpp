@@ -103,10 +103,7 @@ void xref::locateXrefs()
   Xreflocations.emplace_back(stoi(xrefstring));
 
   // If no xref location is found, then we're stuck. Throw an error.
-  if(Xreflocations.empty())
-  {
-    throw runtime_error("No xref entry found");
-  }
+  if(Xreflocations.empty()) throw runtime_error("No xref entry found");
 
   // The first dictionary found after any xref offset is always a trailer
   // dictionary, though sometimes it doubles as an xrefstream dictionary.
@@ -135,10 +132,7 @@ void xref::xrefstrings()
     int len = fs->find("startxref", i) - i;
 
     // Throw error if no xref found
-    if (len <= 0)
-    {
-      throw std::runtime_error("No object found at location");
-    }
+    if (len <= 0) throw std::runtime_error("No object found at location");
 
     // Extract the xref string
     string&& fullxref = fs->substr(i, len);
@@ -239,6 +233,7 @@ size_t xref::getStart(int objnum) const
   {
     throw std::runtime_error("Object does not exist");
   }
+
   return (size_t) xreftab.at(objnum).startbyte;
 }
 
@@ -251,19 +246,13 @@ size_t xref::getEnd(int objnum) const
   auto obj_row = xreftab.find(objnum);
 
   // throw an error if objnum isn't a valid object
-  if(obj_row == xreftab.end())
-  {
-    throw std::runtime_error("Object does not exist");
-  }
+  if(obj_row == xreftab.end()) throw runtime_error("Object does not exist");
 
   // If the object is in an object stream, return 0;
-  if(obj_row->second.in_object)
-  {
-    return 0;
-  }
+  if(obj_row->second.in_object) return 0;
 
   // else find the first match of "endobj" and return
-  return (int) fs->find("endobj", obj_row->second.startbyte);
+  return fs->find("endobj", obj_row->second.startbyte);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -273,10 +262,8 @@ size_t xref::getEnd(int objnum) const
 size_t xref::inObject(int objnum) const
 {
   auto obj_row = xreftab.find(objnum);
-  if(obj_row == xreftab.end())
-  {
-    throw std::runtime_error("Object does not exist");
-  }
+
+  if(obj_row == xreftab.end()) throw runtime_error("Object does not exist");
 
   return (size_t) obj_row->second.in_object;
 }
@@ -289,7 +276,6 @@ std::vector<int> xref::getObjects() const
   return getKeys(this->xreftab);
 }
 
-
 /*---------------------------------------------------------------------------*/
 
 int xref::streamLength(const dictionary& dict) const
@@ -301,11 +287,10 @@ int xref::streamLength(const dictionary& dict) const
     size_t len = fs->find("endobj", firstpos) - firstpos; // and its length
     string objstr = fs->substr(firstpos, len); // from which we get a string
     return getints(move(objstr)).back(); // from which we get a number
-  } // thankfully though most lengths are just direct ints
-  else
-  {
-    return dict.getInts("/Length")[0];
   }
+
+  // Thankfully though most lengths are just direct ints
+  else return dict.getInts("/Length")[0];
 }
 
 /*---------------------------------------------------------------------------*/
@@ -355,17 +340,12 @@ dictionary xref::trailer() const
 void xref::get_crypto()
 {
    // if there's no encryption dictionary, there's nothing else to do
-  if(!TrailerDictionary.has("/Encrypt"))
-  {
-    return;
-  }
+  if(!TrailerDictionary.has("/Encrypt")) return;
 
   int encnum = TrailerDictionary.getRefs("/Encrypt").at(0);
 
-  if(xreftab.find(encnum) == xreftab.end()) // No encryption dict - exception?
-  {
-    return;
-  }
+  // No encryption dict - exception?
+  if(xreftab.find(encnum) == xreftab.end()) return;
 
   // mark file as encrypted and read the encryption dictionary
   encrypted = true;
@@ -396,7 +376,10 @@ std::shared_ptr<const std::string> xref::file() const
 // hairball function being created that is difficult to debug.
 
 xrefstream::xrefstream(shared_ptr<xref> Xref, int starts) :
-  m_XR(Xref), m_ncols(0), m_predictor(0), m_objstart(starts),
+  m_XR(Xref),
+  m_ncols(0),
+  m_predictor(0),
+  m_objstart(starts),
   m_dict(dictionary(m_XR->file(), m_objstart))
 {
   // If there is no /W entry, we don't know how to interpret the stream.
@@ -495,22 +478,15 @@ void xrefstream::getRawMatrix()
   m_arrayWidths.erase(i, m_arrayWidths.end());
 
   // if no record of column numbers, infer from number of /W entries >0
-  if(m_ncols == 0)
-  {
-    m_ncols = m_arrayWidths.size();
-  }
+  if(m_ncols == 0) m_ncols = m_arrayWidths.size();
 
-  if(m_predictor > 9)
-  {
-    m_ncols++; // Predictors above 10 require an extra column
-  }
+  // Predictors above 10 require an extra column
+  if(m_predictor > 9) m_ncols++;
 
-  if(m_ncols == 0)
-  {
-    throw runtime_error("divide by zero error"); // sanity check
-  }
+  if(m_ncols == 0) throw runtime_error("divide by zero error");
 
-  int nrows = intstrm.size() / m_ncols; // get number of rows
+  // Get number of rows
+  int nrows = intstrm.size() / m_ncols;
 
   if ((size_t)(nrows * m_ncols) != intstrm.size()) // ensure rectangular table
   {
@@ -550,20 +526,17 @@ void xrefstream::diffup()
 
 void xrefstream::modulotranspose()
 {
-  for(size_t i = 0; i < m_rawMatrix.at(0).size(); ++i)  // for each row...
+  for(size_t i = 0; i < m_rawMatrix.at(0).size(); ++i)
   {
-    std::vector<int> tempcol;   // create a new column vector
-    // then for each entry in the row make it modulo 256 and push to new column
-    for(auto& j : m_rawMatrix)
-    {
-      tempcol.push_back(j[i] & 0x00ff);
-    }
+    // Create a new column vector
+    std::vector<int> tempcol;
+
+    // Then for each entry in the row make it modulo 256 and push to new column
+    for(auto& j : m_rawMatrix) tempcol.push_back(j[i] & 0x00ff);
+
     // the new column is pushed to the final array unless it is the first
     // column (which is skipped when the predictor is > 9)
-    if(m_predictor < 10 || i > 0)
-    {
-      m_finalArray.push_back(tempcol);
-    }
+    if(m_predictor < 10 || i > 0) m_finalArray.push_back(tempcol);
   }
 }
 
