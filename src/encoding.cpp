@@ -97,13 +97,15 @@ void Encoding::Differences(const string& enc)
 
   // This loop writes the results vector to EncodingMap
   for(auto& i : entries)
-    if(i.first == NUM)  // If the vector entry is a number, convert to RawChar
-      k = (RawChar) stoi(i.second);
-    else
-    // otherwise it's a name - convert it to Unicode, write it to the
+  {
+    // If the vector entry is a number, convert to RawChar
+    if(i.first == NUM) k = (RawChar) stoi(i.second);
+
+    // Otherwise it's a name - convert it to Unicode, write it to the
     // EncodingMap and post-increment the mapping rawchar in case the next
     // entry is also a name (it will be over-written if it is an int)
-      EncodingMap[k++] = Encoding::AdobeToUnicode[i.second];
+    else EncodingMap[k++] = adobe_to_unicode[i.second];
+  }
 }
 
 /*---------------------------------------------------------------------------*/
@@ -112,17 +114,23 @@ void Encoding::Differences(const string& enc)
 
 void Encoding::mapUnicode(dictionary& fontref, shared_ptr<document> d)
 {
-  if (!fontref.hasRefs("/ToUnicode")) return; // no entry, nothing to be done
-  int unirefint = fontref.getRefs("/ToUnicode")[0]; // else get reference
-  string x = d->getobject(unirefint)->getStream(); // get stream from reference
+  // If no /ToUnicode entry, nothing to be done
+  if (!fontref.hasRefs("/ToUnicode")) return;
+
+  // Otherwise, get the reference and get its stream
+  int tounicode_reference = fontref.getRefs("/ToUnicode")[0];
+  string x(d->getobject(tounicode_reference)->getStream());
 
   // multicarve gets all strings between the bookending strings. These are
   // stored in a vector and are substrates for the processing methods below
   vector<string> Char =  multicarve(x, "beginbfchar", "endbfchar");
   vector<string> Range = multicarve(x, "beginbfrange", "endbfrange");
 
-  if (!Char.empty())  processUnicodeChars(Char); // if chars, processChar
-  if (!Range.empty()) processUnicodeRange(Range); // if ranges, processRange
+  // if this is a character to character map, run processUnicodeChars
+  if (!Char.empty())  processUnicodeChars(Char);
+
+  // if this is a character range, run processUnicodeRange
+  if (!Range.empty()) processUnicodeRange(Range);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -135,6 +143,7 @@ void Encoding::processUnicodeChars(vector<string>& Char)
   {
     // use multicarve() to get ascii-encoded byte representations
     vector<string> allentries = multicarve(j, "<", ">");
+
     // This loop takes the ascii-encoded bytes in the first column and
     // converts them to rawchar. It stores this number as 'key', then
     // converts the ascii-encoded bytes in the second column, converts them
@@ -157,23 +166,31 @@ void Encoding::processUnicodeChars(vector<string>& Char)
 void Encoding::processUnicodeRange(vector<string>& Range)
 {
   for(auto& i : Range)
-  { // uses multicarve() from utilities.h to get ascii-endoded byte strings
+  {
+    // Uses multicarve() from utilities.h to get ascii-endoded byte strings
     vector<string> allentries = multicarve(i, "<", ">");
-    // sanity check - there should be at least three entries for a valid range
+
+    // Sanity check - there should be at least three entries for a valid range
     if(allentries.size() < 3) throw runtime_error("No entries in range");
-    // loop to calculate entries and fill encoding map
+
+    // Loop to calculate entries and fill encoding map
     for(size_t j = 2; j < allentries.size(); j += 3)
     {
       // first column == first code point
       RawChar first = HexstringToRawChar(allentries[j - 2]).at(0);
+
       // second column == first code point
       RawChar last = HexstringToRawChar(allentries[j - 1]).at(0);
+
       // We call the HexstringtoRawChar function as it outputs uint16
       // However, 'start' is Unicode and we make this explicit
       Unicode start = (Unicode) HexstringToRawChar(allentries[j]).at(0);
+
       // Now we can fill the encoding map from the data in the row
       for(int k = 0; k <= (last - first); k++)
+      {
         EncodingMap[first + k] = start + k;
+      }
     }
   }
 }
@@ -184,28 +201,31 @@ void Encoding::processUnicodeRange(vector<string>& Range)
 
 void Encoding::getEncoding(dictionary& fontref, shared_ptr<document> d)
 {
-  dictionary encref = fontref;                  // start with font dictionary
-  string encname = encref.get("/Encoding");     // read encoding entry
-  if(fontref.hasRefs("/Encoding"))              //------//
-  {                                                     // if an encoding
-    int a = fontref.getRefs("/Encoding").at(0);         // dictionary exists,
-    shared_ptr<object_class> myobj = d->getobject(a);   // get it and read off
-    encref = myobj->getDict();                          // the baseencoding
-    if(encref.has("/BaseEncoding"))                     // entry
-      encname = encref.get("/BaseEncoding");            //
-  }                                             //------//
-  if( encname == "/WinAnsiEncoding")            //---------------------------//
-    EncodingMap = Encoding::winAnsiEncodingToUnicode; //
-  else if(encname == "/MacRomanEncoding")             // Fill encoding map with
-    EncodingMap = Encoding::macRomanEncodingToUnicode;// the appropriate base
-  else if(encname == "/PDFDocEncoding")               // encoding. If none is
-    EncodingMap = Encoding::pdfDocEncodingToUnicode;  // specified, fill map
-  else                                                // with 1:1 Raw : Unicode
-    for(RawChar i = 0; i < 256; ++i)                  //
-      EncodingMap[i] = (Unicode) i;             //---------------------------//
-  if(encref.has("/Differences"))
-  {// call Differences() if a /Differences entry is found to modify encoding
-    BaseEncoding = encref.get("/Differences");
+  // start with font dictionary
+  dictionary encode_reference = fontref;
+
+  // Read encoding entry
+  string encode_name = encode_reference.get("/Encoding");
+
+  // If an encoding dictionary exists, get it and read the baseencoding entry
+  if(fontref.hasRefs("/Encoding"))
+  {
+    auto myobj = d->getobject(fontref.getRefs("/Encoding")[0]);
+    encode_reference = myobj->getDict();
+    if(encode_reference.has("/BaseEncoding"))
+    {
+      encode_name = encode_reference.get("/BaseEncoding");
+    }
+  }
+  if( encode_name == "/WinAnsiEncoding") EncodingMap = winansi_to_unicode;
+  else if(encode_name == "/MacRomanEncoding") EncodingMap = macroman_to_unicode;
+  else if(encode_name == "/PDFDocEncoding") EncodingMap = pdfdoc_to_unicode;
+  else for(RawChar i = 0; i < 256; ++i) EncodingMap[i] = (Unicode) i;
+
+  // Call Differences() if a /Differences entry is found to modify encoding
+  if(encode_reference.has("/Differences"))
+  {
+    BaseEncoding = encode_reference.get("/Differences");
     Differences(BaseEncoding);
   }
 }
@@ -228,13 +248,13 @@ Encoding::Encoding(const dictionary& fontdict, shared_ptr<document> doc):
 // a range-checked lookup of a given RawChar. If it finds no Unicode entry
 // in the map it returns the original RawChar
 
-Unicode Encoding::Interpret(RawChar raw)
+Unicode Encoding::Interpret(const RawChar& raw)
 {
   auto found = EncodingMap.find(raw);
-  if(found != EncodingMap.end()) // non-inserting lookup
-    return found->second;  // found entry
-  else
-    return raw;               // no entry - have your char back untranslated
+  if(found != EncodingMap.end()) return found->second;
+
+  // If no translation found, return the raw character code point
+  else return raw;
 }
 
 /*---------------------------------------------------------------------------*/

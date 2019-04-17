@@ -97,17 +97,17 @@ public:
   Encoding(const dictionary&, std::shared_ptr<document>);
 
   // public member functions
-  Unicode Interpret(RawChar);       // Maps given code point to Unicode
+  Unicode Interpret(const RawChar&);       // Maps given code point to Unicode
   std::shared_ptr<std::unordered_map<RawChar, Unicode>> encKeys();
 
 private:
   // data lookup tables - defined as static, which means only a single
   // instance of each is created rather than a copy for each object.
   // Note these maps are defined in adobetounicode.h and chartounicode.h
-  static std::unordered_map<std::string, Unicode> AdobeToUnicode;
-  static std::unordered_map<RawChar, Unicode> macRomanEncodingToUnicode;
-  static std::unordered_map<RawChar, Unicode> winAnsiEncodingToUnicode;
-  static std::unordered_map<RawChar, Unicode> pdfDocEncodingToUnicode;
+  static std::unordered_map<std::string, Unicode> adobe_to_unicode;
+  static std::unordered_map<RawChar, Unicode> macroman_to_unicode;
+  static std::unordered_map<RawChar, Unicode> winansi_to_unicode;
+  static std::unordered_map<RawChar, Unicode> pdfdoc_to_unicode;
 
   // the main variable data container for the class
   std::unordered_map<RawChar, Unicode> EncodingMap;
