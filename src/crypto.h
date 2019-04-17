@@ -61,9 +61,9 @@ typedef std::vector<uint8_t> bytes;
 //---------------------------------------------------------------------------//
 // The md5 algorithm makes use of 4-byte numbers (unsigned long or uint32_t).
 // To shorten the name and make it explicit what we are talking about I have
-// typedef'd uint32_t as fourbytes
+// typedef'd uint32_t as four_bytes
 
-typedef uint32_t fourbytes;
+typedef uint32_t four_bytes;
 
 //---------------------------------------------------------------------------//
 // Class definition for crypto
@@ -86,12 +86,12 @@ private:
   dictionary trailer;
   int revision;
   bytes filekey;
-  static bytes UPW;
+  static bytes default_user_password;
 
 // private member functions
-  bytes chopLong(fourbytes) const;    // Chops fourbytes into 4 bytes
-  bytes perm(std::string);            // Return permission flags for file
-  void md5mix(int, std::deque<fourbytes>&, std::vector<fourbytes>&) const;
+  bytes chopLong(four_bytes) const;    // Chops four_bytes into 4 bytes
+  bytes permissions(std::string);     // Return permission flags for file
+  void md5mix(int, std::deque<four_bytes>&, std::vector<four_bytes>&) const;
   bytes md5(bytes input) const;       // Gives md5 hash of a vector of raw bytes
   bytes md5(std::string input) const; // Gives md5 hash of a string (as bytes)
   void rc4(bytes&, bytes) const; // Gives rc4 cipher of message:key pair, or the

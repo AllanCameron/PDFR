@@ -126,16 +126,16 @@ void xref::locateXrefs()
 void xref::xrefstrings()
 {
   // Get a string from each xref location or throw exception
-  for(auto i : Xreflocations)
+  for(auto& start : Xreflocations)
   {
     // Find the length of xref in chars
-    int len = fs->find("startxref", i) - i;
+    int len = fs->find("startxref", start) - start;
 
     // Throw error if no xref found
     if (len <= 0) throw std::runtime_error("No object found at location");
 
     // Extract the xref string
-    string&& fullxref = fs->substr(i, len);
+    string&& fullxref = fs->substr(start, len);
 
     // Carve out the actual string
     string xrefstring = carveout(move(fullxref), "xref", "trailer");
@@ -143,7 +143,7 @@ void xref::xrefstrings()
     // If it contains a dictionary, process as a stream, otherwise as a string
     if(xrefstring.substr(0, 15).find("<<", 0) != string::npos)
     {
-      xrefFromStream(i);
+      xrefFromStream(start);
     }
     else
     {
@@ -157,33 +157,25 @@ void xref::xrefstrings()
 // The output of this object is a "table" (vec<vec<int>>) which is parsed
 // and added to the main combined xref table
 
-void xref::xrefFromStream(int xrefloc)
+void xref::xrefFromStream(int xref_loc)
 {
   // Calls xrefstream constructor to make the data table from the stream
-  auto xreftable = xrefstream(make_shared<xref>(*this), xrefloc).table();
+  auto xref_table = xrefstream(make_shared<xref>(*this), xref_loc).table();
 
   // Throws if xrefstream returns an empty table
-  if(xreftable.empty())
-  {
-    throw std::runtime_error("xreftable empty");
-  }
+  if(xref_table.empty()) throw runtime_error("xref table empty");
 
   // Fill the xref data map from the table -------------------//
-  for (size_t j = 0; j < xreftable[0].size(); j++)            //
-  {                                                           //
-    int& objnum = xreftable[3][j];                            //
-    int& position =  xreftable[1][j];                         //
-    xreftab[objnum] = xrefrow {position, 0, position};        //
-                                                              //
-    if(xreftable[0][j] != 2)                                  //
-    {                                                         //
-      xreftab[objnum].in_object = 0;                          //
-    }                                                         //
-    else                                                      //
-    {                                                         //
-      xreftab[objnum].startbyte = 0;                          //
-    }                                                         //
-  }                                                    //-----//
+  for (size_t j = 0; j < xref_table[0].size(); j++)
+  {
+    int& object_number = xref_table[3][j], position = xref_table[1][j];
+
+    xreftab[object_number] = xrefrow {position, 0, position};
+
+    if(xref_table[0][j] != 2) xreftab[object_number].in_object = 0;
+
+    else xreftab[object_number].startbyte = 0;
+  }
 }
 
 /*---------------------------------------------------------------------------*/
@@ -200,41 +192,35 @@ void xref::xrefFromString(std::string& xstr)
   auto allints = getints(xstr);
 
   // A valid xref has >= 4 ints in it and must have an even number of ints
-  if(allints.size() < 4 || allints.size() % 2 != 0)
-  {
-    throw runtime_error("Malformed xref");
-  }
+  auto xrefsize = allints.size();
+  if(xrefsize < 4 || xrefsize % 2) throw runtime_error("Malformed xref");
 
   // This loop starts on the second row of the table. Even numbers are the
   // byte offsets and odd numbers are the in_use numbers
   for(int bytestore = 0, i = 2; i < (int) allints.size(); ++i)
   {
-    // Store byte offsets if the
-    if(i % 2 == 0)
+    // If an odd number index and the integer is in use, store to map
+    if(i % 2 && allints[i] < 0xffff)
     {
-      bytestore = allints[i];
+      // Numbers each row by counting pairs of numbers past initial object
+      xreftab[allints[0] + (i / 2) - 1] = xrefrow {bytestore, 0, 0};
     }
-    else
-    {
-      if(allints[i] < 65535) // indicates object in use
-      {
-        xreftab[allints[0] + (i / 2) - 1] = xrefrow {bytestore, 0, 0};
-      }
-    }
+
+    // If odd-numbered index, the number gives the byte offset of the object
+    else bytestore = allints[i];
   }
 }
 
 /*---------------------------------------------------------------------------*/
 // Returns the byte offset for a pdf object
 
-size_t xref::getStart(int objnum) const
+size_t xref::getStart(int object_number) const
 {
-  if(xreftab.find(objnum) == xreftab.end())
-  {
-    throw std::runtime_error("Object does not exist");
-  }
+  auto found = xreftab.find(object_number);
 
-  return (size_t) xreftab.at(objnum).startbyte;
+  if(found == xreftab.end()) throw runtime_error("Object does not exist");
+
+  return found->second.startbyte;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -265,7 +251,7 @@ size_t xref::inObject(int objnum) const
 
   if(obj_row == xreftab.end()) throw runtime_error("Object does not exist");
 
-  return (size_t) obj_row->second.in_object;
+  return obj_row->second.in_object;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -552,12 +538,9 @@ void xrefstream::expandbytes()
   {
     while(i)
     {
-      int shift = 8 * (i-- - 1);
-      for(auto &j : m_finalArray.at(ncol))
-      {
-        j <<= shift;
-      }
-      ncol++;
+      int byte_shift = 8 * (i-- - 1);
+      for(auto &j : m_finalArray.at(ncol)) j <<= byte_shift;
+      ++ncol;
     }
   }
 }
@@ -597,11 +580,10 @@ void xrefstream::mergecolumns()
 
 void xrefstream::numberRows()
 {
-
   // If there are only two columns append a zero filled column of the same size
   if(m_result.size() == 2)
   {
-    m_result.emplace_back(std::vector<int>(m_result.at(0).size(), 0));
+    m_result.emplace_back(vector<int>(m_result[0].size(), 0));
   }
 
   // if no index entries, assume start at object 0
@@ -611,6 +593,8 @@ void xrefstream::numberRows()
     m_objectNumbers.resize(m_result[0].size());
     iota(m_objectNumbers.begin(), m_objectNumbers.end(), 0);
   }
+
+  // Append to our result
   m_result.push_back(m_objectNumbers);
 }
 

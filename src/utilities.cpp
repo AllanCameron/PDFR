@@ -100,26 +100,18 @@ string carveout(const string& s, const string& pre, const string& post)
   int start =  s.find(pre);
 
   // If pre not found in s, start at s[0], otherwise start at end of first pre
-  if (start)
-  {
-    start += pre.size();
-  }
-  else
-  {
-    start = 0;
-  }
+  if (start) start += pre.size();
+
+  else start = 0;
 
   // Trim the start of s
-  string str = s.substr(start, s.size() - start);
+  string str(s.substr(start, s.size() - start));
 
   // Now find the starting point of 'post'
-  int stp = str.find(post);
+  int stop = str.find(post);
 
-  if(stp)
-  {
-    // If post found, discard the end of the string starting at start of post
-    return str.substr(0, stp);
-  }
+  // If post found, discard the end of the string starting at start of post
+  if (stop) return str.substr(0, stop);
 
   // if post not found, finish at the end of the string
   return str;
@@ -136,13 +128,10 @@ vector<string> multicarve(const string& s, const string& a, const string& b)
   std::vector<std::string> res;
 
   // if any of the strings are length 0 then return an empty vector
-  if(a.empty() || b.empty() || s.empty())
-  {
-    return res;
-  }
+  if (a.empty() || b.empty() || s.empty()) return res;
 
   // makes a copy to allow const correctness
-  std::string str = s;
+  std::string str(s);
 
   // This loop progressively finds matches in s and removes from the start
   // of the string all characters up to the end of matched b.
@@ -150,14 +139,16 @@ vector<string> multicarve(const string& s, const string& a, const string& b)
   while(true)
   {
     int start = str.find(a);
-    if(start == -1) break; // no more matched pairs so halt
+    if(start == -1) break;
 
     // chop start off string up to end of first match of a
     str = str.substr(start + a.size(), str.size() - (start + a.size()));
 
     int stop = str.find(b);
-    if(stop == -1) break; // no more matched pairs so halt
-    res.push_back(str.substr(0, stop)); // target found - push to result
+    if(stop == -1) break;
+
+    // Target found - push to result
+    res.push_back(str.substr(0, stop));
 
     // Now discard the target plus the following instance of b
     str = str.substr(stop + b.size(), str.size() - (stop + b.size()));
@@ -172,27 +163,21 @@ vector<string> multicarve(const string& s, const string& a, const string& b)
 
 bool IsAscii(const string& s)
 {
-  if(s.empty())
-  {
-    return false;
-  }
+  if(s.empty()) return false;
 
   // Use minmax to get a pair of iterators pointing to min & max char values
-  auto i = minmax_element(s.begin(), s.end());
+  auto minmax_ptrs = minmax_element(s.begin(), s.end());
 
   // If any are outside the ascii range return false, otherwise return true
-  return *(i.first) > 7 && *(i.second) < 127;
+  return *(minmax_ptrs.first) > 7 && *(minmax_ptrs.second) < 127;
 }
 
 /*---------------------------------------------------------------------------*/
 
 void fourBitsToBytes(std::vector<uint8_t>& tmpvec)
 {
-    // We cannot allow odd-length vectors;
-  if(tmpvec.size() % 2 == 1)
-  {
-    tmpvec.push_back(0);
-  }
+  // We cannot allow odd-length vectors;
+  if(tmpvec.size() | 0x01) tmpvec.push_back(0);
 
   // Now take each pair of four-bit bytes, left shift the first by four bits
   // and add them together using a bitwise OR, overwriting the source as we go
@@ -209,38 +194,33 @@ void fourBitsToBytes(std::vector<uint8_t>& tmpvec)
 // Takes a string of bytes represented in ASCII and converts to actual numbers
 // in the form of 4-bit bytes eg ("AB23") -> {0x0a, 0x0b, 0x02, 0x03}
 
-std::vector<uint8_t> fourBitsFromHexString(const std::string& s)
+std::vector<uint8_t> fourBitsFromHexString(const std::string& hexstring)
 {
   // Vector to store results
-  std::vector<uint8_t> tmpvec;
+  std::vector<uint8_t> result;
 
   // If s is empty, return an empty vector;
-  if(s.empty())
-  {
-    return tmpvec;
-  }
+  if(hexstring.empty()) return result;
 
   // Convert hex characters to vector of four-bit values using hexmap
-  for(size_t i = 0; i < s.size(); ++i)
+  for(auto hexchar : hexstring)
   {
-    const auto& b = hexmap.find(s[i]); // Only need to find s[i] once this way
-    if(b != hexmap.end())
-    {
-      tmpvec.push_back(b->second);
-    }
+    const auto& found = hexmap.find(hexchar);
+
+    if(found != hexmap.end()) result.push_back(found->second);
   }
 
-  return tmpvec;
+  return result;
 }
 
 /*---------------------------------------------------------------------------*/
 // Converts an Ascii-encoded string of bytes to a vector of bytes
 
-std::vector<uint8_t> bytesFromArray(const std::string& s)
+std::vector<uint8_t> bytesFromArray(const std::string& hexstring)
 {
-  auto b = fourBitsFromHexString(s);
-  fourBitsToBytes(b);
-  return b;
+  auto byte_vector = fourBitsFromHexString(hexstring);
+  fourBitsToBytes(byte_vector);
+  return byte_vector;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -276,7 +256,7 @@ char symbol_type(const char c)
 
 vector<RawChar> HexstringToRawChar(string& s)
 {
-  while(s.size() % 4 != 0) s = '0' + s;
+  while(s.size() % 4) s = '0' + s;
   vector<RawChar> raw_vector; // vector to store results
   raw_vector.reserve(s.size() / 4);
   for(size_t i = 0; i < (s.size() - 3); i += 4)
@@ -294,13 +274,18 @@ vector<RawChar> HexstringToRawChar(string& s)
 // This requires sequential conversion from char to uint8_t to uint16_t
 // (RawChar is just a synonym for uint16_t)
 
-vector<RawChar> StringToRawChar(const string& s)
+vector<RawChar> StringToRawChar(const string& str)
 {
   vector<RawChar> result; // vector to hold results
-  result.reserve(s.size());
-  if(!s.empty())
-    for(auto i : s)
-      result.emplace_back(0x00ff & ((uint8_t) i)); // convert to uint16
+  result.reserve(str.size());
+
+  if(!str.empty())
+  {
+    for(auto string_char : str)
+    {
+      result.emplace_back(0x00ff & ((uint8_t) string_char)); // convert uint16
+    }
+  }
   return result;
 }
 

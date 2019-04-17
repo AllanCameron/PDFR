@@ -135,20 +135,20 @@ void tokenizer::resourceState()
 {
   switch(char_lookup[*i])
   {
-    case LAB:   pushbuf(RESOURCE, HEXSTRING);     break;
-    case LET:   buf += *i;                        break;
-    case DIG:   buf += *i;                        break;
-    case USC:   buf += '_';                       break;
-    case LSB:   pushbuf(RESOURCE, ARRAY);         break;
-    case FSL:   pushbuf(RESOURCE, RESOURCE);      break;
-    case AST:   buf += '*';                       break;
-    case LCB:   pushbuf(RESOURCE, STRING);        break;
-    case SUB:   buf += '-';                       break;
+    case LAB:   pushbuf(RESOURCE, HEXSTRING);               break;
+    case LET:   buf.append(i, i+1);                         break;
+    case DIG:   buf.append(i, i+1);                         break;
+    case USC:   buf.append("_");                            break;
+    case LSB:   pushbuf(RESOURCE, ARRAY);                   break;
+    case FSL:   pushbuf(RESOURCE, RESOURCE);                break;
+    case AST:   buf.append("*");                            break;
+    case LCB:   pushbuf(RESOURCE, STRING);                  break;
+    case SUB:   buf.append("-");                            break;
     case BSL:   throw runtime_error("illegal character");
-    case SPC:   pushbuf(RESOURCE, NEWSYMBOL);     break;
+    case SPC:   pushbuf(RESOURCE, NEWSYMBOL);               break;
     case RAB:   throw runtime_error("illegal character");
     case PER:   throw runtime_error("illegal character");
-    case ADD:   buf += '+';                       break;
+    case ADD:   buf.append("+");                            break;
     default:    throw runtime_error("illegal character");
   }
 }
@@ -161,18 +161,18 @@ void tokenizer::newsymbolState()
   // get symbol_type of current char
   switch(char_lookup[*i])
   {
-    case LAB:                state = HEXSTRING;   break;
-    case LET:   buf += *i;    state = IDENTIFIER;  break;
-    case DIG:   buf += *i;    state = NUMBER;      break;
-    case USC:   buf += *i;    state = IDENTIFIER;  break;
-    case LSB:                state = ARRAY;       break;
-    case FSL:   buf += *i;    state = RESOURCE;    break;
-    case AST:   buf += *i;    state = IDENTIFIER;  break;
-    case LCB:                 state = STRING;      break;
-    case SUB:   buf += *i;    state = NUMBER;      break;
-    case PER:   buf +=  "0."; state = NUMBER;      break;
-    case SQO:  buf += *i;    state = IDENTIFIER;  break;
-    default : buf = "";       state = NEWSYMBOL;   break;
+    case LAB:                          state = HEXSTRING;   break;
+    case LET:   buf.append(i, i+1);    state = IDENTIFIER;  break;
+    case DIG:   buf.append(i, i+1);    state = NUMBER;      break;
+    case USC:   buf.append(i, i+1);    state = IDENTIFIER;  break;
+    case LSB:                          state = ARRAY;       break;
+    case FSL:   buf.append(i, i+1);    state = RESOURCE;    break;
+    case AST:   buf.append(i, i+1);    state = IDENTIFIER;  break;
+    case LCB:                          state = STRING;      break;
+    case SUB:   buf.append(i, i+1);    state = NUMBER;      break;
+    case PER:   buf.append("0.");      state = NUMBER;      break;
+    case SQO:   buf.append(i, i+1);    state = IDENTIFIER;  break;
+    default : buf.clear();             state = NEWSYMBOL;   break;
   }
 }
 
@@ -185,17 +185,17 @@ void tokenizer::identifierState()
   switch(char_lookup[*i])
   {
     case LAB:   pushbuf(IDENTIFIER, HEXSTRING); break;
-    case LET:   buf += *i;                      break;
-    case DIG:   buf += *i;                      break;
+    case LET:   buf.append(i, i+1);             break;
+    case DIG:   buf.append(i, i+1);             break;
     case SPC:   if (buf == "BI") state = WAIT;  else // BI == inline image
                 pushbuf(IDENTIFIER, NEWSYMBOL); break;
     case FSL:   pushbuf(IDENTIFIER, RESOURCE);
                 buf = "/";                      break;
     case LSB:   pushbuf(IDENTIFIER, ARRAY);     break;
     case LCB:   pushbuf(IDENTIFIER, STRING);    break;
-    case SUB:   buf += *i;                      break;
-    case USC:   buf += *i;                      break;
-    case AST:   buf += *i;                      break;
+    case SUB:   buf.append(i, i+1);             break;
+    case USC:   buf.append(i, i+1);             break;
+    case AST:   buf.append(i, i+1);             break;
     default:                                    break;
   }
 }
@@ -208,17 +208,17 @@ void tokenizer::numberState()
   // get symbol_type of current char
   switch(char_lookup[*i])
   {
-    case LAB:   pushbuf(NUMBER, HEXSTRING);        break;
-    case DIG:   buf += *i;                         break;
-    case SPC:   pushbuf(NUMBER, NEWSYMBOL);        break;
-    case PER:   buf += *i;                         break;
-    case LCB:   pushbuf(NUMBER, STRING);           break;
-    case LET:   buf += *i;                         break;
-    case USC:   buf += *i;                         break;
-    case SUB:   pushbuf(NUMBER, NUMBER); buf = ""; break;
-    case AST:   pushbuf(NUMBER, NUMBER); buf = ""; break;
-    case FSL:   pushbuf(NUMBER, NUMBER); buf = ""; break;
-    case LSB:   pushbuf(NUMBER, ARRAY);            break;
+    case LAB:   pushbuf(NUMBER, HEXSTRING);           break;
+    case DIG:   buf.append(i, i+1);                   break;
+    case SPC:   pushbuf(NUMBER, NEWSYMBOL);           break;
+    case PER:   buf.append(i, i+1);                   break;
+    case LCB:   pushbuf(NUMBER, STRING);              break;
+    case LET:   buf.append(i, i+1);                   break;
+    case USC:   buf.append(i, i+1);                   break;
+    case SUB:   pushbuf(NUMBER, NUMBER); buf.clear(); break;
+    case AST:   pushbuf(NUMBER, NUMBER); buf.clear(); break;
+    case FSL:   pushbuf(NUMBER, NUMBER); buf.clear(); break;
+    case LSB:   pushbuf(NUMBER, ARRAY);               break;
     default:    pushbuf(NUMBER, NEWSYMBOL);
   }
 }
@@ -233,7 +233,7 @@ void tokenizer::stringState()
   {
     case RCB:   pushbuf(STRING, NEWSYMBOL);       break;
     case BSL:   escapeState();                    break;
-    default:    buf += *i;                         break;
+    default:    buf.append(i, i+1);               break;
   }
 }
 
@@ -254,12 +254,11 @@ void tokenizer::hexstringState()
   // get symbol_type of current char
   switch(char_lookup[*i])
   {
-    case RAB:   if (!buf.empty())
-                  pushbuf(HEXSTRING, NEWSYMBOL);
-                state = NEWSYMBOL;                break;
-    case LAB:   buf = ""; state = DICT;           break;
-    case BSL:  buf += *i; ++i; buf += *i;           break;
-    default:   buf += *i;                          break;
+    case RAB:   if (!buf.empty()) pushbuf(HEXSTRING, NEWSYMBOL);
+                state = NEWSYMBOL;                                break;
+    case LAB:   buf.clear(); state = DICT;                        break;
+    case BSL:  buf.append(i, i+1); ++i; buf.append(i, i+1);       break;
+    default:   buf.append(i, i+1);                                break;
   }
 }
 
@@ -272,9 +271,9 @@ void tokenizer::dictState()
   // get symbol_type of current char
   switch(char_lookup[*i])
   {
-    case BSL:  buf += *i; ++i; buf += *i;        break;
-    case RAB:   pushbuf(DICT, HEXSTRING);         break;
-    default:    buf += *i;                        break;
+    case BSL:  buf.append(i, i+1); ++i; buf.append(i, i+1);   break;
+    case RAB:  pushbuf(DICT, HEXSTRING);                      break;
+    default:   buf.append(i, i+1);                            break;
   }
 }
 
@@ -291,7 +290,7 @@ void tokenizer::escapeState()
     pushbuf(STRING, STRING);
     while(char_lookup[*i] == DIG && octcount < 3)
     {// add consecutive chars to octal (up to 3)
-      buf += *i; ++i;
+      buf.append(i, i+1); ++i;
       octcount++;
     }
     int newint = stoi(buf, nullptr, 8); // convert octal string to int
@@ -299,7 +298,7 @@ void tokenizer::escapeState()
     pushbuf(HEXSTRING, STRING);
     i--;                                // decrement to await next char
   }
-  else buf += *i;                       // if not a digit, get escaped char
+  else buf.append(i, i+1);// if not a digit, get escaped char
 }
 
 /*---------------------------------------------------------------------------*/

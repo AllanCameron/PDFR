@@ -169,7 +169,7 @@ Rcpp::List getatomic(std::shared_ptr<page> p)
                         Rcpp::Named("size") = GS.size,
                         Rcpp::Named("stringsAsFactors") = false);
   return Rcpp::List::create(Rcpp::Named("Box") = p->getminbox(),
-                            Rcpp::Named("Elements") = db);
+                            Rcpp::Named("Elements") = std::move(db));
 }
 
 //---------------------------------------------------------------------------//
@@ -210,7 +210,7 @@ Rcpp::List getgrid(std::shared_ptr<page> p)
                         Rcpp::Named("box") = std::move(polygon),
                         Rcpp::Named("stringsAsFactors") = false);
   return Rcpp::List::create(Rcpp::Named("Box") = p->getminbox(),
-                            Rcpp::Named("Elements") = db);
+                            Rcpp::Named("Elements") = std::move(db));
 }
 
 //---------------------------------------------------------------------------//
@@ -218,8 +218,8 @@ Rcpp::List getgrid(std::shared_ptr<page> p)
 Rcpp::List pdfpage(const std::string& s, int pagenum, bool g)
 {
   if(pagenum < 1) Rcpp::stop("Invalid page number");
-  std::shared_ptr<document> myfile = std::make_shared<document>(s);
-  std::shared_ptr<page> p = std::make_shared<page>(myfile, pagenum - 1);
+  auto myfile = std::make_shared<document>(s);
+  auto p = std::make_shared<page>(myfile, pagenum - 1);
   if(!g) return getgrid(p);
   else return getatomic(p);
 }
@@ -231,11 +231,8 @@ Rcpp::List pdfpageraw(const std::vector<uint8_t>& rawfile, int pagenum, bool g)
   if(pagenum < 1) Rcpp::stop("Invalid page number");
   std::shared_ptr<document> myfile = std::make_shared<document>(rawfile);
   std::shared_ptr<page> p = std::make_shared<page>(myfile, pagenum - 1);
-  Rcpp::List res;
-  if(!g) res = getgrid(p);
-  else res = getatomic(p);
-  p->clearFontMap();
-  return res;
+  if(!g) return getgrid(p);
+  else return getatomic(p);
 }
 
 //---------------------------------------------------------------------------//

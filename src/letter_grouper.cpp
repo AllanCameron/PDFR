@@ -39,18 +39,20 @@ GSoutput letter_grouper::out()
   std::vector<float> left, right, bottom, size;
   std::vector<std::string> font;
   std::vector<std::vector<Unicode>> text;
-  for(unsigned i = 0; i < 256; ++i)
-  {// for each cell in the grid...
-    for(auto& j : m_grid[i])
-    {// for each textrow in the cell...
-      if(!j->is_consumed()) //if it isn't marked for deletion...
-      {// copy its contents over
-        text.push_back(j->glyph);
-        left.push_back(j->left);
-        right.push_back(j->right);
-        size.push_back(j->size);
-        bottom.push_back(j->bottom);
-        font.push_back(j->font);
+  for(auto& cell : m_grid)
+  {
+    // for each cell in the grid...
+    for(auto& element : cell.second)
+    {
+      if(!element->is_consumed())
+      {
+        // Copy its contents over
+        text.push_back(element->glyph);
+        left.push_back(element->left);
+        right.push_back(element->right);
+        size.push_back(element->size);
+        bottom.push_back(element->bottom);
+        font.push_back(element->font);
       }
     }
   }
@@ -91,18 +93,18 @@ void letter_grouper::makegrid()
   float dy = (minbox[3] - minbox[1]) / 16; // Grid row height in user space
 
   // For each glyph
-  for(auto& i : gslist)
+  for(auto& element : gslist)
   {
     // Calculate the row and column number the glyph's bottom left corner is in
     // There will be exactly 16 rows and columns, each numbered 0-15 (4 bits)
-    uint8_t column = (i->left - minbox[0]) / dx;
-    uint8_t row = 15 - (i->bottom - minbox[1]) / dy;
+    uint8_t column = (element->left - minbox[0]) / dx;
+    uint8_t row = 15 - (element->bottom - minbox[1]) / dy;
 
     // Convert the two 4-bit row and column numbers to a single byte
     uint8_t index = (row << 4) | column;
 
     // Append a pointer to the glyph's textrow to the vector in that cell
-    m_grid[index].push_back(i);
+    m_grid[index].push_back(element);
   }
 }
 
@@ -230,7 +232,7 @@ void letter_grouper::merge()
       vector<text_ptr>& cell = m_grid[i | (j << 4)];
 
       // If the cell is empty there's nothing to do
-      if(cell.size() == 0) continue;
+      if(cell.empty()) continue;
 
       // For each glyph in the cell
       for(auto& element : cell)

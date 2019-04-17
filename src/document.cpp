@@ -43,7 +43,6 @@ using namespace std;
 document::document(const string& filename) :
   file(filename), filestring(get_file(file))
 {
-  //PROFC_NODE("Document creation");
   buildDoc(); // Call constructor helper to build document
 }
 
@@ -79,20 +78,20 @@ void document::buildDoc()
 
 shared_ptr<object_class> document::getobject(int n)
 {
-  //PROFC_NODE("getobject()");
-  if(objects.find(n) == objects.end())    // check if object is stored
+  // Check if object n is already stored
+  if(objects.find(n) == objects.end())
   {
-    size_t holder = Xref->inObject(n); // ensure no holding object
-    if(holder != 0) // if object is in an object stream
-    {
-      if(objects.find(holder) == objects.end()) // Get holding object if needed
-        objects[holder] = make_shared<object_class>(Xref, holder);
-      objects[n] = make_shared<object_class>(objects[holder], n);
-    }
-    else
-    objects[n] = make_shared<object_class>(Xref, n); // else create & store it
+    // If it is not stored, check whether it is in an object stream
+    size_t holder = Xref->inObject(n);
+
+    // If object is in a stream, create it recursively from the stream object
+    if(holder) objects[n] = make_shared<object_class>(getobject(holder), n);
+
+    // Otherwise create & store it directly
+    else objects[n] = make_shared<object_class>(Xref, n);
   }
-  return objects[n]; // return a pointer to requested object
+
+  return objects[n];
 }
 
 /*---------------------------------------------------------------------------*/
@@ -103,13 +102,11 @@ shared_ptr<object_class> document::getobject(int n)
 
 void document::getCatalog()
 {
-  //PROFC_NODE("getCatalog()");
   // The pointer to the catalog is given under /Root in the trailer dictionary
   vector<int> rootnums = Xref->trailer().getRefs("/Root");
 
   // This is the only place we look for the catalog, so it better be here...
-  if (rootnums.empty())
-    throw runtime_error("Couldn't find catalog dictionary");
+  if (rootnums.empty()) throw runtime_error("Couldn't find catalog dictionary");
 
   // With errors handled, we can now just get the pointed-to object's dictionary
   catalog = getobject(rootnums[0])->getDict();
@@ -122,7 +119,6 @@ void document::getCatalog()
 
 void document::getPageDir()
 {
-  //PROFC_NODE("getPageDir()");
   // Throw an error if catalog has no /Pages entry
   if(!catalog.hasRefs("/Pages")) throw runtime_error("No valid /Pages entry");
 
@@ -131,12 +127,17 @@ void document::getPageDir()
 
   // Now fetch that object and store it
   pagedir = getobject(pagesobject)->getDict();
-    // Ensure /Pages has /kids entry
-  if (!pagedir.hasRefs("/Kids"))
-    throw runtime_error("No /Kids entry in /Pages dictionary.");
-  shared_ptr<tree_node<int>> root = make_shared<tree_node<int>>(pagesobject);
-  // use expandKids() to get page header object numbers
+
+  // Ensure /Pages has /kids entry
+  if (!pagedir.hasRefs("/Kids")) throw runtime_error("No Kids entry in /Pages");
+
+  // Create the page directory tree. Start with the pages object as root node
+  auto root = make_shared<tree_node<int>>(pagesobject);
+
+  // Populate the tree
   expandKids(pagedir.getRefs("/Kids"), root);
+
+  // Get the leafs of the tree
   pageheaders = root->getLeafs();
 }
 
@@ -165,16 +166,20 @@ void document::expandKids(const vector<int>& obs,
 {
   // This function is only called from a single point that is already range
   // checked, so does not need error checked.
-  tree->add_kids(obs); // create new children tree nodes with this one as parent
-  auto kidnodes = tree->getkids(); // get a vector of pointers to the new nodes
-  for(auto& i : kidnodes)  // now for each...
-  {                        // get a vector of ints for its kid nodes
-    vector<int> newnodes = getobject(i->get())->getDict().getRefs("/Kids");
-    if (!newnodes.empty())
-    {
-      expandKids(newnodes, i); // if it has children, use recursion to get them
-    }
-    // Otherwise it's a leaf node. Move on to the next node.
+
+  // Create new children tree nodes with this one as parent
+  tree->add_kids(obs);
+
+  // Get a vector of pointers to the new nodes
+  auto kidnodes = tree->getkids();
+
+  // For each new node get a vector of ints for its kid nodes
+  for(auto& kid : kidnodes)
+  {
+    auto newnodes = getobject(kid->get())->getDict().getRefs("/Kids");
+
+    // If it has children, use recursion to get them
+    if (!newnodes.empty()) expandKids(newnodes, kid);
   }
 }
 
@@ -185,7 +190,10 @@ dictionary document::pageHeader(int pagenumber)
 {
   // Ensure the pagenumber is valid
   if((pageheaders.size() < (size_t) pagenumber) || pagenumber < 0)
+  {
     throw runtime_error("Invalid page number");
+  }
+
   // All good - return the requested header
   return objects[pageheaders[pagenumber]]->getDict();
 }

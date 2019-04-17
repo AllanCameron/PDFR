@@ -296,7 +296,13 @@ pdfdoc <- function(pdf)
   {
     x <- .pdfdocraw(pdf)
   }
-  if(class(pdf) == "character" & length(pdf) == 1 & grepl("[.]pdf$", pdf))
+  if(class(pdf) == "character" & length(pdf) == 1 & grepl("[.]pdf$", pdf) &
+     !grepl("/", pdf))
+  {
+    x <- .pdfdoc(paste0(path.expand("~/"), pdf))
+  }
+  if(class(pdf) == "character" & length(pdf) == 1 & grepl("[.]pdf$", pdf) &
+     grepl("/", pdf))
   {
     x <- .pdfdoc(pdf)
   }
