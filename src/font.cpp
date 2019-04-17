@@ -68,16 +68,16 @@ void font::getFontName()
 // as the input vector, containing a pair of {Unicode glyph, width} at each
 // position
 
-vector<pair<Unicode, int>> font::mapRawChar(vector<RawChar> raw)
+vector<pair<Unicode, int>> font::mapRawChar(const vector<RawChar>& raw)
 {
-  vector<pair<Unicode, int>> res; // container for results
+  vector<pair<Unicode, int>> res;
   res.reserve(raw.size());
-  for(auto i : raw)
+  for(const auto& i : raw)
   {
     auto g = m_glyphmap.find(i);
-    if(g != m_glyphmap.end()) // safe range checker
+    if(g != m_glyphmap.end())
     {
-      res.push_back(g->second);          // push found result
+      res.push_back(g->second);
     }
   }
   return res;
@@ -91,23 +91,37 @@ vector<pair<Unicode, int>> font::mapRawChar(vector<RawChar> raw)
 void font::makeGlyphTable()
 {
   // Create Encoding object
-  Encoding Enc(m_fontref, m_d);
+  Encoding encodings(m_fontref, m_d);
+
   // Create glyphwidth object
-  glyphwidths Wid(m_fontref, m_d);
+  glyphwidths widths(m_fontref, m_d);
+
   // get all the mapped RawChars from the Encoding object
-  std::shared_ptr<std::unordered_map<RawChar, Unicode>> inkeys = Enc.encKeys();
+  auto encoding_map = encodings.encKeys();
 
   // We need to know whether the width code points refer to the width of raw
   // character codes or to the final Unicode translations
-  if(Wid.widthsAreForRaw()) // The widths refer to RawChar code points
-    for(auto& i : *inkeys) // map every mapped RawChar to a width
-      m_glyphmap[i.first] = make_pair(Enc.Interpret(i.first),
-                                    Wid.getwidth(i.first));
 
-  else // The widths refer to Unicode glyphs
-    for(auto& i : *inkeys) // map every mapped Unicode to a width
-      m_glyphmap[i.first] = make_pair(Enc.Interpret(i.first),
-                                    Wid.getwidth(Enc.Interpret(i.first)));
+  // If the widths refer to RawChar code points, map every RawChar to a width
+  if(widths.widthsAreForRaw())
+  {
+    for(auto& key_value_pair : *encoding_map)
+    {
+      auto& key = key_value_pair.first;
+      m_glyphmap[key] = make_pair(encodings.Interpret(key),
+                                  widths.getwidth(key));
+    }
+  }
+  // Otherwise widths refer to Unicode glyphs, so map each to a width
+  else
+  {
+    for(auto& key_value_pair : *encoding_map)
+    {
+      auto& key = key_value_pair.first;
+      m_glyphmap[key] = make_pair(encodings.Interpret(key),
+                                  widths.getwidth(encodings.Interpret(key)));
+    }
+  }
 }
 
 /*---------------------------------------------------------------------------*/
@@ -124,5 +138,5 @@ std::string font::fontname()
 
 std::vector<RawChar> font::getGlyphKeys()
 {
-  return getKeys(m_glyphmap); // Uses getKeys() from utilities.h
+  return getKeys(m_glyphmap);
 }

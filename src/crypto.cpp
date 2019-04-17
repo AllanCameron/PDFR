@@ -77,6 +77,7 @@ std::vector<std::vector<four_bytes>> mixarray =
   {4, 11, 16, 23},
   {6, 10, 15, 21},
 };
+
 //---------------------------------------------------------------------------//
 // This simple function "chops" a four-byte int to a vector of four bytes.
 // The bytes are returned lowest-order first as this is the typical use.
@@ -165,7 +166,7 @@ void crypto::md5mix(int n, deque<four_bytes>& m, vector<four_bytes>& x) const
 }
 
 /*---------------------------------------------------------------------------*/
-// The main md5 algorithm. This version of if was modified from various
+// The main md5 algorithm. This version of it was modified from various
 // open source online implementations.
 
 bytes crypto::md5(bytes msg) const
@@ -357,7 +358,7 @@ bytes crypto::getPassword(const string& key)
     }
   }
 
-  // The owner password has should have >= 32 characters
+  // The owner password should have 32 or more characters
   if(password.size() < 32) throw runtime_error("Corrupted password hash");
 
   // Return first 32 bytes (skip the first char which is the opening bracket)
@@ -370,10 +371,10 @@ bytes crypto::getPassword(const string& key)
 
 void crypto::getFilekey()
 {
-  // The generic or null user password
+  // Get the generic user password
   filekey = default_user_password;
 
-  // stick the owner password on
+  // Stick the owner password on
   concat(filekey, getPassword("/O"));
 
   // Stick permissions flags on

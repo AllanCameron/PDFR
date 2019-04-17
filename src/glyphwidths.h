@@ -102,7 +102,7 @@ public:
   glyphwidths(dictionary& dic, std::shared_ptr<document> doc);
 
   // public methods
-  int getwidth(RawChar);                       // Main data lookup
+  int getwidth(const RawChar&);                // Main data lookup
   std::vector<RawChar> widthKeys();            // Returns all map keys
   bool widthsAreForRaw();                      // returns widthfromcharcodes
 

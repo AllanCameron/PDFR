@@ -83,7 +83,7 @@ public:
   // The most important public method is mapRawChar, which takes a vector of
   // uint16_t representing raw character codes, and returns a vector of pairs
   // containing the Unicode interpretation and its associated width
-  std::vector<std::pair<Unicode, int>> mapRawChar(std::vector<RawChar>);
+  std::vector<std::pair<Unicode, int>> mapRawChar(const std::vector<RawChar>&);
 
 private:
   // private data members
@@ -91,7 +91,7 @@ private:
   dictionary m_fontref;   // the font dictionary
   std::string m_FontID,   // The name the font is given in the PDF
               m_FontName; // The actual name of the font
-  GlyphMap m_glyphmap;    // Main data member, mapping RawChar to {Unicode, width}
+  GlyphMap m_glyphmap;  // Main data member, mapping RawChar to {Unicode, width}
 
   // private methods
   void getFontName();   // Finds the postscript font name
