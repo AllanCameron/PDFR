@@ -1,6 +1,6 @@
 //---------------------------------------------------------------------------//
 //                                                                           //
-//  PDFR letter_grouper header file                                          //
+//  PDFR linegrouper implementation file                                     //
 //                                                                           //
 //  Copyright (C) 2018 by Allan Cameron                                      //
 //                                                                           //
@@ -25,61 +25,72 @@
 //                                                                           //
 //---------------------------------------------------------------------------//
 
-#ifndef PDFR_LGROUPER
+#include "linegrouper.h"
 
 //---------------------------------------------------------------------------//
 
-#define PDFR_LGROUPER
-
-/* The letter_grouper class co-ordinates the grouping together of words. In
- * terms of program structure, this comes directly after the parser step that
- * reads the page description program. The goal of this class is to clump
- * adjoining glyphs to form strings. Mostly, these will form words, but if
- * actual spaces are included as glyphs then grouped strings of words will be
- * included in the output.
- *
- * This is the first step of a "meet-in-the-middle" document reconstruction,
- * which will use these strings as the atoms from which to form structures such
- * as paragraphs, headers and tables.
- */
-
-#include "tokenizer.h"
+using namespace std;
 
 //---------------------------------------------------------------------------//
-// The letter_grouper class contains a constructor, an output map of results,
-// and a method for passing out the minimum text bounding box found in page
-// construction. Its private methods are used only in construction of the
-// output. The main private member is a map of vectors of textrows, each
-// vector representing all glyphs in one of 256 equally sized cells on the page.
-// Each glyph is addressable by two numbers - the grid number and the position
-// of the glyph in the cell's vector.
 
-class letter_grouper
+linegrouper::linegrouper(textboxes t): m_textboxes(t)
 {
-public:
-  // constructor.
-  letter_grouper(textrows);
-
-  // public methods
-  // Passes text elements to word_grouper for further construction if needed
-  textrows output();
-  GSoutput out(); // output table to interface if ungrouped words needed
-
-private:
-  // private data members
-  textrows gslist;            // a copy of the parser output used to create grid
-  std::vector<float> minbox;
-
-  // the main data member. A 16 x 16 grid of cells, each with textrow vector
-  std::unordered_map<uint8_t, std::vector<text_ptr>> m_grid;
-
-  // private methods
-  void makegrid();                    // assigns each glyph to a 16 x 16 grid
-  void compareCells();                // co-ordinates matching between cells
-  void matchRight(text_ptr, uint8_t); // compare all glyphs in cell
-  void merge();                       // join matching glyphs together
+  for(auto& i : m_textboxes)
+  {
+    auto& textrow_vector = i.second;
+    if (textrow_vector.size() < 2) continue;
+    sort(textrow_vector.begin(), textrow_vector.end(), reading_order());
+    find_breaks(textrow_vector);
+    line_endings(textrow_vector);
+    paste_lines(textrow_vector);
+  }
 };
 
 //---------------------------------------------------------------------------//
 
-#endif
+void linegrouper::find_breaks(vector<shared_ptr<textrow>>& textrow_vector)
+{
+
+}
+
+//---------------------------------------------------------------------------//
+
+void linegrouper::line_endings(vector<shared_ptr<textrow>>& textrow_vector)
+{
+for(size_t i = 0; i < textrow_vector.size() - 1; ++i)
+  {
+    auto& text_row = textrow_vector[i];
+    switch(text_row->glyph.back())
+    {
+      case 0x0020:                             break;
+      case 0x00A0:                             break;
+      case 0x002d: text_row->glyph.pop_back(); break;
+      case 0x2010: text_row->glyph.pop_back(); break;
+      case 0x2011: text_row->glyph.pop_back(); break;
+      case 0x2012: text_row->glyph.pop_back(); break;
+      case 0x2013: text_row->glyph.pop_back(); break;
+      case 0x2014: text_row->glyph.pop_back(); break;
+      case 0x2015: text_row->glyph.pop_back(); break;
+      default:     text_row->glyph.push_back(0x0020);
+    }
+  }
+}
+
+//---------------------------------------------------------------------------//
+
+void linegrouper::paste_lines(vector<shared_ptr<textrow>>& textrow_vector)
+{
+  for(size_t i = 1; i < textrow_vector.size(); ++i)
+  {
+    concat(textrow_vector[0]->glyph, textrow_vector[i]->glyph);
+  }
+  textrow_vector.resize(1);
+}
+
+//---------------------------------------------------------------------------//
+
+textboxes& linegrouper::output()
+{
+  return m_textboxes;
+}
+

@@ -73,8 +73,7 @@ std::array<tokenizer::chartype, 256> tokenizer::char_lookup = {
 tokenizer::tokenizer(shared_ptr<string> input, parser* GS) :
  s(input), i(s->begin()), state(NEWSYMBOL), gs(GS)
 {
-  //PROFC_NODE("Tokenizer creation");
-  tokenize();       // instigate lexer
+  tokenize();
 }
 
 
@@ -92,10 +91,12 @@ void tokenizer::pushbuf(const TState type, const TState statename)
     {
       inloop = loopname;
       shared_ptr<string> xo = gs->getXobject(inloop);
-      if(IsAscii(*xo)) // don't try to parse binary objects like images etc
-        tokenizer(xo, gs);
+
+      // Don't try to parse binary objects like images etc
+      if(IsAscii(*xo)) tokenizer(xo, gs);
     }
   }
+
   state = statename; // switch state
   gs->reader(buf, type); // make pair and push to result
   buf.clear(); // clear buffer
@@ -136,8 +137,8 @@ void tokenizer::resourceState()
   switch(char_lookup[*i])
   {
     case LAB:   pushbuf(RESOURCE, HEXSTRING);               break;
-    case LET:   buf.append(i, i+1);                         break;
-    case DIG:   buf.append(i, i+1);                         break;
+    case LET:   buf.append(i, i + 1);                       break;
+    case DIG:   buf.append(i, i + 1);                       break;
     case USC:   buf.append("_");                            break;
     case LSB:   pushbuf(RESOURCE, ARRAY);                   break;
     case FSL:   pushbuf(RESOURCE, RESOURCE);                break;
@@ -161,18 +162,18 @@ void tokenizer::newsymbolState()
   // get symbol_type of current char
   switch(char_lookup[*i])
   {
-    case LAB:                          state = HEXSTRING;   break;
-    case LET:   buf.append(i, i+1);    state = IDENTIFIER;  break;
-    case DIG:   buf.append(i, i+1);    state = NUMBER;      break;
-    case USC:   buf.append(i, i+1);    state = IDENTIFIER;  break;
-    case LSB:                          state = ARRAY;       break;
-    case FSL:   buf.append(i, i+1);    state = RESOURCE;    break;
-    case AST:   buf.append(i, i+1);    state = IDENTIFIER;  break;
-    case LCB:                          state = STRING;      break;
-    case SUB:   buf.append(i, i+1);    state = NUMBER;      break;
-    case PER:   buf.append("0.");      state = NUMBER;      break;
-    case SQO:   buf.append(i, i+1);    state = IDENTIFIER;  break;
-    default : buf.clear();             state = NEWSYMBOL;   break;
+    case LAB:                             state = HEXSTRING;   break;
+    case LET:   buf.append(i, i + 1);     state = IDENTIFIER;  break;
+    case DIG:   buf.append(i, i + 1);     state = NUMBER;      break;
+    case USC:   buf.append(i, i + 1);     state = IDENTIFIER;  break;
+    case LSB:                             state = ARRAY;       break;
+    case FSL:   buf.append(i, i + 1);     state = RESOURCE;    break;
+    case AST:   buf.append(i, i + 1);     state = IDENTIFIER;  break;
+    case LCB:                             state = STRING;      break;
+    case SUB:   buf.append(i, i + 1);     state = NUMBER;      break;
+    case PER:   buf.append("0.");         state = NUMBER;      break;
+    case SQO:   buf.append(i, i + 1);     state = IDENTIFIER;  break;
+    default : buf.clear();                state = NEWSYMBOL;   break;
   }
 }
 
@@ -185,17 +186,17 @@ void tokenizer::identifierState()
   switch(char_lookup[*i])
   {
     case LAB:   pushbuf(IDENTIFIER, HEXSTRING); break;
-    case LET:   buf.append(i, i+1);             break;
-    case DIG:   buf.append(i, i+1);             break;
+    case LET:   buf.append(i, i + 1);           break;
+    case DIG:   buf.append(i, i + 1);           break;
     case SPC:   if (buf == "BI") state = WAIT;  else // BI == inline image
                 pushbuf(IDENTIFIER, NEWSYMBOL); break;
     case FSL:   pushbuf(IDENTIFIER, RESOURCE);
                 buf = "/";                      break;
     case LSB:   pushbuf(IDENTIFIER, ARRAY);     break;
     case LCB:   pushbuf(IDENTIFIER, STRING);    break;
-    case SUB:   buf.append(i, i+1);             break;
-    case USC:   buf.append(i, i+1);             break;
-    case AST:   buf.append(i, i+1);             break;
+    case SUB:   buf.append(i, i + 1);           break;
+    case USC:   buf.append(i, i + 1);           break;
+    case AST:   buf.append(i, i + 1);           break;
     default:                                    break;
   }
 }
@@ -209,12 +210,12 @@ void tokenizer::numberState()
   switch(char_lookup[*i])
   {
     case LAB:   pushbuf(NUMBER, HEXSTRING);           break;
-    case DIG:   buf.append(i, i+1);                   break;
+    case DIG:   buf.append(i, i + 1);                 break;
     case SPC:   pushbuf(NUMBER, NEWSYMBOL);           break;
-    case PER:   buf.append(i, i+1);                   break;
+    case PER:   buf.append(i, i + 1);                 break;
     case LCB:   pushbuf(NUMBER, STRING);              break;
-    case LET:   buf.append(i, i+1);                   break;
-    case USC:   buf.append(i, i+1);                   break;
+    case LET:   buf.append(i, i + 1);                 break;
+    case USC:   buf.append(i, i + 1);                 break;
     case SUB:   pushbuf(NUMBER, NUMBER); buf.clear(); break;
     case AST:   pushbuf(NUMBER, NUMBER); buf.clear(); break;
     case FSL:   pushbuf(NUMBER, NUMBER); buf.clear(); break;
@@ -233,7 +234,7 @@ void tokenizer::stringState()
   {
     case RCB:   pushbuf(STRING, NEWSYMBOL);       break;
     case BSL:   escapeState();                    break;
-    default:    buf.append(i, i+1);               break;
+    default:    buf.append(i, i + 1);             break;
   }
 }
 
@@ -257,8 +258,8 @@ void tokenizer::hexstringState()
     case RAB:   if (!buf.empty()) pushbuf(HEXSTRING, NEWSYMBOL);
                 state = NEWSYMBOL;                                break;
     case LAB:   buf.clear(); state = DICT;                        break;
-    case BSL:  buf.append(i, i+1); ++i; buf.append(i, i+1);       break;
-    default:   buf.append(i, i+1);                                break;
+    case BSL:  buf.append(i, i + 1); ++i; buf.append(i, i + 1);   break;
+    default:   buf.append(i, i + 1);                              break;
   }
 }
 
@@ -271,9 +272,9 @@ void tokenizer::dictState()
   // get symbol_type of current char
   switch(char_lookup[*i])
   {
-    case BSL:  buf.append(i, i+1); ++i; buf.append(i, i+1);   break;
-    case RAB:  pushbuf(DICT, HEXSTRING);                      break;
-    default:   buf.append(i, i+1);                            break;
+    case BSL:  buf.append(i, i + 1); ++i; buf.append(i, i + 1);   break;
+    case RAB:  pushbuf(DICT, HEXSTRING);                          break;
+    default:   buf.append(i, i + 1);                              break;
   }
 }
 
@@ -283,22 +284,29 @@ void tokenizer::dictState()
 void tokenizer::escapeState()
 {
   ++i;
-   // read the next char
-  if (char_lookup[*i] == DIG) // if it's a digit it's likely an octal
+
+  // Read the next char - if it's a digit it's likely an octal
+  if (char_lookup[*i] == DIG)
   {
     int octcount = 0;
     pushbuf(STRING, STRING);
+
+    // Add consecutive chars to octal (up to 3)
     while(char_lookup[*i] == DIG && octcount < 3)
-    {// add consecutive chars to octal (up to 3)
-      buf.append(i, i+1); ++i;
+    {
+      buf.append(i, i + 1); ++i;
       octcount++;
     }
-    int newint = stoi(buf, nullptr, 8); // convert octal string to int
+
+    // Convert octal string to int
+    int newint = stoi(buf, nullptr, 8);
     buf = intToHexstring(newint);
     pushbuf(HEXSTRING, STRING);
-    i--;                                // decrement to await next char
+    i--;  // Decrement to await next char
   }
-  else buf.append(i, i+1);// if not a digit, get escaped char
+
+  // If not a digit, get escaped char
+  else buf.append(i, i + 1);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -307,10 +315,13 @@ void tokenizer::escapeState()
 
 void tokenizer::waitState()
 {
-  do {i = s->begin() + s->find("EI", i - s->begin()) + 2;}
+  do
+  {
+    i = s->begin() + s->find("EI", i - s->begin()) + 2;
+  }
   while (char_lookup[*i] != SPC);
   buf.clear();
-  state = NEWSYMBOL; // only break out of wait state by finding EI (or EOF)
+  state = NEWSYMBOL; // Only break out of wait state by finding EI (or EOF)
 }
 
 

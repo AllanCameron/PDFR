@@ -178,14 +178,15 @@ Rcpp::List getgrid(std::shared_ptr<page> p)
 {
   parser G(p); // New parser
   tokenizer(p->pageContents(), &G);   // Read page contents to graphic state
-  letter_grouper LG(std::move(G.output()));
-  word_grouper WG(std::move(LG.output()));
-  Whitespace WS(std::move(WG.output()));
+  letter_grouper LG(G.output());
+  word_grouper WG(LG.output());
+  Whitespace WS(WG.output());
+  linegrouper line_grouper(WS.output());
   std::vector<float> left, right, size, bottom;
   std::vector<std::string> glyph, font;
   std::vector<int> polygon;
   int polygonNumber = 0;
-  for(auto& i : WS.output())
+  for(auto& i : line_grouper.output())
   {
     for(auto& j : i.second)
     {

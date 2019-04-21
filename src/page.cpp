@@ -159,10 +159,8 @@ void page::getFonts()
     }
   }
   // Otherwise, it is a dictionary, so we get the result
-  else
-  {
-    m_fonts = m_resources.getDictionary("/Font");
-  }
+  else m_fonts = m_resources.getDictionary("/Font");
+
   // We can now iterate through the font names using getFontNames(), create
   // each font in turn and store it in the fontmap
   for(auto font_label : m_fonts)

@@ -74,7 +74,7 @@ unordered_map<uint8_t, pair<Direction, Direction>> Whitespace::arrows =
 // then trace round all the vertices, storing every connected loop as a
 // polygon surrounding a text element.
 
-Whitespace::Whitespace(textrows&& word_grouper_output):
+Whitespace::Whitespace(textrows word_grouper_output):
   m_text_elements(move(word_grouper_output.m_data)),
   minbox(move(word_grouper_output.minbox)),
   m_page(WSbox(minbox[West], minbox[East], minbox[North], minbox[South]))

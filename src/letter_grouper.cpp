@@ -65,7 +65,7 @@ GSoutput letter_grouper::out()
 // page into an easily addressable 16 x 16 grid, find glyphs in close proximity
 // to each other, and glue them together, respectively.
 
-letter_grouper::letter_grouper(textrows&& GS) :
+letter_grouper::letter_grouper(textrows GS) :
   gslist(move(GS)), minbox(gslist.minbox)
 {
   makegrid();     // Split the glyphs into 256 cells to reduce search space

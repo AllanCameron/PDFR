@@ -35,12 +35,12 @@ using namespace std;
 // The main object creator class. It needs a pointer to the xref and a number
 // representing the object's number as set out in the xref table.
 
-object_class::object_class(shared_ptr<const xref> Xref, int objnum) :
-  XR(Xref), number(objnum), has_stream(false), m_streampos({0, 0})
+object_class::object_class(shared_ptr<const xref> Xref, int object_num) :
+  XR(Xref), number(object_num), has_stream(false), m_streampos({0, 0})
 {
   // Find start and end of object
-  size_t startbyte = XR->getStart(objnum);
-  size_t stopbyte  = XR->getEnd(objnum);
+  size_t startbyte = XR->getStart(object_num);
+  size_t stopbyte  = XR->getEnd(object_num);
 
   // We check to see if the object has a header dictionary by finding '<<'
   if(XR->file()->substr(startbyte, 20).find("<<") == string::npos)
@@ -76,13 +76,10 @@ object_class::object_class(shared_ptr<const xref> Xref, int objnum) :
                                   m_streampos[1] - m_streampos[0]);
 
       // Decrypt if necessary
-      if(XR->isEncrypted())
-      {
-        XR->decrypt(stream, number, 0);
-      }
+      if(XR->isEncrypted()) XR->decrypt(stream, number, 0);
 
       // De-deflate if necessary
-      if(header.get("/Filter").find("/FlateDecode", 0) != string::npos)
+      if(header.get("/Filter").find("/FlateDecode") != string::npos)
       {
         FlateDecode(stream);
       }
@@ -105,34 +102,26 @@ void object_class::indexObjectStream()
   int startbyte = stream.find_first_not_of("\n\r\t 0123456789");
 
   // Now get the substring with the objects proper...
-  std::string s(stream.begin() + startbyte, stream.end());
+  string s(stream.begin() + startbyte, stream.end());
 
   // ...and the substring with the registration numbers...
-  std::string pre(stream.begin(), stream.begin() + startbyte - 1);
+  string pre(stream.begin(), stream.begin() + startbyte - 1);
 
   // extract these numbers to a vector
-  std::vector<int> numarray = getints(pre);
+  vector<int> index = getints(pre);
 
   // If this is empty, something has gone wrong.
-  if(numarray.empty())
-  {
-    throw runtime_error("Couldn't parse object stream");
-  }
+  if(index.empty()) throw runtime_error("Couldn't parse object stream");
 
   // We now set up a loop that determines which numbers are object numbers and
   // which are byte offsets
-  for(size_t i = 1; i < numarray.size(); i += 2)
+  for(size_t byte_length, i = 1; i < index.size(); i += 2)
   {
-    int bytelen;
-    if(i == (numarray.size() - 1))
-    {
-      bytelen = s.size() - numarray[i];
-    }
-    else
-    {
-      bytelen = numarray[i + 2] - numarray[i];
-    }
-    objstmIndex[numarray[i - 1]] = make_pair(numarray[i] + startbyte, bytelen);
+    if(i == (index.size() - 1)) byte_length = s.size() - index[i];
+
+    else byte_length = index[i + 2] - index[i];
+
+    objstmIndex[index[i - 1]] = make_pair(index[i] + startbyte, byte_length);
   }
 }
 
@@ -143,10 +132,7 @@ string object_class::objFromStream(int objnum)
 {
   auto i = objstmIndex.find(objnum);
 
-  if(i == objstmIndex.end())
-  {
-    throw runtime_error("Object not found in stream");
-  }
+  if(i == objstmIndex.end()) throw runtime_error("Object not found in stream");
 
   return stream.substr(i->second.first, i->second.second);
 }
@@ -159,7 +145,7 @@ string object_class::objFromStream(int objnum)
 object_class::object_class(shared_ptr<object_class> holder, int objnum)
   :  XR(holder->XR), number(objnum), m_streampos({0, 0})
 {
-  std::string H = holder->objFromStream(objnum);
+  string H = holder->objFromStream(objnum);
 
   // Most stream objects consist of just a dictionary
   if(H[0] == '<')
@@ -210,31 +196,23 @@ dictionary object_class::getDict()
 // We have to create the stream on the fly when it is needed rather than
 // calculating and storing all the streams upon document creation
 
-std::string object_class::getStream()
+string object_class::getStream()
 {
   // no stream - return empty string
-  if(!hasStream())
-  {
-    return string {};
-  }
+  if(!hasStream()) return string {};
 
   // stream already calculated - return
-  else if(!stream.empty())
-  {
-    return stream;
-  }
+  else if(!stream.empty()) return stream;
 
   // get the stream from known stream locations
   else
   {
-    stream = XR->file()->substr(m_streampos[0], m_streampos[1] - m_streampos[0]);
+    stream = XR->file()->substr(m_streampos[0],
+                                m_streampos[1] - m_streampos[0]);
   }
 
   // decrypt if necessary
-  if(XR->isEncrypted())
-  {
-    XR->decrypt(stream, number, 0);
-  }
+  if(XR->isEncrypted()) XR->decrypt(stream, number, 0);
 
   // de-deflate if necessary
   if(header.get("/Filter").find("/FlateDecode", 0) != string::npos)

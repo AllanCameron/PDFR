@@ -230,9 +230,11 @@ class Whitespace
 {
 public:
   // constructor
-  Whitespace(textrows&&);
+  Whitespace(textrows);
+
   //  Output the text element groups directly
   std::vector<std::pair<WSbox, std::vector<text_ptr>>> output();
+
   // Output the final text box co-ordinates
   std::vector<WSbox> ws_box_out() const;
 
@@ -242,11 +244,12 @@ private:
   std::vector<float> minbox;
   std::unordered_map<size_t, std::vector<Vertex>> polygonMap;// main polygon map
   WSbox m_page;
-  float max_line_space;  // The average font size on the page
-  std::vector<WSbox> ws_boxes; // used in whitespace construction AND output
-  std::vector<Vertex> vertices; // The vertices used to make polygons
+  float max_line_space;                // The average font size on the page
+  std::vector<WSbox> ws_boxes;         // used in construction AND output
+  std::vector<Vertex> vertices;        // The vertices used to make polygons
   static const size_t DIVISIONS = 200; // number of strips used for whitespace
-  // we use this to map directions to vertices
+
+  // We use this to map directions to vertices
   static std::unordered_map<uint8_t, std::pair<Direction, Direction>> arrows;
 
   void getMaxLineSize();
