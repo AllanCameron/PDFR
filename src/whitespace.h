@@ -210,14 +210,15 @@ struct WSbox
 
   inline bool engulfs(const WSbox& j)
   {
-    return  j.bottom >= bottom && j.top <= top &&
-            j.left >= left && j.right <= right && !(*this == j);
+    return  j.bottom - bottom > -0.1 && j.top - top < 0.1 &&
+            j.left - left > -0.1 && j.right - right < 0.1 && !(*this == j);
   }
 
   inline bool contains_text(text_ptr& j)
   {
-    return  j->left >= left && j->right <= right &&
-            j->bottom >= bottom && j->bottom <= top && !j->is_consumed();
+    return  j->get_left() >= left && j->get_right() <= right &&
+            j->get_bottom() >= bottom && j->get_bottom() <= top &&
+            !j->is_consumed();
   }
 };
 

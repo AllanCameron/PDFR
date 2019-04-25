@@ -47,12 +47,12 @@ GSoutput letter_grouper::out()
       if(!element->is_consumed())
       {
         // Copy its contents over
-        text.push_back(element->glyph);
-        left.push_back(element->left);
-        right.push_back(element->right);
-        size.push_back(element->size);
-        bottom.push_back(element->bottom);
-        font.push_back(element->font);
+        text.push_back(element->get_glyph());
+        left.push_back(element->get_left());
+        right.push_back(element->get_right());
+        size.push_back(element->get_size());
+        bottom.push_back(element->get_bottom());
+        font.push_back(element->get_font());
       }
     }
   }
@@ -97,8 +97,8 @@ void letter_grouper::makegrid()
   {
     // Calculate the row and column number the glyph's bottom left corner is in
     // There will be exactly 16 rows and columns, each numbered 0-15 (4 bits)
-    uint8_t column = (element->left - minbox[0]) / dx;
-    uint8_t row = 15 - (element->bottom - minbox[1]) / dy;
+    uint8_t column = (element->get_left() - minbox[0]) / dx;
+    uint8_t row = 15 - (element->get_bottom() - minbox[1]) / dy;
 
     // Convert the two 4-bit row and column numbers to a single byte
     uint8_t index = (row << 4) | column;
@@ -119,7 +119,7 @@ textrows letter_grouper::output()
 
   // This lambda defines a text_ptr sort from left to right
   auto left_sort = [](const text_ptr& a, const text_ptr& b) -> bool
-                     { return a->left < b->left;};
+                     { return a->get_left() < b->get_left();};
 
   // Now copy all the text_ptrs from the grid to a vector
   vector<text_ptr> v;
@@ -163,7 +163,7 @@ void letter_grouper::compareCells()
         matchRight(k, key);
         if(j < 15) matchRight(k, i | ((j + 1) << 4)); // and cell to North
         if(j > 0)  matchRight(k, i | ((j - 1) << 4)); // and cell to South
-        if(k->r_join.first != -1) continue; // If match, look no further
+        if(!k->no_join()) continue; // If match, look no further
 
         if(i < 15)
         {
@@ -200,16 +200,17 @@ void letter_grouper::matchRight(text_ptr row, uint8_t key)
       if(*cell[i] == *row) row->consume();
       if(cell[i]->is_consumed()) continue; // ignore if marked for deletion
 
-      if(row->r_join.first == -1)
+      if(row->no_join())
       {
-        row->r_join = {key, i};
+        row->set_join(key, i);
         continue; // don't bother checking next statement
       }
 
       // If already a match but this one is better...
-      if(m_grid[row->r_join.first][row->r_join.second]->left > cell[i]->left)
+      if(m_grid[row->grid_num()][row->vec_num()]->get_left() >
+           cell[i]->get_left())
       {
-        row->r_join = {key, i};
+        row->set_join(key, i);
       }
     }
   }
@@ -238,10 +239,10 @@ void letter_grouper::merge()
       for(auto& element : cell)
       {
         // If glyph is viable and matches another glyph to the right
-        if(element->is_consumed() || element->r_join.first == -1) continue;
+        if(element->is_consumed() || element->no_join()) continue;
 
         // Look up the right-matching glyph
-        auto& matcher = m_grid[element->r_join.first][element->r_join.second];
+        auto& matcher = m_grid[element->grid_num()][element->vec_num()];
 
         // Use the textrow member function to merge the two glyphs
         element->merge_letters(*matcher);

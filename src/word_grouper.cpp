@@ -109,8 +109,8 @@ void word_grouper::findEdges()
   vector<float> left, right;
   for(auto& i : m_allRows)
   {
-    left.push_back(i->left);
-    right.push_back(i->right);
+    left.push_back(i->get_left());
+    right.push_back(i->get_right());
   }
 
   // Create a vector of midpoints of text elements
@@ -136,19 +136,19 @@ void word_grouper::assignEdges()
   for(auto& i : m_allRows)
   {
     // Non-unique left edge - assume column edge
-    if(m_leftEdges.find((int) (i->left * 10)) != m_leftEdges.end())
+    if(m_leftEdges.find((int) (i->get_left() * 10)) != m_leftEdges.end())
     {
       i->make_left_edge();
     }
 
     // Non-unique right edge - assume column edge
-    if(m_rightEdges.find((int) (i->right * 10)) != m_rightEdges.end())
+    if(m_rightEdges.find((int) (i->get_right() * 10)) != m_rightEdges.end())
     {
       i->make_right_edge();
     }
 
     // Non-unique centre value - assume centred column
-    if(m_mids.find((int) ((i->right + i->left) * 5)) != m_mids.end())
+    if(m_mids.find((int)((i->get_right() + i->get_left()) * 5)) != m_mids.end())
     {
       i->make_centred();
     }

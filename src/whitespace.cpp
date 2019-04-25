@@ -100,7 +100,7 @@ void Whitespace::getMaxLineSize()
   std::vector<float> fontsizes;
   for(auto& i : m_text_elements)
   {
-    fontsizes.push_back(i->size);
+    fontsizes.push_back(i->get_size());
   }
   sort(fontsizes.begin(), fontsizes.end());
   max_line_space = fontsizes[fontsizes.size()/2] * MAX_LINE_FACTOR;
@@ -116,10 +116,10 @@ void Whitespace::pageDimensions()
 {
   for(auto& i : m_text_elements)
   {
-    if(i->right > m_page.right) m_page.right += 10.0;
-    if(i->left < m_page.left) m_page.left -= 10.0;
-    if((i->bottom + i->size) > m_page.top) m_page.top += 10.0;
-    if(i->bottom < m_page.bottom) m_page.bottom -= 10.0;
+    if(i->get_right() > m_page.right) m_page.right += 10.0;
+    if(i->get_left() < m_page.left) m_page.left -= 10.0;
+    if((i->get_bottom() + i->get_size()) > m_page.top) m_page.top += 10.0;
+    if(i->get_bottom() < m_page.bottom) m_page.bottom -= 10.0;
   }
 }
 
@@ -137,14 +137,18 @@ void Whitespace::cleanAndSortBoxes()
   // Define a lambda to sort boxes left to right
   auto l = [](const WSbox& a, const WSbox& b) -> bool {return a.left < b.left;};
 
+  // Define a lambda to sort boxes top to bottom
+  auto t = [](const WSbox& a, const WSbox& b) -> bool {return b.top < a.top;};
+
   // Move boxes for deletion to back of vector, starting at returned iterator
   auto junk = remove_if(ws_boxes.begin(), ws_boxes.end(), del);
 
   // Erase the back of the vector containing the boxes flagged for deletion
   ws_boxes.erase(junk, ws_boxes.end());
 
-  // Sort the remaining boxes left to right
-  sort(ws_boxes.begin(), ws_boxes.end(), l);
+  // Sort the remaining boxes top to bottom then left to right
+  sort(ws_boxes.begin(), ws_boxes.end(), t);
+  stable_sort(ws_boxes.begin(), ws_boxes.end(), l);
 }
 
 //---------------------------------------------------------------------------//
@@ -182,10 +186,10 @@ void Whitespace::makeStrips()
     for(const auto& j : m_text_elements)
     {
       // If it obstructs our strip, store its upper and lower bounds
-      if(j->left < R_Edge && j->right > L_Edge)
+      if(j->get_left() < R_Edge && j->get_right() > L_Edge)
       {
-        bottoms.push_back(j->bottom + j->size);
-        tops.push_back(j->bottom);
+        bottoms.push_back(j->get_top());
+        tops.push_back(j->get_bottom());
       }
     }
 
@@ -497,7 +501,7 @@ vector<pair<WSbox, vector<text_ptr>>> Whitespace::output()
         text_vec.push_back(*text_it);
         start_at = distance(m_text_elements.begin(), text_it);
       }
-      if(box.right < (*text_it)->left) break;
+      if(box.right < (*text_it)->get_left()) break;
     }
     res.emplace_back(pair<WSbox, vector<text_ptr>>(move(box), move(text_vec)));
   }

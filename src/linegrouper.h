@@ -62,8 +62,8 @@
  *
  */
 
-typedef std::vector<std::pair<WSbox, std::vector<std::shared_ptr<textrow>>>>
-  textboxes;
+typedef std::pair<WSbox, std::vector<text_ptr>> textbox;
+typedef std::vector<textbox> textboxes;
 
 class linegrouper
 {
@@ -72,17 +72,18 @@ public:
   textboxes& output();
 
 private:
-  void find_breaks(std::vector<std::shared_ptr<textrow>>&);
-  void line_endings(std::vector<std::shared_ptr<textrow>>&);
-  void paste_lines(std::vector<std::shared_ptr<textrow>>&);
+  void find_breaks(textbox&);
+  void line_endings(std::vector<text_ptr>&);
+  void paste_lines(std::vector<text_ptr>&);
+  textbox splitbox(textbox&, float);
 
   struct reading_order
   {
-    bool operator() (const std::shared_ptr<textrow>& row1,
-                     const std::shared_ptr<textrow>& row2) const
+    bool operator() (const text_ptr& row1, const text_ptr& row2) const
     {
-      if (row1->bottom > row2->bottom ) return true;
-      if (row1->bottom == row2->bottom && row1->left < row2->left) return true;
+      if (row1->get_bottom()  > row2->get_bottom() ) return true;
+      if (row1->get_bottom() == row2->get_bottom() &&
+          row1->get_left()    < row2->get_left()) return true;
       return false;
     }
   };
