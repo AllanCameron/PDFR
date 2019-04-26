@@ -33,7 +33,7 @@ using namespace std;
 //---------------------------------------------------------------------------//
 // Output words without first joining them into lines
 
-GSoutput letter_grouper::out()
+text_table letter_grouper::out()
 {
 
   std::vector<float> left, right, bottom, size;
@@ -56,8 +56,8 @@ GSoutput letter_grouper::out()
       }
     }
   }
-  return GSoutput{move(text), move(left), move(bottom), move(right),
-                  move(font), move(size), move(gslist.m_box)};
+  return text_table{move(text), move(left), move(bottom), move(right),
+                  move(font), move(size), move(m_text_box.m_box)};
 }
 
 //---------------------------------------------------------------------------//
@@ -65,8 +65,9 @@ GSoutput letter_grouper::out()
 // page into an easily addressable 16 x 16 grid, find glyphs in close proximity
 // to each other, and glue them together, respectively.
 
-letter_grouper::letter_grouper(textbox GS) : gslist(move(GS))
+letter_grouper::letter_grouper(textbox text_box) : m_text_box(move(text_box))
 {
+  m_text_box.remove_duplicates();
   makegrid();     // Split the glyphs into 256 cells to reduce search space
   compareCells(); // Find adjacent glyphs
   merge();        // Glue adjacent glyphs together
@@ -74,9 +75,9 @@ letter_grouper::letter_grouper(textbox GS) : gslist(move(GS))
 
 //---------------------------------------------------------------------------//
 // This method creates a 16 x 16 grid of equally-sized bins across the page and
-// places each textrow from the parser into a vector in each bin. The reason for
-// doing this is to narrow the search space of potentially adjoining glyphs. The
-// naive method would involve comparing the right and bottom edge of every glyph
+// places each text_element from the parser into a vector in each bin. The
+// reason for doing this is speed up the search of potentially adjoining glyphs.
+// The naive method would comparine the right and bottom edge of every glyph
 // to every other glyph. By putting the glyphs into bins, we only need to
 // compare the right edge of each glyph with glyphs in the same bin or the bin
 // immediately to the right. For completeness, to capture letters with low
@@ -89,23 +90,23 @@ letter_grouper::letter_grouper(textbox GS) : gslist(move(GS))
 void letter_grouper::makegrid()
 {
   // Grid column width in user space
-  float dx = (gslist.m_box.right - gslist.m_box.left) / 16;
+  float dx = (m_text_box.m_box.right - m_text_box.m_box.left) / 16;
 
   // Grid row height in user space
-  float dy = (gslist.m_box.top - gslist.m_box.bottom) / 16;
+  float dy = (m_text_box.m_box.top - m_text_box.m_box.bottom) / 16;
 
   // For each glyph
-  for(auto& element : gslist)
+  for(auto& element : m_text_box)
   {
     // Calculate the row and column number the glyph's bottom left corner is in
     // There will be exactly 16 rows and columns, each numbered 0-15 (4 bits)
-    uint8_t column = (element->get_left() - gslist.m_box.left) / dx;
-    uint8_t row = 15 - (element->get_bottom() - gslist.m_box.bottom) / dy;
+    uint8_t column = (element->get_left() - m_text_box.m_box.left) / dx;
+    uint8_t row = 15 - (element->get_bottom() - m_text_box.m_box.bottom) / dy;
 
     // Convert the two 4-bit row and column numbers to a single byte
     uint8_t index = (row << 4) | column;
 
-    // Append a pointer to the glyph's textrow to the vector in that cell
+    // Append a pointer to the glyph's text_element to the vector in that cell
     m_grid[index].push_back(element);
   }
 }
@@ -133,9 +134,9 @@ textbox letter_grouper::output()
   // Sort left to right
   sort(v.begin(), v.end(), left_sort);
 
-  swap(gslist.m_data, v);
+  swap(m_text_box.m_data, v);
 
-  return gslist;
+  return m_text_box;
 
 }
 
@@ -183,8 +184,7 @@ void letter_grouper::compareCells()
 //---------------------------------------------------------------------------//
 // This is the algorithm that finds adjoining glyphs. Each glyph is addressable
 // by its cell and the order it appears in the vector of glyphs contained in
-// that cell. The glyphs are called textrows here because each glyph forms a row
-// of output from the parser class
+// that cell.
 
 void letter_grouper::matchRight(text_ptr row, uint8_t key)
 {
@@ -248,7 +248,7 @@ void letter_grouper::merge()
         // Look up the right-matching glyph
         auto& matcher = m_grid[element->grid_num()][element->vec_num()];
 
-        // Use the textrow member function to merge the two glyphs
+        // Use the text_element member function to merge the two glyphs
         element->merge_letters(*matcher);
       }
     }

@@ -64,7 +64,7 @@
  * to reduce the passing around of several parameters.
  */
 
-#include "textrow.h"
+#include "text_element.h"
 #include<functional>
 #include<iostream>
 

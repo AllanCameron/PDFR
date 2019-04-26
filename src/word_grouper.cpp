@@ -61,7 +61,7 @@ textbox& word_grouper::output()
 // the results of word_grouper to be passed out to an API if no further
 // processing is required.
 
-GSoutput word_grouper::out()
+text_table word_grouper::out()
 {
   return m_allRows.transpose();
 }
@@ -178,11 +178,11 @@ void word_grouper::findRightMatch()
       // Don't match against itself
       if(i == j) continue;
 
-      // These textrow functions are quite complex in themselves
+      // These text_element functions are quite complex in themselves
       if((*i)->is_elligible_to_join(**j))
       {
         (*i)->join_words(**j);
-        --i;  // Keep matching same textrow until no further matches are found
+        --i;  // Keep matching same text_element until no further matches found
         break;
       }
     }

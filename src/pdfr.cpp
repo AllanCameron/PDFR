@@ -155,18 +155,18 @@ Rcpp::List getatomic(std::shared_ptr<page> p)
   parser G = parser(p); // New parser
   tokenizer(p->pageContents(), &G);   // Read page contents to graphic state
   auto TR = G.output();               // Obtain output from graphic state
-  auto GS = TR.transpose();
+  auto TT = TR.transpose();
   std::vector<std::string> glyph;     // Container for utf-glyphs
-  for(auto& i : GS.text) glyph.push_back(utf({i})); // Unicode to utf8
+  for(auto& i : TT.text) glyph.push_back(utf({i})); // Unicode to utf8
   p->clearFontMap();
   // Now create the data frame
   Rcpp::DataFrame db =  Rcpp::DataFrame::create(
                         Rcpp::Named("text") = glyph,
-                        Rcpp::Named("left") = GS.left,
-                        Rcpp::Named("bottom") = GS.bottom,
-                        Rcpp::Named("right") = GS.right,
-                        Rcpp::Named("font") = GS.fonts,
-                        Rcpp::Named("size") = GS.size,
+                        Rcpp::Named("left") = TT.left,
+                        Rcpp::Named("bottom") = TT.bottom,
+                        Rcpp::Named("right") = TT.right,
+                        Rcpp::Named("font") = TT.fonts,
+                        Rcpp::Named("size") = TT.size,
                         Rcpp::Named("stringsAsFactors") = false);
   return Rcpp::List::create(Rcpp::Named("Box") = p->getminbox(),
                             Rcpp::Named("Elements") = std::move(db));
@@ -257,7 +257,7 @@ Rcpp::DataFrame pdfdoc_common(std::shared_ptr<document> myfile)
     tokenizer(p->pageContents(), &G);   // Read page contents to graphic state
     letter_grouper LG(std::move(G.output()));
     word_grouper WG(LG.output());
-    GSoutput gridout = WG.out();
+    text_table gridout = WG.out();
     for(auto& i : gridout.text) glyph.push_back(utf(i));
     concat(left, gridout.left);
     concat(right, gridout.right);

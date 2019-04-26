@@ -53,17 +53,15 @@ linegrouper::linegrouper(vector<textbox> t): m_textboxes(t)
 //---------------------------------------------------------------------------//
 //
 
-void linegrouper::find_breaks(textbox& textrow_vector)
+void linegrouper::find_breaks(textbox& text_box)
 {
-  for(size_t i = 1; i < textrow_vector.size(); ++i)
+  for(size_t i = 1; i < text_box.size(); ++i)
   {
-    if(textrow_vector[i]->get_left() - textrow_vector[i - 1]->get_left() > 0.1
+    if(text_box[i]->get_left() - text_box[i - 1]->get_left() > 0.1
          &&
-       textrow_vector[i]->get_bottom() < textrow_vector[i - 1]->get_bottom())
+       text_box[i]->get_bottom() < text_box[i - 1]->get_bottom())
     {
-      m_textboxes.push_back(splitbox(textrow_vector,
-                                     textrow_vector[i - 1]->get_bottom()));
-
+      m_textboxes.push_back(splitbox(text_box, text_box[i - 1]->get_bottom()));
       break;
     }
 
@@ -73,23 +71,23 @@ void linegrouper::find_breaks(textbox& textrow_vector)
 //---------------------------------------------------------------------------//
 //
 
-void linegrouper::line_endings(textbox& textrow_vector)
+void linegrouper::line_endings(textbox& text_box)
 {
-  for(size_t i = 0; i < textrow_vector.size() - 1; ++i)
+  for(size_t i = 0; i < text_box.size() - 1; ++i)
   {
-    auto& text_row = textrow_vector[i];
-    switch(text_row->get_glyph().back())
+    auto& element = text_box[i];
+    switch(element->get_glyph().back())
     {
       case 0x0020:                             break;
       case 0x00A0:                             break;
-      case 0x002d: text_row->pop_last_glyph(); break;
-      case 0x2010: text_row->pop_last_glyph(); break;
-      case 0x2011: text_row->pop_last_glyph(); break;
-      case 0x2012: text_row->pop_last_glyph(); break;
-      case 0x2013: text_row->pop_last_glyph(); break;
-      case 0x2014: text_row->pop_last_glyph(); break;
-      case 0x2015: text_row->pop_last_glyph(); break;
-      default:     text_row->add_space();
+      case 0x002d: element->pop_last_glyph(); break;
+      case 0x2010: element->pop_last_glyph(); break;
+      case 0x2011: element->pop_last_glyph(); break;
+      case 0x2012: element->pop_last_glyph(); break;
+      case 0x2013: element->pop_last_glyph(); break;
+      case 0x2014: element->pop_last_glyph(); break;
+      case 0x2015: element->pop_last_glyph(); break;
+      default:     element->add_space();
     }
   }
 }
@@ -97,13 +95,13 @@ void linegrouper::line_endings(textbox& textrow_vector)
 //---------------------------------------------------------------------------//
 //
 
-void linegrouper::paste_lines(textbox& textrow_vector)
+void linegrouper::paste_lines(textbox& text_box)
 {
-  for(size_t i = 1; i < textrow_vector.size(); ++i)
+  for(size_t i = 1; i < text_box.size(); ++i)
   {
-    textrow_vector[0]->concat_glyph(textrow_vector[i]->get_glyph());
+    text_box[0]->concat_glyph(text_box[i]->get_glyph());
   }
-  textrow_vector.resize(1);
+  text_box.resize(1);
 }
 
 //---------------------------------------------------------------------------//
@@ -115,8 +113,8 @@ textbox linegrouper::splitbox(textbox& old_one, float top_edge)
   auto& old_contents = old_one.m_data;
   Box new_box        = old_box;
   auto break_point = find_if(old_contents.begin(), old_contents.end(),
-                          [&](text_ptr& textrow_ptr) -> bool {
-                            return textrow_ptr->get_bottom() < top_edge;
+                          [&](text_ptr& textptr) -> bool {
+                            return textptr->get_bottom() < top_edge;
                           });
   vector<text_ptr> new_contents(break_point, old_contents.end());
   old_contents.erase(break_point, old_contents.end());

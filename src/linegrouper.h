@@ -57,8 +57,8 @@
  * joined to the one below but already ends in a space or ends in a hyphen,
  * it should be joined without a space.
  *
- * The linegrouper class modifies the vector<pair<box, vector<textrow>>> so
- * only needs passed a reference to this.
+ * The linegrouper class modifies the std::vector<textbox> class, so we only
+ * need to pass a pointer to this
  *
  */
 

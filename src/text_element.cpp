@@ -1,6 +1,6 @@
 //---------------------------------------------------------------------------//
 //                                                                           //
-//  PDFR textrow implementation file                                         //
+//  PDFR text_element implementation file                                         //
 //                                                                           //
 //  Copyright (C) 2018 by Allan Cameron                                      //
 //                                                                           //
@@ -25,14 +25,14 @@
 //                                                                           //
 //---------------------------------------------------------------------------//
 
-#include "textrow.h"
+#include "text_element.h"
 
 using namespace std;
 
 
 //---------------------------------------------------------------------------//
 
-textrow::textrow
+text_element::text_element
 (float l, float r, float b, float s, string f, vector<Unicode> g):
   left(l), right(r), bottom(b), size(s), font(f), glyph(g),
   r_join(make_pair(-1, -1)), m_flags(0) {};
@@ -40,7 +40,7 @@ textrow::textrow
 
 //---------------------------------------------------------------------------//
 
-void textrow::merge_letters(textrow& matcher)
+void text_element::merge_letters(text_element& matcher)
 {
    // paste the left glyph to the right glyph
   concat_glyph(matcher.glyph);
@@ -60,7 +60,7 @@ void textrow::merge_letters(textrow& matcher)
 
 //---------------------------------------------------------------------------//
 
-bool textrow::is_elligible_to_join(const textrow& j) const
+bool text_element::is_elligible_to_join(const text_element& j) const
 {
   if(j.is_consumed() ||
      (j.left < this->right) ||
@@ -76,7 +76,7 @@ bool textrow::is_elligible_to_join(const textrow& j) const
 
 //---------------------------------------------------------------------------//
 
-void textrow::join_words(textrow& j)
+void text_element::join_words(text_element& j)
 {
     // This element is elligible for joining - start by adding a space to it
     this->glyph.push_back(0x0020);
@@ -99,7 +99,7 @@ void textrow::join_words(textrow& j)
 }
 
 
-void textrow::concat_glyph(const std::vector<Unicode>& other)
+void text_element::concat_glyph(const std::vector<Unicode>& other)
 {
   concat(glyph, other);
 }

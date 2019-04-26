@@ -75,7 +75,7 @@ public:
   textbox& output();
 
   // Output text elements with sizes, fonts, positions to API
-  GSoutput out();
+  text_table out();
 
 private:
   // Make a table of values in a vector of floats rounded to one decimal place

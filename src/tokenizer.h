@@ -68,7 +68,7 @@ class tokenizer
 {
 public:
   // constructor
-  tokenizer(std::shared_ptr<std::string> s, parser* GS);
+  tokenizer(std::shared_ptr<std::string>, parser*);
 
 private:
   // private data members

@@ -34,6 +34,13 @@
 #include "page.h"
 
 //---------------------------------------------------------------------------//
+// Before we get to reading the page description program from the PDF, we first
+// need to define some data structures we are going to need to store the output
+// of the program in a way that can be read and processed efficiently.
+//
+
+
+//---------------------------------------------------------------------------//
 // This enum allows Vertices to be labelled according to which clockwise
 // direction around a polygon their incoming and outgoing edges point. The
 // strange numbering is simply to allow a matching to the indices of the crop

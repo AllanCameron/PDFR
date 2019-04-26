@@ -1,6 +1,6 @@
 //---------------------------------------------------------------------------//
 //                                                                           //
-//  PDFR textrow header file                                                 //
+//  PDFR text_element header file                                            //
 //                                                                           //
 //  Copyright (C) 2018 by Allan Cameron                                      //
 //                                                                           //
@@ -25,16 +25,33 @@
 //                                                                           //
 //---------------------------------------------------------------------------//
 
-#ifndef PDFR_TEXTROW
+#ifndef PDFR_TEXT_ELEMENT
 
 //---------------------------------------------------------------------------//
 
-#define PDFR_TEXTROW
+#define PDFR_TEXT_ELEMENT
 
 #include "box.h"
 
 //---------------------------------------------------------------------------//
-// The textrow is a struct which acts as a "row" of information about each text
+// The "atom" of our output will be the text_element. This is a struct containing
+// one or more glyphs as a vector of uint16_t (representing Unicode code points)
+// along with its position, size, and the name of the font used to draw it.
+// We will need to shuffle these around quite a lot in processing, so we use
+// shared pointers to each text_element to represent each text element. The pointers
+// to text_elements are typedef'd as text_ptr for brevity.
+//
+// We need to be able to process groups of text_elements together, so we can just use
+// a vector of text_ptr. However, we often need to know the bounding box of a
+// group of text_elements. We can therefore define a textbox as a struct with a Box
+// and a vector of text_elements.
+//
+// This header file contains the definitions of the text_element, text_ptr and
+// textbox classes. Most of their methods are straightforward and inlined, but
+// some of the more involved methods are described in text_element.cpp
+
+//---------------------------------------------------------------------------//
+// The text_element is a struct which contains information about each text
 // element on a page including the actual unicode glyph(s), the position, the
 // font and size of the character(s). It also contains a pair that acts as an
 // address for the adjacent glyph which will be found during letter_grouper's
@@ -42,10 +59,10 @@
 // the glyphs are stuck together into words, as well as flags to indicate
 // whether the element is at the left, right or centre of a column
 
-class textrow
+class text_element
 {
 public:
-  textrow(float, float, float, float, std::string, std::vector<Unicode>);
+  text_element(float, float, float, float, std::string, std::vector<Unicode>);
 
   constexpr static float CLUMP_H = 0.01; // horizontal clumping, high = sticky
   constexpr static float CLUMP_V = 0.1; // vertical clumping, high = sticky
@@ -55,9 +72,6 @@ public:
   inline void make_centred()        { m_flags |= 0x04; }
   inline void consume()             { m_flags |= 0x01; }
   inline void set_join(int key, int ind) { r_join = {key, ind};}
-  inline void pop_last_glyph(){
-    if(glyph.empty()) throw std::runtime_error("Can't pop empty glyph vector");
-    glyph.pop_back();}
   inline void add_space(){glyph.push_back(0x0020);}
   inline bool is_left_edge()  const { return (m_flags & 0x08) == 0x08; }
   inline bool is_right_edge() const { return (m_flags & 0x02) == 0x02; }
@@ -74,14 +88,19 @@ public:
   inline std::vector<Unicode> get_glyph() const { return this->glyph;}
   inline std::string get_font() const { return this->font;}
 
+  inline void pop_last_glyph()
+  {
+    if(glyph.empty()) throw std::runtime_error("Can't pop empty glyph vector");
+    glyph.pop_back();
+  }
 
-  inline bool operator ==(const textrow& a) const
+  inline bool operator ==(const text_element& a) const
   {
     return (a.left == this->left && a.bottom == this->bottom &&
             a.size == this->size && a.glyph  == this->glyph);
   }
 
-  inline bool is_adjoining_letter(const textrow& cell) const
+  inline bool is_adjoining_letter(const text_element& cell) const
   {
        return (cell.left > this->left &&
         abs(cell.bottom - this->bottom) < (CLUMP_V * this->size) &&
@@ -89,9 +108,9 @@ public:
         (cell.left < this->right)) );
   }
 
-  void merge_letters(textrow&);
-  bool is_elligible_to_join(const textrow&) const;
-  void join_words(textrow&);
+  void merge_letters(text_element&);
+  bool is_elligible_to_join(const text_element&) const;
+  void join_words(text_element&);
   void concat_glyph(const std::vector<Unicode>&);
 
 
@@ -108,7 +127,7 @@ private:
 
 //---------------------------------------------------------------------------//
 
-typedef std::shared_ptr<textrow> text_ptr;
+typedef std::shared_ptr<text_element> text_ptr;
 
 //---------------------------------------------------------------------------//
 // This struct is a container for the output of the parser class. All
@@ -116,9 +135,9 @@ typedef std::shared_ptr<textrow> text_ptr;
 // one row for each glyph on the page. This makes it straightforward to output
 // to other formats if needed.
 
-struct GSoutput
+struct text_table
 {
-  std::vector<std::vector<Unicode>> text;      // vector of unicode code points
+  std::vector<std::vector<Unicode>> text; // vector of unicode code points
   std::vector<float> left;        // vector of glyphs' left edges
   std::vector<float> bottom;      // vector of glyphs' bottom edges
   std::vector<float> right;       // vector of glyphs' right edges
@@ -126,12 +145,12 @@ struct GSoutput
   std::vector<float> size;        // vector of glyphs' point size
   Box m_box;
 
-  std::vector<textrow> transpose()
+  std::vector<text_element> transpose()
   {
-    std::vector<textrow> res;
+    std::vector<text_element> res;
     if(!left.empty())
       for(size_t i = 0; i < left.size(); ++i)
-        res.emplace_back(textrow(left[i], right[i], bottom[i],
+        res.emplace_back(text_element(left[i], right[i], bottom[i],
                                  size[i], fonts[i], text[i]));
     return res;
   }
@@ -139,14 +158,14 @@ struct GSoutput
 
 //---------------------------------------------------------------------------//
 // The textbox struct will be the main data repository for our output.
-// It is essentially a vector of textrows which also houses the containing box
+// It is essentially a vector of text_elements which also houses the containing box
 // as a seperate member. To make it easy to work with, it contains functions
-// that allow us to use it as if it was just a vector of textrows. This allows
+// that allow us to use it as if it was just a vector of text_elements. This allows
 // for easy iteration.
 
 struct textbox
 {
-  // Standard constructor - takes vector of textrow pointers and the minbox
+  // Standard constructor - takes vector of text_element pointers and the minbox
   textbox(std::vector<text_ptr> t, Box m): m_data(t), m_box(m) {}
 
   textbox(std::vector<text_ptr> t, std::vector<float> b):
@@ -190,10 +209,10 @@ struct textbox
   inline bool empty(){return m_data.empty();}
   inline void resize(int a){ m_data.resize(a);}
 
-  // Converts textbox to GSoutput
-  GSoutput transpose()
+  // Converts textbox to text_table
+  text_table transpose()
   {
-    GSoutput res;
+    text_table res;
     res.m_box = this->m_box;
     this->remove_duplicates();
     for (auto i : this->m_data)

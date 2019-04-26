@@ -49,7 +49,7 @@
 // The letter_grouper class contains a constructor, an output map of results,
 // and a method for passing out the minimum text bounding box found in page
 // construction. Its private methods are used only in construction of the
-// output. The main private member is a map of vectors of textrows, each
+// output. The main private member is a map of vectors of text_elements, each
 // vector representing all glyphs in one of 256 equally sized cells on the page.
 // Each glyph is addressable by two numbers - the grid number and the position
 // of the glyph in the cell's vector.
@@ -63,13 +63,13 @@ public:
   // public methods
   // Passes text elements to word_grouper for further construction if needed
   textbox output();
-  GSoutput out(); // output table to interface if ungrouped words needed
+  text_table out(); // output table to interface if ungrouped words needed
 
 private:
   // private data members
-  textbox gslist; // a copy of the parser output used to create grid
+  textbox m_text_box; // a copy of the parser output used to create grid
 
-  // the main data member. A 16 x 16 grid of cells, each with textrow vector
+  // Main data member - a 16 x 16 grid of cells, each with a text_ptr vector
   std::unordered_map<uint8_t, std::vector<text_ptr>> m_grid;
 
   // private methods

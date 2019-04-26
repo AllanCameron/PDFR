@@ -70,8 +70,8 @@ std::array<tokenizer::chartype, 256> tokenizer::char_lookup = {
 // constructor of tokenizer - initializes members and starts main
 // lexer function
 
-tokenizer::tokenizer(shared_ptr<string> input, parser* GS) :
- s(input), i(s->begin()), state(NEWSYMBOL), gs(GS)
+tokenizer::tokenizer(shared_ptr<string> input, parser* prser) :
+ s(input), i(s->begin()), state(NEWSYMBOL), gs(prser)
 {
   tokenize();
 }
