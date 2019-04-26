@@ -34,7 +34,7 @@ using namespace std;
 //---------------------------------------------------------------------------//
 //
 
-linegrouper::linegrouper(vector<textrows> t): m_textboxes(t)
+linegrouper::linegrouper(vector<textbox> t): m_textboxes(t)
 {
   size_t i = 0;
   if(m_textboxes.empty()) throw runtime_error("No textboxes on page");
@@ -53,7 +53,7 @@ linegrouper::linegrouper(vector<textrows> t): m_textboxes(t)
 //---------------------------------------------------------------------------//
 //
 
-void linegrouper::find_breaks(textrows& textrow_vector)
+void linegrouper::find_breaks(textbox& textrow_vector)
 {
   for(size_t i = 1; i < textrow_vector.size(); ++i)
   {
@@ -73,7 +73,7 @@ void linegrouper::find_breaks(textrows& textrow_vector)
 //---------------------------------------------------------------------------//
 //
 
-void linegrouper::line_endings(textrows& textrow_vector)
+void linegrouper::line_endings(textbox& textrow_vector)
 {
   for(size_t i = 0; i < textrow_vector.size() - 1; ++i)
   {
@@ -97,7 +97,7 @@ void linegrouper::line_endings(textrows& textrow_vector)
 //---------------------------------------------------------------------------//
 //
 
-void linegrouper::paste_lines(textrows& textrow_vector)
+void linegrouper::paste_lines(textbox& textrow_vector)
 {
   for(size_t i = 1; i < textrow_vector.size(); ++i)
   {
@@ -109,7 +109,7 @@ void linegrouper::paste_lines(textrows& textrow_vector)
 //---------------------------------------------------------------------------//
 //
 
-textrows linegrouper::splitbox(textrows& old_one, float top_edge)
+textbox linegrouper::splitbox(textbox& old_one, float top_edge)
 {
   auto& old_box      = old_one.m_box;
   auto& old_contents = old_one.m_data;
@@ -121,13 +121,13 @@ textrows linegrouper::splitbox(textrows& old_one, float top_edge)
   vector<text_ptr> new_contents(break_point, old_contents.end());
   old_contents.erase(break_point, old_contents.end());
   old_box.bottom = new_box.top = old_contents.back()->get_bottom();
-  return textrows(new_contents, new_box);
+  return textbox(new_contents, new_box);
 }
 
 
 //---------------------------------------------------------------------------//
 
-vector<textrows>& linegrouper::output()
+vector<textbox>& linegrouper::output()
 {
   return m_textboxes;
 }

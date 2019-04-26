@@ -74,7 +74,7 @@ unordered_map<uint8_t, pair<Direction, Direction>> Whitespace::arrows =
 // then trace round all the vertices, storing every connected loop as a
 // polygon surrounding a text element.
 
-Whitespace::Whitespace(textrows word_grouper_output):
+Whitespace::Whitespace(textbox word_grouper_output):
   m_page_text(move(word_grouper_output))
 {
   getMaxLineSize();
@@ -490,9 +490,9 @@ void Whitespace::removeEngulfed()
 // Finally we need to group our text items together in the text boxes for
 // joining and analysis.
 
-vector<textrows> Whitespace::output()
+vector<textbox> Whitespace::output()
 {
-  vector<textrows> res;
+  vector<textbox> res;
   for(auto& box : ws_boxes)
   {
     vector<text_ptr> text_vec;
@@ -511,7 +511,7 @@ vector<textrows> Whitespace::output()
       }
       if(box.right < (*text_it)->get_left()) break;
     }
-    res.emplace_back(textrows(move(text_vec), move(box)));
+    res.emplace_back(textbox(move(text_vec), move(box)));
   }
 
   return res;

@@ -65,7 +65,7 @@ GSoutput letter_grouper::out()
 // page into an easily addressable 16 x 16 grid, find glyphs in close proximity
 // to each other, and glue them together, respectively.
 
-letter_grouper::letter_grouper(textrows GS) : gslist(move(GS))
+letter_grouper::letter_grouper(textbox GS) : gslist(move(GS))
 {
   makegrid();     // Split the glyphs into 256 cells to reduce search space
   compareCells(); // Find adjacent glyphs
@@ -113,7 +113,7 @@ void letter_grouper::makegrid()
 //---------------------------------------------------------------------------//
 // Allows the main data object to be output after calculations done
 
-textrows letter_grouper::output()
+textbox letter_grouper::output()
 {
   // This lambda is used to find text_ptrs that aren't flagged for deletion
   auto extant = [&](const text_ptr& elem) -> bool

@@ -105,7 +105,7 @@ public:
   void reader(std::string&, Token::TState);
 
   // Access results
-  textrows& output();
+  textbox& output();
 
   // To recursively pass xobjects, we need to be able to see the operand
   std::string getOperand();
@@ -133,7 +133,7 @@ private:
                                     m_Tw,             // Word spacing
                                     m_Th,             // Horizontal scaling
                                     m_Tc;             // Character spacing
-  textrows                          m_db;             // The main output struct
+  textbox                           m_db;             // The main output struct
 
   // This typedef allows us to create a map of function pointers
   typedef void (parser::*fptr)();

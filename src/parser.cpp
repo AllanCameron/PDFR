@@ -92,7 +92,7 @@ std::string parser::getOperand()
 //---------------------------------------------------------------------------//
 // The public getter of the main data member
 
-textrows& parser::output()
+textbox& parser::output()
 {
   m_db.m_box = Box(m_p->getminbox());
   return m_db;

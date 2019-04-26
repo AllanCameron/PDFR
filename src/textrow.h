@@ -138,32 +138,32 @@ struct GSoutput
 };
 
 //---------------------------------------------------------------------------//
-// The textrows struct will be the main data repository for our output.
-// It is essentially a vector of textrows which also houses the page dimensions
-// as a seperate vector. To make it easy to work with, it contains functions
+// The textbox struct will be the main data repository for our output.
+// It is essentially a vector of textrows which also houses the containing box
+// as a seperate member. To make it easy to work with, it contains functions
 // that allow us to use it as if it was just a vector of textrows. This allows
 // for easy iteration.
 
-struct textrows
+struct textbox
 {
   // Standard constructor - takes vector of textrow pointers and the minbox
-  textrows(std::vector<text_ptr> t, Box m): m_data(t), m_box(m) {}
+  textbox(std::vector<text_ptr> t, Box m): m_data(t), m_box(m) {}
 
-  textrows(std::vector<text_ptr> t, std::vector<float> b):
+  textbox(std::vector<text_ptr> t, std::vector<float> b):
   m_data(t), m_box(Box(b)){}
 
-  textrows(std::vector<text_ptr> t, float a, float b, float c, float d):
+  textbox(std::vector<text_ptr> t, float a, float b, float c, float d):
   m_data(t), m_box(Box(a, b, c, d)) {}
 
   // Copy contructor
-  textrows(const textrows& t): m_data(t.m_data), m_box(t.m_box) {}
+  textbox(const textbox& t): m_data(t.m_data), m_box(t.m_box) {}
 
   // Move constructor
-  textrows(textrows&& t) noexcept :
+  textbox(textbox&& t) noexcept :
     m_data(std::move(t.m_data)), m_box(std::move(t.m_box)) {}
 
   // Rvalue assignment constructor
-  textrows& operator=(textrows&& t) noexcept
+  textbox& operator=(textbox&& t) noexcept
   {
     std::swap(this->m_data, t.m_data);
     std::swap(this->m_box, t.m_box);
@@ -171,7 +171,7 @@ struct textrows
   }
 
   // Lvalue assignment constructor
-  textrows& operator=(const textrows& t)
+  textbox& operator=(const textbox& t)
   {
     this->m_data = t.m_data;
     this->m_box = t.m_box;
@@ -179,7 +179,7 @@ struct textrows
   }
 
   // Default constructor
-  textrows() = default;
+  textbox() = default;
 
   // Functions to copy the methods of vectors to access main data object
   inline std::vector<text_ptr>::iterator begin(){return m_data.begin();}
@@ -190,7 +190,7 @@ struct textrows
   inline bool empty(){return m_data.empty();}
   inline void resize(int a){ m_data.resize(a);}
 
-  // Converts textrows to GSoutput
+  // Converts textbox to GSoutput
   GSoutput transpose()
   {
     GSoutput res;

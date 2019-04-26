@@ -40,7 +40,7 @@ constexpr int EDGECOUNT = 4;
 // and finds its column edges, then joins elligible words together as long as
 // they do not belong to different columns.
 
-word_grouper::word_grouper(textrows&& g): m_allRows(move(g))
+word_grouper::word_grouper(textbox&& g): m_allRows(move(g))
 {
   findEdges();
   assignEdges();
@@ -48,9 +48,9 @@ word_grouper::word_grouper(textrows&& g): m_allRows(move(g))
 };
 
 //---------------------------------------------------------------------------//
-// This returns a vector of textrows for continued processing if needed
+// This returns a single text box of the page for further processing if needed
 
-textrows& word_grouper::output()
+textbox& word_grouper::output()
 {
   return m_allRows;
 }

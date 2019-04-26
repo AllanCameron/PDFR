@@ -58,16 +58,16 @@ class letter_grouper
 {
 public:
   // constructor.
-  letter_grouper(textrows);
+  letter_grouper(textbox);
 
   // public methods
   // Passes text elements to word_grouper for further construction if needed
-  textrows output();
+  textbox output();
   GSoutput out(); // output table to interface if ungrouped words needed
 
 private:
   // private data members
-  textrows gslist; // a copy of the parser output used to create grid
+  textbox gslist; // a copy of the parser output used to create grid
 
   // the main data member. A 16 x 16 grid of cells, each with textrow vector
   std::unordered_map<uint8_t, std::vector<text_ptr>> m_grid;

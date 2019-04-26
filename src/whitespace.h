@@ -79,17 +79,17 @@ class Whitespace
 {
 public:
   // constructor
-  Whitespace(textrows);
+  Whitespace(textbox);
 
   //  Output the text element groups directly
-  std::vector<textrows> output();
+  std::vector<textbox> output();
 
   // Output the final text box co-ordinates
   std::vector<Box> ws_box_out() const;
 
 private:
   //The main output is a collection of pairs of text boxes with their elements
-  textrows m_page_text; // a copy of word grouper's output
+  textbox m_page_text; // a copy of word grouper's output
   std::unordered_map<size_t, std::vector<Vertex>> polygonMap;// main polygon map
   float max_line_space;                // The average font size on the page
   std::vector<Box> ws_boxes;         // used in construction AND output

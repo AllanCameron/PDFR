@@ -65,14 +65,14 @@
 class linegrouper
 {
 public:
-  linegrouper(std::vector<textrows> t);
-  std::vector<textrows>& output();
+  linegrouper(std::vector<textbox> t);
+  std::vector<textbox>& output();
 
 private:
-  void find_breaks(textrows&);
-  void line_endings(textrows&);
-  void paste_lines(textrows&);
-  textrows splitbox(textrows&, float);
+  void find_breaks(textbox&);
+  void line_endings(textbox&);
+  void paste_lines(textbox&);
+  textbox splitbox(textbox&, float);
 
   struct reading_order
   {
@@ -86,7 +86,7 @@ private:
   };
 
   // private data members
-  std::vector<textrows> m_textboxes;
+  std::vector<textbox> m_textboxes;
 };
 
 

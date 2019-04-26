@@ -69,10 +69,10 @@ class word_grouper
 {
 public:
   // Constructor
-  word_grouper(textrows&&);
+  word_grouper(textbox&&);
 
   // Output individual text elements for next phase of layout analysis
-  textrows& output();
+  textbox& output();
 
   // Output text elements with sizes, fonts, positions to API
   GSoutput out();
@@ -95,9 +95,8 @@ private:
   // The tables of edges
   std::unordered_map<int, size_t> m_leftEdges, m_rightEdges, m_mids;
 
-  // The main data member: a vector of textrows, each containing a word with
-  // its associated size, font and position
-  textrows m_allRows;
+  // The main data member
+  textbox m_allRows;
 };
 
 //---------------------------------------------------------------------------//
