@@ -66,7 +66,6 @@
 
 #include "text_element.h"
 #include<functional>
-#include<iostream>
 
 //---------------------------------------------------------------------------//
 // The states of the lexer are defined by this enum. It is defined in its own

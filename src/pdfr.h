@@ -73,7 +73,7 @@
  */
 
 #include<Rcpp.h>
-#include "linegrouper.h"
+#include "line_grouper.h"
 
 //---------------------------------------------------------------------------//
 // Get xref. Returns a dataframe representing all of the cross-reference tables

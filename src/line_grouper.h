@@ -1,6 +1,6 @@
 //---------------------------------------------------------------------------//
 //                                                                           //
-//  PDFR linegrouper header file                                             //
+//  PDFR line_grouper header file                                            //
 //                                                                           //
 //  Copyright (C) 2018 by Allan Cameron                                      //
 //                                                                           //
@@ -34,7 +34,7 @@
 #include "whitespace.h"
 
 //---------------------------------------------------------------------------//
-/*  The linegrouper class takes the output of the whitespace class, which is
+/*  The line_grouper class takes the output of the whitespace class, which is
  * a vector of pairs : each pair contains a box representing an area on the
  * page, and a vector of the text elements contained within that box. What we
  * want is to change this so that we have a 1:1 correspondence between boxes
@@ -57,15 +57,15 @@
  * joined to the one below but already ends in a space or ends in a hyphen,
  * it should be joined without a space.
  *
- * The linegrouper class modifies the std::vector<textbox> class, so we only
+ * The line_grouper class modifies the std::vector<textbox> class, so we only
  * need to pass a pointer to this
  *
  */
 
-class linegrouper
+class line_grouper
 {
 public:
-  linegrouper(std::vector<textbox> t);
+  line_grouper(std::vector<textbox> t);
   std::vector<textbox>& output();
 
 private:

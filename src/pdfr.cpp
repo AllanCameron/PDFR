@@ -181,12 +181,12 @@ Rcpp::List getgrid(std::shared_ptr<page> p)
   letter_grouper LG(G.output());
   word_grouper WG(LG.output());
   Whitespace WS(WG.output());
-  linegrouper line_grouper(WS.output());
+  line_grouper linegrouper(WS.output());
   std::vector<float> left, right, size, bottom;
   std::vector<std::string> glyph, font;
   std::vector<int> polygon;
   int polygonNumber = 0;
-  auto LGO = line_grouper.output();
+  auto LGO = linegrouper.output();
 
   for(auto& i : LGO)
   {

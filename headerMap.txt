@@ -35,15 +35,15 @@ target.
                                        v                  <string>
                                  "utilities.h" <--------  <vector>
                 <fstream>  ---> {utilities.cpp}           <unordered_map>
-                                       |
+                                       |                  <iostream>
                                        |
                                        v
                           ,----- "dictionary.h" -----,
                           |     {dictionary.cpp}     |
                           |                          |
                           v                          v
-"external/miniz.h"    "streams.h"  <utility>    "crypto.h"
-   {miniz.cpp}  ---> {streams.cpp}     |        {crypto.cpp} <-- <deque>
+"external/miniz.h"    "streams.h"  <utility>    "crypto.h" <-- <deque>
+    {miniz.c}   ---> {streams.cpp}     |        {crypto.cpp}
                           |            |             |
                           |            v             |
                           '-------> "xref.h" <-------'
@@ -59,7 +59,9 @@ target.
                                        v    v
                             ,---- "document.h" ----,
                             |    {document.cpp}    |
-                            |                      |
+                            |          ^           |
+                            |          |           |
+                            |       <list>         |
                             v                      v
                        "encoding.h"         "glyphwidths.h"
                       {encoding.cpp}       {glyphwidths.cpp}
@@ -73,6 +75,15 @@ target.
                                        v
                                     "page.h"
                                    {page.cpp}
+                                       |
+                                       |
+                                       v
+                                    "box.h"
+                                       |
+                                       |
+                                       v
+                                "text_element.h"
+                               {text_element.cpp}
                                        |
                                        |
                                        v
@@ -97,23 +108,31 @@ target.
                                        |
                                        v
                                  "whitespace.h"
-                                {whitespace.cpp}                                                                        |
+                                {whitespace.cpp}
+                                       |
                                        |
                                        v
-                   [Just #include "whitespace.h" in wrapper]
+                                "line_grouper.h"
+                               {line_grouper.cpp}
+                                       |
+                                       |
+                                       v
+                   [Just #include "line_grouper.h" in wrapper]
 
 --------------------------------------------------------------------------------
 
                                    R wrapper
                                    =========
 
-                                 "whitespace.h"
+                                "line_grouper.h"
                                        |
                                        v
                           ------>    pdfr.h   ----------------
                          /         {pdfr.cpp}                 |
-              <Rcpp.h>  /                                     |
-             *external* \                                     |
+                        /              ^                      |
+             <Rcpp.h>  /               |                      |
+            *external* \            <list>                    |
+                        \                                     |
                          \                                    |
                           ---> {RcppExports.cpp}<--           v
                                        |           \ [automatically generated

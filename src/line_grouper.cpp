@@ -1,6 +1,6 @@
 //---------------------------------------------------------------------------//
 //                                                                           //
-//  PDFR linegrouper implementation file                                     //
+//  PDFR line_grouper implementation file                                    //
 //                                                                           //
 //  Copyright (C) 2018 by Allan Cameron                                      //
 //                                                                           //
@@ -25,7 +25,7 @@
 //                                                                           //
 //---------------------------------------------------------------------------//
 
-#include "linegrouper.h"
+#include "line_grouper.h"
 
 //---------------------------------------------------------------------------//
 
@@ -34,7 +34,7 @@ using namespace std;
 //---------------------------------------------------------------------------//
 //
 
-linegrouper::linegrouper(vector<textbox> t): m_textboxes(t)
+line_grouper::line_grouper(vector<textbox> t): m_textboxes(t)
 {
   size_t i = 0;
   if(m_textboxes.empty()) throw runtime_error("No textboxes on page");
@@ -53,7 +53,7 @@ linegrouper::linegrouper(vector<textbox> t): m_textboxes(t)
 //---------------------------------------------------------------------------//
 //
 
-void linegrouper::find_breaks(textbox& text_box)
+void line_grouper::find_breaks(textbox& text_box)
 {
   for(size_t i = 1; i < text_box.size(); ++i)
   {
@@ -71,7 +71,7 @@ void linegrouper::find_breaks(textbox& text_box)
 //---------------------------------------------------------------------------//
 //
 
-void linegrouper::line_endings(textbox& text_box)
+void line_grouper::line_endings(textbox& text_box)
 {
   for(size_t i = 0; i < text_box.size() - 1; ++i)
   {
@@ -95,7 +95,7 @@ void linegrouper::line_endings(textbox& text_box)
 //---------------------------------------------------------------------------//
 //
 
-void linegrouper::paste_lines(textbox& text_box)
+void line_grouper::paste_lines(textbox& text_box)
 {
   for(size_t i = 1; i < text_box.size(); ++i)
   {
@@ -107,7 +107,7 @@ void linegrouper::paste_lines(textbox& text_box)
 //---------------------------------------------------------------------------//
 //
 
-textbox linegrouper::splitbox(textbox& old_one, float top_edge)
+textbox line_grouper::splitbox(textbox& old_one, float top_edge)
 {
   auto& old_box      = old_one.m_box;
   auto& old_contents = old_one.m_data;
@@ -125,7 +125,7 @@ textbox linegrouper::splitbox(textbox& old_one, float top_edge)
 
 //---------------------------------------------------------------------------//
 
-vector<textbox>& linegrouper::output()
+vector<textbox>& line_grouper::output()
 {
   return m_textboxes;
 }

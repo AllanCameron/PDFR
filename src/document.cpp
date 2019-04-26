@@ -27,7 +27,7 @@
 
 #include "document.h"
 #include<list>
-#include<iostream>
+
 //---------------------------------------------------------------------------//
 // See the document.h file for comments regarding the rationale and use of this
 // class. The comments here are for descriptions of the functions themselves.

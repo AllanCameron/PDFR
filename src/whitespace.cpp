@@ -26,8 +26,7 @@
 //---------------------------------------------------------------------------//
 
 #include "whitespace.h"
-#include<memory>
-#include<iostream>
+
 using namespace std;
 
 static const float MAXPAGE = 30000;
