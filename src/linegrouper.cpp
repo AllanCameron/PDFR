@@ -34,19 +34,18 @@ using namespace std;
 //---------------------------------------------------------------------------//
 //
 
-linegrouper::linegrouper(textboxes t): m_textboxes(t)
+linegrouper::linegrouper(vector<textrows> t): m_textboxes(t)
 {
   size_t i = 0;
+  if(m_textboxes.empty()) throw runtime_error("No textboxes on page");
   while(i < m_textboxes.size())
   {
-    auto& element = m_textboxes[i];
-    auto& textrow_vector = element.second;
-    if (textrow_vector.size() < 2){++i; continue;}
-    sort(textrow_vector.begin(), textrow_vector.end(), reading_order());
-    find_breaks(element);
-    if (textrow_vector.size() < 2){++i; continue;}
-    line_endings(textrow_vector);
-    paste_lines(textrow_vector);
+    if (m_textboxes[i].size() < 2){++i; continue;}
+    sort(m_textboxes[i].begin(), m_textboxes[i].end(), reading_order());
+    find_breaks(m_textboxes[i]);
+    if (m_textboxes[i].size() < 2){++i; continue;}
+    line_endings(m_textboxes[i]);
+    paste_lines(m_textboxes[i]);
     ++i;
   }
 };
@@ -54,17 +53,17 @@ linegrouper::linegrouper(textboxes t): m_textboxes(t)
 //---------------------------------------------------------------------------//
 //
 
-void linegrouper::find_breaks(textbox& this_box)
+void linegrouper::find_breaks(textrows& textrow_vector)
 {
-  auto& textrow_vector = this_box.second;
   for(size_t i = 1; i < textrow_vector.size(); ++i)
   {
     if(textrow_vector[i]->get_left() - textrow_vector[i - 1]->get_left() > 0.1
          &&
        textrow_vector[i]->get_bottom() < textrow_vector[i - 1]->get_bottom())
     {
-      m_textboxes.push_back(splitbox(this_box,
+      m_textboxes.push_back(splitbox(textrow_vector,
                                      textrow_vector[i - 1]->get_bottom()));
+
       break;
     }
 
@@ -74,7 +73,7 @@ void linegrouper::find_breaks(textbox& this_box)
 //---------------------------------------------------------------------------//
 //
 
-void linegrouper::line_endings(vector<text_ptr>& textrow_vector)
+void linegrouper::line_endings(textrows& textrow_vector)
 {
   for(size_t i = 0; i < textrow_vector.size() - 1; ++i)
   {
@@ -98,7 +97,7 @@ void linegrouper::line_endings(vector<text_ptr>& textrow_vector)
 //---------------------------------------------------------------------------//
 //
 
-void linegrouper::paste_lines(vector<text_ptr>& textrow_vector)
+void linegrouper::paste_lines(textrows& textrow_vector)
 {
   for(size_t i = 1; i < textrow_vector.size(); ++i)
   {
@@ -110,10 +109,10 @@ void linegrouper::paste_lines(vector<text_ptr>& textrow_vector)
 //---------------------------------------------------------------------------//
 //
 
-textbox linegrouper::splitbox(textbox& old_one, float top_edge)
+textrows linegrouper::splitbox(textrows& old_one, float top_edge)
 {
-  auto& old_box      = old_one.first;
-  auto& old_contents = old_one.second;
+  auto& old_box      = old_one.m_box;
+  auto& old_contents = old_one.m_data;
   Box new_box        = old_box;
   auto break_point = find_if(old_contents.begin(), old_contents.end(),
                           [&](text_ptr& textrow_ptr) -> bool {
@@ -122,13 +121,13 @@ textbox linegrouper::splitbox(textbox& old_one, float top_edge)
   vector<text_ptr> new_contents(break_point, old_contents.end());
   old_contents.erase(break_point, old_contents.end());
   old_box.bottom = new_box.top = old_contents.back()->get_bottom();
-  return make_pair(new_box, new_contents);
+  return textrows(new_contents, new_box);
 }
 
 
 //---------------------------------------------------------------------------//
 
-textboxes& linegrouper::output()
+vector<textrows>& linegrouper::output()
 {
   return m_textboxes;
 }

@@ -82,17 +82,15 @@ public:
   Whitespace(textrows);
 
   //  Output the text element groups directly
-  std::vector<std::pair<Box, std::vector<text_ptr>>> output();
+  std::vector<textrows> output();
 
   // Output the final text box co-ordinates
   std::vector<Box> ws_box_out() const;
 
 private:
   //The main output is a collection of pairs of text boxes with their elements
-  std::vector<text_ptr> m_text_elements; // a copy of word grouper's output
-  Box m_box;
+  textrows m_page_text; // a copy of word grouper's output
   std::unordered_map<size_t, std::vector<Vertex>> polygonMap;// main polygon map
-  Box m_page;
   float max_line_space;                // The average font size on the page
   std::vector<Box> ws_boxes;         // used in construction AND output
   std::vector<Vertex> vertices;        // The vertices used to make polygons

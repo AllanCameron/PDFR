@@ -67,8 +67,7 @@ public:
 
 private:
   // private data members
-  textrows gslist;            // a copy of the parser output used to create grid
-  Box m_box;
+  textrows gslist; // a copy of the parser output used to create grid
 
   // the main data member. A 16 x 16 grid of cells, each with textrow vector
   std::unordered_map<uint8_t, std::vector<text_ptr>> m_grid;

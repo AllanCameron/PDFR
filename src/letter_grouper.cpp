@@ -57,7 +57,7 @@ GSoutput letter_grouper::out()
     }
   }
   return GSoutput{move(text), move(left), move(bottom), move(right),
-                  move(font), move(size), move(m_box)};
+                  move(font), move(size), move(gslist.m_box)};
 }
 
 //---------------------------------------------------------------------------//
@@ -65,8 +65,7 @@ GSoutput letter_grouper::out()
 // page into an easily addressable 16 x 16 grid, find glyphs in close proximity
 // to each other, and glue them together, respectively.
 
-letter_grouper::letter_grouper(textrows GS) :
-  gslist(move(GS)), m_box(gslist.m_box)
+letter_grouper::letter_grouper(textrows GS) : gslist(move(GS))
 {
   makegrid();     // Split the glyphs into 256 cells to reduce search space
   compareCells(); // Find adjacent glyphs
@@ -89,16 +88,19 @@ letter_grouper::letter_grouper(textrows GS) :
 
 void letter_grouper::makegrid()
 {
-  float dx = (m_box.right - m_box.left) / 16; // Grid column width in user space
-  float dy = (m_box.top - m_box.bottom) / 16; // Grid row height in user space
+  // Grid column width in user space
+  float dx = (gslist.m_box.right - gslist.m_box.left) / 16;
+
+  // Grid row height in user space
+  float dy = (gslist.m_box.top - gslist.m_box.bottom) / 16;
 
   // For each glyph
   for(auto& element : gslist)
   {
     // Calculate the row and column number the glyph's bottom left corner is in
     // There will be exactly 16 rows and columns, each numbered 0-15 (4 bits)
-    uint8_t column = (element->get_left() - m_box.left) / dx;
-    uint8_t row = 15 - (element->get_bottom() - m_box.bottom) / dy;
+    uint8_t column = (element->get_left() - gslist.m_box.left) / dx;
+    uint8_t row = 15 - (element->get_bottom() - gslist.m_box.bottom) / dy;
 
     // Convert the two 4-bit row and column numbers to a single byte
     uint8_t index = (row << 4) | column;
@@ -131,7 +133,9 @@ textrows letter_grouper::output()
   // Sort left to right
   sort(v.begin(), v.end(), left_sort);
 
-  return textrows(v, m_box);
+  swap(gslist.m_data, v);
+
+  return gslist;
 
 }
 

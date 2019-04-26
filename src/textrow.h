@@ -55,7 +55,9 @@ public:
   inline void make_centred()        { m_flags |= 0x04; }
   inline void consume()             { m_flags |= 0x01; }
   inline void set_join(int key, int ind) { r_join = {key, ind};}
-  inline void pop_last_glyph(){ glyph.pop_back();}
+  inline void pop_last_glyph(){
+    if(glyph.empty()) throw std::runtime_error("Can't pop empty glyph vector");
+    glyph.pop_back();}
   inline void add_space(){glyph.push_back(0x0020);}
   inline bool is_left_edge()  const { return (m_flags & 0x08) == 0x08; }
   inline bool is_right_edge() const { return (m_flags & 0x02) == 0x02; }
@@ -186,6 +188,7 @@ struct textrows
   inline void push_back(text_ptr t){m_data.push_back(t);}
   inline size_t size(){return m_data.size();}
   inline bool empty(){return m_data.empty();}
+  inline void resize(int a){ m_data.resize(a);}
 
   // Converts textrows to GSoutput
   GSoutput transpose()

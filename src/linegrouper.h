@@ -62,20 +62,17 @@
  *
  */
 
-typedef std::pair<Box, std::vector<text_ptr>> textbox;
-typedef std::vector<textbox> textboxes;
-
 class linegrouper
 {
 public:
-  linegrouper(textboxes t);
-  textboxes& output();
+  linegrouper(std::vector<textrows> t);
+  std::vector<textrows>& output();
 
 private:
-  void find_breaks(textbox&);
-  void line_endings(std::vector<text_ptr>&);
-  void paste_lines(std::vector<text_ptr>&);
-  textbox splitbox(textbox&, float);
+  void find_breaks(textrows&);
+  void line_endings(textrows&);
+  void paste_lines(textrows&);
+  textrows splitbox(textrows&, float);
 
   struct reading_order
   {
@@ -89,7 +86,7 @@ private:
   };
 
   // private data members
-  textboxes m_textboxes;
+  std::vector<textrows> m_textboxes;
 };
 
 

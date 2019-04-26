@@ -75,9 +75,7 @@ unordered_map<uint8_t, pair<Direction, Direction>> Whitespace::arrows =
 // polygon surrounding a text element.
 
 Whitespace::Whitespace(textrows word_grouper_output):
-  m_text_elements(move(word_grouper_output.m_data)),
-  m_box(move(word_grouper_output.m_box)),
-  m_page(Box(m_box.left, m_box.right, m_box.top, m_box.bottom))
+  m_page_text(move(word_grouper_output))
 {
   getMaxLineSize();
   pageDimensions();
@@ -98,7 +96,7 @@ Whitespace::Whitespace(textrows word_grouper_output):
 void Whitespace::getMaxLineSize()
 {
   std::vector<float> fontsizes;
-  for(auto& i : m_text_elements)
+  for(auto& i : m_page_text)
   {
     fontsizes.push_back(i->get_size());
   }
@@ -114,12 +112,16 @@ void Whitespace::getMaxLineSize()
 
 void Whitespace::pageDimensions()
 {
-  for(auto& i : m_text_elements)
+  for(auto& i : m_page_text)
   {
-    if(i->get_right() > m_page.right) m_page.right += 10.0;
-    if(i->get_left() < m_page.left) m_page.left -= 10.0;
-    if((i->get_bottom() + i->get_size()) > m_page.top) m_page.top += 10.0;
-    if(i->get_bottom() < m_page.bottom) m_page.bottom -= 10.0;
+    if(i->get_right() > m_page_text.m_box.right)
+      m_page_text.m_box.right += 10.0;
+    if(i->get_left() < m_page_text.m_box.left)
+      m_page_text.m_box.left -= 10.0;
+    if((i->get_bottom() + i->get_size()) > m_page_text.m_box.top)
+      m_page_text.m_box.top += 10.0;
+    if(i->get_bottom() < m_page_text.m_box.bottom)
+      m_page_text.m_box.bottom -= 10.0;
   }
 }
 
@@ -169,21 +171,21 @@ void Whitespace::cleanAndSortBoxes()
 void Whitespace::makeStrips()
 {
   // Find strip widths
-  float pixwidth = m_page.width() / DIVISIONS;
+  float pixwidth = m_page_text.m_box.width() / DIVISIONS;
 
   // The first strip starts at the left edge and stops one stripwidth to right
-  float L_Edge = m_page.left;
+  float L_Edge = m_page_text.m_box.left;
   float R_Edge = L_Edge + pixwidth;
 
   // For each of these page divisions
   for(size_t i = 0; i < DIVISIONS; ++i)
   {
     // Create top/bottom bounds for boxes at top/bottom of page.
-    vector<float> tops = {m_page.top};
-    vector<float> bottoms = {m_page.bottom};
+    vector<float> tops = {m_page_text.m_box.top};
+    vector<float> bottoms = {m_page_text.m_box.bottom};
 
     // Now for each text element on the page
-    for(const auto& j : m_text_elements)
+    for(const auto& j : m_page_text)
     {
       // If it obstructs our strip, store its upper and lower bounds
       if(j->get_left() < R_Edge && j->get_right() > L_Edge)
@@ -248,7 +250,9 @@ void Whitespace::removeSmall()
   for(auto& i : ws_boxes)
   {
     // Remove only undeleted boxes who are not at the page border and are short
-    if(!i.is_deleted && !i.shares_edge(m_page) && i.height() < max_line_space)
+    if(!i.is_deleted &&
+       !i.shares_edge(m_page_text.m_box) &&
+       i.height() < max_line_space)
     {
       i.remove();
     }
@@ -338,7 +342,7 @@ void Whitespace::tracePolygons()
   for(auto& i : vertices)
   {
     // Use the Direction enum as an int to get points beyond page edges
-    float initialEdge = m_box[i.Out] + (2 * (i.Out / 2) - 1) * 100;
+    float initialEdge = m_page_text.m_box[i.Out] + (2 * (i.Out / 2) - 1) * 100;
 
     // "edge" keeps track of the nearest vertex
     float edge = initialEdge;
@@ -450,7 +454,7 @@ void Whitespace::polygonMax()
     }
 
     // if the box is not the page itself, append this polygon to our result
-    if(!bounding_box.is_approximately_same_as(m_page))
+    if(!bounding_box.is_approximately_same_as(m_page_text.m_box))
     {
       ws_boxes.emplace_back(move(bounding_box));
     }
@@ -486,15 +490,15 @@ void Whitespace::removeEngulfed()
 // Finally we need to group our text items together in the text boxes for
 // joining and analysis.
 
-vector<pair<Box, vector<text_ptr>>> Whitespace::output()
+vector<textrows> Whitespace::output()
 {
-  vector<pair<Box, vector<text_ptr>>> res;
+  vector<textrows> res;
   for(auto& box : ws_boxes)
   {
     vector<text_ptr> text_vec;
     int start_at = 0;
-    for(auto text_it = m_text_elements.begin() + start_at;
-             text_it != m_text_elements.end(); ++text_it)
+    for(auto text_it = m_page_text.begin() + start_at;
+             text_it != m_page_text.end(); ++text_it)
     {
       if ((*text_it)->get_left() >= box.left &&
           (*text_it)->get_right() <= box.right &&
@@ -503,11 +507,11 @@ vector<pair<Box, vector<text_ptr>>> Whitespace::output()
           !(*text_it)->is_consumed())
       {
         text_vec.push_back(*text_it);
-        start_at = distance(m_text_elements.begin(), text_it);
+        start_at = distance(m_page_text.begin(), text_it);
       }
       if(box.right < (*text_it)->get_left()) break;
     }
-    res.emplace_back(pair<Box, vector<text_ptr>>(move(box), move(text_vec)));
+    res.emplace_back(textrows(move(text_vec), move(box)));
   }
 
   return res;

@@ -190,7 +190,7 @@ Rcpp::List getgrid(std::shared_ptr<page> p)
 
   for(auto& i : LGO)
   {
-    for(auto& j : i.second)
+    for(auto& j : i)
     {
       if(!j->is_consumed())
       {
