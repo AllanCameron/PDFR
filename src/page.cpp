@@ -64,7 +64,7 @@ void page::boxes()
   dictionary box_header = m_header;
   vector<string> box_names {"/BleedBox", "/CropBox", "/MediaBox",
                            "/ArtBox", "/TrimBox"};
-
+  vector<float> minbox;
   // Need to keep track of whether node has a parent
   bool has_parent = true;
 
@@ -74,11 +74,11 @@ void page::boxes()
     for(auto& i : box_names)
     {
       vector<float>&& this_box = box_header.getNums(i);
-      if (!this_box.empty()) m_minbox = this_box;
+      if (!this_box.empty()) minbox = this_box;
     }
 
     // If no boxes found
-    if(m_minbox.empty())
+    if(minbox.empty())
     {
       // Find the parent object number and get its object dictionary
       if(box_header.hasRefs("/Parent"))
@@ -92,7 +92,9 @@ void page::boxes()
     }
 
     // stop loop if we have minbox or there are no more parent nodes
-  } while (m_minbox.empty() && has_parent);
+  } while (minbox.empty() && has_parent);
+
+  m_minbox = Box(minbox);
 
   // Get the "rotate" value - will need in future feature development
   if (m_header.has("/Rotate")) m_rotate = m_header.getNums("/Rotate").at(0);
@@ -329,7 +331,7 @@ shared_ptr<font> page::getFont(const string& fontID)
 /*--------------------------------------------------------------------------*/
 // simple getter for page margins
 
-std::vector<float> page::getminbox()
+Box page::getminbox()
 {
   return m_minbox;
 }

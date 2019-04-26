@@ -94,7 +94,7 @@ std::string parser::getOperand()
 
 textbox& parser::output()
 {
-  m_db.m_box = Box(m_p->getminbox());
+  m_db.m_box = m_p->getminbox();
   return m_db;
 }
 

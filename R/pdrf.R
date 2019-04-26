@@ -107,7 +107,7 @@ internetFile <- function(x, filename = NULL)
 #'
 #' @examples pdfpage(testfiles$leeds, 1, FALSE)
 ##---------------------------------------------------------------------------##
-pdfpage <- function(pdf, page, atomic = FALSE)
+pdfpage <- function(pdf, page, atomic = FALSE, table_only = TRUE)
 {
   if(class(pdf) == "raw")
   {
@@ -137,7 +137,7 @@ pdfpage <- function(pdf, page, atomic = FALSE)
   x$Elements$size <- round(x$Elements$size, 1)
   rownames(x$Elements) <- seq_along(x$Elements[[1]])
   .stopCpp()
-  return(x)
+  if(table_only == FALSE) return(x) else return(x$Elements)
 }
 
 ##---------------------------------------------------------------------------##
@@ -208,7 +208,7 @@ get_object <- function(pdf, number)
 ##---------------------------------------------------------------------------##
 pdfplot <- function(pdf, page = 1, atomic = FALSE, textsize = 1)
 {
-  x <- pdfpage(pdf, page, atomic)
+  x <- pdfpage(pdf, page, atomic, FALSE)
   y <- x$Elements
   G <- ggplot2::ggplot(data = y, ggplot2::aes(x = y$left, y = y$bottom,
                        size = I(textsize*170 * y$size / (x$Box[4] - x$Box[2]))),
@@ -362,4 +362,5 @@ pdfboxes <- function(pdf, pagenum)
                        fill = factor(x$box))) -> D
   print(D + geom_rect(alpha = 0.5))
   .stopCpp()
+  return(x)
 }

@@ -73,12 +73,12 @@ target.
                                        |
                                        |
                                        v
-                                    "page.h"
-                                   {page.cpp}
+                                    "box.h"
                                        |
                                        |
                                        v
-                                    "box.h"
+                                    "page.h"
+                                   {page.cpp}
                                        |
                                        |
                                        v

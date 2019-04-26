@@ -57,7 +57,7 @@
  * page contents and Xobjects for example.
  */
 
-#include "font.h"
+#include "box.h"
 
 //---------------------------------------------------------------------------//
 
@@ -75,7 +75,7 @@ public:
   std::shared_ptr<std::string> pageContents(); // Returns page description program as string
   std::shared_ptr<std::string> getXobject(const std::string&); // Return specified XObject string
   std::shared_ptr<font> getFont(const std::string&);  // Get pointer to font
-  std::vector<float> getminbox();
+  Box getminbox();
   void clearFontMap();
 
 private:
@@ -85,7 +85,7 @@ private:
   dictionary          m_header,         // The page's header dictionary
                       m_resources,      // Resource sub-dictionary
                       m_fonts;          // Font sub-dictionary
-  std::vector<float>  m_minbox;
+  Box  m_minbox;
   std::string         m_content_string;  // The page PostScript program
   double              m_rotate;         // Intended page rotation in degrees
 

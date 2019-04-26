@@ -31,7 +31,7 @@
 
 #define PDFR_TEXT_ELEMENT
 
-#include "box.h"
+#include "page.h"
 
 //---------------------------------------------------------------------------//
 // The "atom" of our output will be the text_element. This is a struct containing

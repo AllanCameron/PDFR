@@ -31,7 +31,7 @@
 
 #define PDFR_BOX
 
-#include "page.h"
+#include "font.h"
 
 //---------------------------------------------------------------------------//
 // Before we get to reading the page description program from the PDF, we first
@@ -206,6 +206,8 @@ struct Box
     return  j.bottom - bottom > -0.1 && j.top - top < 0.1 &&
             j.left - left > -0.1 && j.right - right < 0.1 && !(*this == j);
   }
+
+  std::vector<float> vector() { return {left, bottom, right, top}; }
 
 };
 

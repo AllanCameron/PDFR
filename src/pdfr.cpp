@@ -168,7 +168,7 @@ Rcpp::List getatomic(std::shared_ptr<page> p)
                         Rcpp::Named("font") = TT.fonts,
                         Rcpp::Named("size") = TT.size,
                         Rcpp::Named("stringsAsFactors") = false);
-  return Rcpp::List::create(Rcpp::Named("Box") = p->getminbox(),
+  return Rcpp::List::create(Rcpp::Named("Box") = p->getminbox().vector(),
                             Rcpp::Named("Elements") = std::move(db));
 }
 
@@ -215,7 +215,7 @@ Rcpp::List getgrid(std::shared_ptr<page> p)
                         Rcpp::Named("size") = std::move(size),
                         Rcpp::Named("box") = std::move(polygon),
                         Rcpp::Named("stringsAsFactors") = false);
-  return Rcpp::List::create(Rcpp::Named("Box") = p->getminbox(),
+  return Rcpp::List::create(Rcpp::Named("Box") = p->getminbox().vector(),
                             Rcpp::Named("Elements") = std::move(db));
 }
 
