@@ -62,7 +62,7 @@
  *
  */
 
-typedef std::pair<WSbox, std::vector<text_ptr>> textbox;
+typedef std::pair<Box, std::vector<text_ptr>> textbox;
 typedef std::vector<textbox> textboxes;
 
 class linegrouper

@@ -114,7 +114,7 @@ textbox linegrouper::splitbox(textbox& old_one, float top_edge)
 {
   auto& old_box      = old_one.first;
   auto& old_contents = old_one.second;
-  WSbox new_box      = old_box;
+  Box new_box        = old_box;
   auto break_point = find_if(old_contents.begin(), old_contents.end(),
                           [&](text_ptr& textrow_ptr) -> bool {
                             return textrow_ptr->get_bottom() < top_edge;

@@ -57,7 +57,7 @@ GSoutput letter_grouper::out()
     }
   }
   return GSoutput{move(text), move(left), move(bottom), move(right),
-                  move(font), move(size), move(minbox)};
+                  move(font), move(size), move(m_box)};
 }
 
 //---------------------------------------------------------------------------//
@@ -66,7 +66,7 @@ GSoutput letter_grouper::out()
 // to each other, and glue them together, respectively.
 
 letter_grouper::letter_grouper(textrows GS) :
-  gslist(move(GS)), minbox(gslist.minbox)
+  gslist(move(GS)), m_box(gslist.m_box)
 {
   makegrid();     // Split the glyphs into 256 cells to reduce search space
   compareCells(); // Find adjacent glyphs
@@ -89,16 +89,16 @@ letter_grouper::letter_grouper(textrows GS) :
 
 void letter_grouper::makegrid()
 {
-  float dx = (minbox[2] - minbox[0]) / 16; // Grid column width in user space
-  float dy = (minbox[3] - minbox[1]) / 16; // Grid row height in user space
+  float dx = (m_box.right - m_box.left) / 16; // Grid column width in user space
+  float dy = (m_box.top - m_box.bottom) / 16; // Grid row height in user space
 
   // For each glyph
   for(auto& element : gslist)
   {
     // Calculate the row and column number the glyph's bottom left corner is in
     // There will be exactly 16 rows and columns, each numbered 0-15 (4 bits)
-    uint8_t column = (element->get_left() - minbox[0]) / dx;
-    uint8_t row = 15 - (element->get_bottom() - minbox[1]) / dy;
+    uint8_t column = (element->get_left() - m_box.left) / dx;
+    uint8_t row = 15 - (element->get_bottom() - m_box.bottom) / dy;
 
     // Convert the two 4-bit row and column numbers to a single byte
     uint8_t index = (row << 4) | column;
@@ -131,7 +131,7 @@ textrows letter_grouper::output()
   // Sort left to right
   sort(v.begin(), v.end(), left_sort);
 
-  return textrows(v, minbox);
+  return textrows(v, m_box);
 
 }
 

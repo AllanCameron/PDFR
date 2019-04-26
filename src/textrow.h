@@ -31,7 +31,7 @@
 
 #define PDFR_TEXTROW
 
-#include "page.h"
+#include "box.h"
 
 //---------------------------------------------------------------------------//
 // The textrow is a struct which acts as a "row" of information about each text
@@ -122,7 +122,7 @@ struct GSoutput
   std::vector<float> right;       // vector of glyphs' right edges
   std::vector<std::string> fonts; // vector of glyphs' font names
   std::vector<float> size;        // vector of glyphs' point size
-  std::vector<float> minbox;
+  Box m_box;
 
   std::vector<textrow> transpose()
   {
@@ -145,22 +145,26 @@ struct GSoutput
 struct textrows
 {
   // Standard constructor - takes vector of textrow pointers and the minbox
-  textrows(std::vector<text_ptr> t, std::vector<float> m):
-    m_data(t), minbox(m) {}
+  textrows(std::vector<text_ptr> t, Box m): m_data(t), m_box(m) {}
+
+  textrows(std::vector<text_ptr> t, std::vector<float> b):
+  m_data(t), m_box(Box(b)){}
+
+  textrows(std::vector<text_ptr> t, float a, float b, float c, float d):
+  m_data(t), m_box(Box(a, b, c, d)) {}
 
   // Copy contructor
-  textrows(const textrows& t):
-    m_data(t.m_data), minbox(t.minbox) {}
+  textrows(const textrows& t): m_data(t.m_data), m_box(t.m_box) {}
 
   // Move constructor
   textrows(textrows&& t) noexcept :
-    m_data(std::move(t.m_data)), minbox(std::move(t.minbox)) {}
+    m_data(std::move(t.m_data)), m_box(std::move(t.m_box)) {}
 
   // Rvalue assignment constructor
   textrows& operator=(textrows&& t) noexcept
   {
     std::swap(this->m_data, t.m_data);
-    std::swap(this->minbox, t.minbox);
+    std::swap(this->m_box, t.m_box);
     return *this;
   }
 
@@ -168,7 +172,7 @@ struct textrows
   textrows& operator=(const textrows& t)
   {
     this->m_data = t.m_data;
-    this->minbox = t.minbox;
+    this->m_box = t.m_box;
     return *this;
   }
 
@@ -187,8 +191,9 @@ struct textrows
   GSoutput transpose()
   {
     GSoutput res;
-    res.minbox = this->minbox;
-    for(auto i : this->m_data)
+    res.m_box = this->m_box;
+    this->remove_duplicates();
+    for (auto i : this->m_data)
     {
       if(!i->is_consumed())
       {
@@ -203,9 +208,26 @@ struct textrows
     return res;
   }
 
+  void remove_duplicates()
+  {
+    for (auto this_row = m_data.begin(); this_row != m_data.end(); ++this_row)
+    {
+      if ((*this_row)->is_consumed()) continue;
+      for (auto other_row = this_row; other_row != m_data.end(); ++other_row)
+      {
+        if(other_row == this_row) continue;
+
+        if (**other_row == **this_row)
+        {
+          (*other_row)->consume();
+        }
+      }
+    }
+  }
+
   // The data members
   std::vector<text_ptr> m_data;
-  std::vector<float> minbox;
+  Box m_box;
 };
 
 

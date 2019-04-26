@@ -71,158 +71,6 @@
 #include "word_grouper.h"
 
 //---------------------------------------------------------------------------//
-// This enum allows Vertices to be labelled according to which clockwise
-// direction around a polygon their incoming and outgoing edges point. The
-// strange numbering is simply to allow a matching to the indices of the crop
-// box passed from page.h, so that these labels can be used in place of indices
-
-enum Direction {North = 3, South = 1, East = 2, West = 0, None = 4};
-
-//---------------------------------------------------------------------------//
-// Each vertex starts life at the corner of a whitespace box, then most are
-// pruned until only those forming the vertices of text boxes remain. Along the
-// way a Vertex has to know in which direction whitespace lies, which directions
-// the edges of the text box enter and leave it, which other Vertex this one
-// points to, and which group of vertices it belongs to. It also needs a
-// deletion flad - hence the relatively large number of member variables. Some
-// of these have been compressed into a flag byte to save space.
-
-struct Vertex
-{
-  float x, y;
-  uint8_t flags; // bits denote delete-void-void-void-NW-NE-SE-SW
-  Direction In, Out;
-  size_t points_to, group;
-
-  Vertex(float a, float b, uint8_t c):
-    x(a), y(b), flags(c), In(None), Out(None), points_to(0), group(0) {}
-
-  Vertex(const Vertex& v) = default;
-  Vertex& operator=(const Vertex& v) = default;
-  Vertex& operator=(Vertex&& v){std::swap(v, *this); return *this;}
-
-  inline bool is_closer_than(const Vertex& j, const float& edge)
-  {
-    return
-    (Out == North && j.x == x && j.In  == North && j.y >  y && j.y < edge) ||
-    (Out == South && j.x == x && j.In  == South && j.y <  y && j.y > edge) ||
-    (Out == East  && j.y == y && j.In  == East  && j.x >  x && j.x < edge) ||
-    (Out == West  && j.y == y && j.In  == West  && j.x <  x && j.x > edge) ;
-  }
-};
-
-//---------------------------------------------------------------------------//
-// A lot of the work of Whitespace.cpp is done by identifying and manipulating
-// rectangles of whitespace. These are simply a struct of 4 co-ordinates and
-// an additional deletion flag that allows a vector of WSbox to be iterated and
-// allowing deletions without removing iterator validity.
-
-struct WSbox
-{
-  float left, right, top, bottom;
-  bool is_deleted;
-
-  WSbox(float a, float b, float c, float d):
-    left(a), right(b), top(c), bottom(d), is_deleted(false) {}
-
-  inline bool operator==(const WSbox& other) const
-  {
-    return left == other.left && right  == other.right &&
-           top  == other.top  && bottom == other.bottom;
-  }
-
-  inline bool eq(const float& a, const float& b) const
-  {
-    return a - b < 0.1 && b - a < 0.1;
-  }
-
-  inline void expand_box_to_include_vertex(const Vertex& corner)
-  {
-      if(corner.x < left)    left   = corner.x;
-      if(corner.x > right)   right  = corner.x;
-      if(corner.y < bottom)  bottom = corner.y;
-      if(corner.y > top)     top    = corner.y;
-  }
-
-  inline bool is_approximately_same_as(const WSbox& other) const
-  {
-    return eq(left, other.left) && eq(right, other.right) &&
-           eq(top, other.top)  && eq(bottom, other.bottom);
-  }
-
-  inline void remove() {is_deleted = true;}
-
-  inline bool is_NW_of(Vertex& v) const
-  {
-    return right >= v.x && left < v.x && top > v.y && bottom <= v.y;
-  }
-
-  inline bool is_NE_of(Vertex& v) const
-  {
-    return right > v.x && left <= v.x && top > v.y && bottom <= v.y;
-  }
-
-  inline bool is_SE_of(Vertex& v) const
-  {
-    return right > v.x && left <= v.x && top >= v.y && bottom < v.y;
-  }
-
-  inline bool is_SW_of(Vertex& v) const
-  {
-    return right >= v.x && left < v.x && top >= v.y && bottom < v.y;
-  }
-
-  inline float width() const { return right - left;}
-
-  inline float height() const { return top - bottom;}
-
-  inline bool shares_edge(const WSbox& other) const
-  {
-    return top  == other.top  || bottom == other.bottom ||
-           left == other.left || right  == other.right  ;
-  }
-
-  inline bool is_adjacent(const WSbox& j)
-  {
-    return left == j.right && top == j.top && bottom == j.bottom;
-  }
-
-  Vertex get_vertex(int j)
-  {
-    switch(j)
-    {
-      case 0 : return Vertex  (left, top, 0x02);
-      case 1 : return Vertex  (right, top, 0x01);
-      case 2 : return Vertex  (left, bottom, 0x04);
-      case 3 : return Vertex  (right, bottom, 0x08);
-      default: return Vertex  (0, 0, 0);
-    }
-    return Vertex  (0, 0, 0);
-  }
-
-  void record_impingement_on(Vertex& v)
-  {
-    if(is_NW_of(v)) v.flags |= 0x08; // NW
-    if(is_NE_of(v)) v.flags |= 0x04; // NE
-    if(is_SE_of(v)) v.flags |= 0x02; // SE
-    if(is_SW_of(v)) v.flags |= 0x01; // SW
-  }
-
-  inline bool engulfs(const WSbox& j)
-  {
-    return  j.bottom - bottom > -0.1 && j.top - top < 0.1 &&
-            j.left - left > -0.1 && j.right - right < 0.1 && !(*this == j);
-  }
-
-  inline bool contains_text(text_ptr& j)
-  {
-    return  j->get_left() >= left && j->get_right() <= right &&
-            j->get_bottom() >= bottom && j->get_bottom() <= top &&
-            !j->is_consumed();
-  }
-};
-
-//---------------------------------------------------------------------------//
 // The whitespace class takes a word grouper as an argument in its constructor
 // and from that uses a sequence of helper functions to construct its final
 // output, which is a vector of WS_box containing the text boxes for a page.
@@ -234,19 +82,19 @@ public:
   Whitespace(textrows);
 
   //  Output the text element groups directly
-  std::vector<std::pair<WSbox, std::vector<text_ptr>>> output();
+  std::vector<std::pair<Box, std::vector<text_ptr>>> output();
 
   // Output the final text box co-ordinates
-  std::vector<WSbox> ws_box_out() const;
+  std::vector<Box> ws_box_out() const;
 
 private:
   //The main output is a collection of pairs of text boxes with their elements
   std::vector<text_ptr> m_text_elements; // a copy of word grouper's output
-  std::vector<float> minbox;
+  Box m_box;
   std::unordered_map<size_t, std::vector<Vertex>> polygonMap;// main polygon map
-  WSbox m_page;
+  Box m_page;
   float max_line_space;                // The average font size on the page
-  std::vector<WSbox> ws_boxes;         // used in construction AND output
+  std::vector<Box> ws_boxes;         // used in construction AND output
   std::vector<Vertex> vertices;        // The vertices used to make polygons
   static const size_t DIVISIONS = 200; // number of strips used for whitespace
 
@@ -255,11 +103,11 @@ private:
 
   void getMaxLineSize();
   void pageDimensions();    // Gets page margins
-  void cleanAndSortBoxes(); // Helper to remove WSboxes flagged for deletion
+  void cleanAndSortBoxes(); // Helper to remove Boxes flagged for deletion
   void makeStrips();        // Cover the whitespace with tall thin strips
   void mergeStrips();       // merge adjacent strips into boxes
   void removeSmall();       // remove insufficiently tall boxes
-  void makeVertices();      // use WSboxes to find vertices of polygons
+  void makeVertices();      // use Boxes to find vertices of polygons
   void tidyVertices();      // identify and remove the unneeded vertices
   void tracePolygons();     // trace around polygons by following vertices
   void makePolygonMap();    // map polygons to size_t keys

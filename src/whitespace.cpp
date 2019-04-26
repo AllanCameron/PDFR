@@ -76,8 +76,8 @@ unordered_map<uint8_t, pair<Direction, Direction>> Whitespace::arrows =
 
 Whitespace::Whitespace(textrows word_grouper_output):
   m_text_elements(move(word_grouper_output.m_data)),
-  minbox(move(word_grouper_output.minbox)),
-  m_page(WSbox(minbox[West], minbox[East], minbox[North], minbox[South]))
+  m_box(move(word_grouper_output.m_box)),
+  m_page(Box(m_box.left, m_box.right, m_box.top, m_box.bottom))
 {
   getMaxLineSize();
   pageDimensions();
@@ -132,13 +132,13 @@ void Whitespace::pageDimensions()
 void Whitespace::cleanAndSortBoxes()
 {
   // Define a lambda to identify boxes flagged for deletion
-  auto del = [&](WSbox x){return x.is_deleted;};
+  auto del = [&](Box x){return x.is_deleted;};
 
   // Define a lambda to sort boxes left to right
-  auto l = [](const WSbox& a, const WSbox& b) -> bool {return a.left < b.left;};
+  auto l = [](const Box& a, const Box& b) -> bool {return a.left < b.left;};
 
   // Define a lambda to sort boxes top to bottom
-  auto t = [](const WSbox& a, const WSbox& b) -> bool {return b.top < a.top;};
+  auto t = [](const Box& a, const Box& b) -> bool {return b.top < a.top;};
 
   // Move boxes for deletion to back of vector, starting at returned iterator
   auto junk = remove_if(ws_boxes.begin(), ws_boxes.end(), del);
@@ -200,7 +200,7 @@ void Whitespace::makeStrips()
     // Now create boxes from our strip
     for(size_t j = 0; j < tops.size(); j++)
     {
-      ws_boxes.emplace_back(WSbox(L_Edge, R_Edge, tops[j], bottoms[j]));
+      ws_boxes.emplace_back(Box(L_Edge, R_Edge, tops[j], bottoms[j]));
     }
 
     // Move along to next strip.
@@ -338,7 +338,7 @@ void Whitespace::tracePolygons()
   for(auto& i : vertices)
   {
     // Use the Direction enum as an int to get points beyond page edges
-    float initialEdge = minbox[i.Out] + (2 * (i.Out / 2) - 1) * 100;
+    float initialEdge = m_box[i.Out] + (2 * (i.Out / 2) - 1) * 100;
 
     // "edge" keeps track of the nearest vertex
     float edge = initialEdge;
@@ -423,7 +423,7 @@ void Whitespace::makePolygonMap()
 //---------------------------------------------------------------------------//
 // Simple getter for the whitespace boxes - useful for debugging
 
-std::vector<WSbox> Whitespace::ws_box_out() const
+std::vector<Box> Whitespace::ws_box_out() const
 {
   return ws_boxes;
 }
@@ -441,7 +441,7 @@ void Whitespace::polygonMax()
   for(auto& shape : polygonMap)
   {
     // Define floats that will shrink and invert to fit our text box
-    WSbox bounding_box(MAXPAGE, -MAXPAGE, -MAXPAGE, MAXPAGE);
+    Box bounding_box(MAXPAGE, -MAXPAGE, -MAXPAGE, MAXPAGE);
 
     // Shrink and invert the edges of our bounding box
     for(auto& corner : shape.second)
@@ -486,9 +486,9 @@ void Whitespace::removeEngulfed()
 // Finally we need to group our text items together in the text boxes for
 // joining and analysis.
 
-vector<pair<WSbox, vector<text_ptr>>> Whitespace::output()
+vector<pair<Box, vector<text_ptr>>> Whitespace::output()
 {
-  vector<pair<WSbox, vector<text_ptr>>> res;
+  vector<pair<Box, vector<text_ptr>>> res;
   for(auto& box : ws_boxes)
   {
     vector<text_ptr> text_vec;
@@ -496,14 +496,18 @@ vector<pair<WSbox, vector<text_ptr>>> Whitespace::output()
     for(auto text_it = m_text_elements.begin() + start_at;
              text_it != m_text_elements.end(); ++text_it)
     {
-      if(box.contains_text(*text_it))
+      if ((*text_it)->get_left() >= box.left &&
+          (*text_it)->get_right() <= box.right &&
+          (*text_it)->get_bottom() >= box.bottom &&
+          (*text_it)->get_bottom() <= box.top &&
+          !(*text_it)->is_consumed())
       {
         text_vec.push_back(*text_it);
         start_at = distance(m_text_elements.begin(), text_it);
       }
       if(box.right < (*text_it)->get_left()) break;
     }
-    res.emplace_back(pair<WSbox, vector<text_ptr>>(move(box), move(text_vec)));
+    res.emplace_back(pair<Box, vector<text_ptr>>(move(box), move(text_vec)));
   }
 
   return res;

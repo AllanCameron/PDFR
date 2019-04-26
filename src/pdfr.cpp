@@ -186,17 +186,22 @@ Rcpp::List getgrid(std::shared_ptr<page> p)
   std::vector<std::string> glyph, font;
   std::vector<int> polygon;
   int polygonNumber = 0;
-  for(auto& i : line_grouper.output())
+  auto LGO = line_grouper.output();
+
+  for(auto& i : LGO)
   {
     for(auto& j : i.second)
     {
-      left.push_back(j->get_left());
-      right.push_back(j->get_right());
-      size.push_back(j->get_size());
-      bottom.push_back(j->get_bottom());
-      glyph.push_back(utf(j->get_glyph()));
-      font.push_back(j->get_font());
-      polygon.push_back(polygonNumber);
+      if(!j->is_consumed())
+      {
+        left.push_back(j->get_left());
+        right.push_back(j->get_right());
+        size.push_back(j->get_size());
+        bottom.push_back(j->get_bottom());
+        glyph.push_back(utf(j->get_glyph()));
+        font.push_back(j->get_font());
+        polygon.push_back(polygonNumber);
+      }
     }
     polygonNumber++;
   }
