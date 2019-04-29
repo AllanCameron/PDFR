@@ -90,18 +90,18 @@ letter_grouper::letter_grouper(textbox text_box) : m_text_box(move(text_box))
 void letter_grouper::makegrid()
 {
   // Grid column width in user space
-  float dx = (m_text_box.m_box.right - m_text_box.m_box.left) / 16;
+  float dx = (m_text_box.m_box.get_right() - m_text_box.m_box.get_left()) / 16;
 
   // Grid row height in user space
-  float dy = (m_text_box.m_box.top - m_text_box.m_box.bottom) / 16;
+  float dy = (m_text_box.m_box.get_top() - m_text_box.m_box.get_bottom()) / 16;
 
   // For each glyph
   for(auto& element : m_text_box)
   {
     // Calculate the row and column number the glyph's bottom left corner is in
     // There will be exactly 16 rows and columns, each numbered 0-15 (4 bits)
-    uint8_t column = (element->get_left() - m_text_box.m_box.left) / dx;
-    uint8_t row = 15 - (element->get_bottom() - m_text_box.m_box.bottom) / dy;
+    uint8_t column = (element->get_left() - m_text_box.m_box.get_left()) / dx;
+    uint8_t row = 15 - (element->get_bottom() - m_text_box.m_box.get_bottom()) / dy;
 
     // Convert the two 4-bit row and column numbers to a single byte
     uint8_t index = (row << 4) | column;

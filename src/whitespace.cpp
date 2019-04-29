@@ -113,14 +113,25 @@ void Whitespace::pageDimensions()
 {
   for(auto& i : m_page_text)
   {
-    if(i->get_right() > m_page_text.m_box.right)
-      m_page_text.m_box.right += 10.0;
-    if(i->get_left() < m_page_text.m_box.left)
-      m_page_text.m_box.left -= 10.0;
-    if((i->get_bottom() + i->get_size()) > m_page_text.m_box.top)
-      m_page_text.m_box.top += 10.0;
-    if(i->get_bottom() < m_page_text.m_box.bottom)
-      m_page_text.m_box.bottom -= 10.0;
+    if(i->get_right() > m_page_text.m_box.get_right())
+    {
+      m_page_text.m_box.set_right(m_page_text.m_box.get_right() + 10.0);
+    }
+
+    if(i->get_left() < m_page_text.m_box.get_left())
+    {
+      m_page_text.m_box.set_left(m_page_text.m_box.get_left() - 10.0);
+    }
+
+    if((i->get_bottom() + i->get_size()) > m_page_text.m_box.get_top())
+    {
+      m_page_text.m_box.set_top(m_page_text.m_box.get_top() + 10.0);
+    }
+
+    if(i->get_bottom() < m_page_text.m_box.get_bottom())
+    {
+      m_page_text.m_box.set_bottom(m_page_text.m_box.get_bottom() - 10.0);
+    }
   }
 }
 
@@ -133,13 +144,17 @@ void Whitespace::pageDimensions()
 void Whitespace::cleanAndSortBoxes()
 {
   // Define a lambda to identify boxes flagged for deletion
-  auto del = [&](Box x){return x.is_deleted;};
+  auto del = [&](Box x){return x.is_deleted();};
 
   // Define a lambda to sort boxes left to right
-  auto l = [](const Box& a, const Box& b) -> bool {return a.left < b.left;};
+  auto l = [](const Box& a, const Box& b) -> bool {
+    return a.get_left() < b.get_left();
+    };
 
   // Define a lambda to sort boxes top to bottom
-  auto t = [](const Box& a, const Box& b) -> bool {return b.top < a.top;};
+  auto t = [](const Box& a, const Box& b) -> bool {
+    return b.get_top() < a.get_top();
+    };
 
   // Move boxes for deletion to back of vector, starting at returned iterator
   auto junk = remove_if(ws_boxes.begin(), ws_boxes.end(), del);
@@ -173,15 +188,15 @@ void Whitespace::makeStrips()
   float pixwidth = m_page_text.m_box.width() / DIVISIONS;
 
   // The first strip starts at the left edge and stops one stripwidth to right
-  float L_Edge = m_page_text.m_box.left;
+  float L_Edge = m_page_text.m_box.get_left();
   float R_Edge = L_Edge + pixwidth;
 
   // For each of these page divisions
   for(size_t i = 0; i < DIVISIONS; ++i)
   {
     // Create top/bottom bounds for boxes at top/bottom of page.
-    vector<float> tops = {m_page_text.m_box.top};
-    vector<float> bottoms = {m_page_text.m_box.bottom};
+    vector<float> tops = {m_page_text.m_box.get_top()};
+    vector<float> bottoms = {m_page_text.m_box.get_bottom()};
 
     // Now for each text element on the page
     for(const auto& j : m_page_text)
@@ -226,12 +241,12 @@ void Whitespace::mergeStrips()
     {
       // Since boxes are ordered, if right_box is beyond left_box, break inner
       // loop and move to next left_box
-      if(right_box->left > left_box->right) break;
+      if(right_box->get_left() > left_box->get_right()) break;
 
       // If tested box is adjacent to test box, merge left edges and delete
       if(right_box->is_adjacent(*left_box))
       {
-        right_box->left = left_box->left;
+        right_box->set_left(left_box->get_left());
         left_box->remove();
         break; // There can be only one match - skip to next left_box
       }
@@ -249,7 +264,7 @@ void Whitespace::removeSmall()
   for(auto& i : ws_boxes)
   {
     // Remove only undeleted boxes who are not at the page border and are short
-    if(!i.is_deleted &&
+    if(!i.is_deleted() &&
        !i.shares_edge(m_page_text.m_box) &&
        i.height() < max_line_space)
     {
@@ -288,7 +303,7 @@ void Whitespace::makeVertices()
         other_box.record_impingement_on(this_corner);
 
         // Since ws_boxes are sorted, skip to next corner if no effect possible.
-        if(other_box.left > owner_box.right) continue;
+        if(other_box.get_left() > owner_box.get_right()) continue;
       }
       // Now we can push our vertex to the list
       vertices.emplace_back(move(this_corner));
@@ -472,12 +487,12 @@ void Whitespace::removeEngulfed()
   // For each box check whether it engulfs another box
   for(auto i = ws_boxes.begin(); i != ws_boxes.end(); ++i)
   {
-    if(i->is_deleted) continue;
+    if(i->is_deleted()) continue;
 
     for(auto j = i; j != ws_boxes.end(); ++j)
     {
-      if(j->left > i->right) break;
-      if(j->is_deleted) continue;
+      if(j->get_left() > i->get_right()) break;
+      if(j->is_deleted()) continue;
       if(i->engulfs(*j)) j->remove();
     }
   }
@@ -499,16 +514,16 @@ vector<textbox> Whitespace::output()
     for(auto text_it = m_page_text.begin() + start_at;
              text_it != m_page_text.end(); ++text_it)
     {
-      if ((*text_it)->get_left() >= box.left &&
-          (*text_it)->get_right() <= box.right &&
-          (*text_it)->get_bottom() >= box.bottom &&
-          (*text_it)->get_bottom() <= box.top &&
+      if ((*text_it)->get_left() >= box.get_left() &&
+          (*text_it)->get_right() <= box.get_right() &&
+          (*text_it)->get_bottom() >= box.get_bottom() &&
+          (*text_it)->get_bottom() <= box.get_top() &&
           !(*text_it)->is_consumed())
       {
         text_vec.push_back(*text_it);
         start_at = distance(m_page_text.begin(), text_it);
       }
-      if(box.right < (*text_it)->get_left()) break;
+      if(box.get_right() < (*text_it)->get_left()) break;
     }
     res.emplace_back(textbox(move(text_vec), move(box)));
   }

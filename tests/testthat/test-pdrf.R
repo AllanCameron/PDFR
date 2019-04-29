@@ -1,13 +1,13 @@
 context("test-pdrf")
-pdfpage(testfiles[[1]], 1, FALSE)$Elements -> barcodes
-pdfpage(testfiles[[2]], 1, FALSE)$Elements -> chestpain
-pdfpage(testfiles[[3]], 1, FALSE)$Elements -> pdfinfo
-pdfpage(testfiles[[4]], 1, FALSE)$Elements -> adobe
-pdfpage(testfiles[[5]], 1, FALSE)$Elements -> leeds
-pdfpage(testfiles[[6]], 1, FALSE)$Elements -> sams
-pdfpage(testfiles[[7]], 1, FALSE)$Elements -> testreader
-pdfpage(testfiles[[8]], 3, FALSE)$Elements -> tex
-pdfpage(testfiles[[9]], 1, FALSE)$Elements -> rcpp
+pdfpage(testfiles[[1]], 1, FALSE, FALSE)$Elements -> barcodes
+pdfpage(testfiles[[2]], 1, FALSE, FALSE)$Elements -> chestpain
+pdfpage(testfiles[[3]], 1, FALSE, FALSE)$Elements -> pdfinfo
+pdfpage(testfiles[[4]], 1, FALSE, FALSE)$Elements -> adobe
+pdfpage(testfiles[[5]], 1, FALSE, FALSE)$Elements -> leeds
+pdfpage(testfiles[[6]], 1, FALSE, FALSE)$Elements -> sams
+pdfpage(testfiles[[7]], 1, FALSE, FALSE)$Elements -> testreader
+pdfpage(testfiles[[8]], 3, FALSE, FALSE)$Elements -> tex
+pdfpage(testfiles[[9]], 1, FALSE, FALSE)$Elements -> rcpp
 
 test_that("Encoding works",
 {

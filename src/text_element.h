@@ -154,6 +154,17 @@ struct text_table
                                  size[i], fonts[i], text[i]));
     return res;
   }
+
+  void join(const text_table& other)
+  {
+    m_box.merge(other.m_box);
+    concat(this->text, other.text);
+    concat(this->left, other.left);
+    concat(this->bottom, other.bottom);
+    concat(this->right, other.right);
+    concat(this->fonts, other.fonts);
+    concat(this->size, other.size);
+  }
 };
 
 //---------------------------------------------------------------------------//

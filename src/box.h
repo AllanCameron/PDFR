@@ -38,6 +38,17 @@
 // need to define some data structures we are going to need to store the output
 // of the program in a way that can be read and processed efficiently.
 //
+// One of our fundamental data structures is the box. This is a simple
+// collection of four floats representing the edges of a rectangle along with
+// a boolean flag that records whether the box is in use (this allows us to
+// functionally delete boxes in a collection without moving data around). It
+// has several member functions that allow comparisons with other boxes and
+// individual vertices. The box is a key element of the text_box
+//
+// The other structure we need to define is the Vertex. This is an x, y point
+// that contains information about the edges that meet there. Although the
+// Vertex is created from the corners of boxes, they go on to form vertices
+// of more complex polygons formed by merging boxes together.
 
 
 //---------------------------------------------------------------------------//
@@ -82,20 +93,19 @@ struct Vertex
 };
 
 //---------------------------------------------------------------------------//
-// A lot of the work of Whitespace.cpp is done by identifying and manipulating
-// rectangles of whitespace. These are simply a struct of 4 co-ordinates and
-// an additional deletion flag that allows a vector of WSbox to be iterated and
-// allowing deletions without removing iterator validity.
+// The Box struct will form the basis for our page boundary, the text boxes,
+// and the whitespace boxes created in page segmentation. Most of the member
+// functions are boolean comparisons against other boxes and are inlined here.
+// For this reason there is no separate implementation file.
 
 struct Box
 {
-  float left, right, top, bottom;
-  bool is_deleted;
 
+  // Constructors: from separate floats or a vector of floats
   Box(float a, float b, float c, float d):
-    left(a), right(b), top(c), bottom(d), is_deleted(false) {}
+    left(a), right(b), top(c), bottom(d), deletion_flag(false) {}
 
-  Box(std::vector<float> v): is_deleted(false)
+  Box(std::vector<float> v): deletion_flag(false)
   {
     if(v.size() < 4) throw std::runtime_error("Box creation needs four floats");
     left = v[0];
@@ -106,7 +116,9 @@ struct Box
 
   Box(){}
 
-  inline float operator[](int a)
+  // We can use the direction enum in square brackets instead of direct access
+  // of data members
+  inline float operator[](int a) const
   {
     switch(a)
     {
@@ -118,17 +130,36 @@ struct Box
     }
   }
 
+  inline float get_left() const { return this->left;}
+  inline float get_right() const { return this->right;}
+  inline float get_top() const { return this->top;}
+  inline float get_bottom() const { return this->bottom;}
+  inline void set_left(float a) { left = a;}
+  inline void set_right(float a) { right = a;}
+  inline void set_top(float a) { top = a;}
+  inline void set_bottom(float a) { bottom = a;}
+  inline void merge(const Box& other)
+  {
+    this->left = std::min(this->left, other.left);
+    this->right = std::max(this->right, other.right);
+    this->bottom = std::min(this->bottom, other.bottom);
+    this->top = std::max(this->top, other.top);
+  }
+
+  // Compare two boxes for equality
   inline bool operator==(const Box& other) const
   {
     return left == other.left && right  == other.right &&
            top  == other.top  && bottom == other.bottom;
   }
 
+  // Approximate equality between floats
   inline bool eq(const float& a, const float& b) const
   {
     return a - b < 0.1 && b - a < 0.1;
   }
 
+  // Enlarge a box to include a given vertex
   inline void expand_box_to_include_vertex(const Vertex& corner)
   {
       if(corner.x < left)    left   = corner.x;
@@ -137,14 +168,22 @@ struct Box
       if(corner.y > top)     top    = corner.y;
   }
 
+  // Test for non-strict equality
   inline bool is_approximately_same_as(const Box& other) const
   {
     return eq(left, other.left) && eq(right, other.right) &&
            eq(top, other.top)  && eq(bottom, other.bottom);
   }
 
-  inline void remove() {is_deleted = true;}
+  // Mark for deletion
+  inline void remove() {deletion_flag = true;}
 
+  inline bool is_deleted() const { return deletion_flag;}
+
+  // The following four functions determine whether, for any given Vertex,
+  // moving an arbitrarily small distance in the stated direction will put
+  // us inside the box. This allows us to work out on which edges of which
+  // boxes the point lies.
   inline bool is_NW_of(Vertex& v) const
   {
     return right >= v.x && left < v.x && top > v.y && bottom <= v.y;
@@ -165,21 +204,28 @@ struct Box
     return right >= v.x && left < v.x && top >= v.y && bottom < v.y;
   }
 
+  // Simple calculations of width and height
   inline float width() const { return right - left;}
-
   inline float height() const { return top - bottom;}
 
+  // Are two given boxes aligned on at least one side?
   inline bool shares_edge(const Box& other) const
   {
     return top  == other.top  || bottom == other.bottom ||
            left == other.left || right  == other.right  ;
   }
 
-  inline bool is_adjacent(const Box& j)
+  // Are two given boxes side-by-side with the same top and bottom edge?
+  // This can be used to merge boxes
+  inline bool is_adjacent(const Box& j) const
   {
     return left == j.right && top == j.top && bottom == j.bottom;
   }
 
+  // Create a vertex from a given corner of the box
+  // (0 = top-left, 1 = top-right, 2 = bottom-left, 3 = bottom-right)
+  // Note, the given vertex is automatically flagged as being impinged at the
+  // correct compass direction
   Vertex get_vertex(int j)
   {
     switch(j)
@@ -193,6 +239,7 @@ struct Box
     return Vertex  (0, 0, 0);
   }
 
+  // Marks a box's impingement on a given vertex
   void record_impingement_on(Vertex& v)
   {
     if(is_NW_of(v)) v.flags |= 0x08; // NW
@@ -201,14 +248,20 @@ struct Box
     if(is_SW_of(v)) v.flags |= 0x01; // SW
   }
 
-  inline bool engulfs(const Box& j)
+  // Is another box completely enclosed by this one?
+  inline bool engulfs(const Box& j) const
   {
     return  j.bottom - bottom > -0.1 && j.top - top < 0.1 &&
             j.left - left > -0.1 && j.right - right < 0.1 && !(*this == j);
   }
 
-  std::vector<float> vector() { return {left, bottom, right, top}; }
+  // Return box dimensions as a vector for output
+  inline std::vector<float> vector() const { return {left, bottom, right, top};}
 
+  private:
+    // Data members
+  float left, right, top, bottom;
+  bool deletion_flag;
 };
 
 

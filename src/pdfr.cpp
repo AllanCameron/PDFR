@@ -29,38 +29,80 @@
 #include<list>
 
 //---------------------------------------------------------------------------//
+
+using namespace std;
+
+//---------------------------------------------------------------------------//
+// The two get_page functions are helpers to take either a string representing
+// the path to a valid pdf file, or the pdf file itself as a vector of bytes,
+// as well as an integer page number, and returning a pointer to a newly created
+// page object. This is a common task in the exported functions, so we need to
+// seperate these functions out to reduce replication
+
+shared_ptr<page> get_page(string file_name, int page_number)
+{
+  // Pages are numbered from 1. Any less than this should throw an error
+  if(page_number < 1) Rcpp::stop("Invalid page number");
+
+  // Create the document object
+  auto document_ptr = make_shared<document>(file_name);
+
+  // Create the page object and return it
+  return make_shared<page>(document_ptr, page_number - 1);
+}
+
+shared_ptr<page> get_page(vector<uint8_t> raw_file, int page_number)
+{
+  // Pages are numbered from 1. Any less than this should throw an error
+  if(page_number < 1) Rcpp::stop("Invalid page number");
+
+  // Create the document object
+  auto document_ptr = make_shared<document>(raw_file);
+
+  // Create the page object and return it
+  return make_shared<page>(document_ptr, page_number - 1);
+}
+
+//---------------------------------------------------------------------------//
 // This exported function is used mainly for debugging the font reading
 // process in PDFR. It returns a single dataframe, with a row for every
 // Unicode mapping and glyph width for every font on the page (the font used is
 // also given its own column. This export may be removed in production or moved
 // to a debugging version
 
-Rcpp::DataFrame getglyphmap(const std::string& s, int pagenum)
+Rcpp::DataFrame getglyphmap(const string& file_name, int page_number)
 {
-  std::shared_ptr<document> d = std::make_shared<document>(s);
-  std::shared_ptr<page> p = std::make_shared<page>(d, pagenum - 1);
-  std::vector<std::string> FontName;// container for the fonts used
+  // Create document and page objects
+  auto page_ptr = get_page(file_name, page_number);
 
-  // containers for the dataframe columns
-  std::vector<uint16_t> codepoint, unicode, width;
+  // Declare containers for the R dataframe columns
+  vector<uint16_t> codepoint, unicode, width;
+  vector<string> font_names;
 
-  for(auto& i : p->getFontNames()) // for each font on the page...
+  // For each font string on the page...
+  for(auto& font_string : page_ptr->getFontNames())
   {
-    std::shared_ptr<font> loopfont = p->getFont(i); // get a pointer to the font
-    for(auto& b : loopfont->getGlyphKeys()) // for each code point in the font
+    // Get a pointer to the font
+    shared_ptr<font>&& font_ptr = page_ptr->getFont(font_string);
+
+    // for each code point in the font, copy the fontname and input codepoint
+    for(auto& key : font_ptr->getGlyphKeys())
     {
-      FontName.push_back(i);    // copy the fontname
-      codepoint.push_back(b);   // copy the input codepoint
-      unicode.push_back(loopfont->mapRawChar({b}).at(0).first); // get Unicode
-      width.push_back(loopfont->mapRawChar({b}).at(0).second);  // get width
+      font_names.push_back(font_string);
+      codepoint.push_back(key);
+      unicode.push_back(font_ptr->mapRawChar({key}).at(0).first); // get Unicode
+      width.push_back(font_ptr->mapRawChar({key}).at(0).second);  // get width
     }
   }
-  p->clearFontMap();
+
+  // Clear the static font map
+  page_ptr->clearFontMap();
+
   // put all the glyphs in a single dataframe and return
-  return Rcpp::DataFrame::create(Rcpp::Named("Font") = FontName,
-                          Rcpp::Named("Codepoint") = codepoint,
-                          Rcpp::Named("Unicode") = unicode,
-                          Rcpp::Named("Width") = width);
+  return  Rcpp::DataFrame::create(Rcpp::Named("Font")      = font_names,
+                                  Rcpp::Named("Codepoint") = codepoint,
+                                  Rcpp::Named("Unicode")   = unicode,
+                                  Rcpp::Named("Width")     = width);
 }
 
 //---------------------------------------------------------------------------//
@@ -68,25 +110,33 @@ Rcpp::DataFrame getglyphmap(const std::string& s, int pagenum)
 // get_xref. It acts as a helper function and common final pathway for the
 // raw and filepath versions of get_xref
 
-Rcpp::DataFrame xrefcreator(std::shared_ptr<const std::string> fs)
+Rcpp::DataFrame xrefcreator(shared_ptr<const string> file_string)
 {
-  xref Xref(fs); // create the xref from the given string pointer
-  // containers used to fill dataframe
-  std::vector<int> ob, startb, inob;
-  if(!Xref.getObjects().empty()) // if the xref has entries...
+  // Create the xref from the given string pointer
+  xref Xref(file_string);
+
+  // Declare containers used to fill dataframe
+  vector<int> object {}, start_byte {}, in_object {};
+
+  // If the xref has entries
+  if(!Xref.getObjects().empty())
   {
-    std::vector<int>&& allobs = Xref.getObjects(); // get all of its object #s
-    for(int j : allobs) // then for each of them...
+    // Get all of its object numbers
+    vector<int>&& all_objects = Xref.getObjects();
+
+    // Then for each listed object, store its number, start byte and container
+    for(int object_num : all_objects)
     {
-      ob.push_back(j);                    // store the object number
-      startb.push_back(Xref.getStart(j)); // store the byte offset
-      inob.push_back(Xref.inObject(j));   // store the containing object
+      object.push_back(object_num);
+      start_byte.push_back(Xref.getStart(object_num));
+      in_object.push_back(Xref.inObject(object_num));
     }
   }
-  // use the containers to fill the dataframe and return it to caller
-  return Rcpp::DataFrame::create(Rcpp::Named("Object") = ob,
-                                 Rcpp::Named("StartByte") = startb,
-                                 Rcpp::Named("InObject") = inob);
+
+  // Use the containers to fill the dataframe and return it to caller
+  return Rcpp::DataFrame::create(Rcpp::Named("Object") = object,
+                                 Rcpp::Named("StartByte") = start_byte,
+                                 Rcpp::Named("InObject") = in_object);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -94,10 +144,11 @@ Rcpp::DataFrame xrefcreator(std::shared_ptr<const std::string> fs)
 // the file path into a single large string, a pointer to which is used to
 // call the xrefcreator
 
-Rcpp::DataFrame get_xref(const std::string& filename)
+Rcpp::DataFrame get_xref(const string& filename)
 {
-  std::string fs = get_file(filename); // loads file from path name
-  return xrefcreator(std::make_shared<std::string>(fs));// output of xrefcreator
+  // This one-liner gets the file string, builds the xref and turns it into an
+  // R data frame
+  return xrefcreator(make_shared<string>(get_file(filename)));
 }
 
 //---------------------------------------------------------------------------//
@@ -105,10 +156,13 @@ Rcpp::DataFrame get_xref(const std::string& filename)
 // raw data vector as a single large string, a pointer to which is used to
 // call the xrefcreator
 
-Rcpp::DataFrame get_xrefraw(const std::vector<uint8_t>& rawfile)
+Rcpp::DataFrame get_xrefraw(const vector<uint8_t>& raw_file)
 {
-  std::string fs(rawfile.begin(), rawfile.end()); // cast raw vector to string
-  return xrefcreator(std::make_shared<std::string>(fs));// output of xrefcreator
+  // Cast raw vector to string
+  string file_string(raw_file.begin(), raw_file.end());
+
+  // Create a dataframe representing the xref entry
+  return xrefcreator(make_shared<string>(file_string));
 }
 
 //---------------------------------------------------------------------------//
@@ -119,13 +173,15 @@ Rcpp::DataFrame get_xrefraw(const std::vector<uint8_t>& rawfile)
 // of two named values - the dictionary, as a named character vector, and the
 // decrypted / decompressed stream as a single string
 
-Rcpp::List get_object(const std::string& filename, int object)
+Rcpp::List get_object(const string& file_name, int object)
 {
-  std::shared_ptr<document> doc = std::make_shared<document>(filename);
-  // Fill an Rcpp::List with the requested object and return
+  // Create the document
+  auto document_ptr = make_shared<document>(file_name);
+
+  // Fill an Rcpp::List with the requested object's elements and return
   return Rcpp::List::create(
-    Rcpp::Named("header") = doc->getobject(object)->getDict().R_out(),
-    Rcpp::Named("stream") = doc->getobject(object)->getStream());
+    Rcpp::Named("header") = document_ptr->getobject(object)->getDict().R_out(),
+    Rcpp::Named("stream") = document_ptr->getobject(object)->getStream());
 }
 
 //---------------------------------------------------------------------------//
@@ -136,13 +192,15 @@ Rcpp::List get_object(const std::string& filename, int object)
 // of two named values - the dictionary, as a named character vector, and the
 // decrypted / decompressed stream as a single string
 
-Rcpp::List get_objectraw(const std::vector<uint8_t>& rawfile, int object)
+Rcpp::List get_objectraw(const vector<uint8_t>& raw_file, int object)
 {
-  std::shared_ptr<document> mydoc = std::make_shared<document>(rawfile);
-    // Fill an Rcpp::List with the requested object and return
+  // Create the document
+  auto document_ptr = make_shared<document>(raw_file);
+
+  // Fill an Rcpp::List with the requested object and return
   return Rcpp::List::create(
-    Rcpp::Named("header") = mydoc->getobject(object)->getDict().R_out(),
-    Rcpp::Named("stream") = mydoc->getobject(object)->getStream());
+    Rcpp::Named("header") = document_ptr->getobject(object)->getDict().R_out(),
+    Rcpp::Named("stream") = document_ptr->getobject(object)->getStream());
 }
 
 //---------------------------------------------------------------------------//
@@ -150,15 +208,27 @@ Rcpp::List get_objectraw(const std::vector<uint8_t>& rawfile, int object)
 // from the parser. It packages the dataframe with a vector of page
 // dimensions to allow plotting etc
 
-Rcpp::List getatomic(std::shared_ptr<page> p)
+Rcpp::List getatomic(shared_ptr<page> page_ptr)
 {
-  parser G = parser(p); // New parser
-  tokenizer(p->pageContents(), &G);   // Read page contents to graphic state
-  auto TR = G.output();               // Obtain output from graphic state
+  // Create new parser
+  parser parser_object = parser(page_ptr);
+
+  // Read page contents to parser
+  tokenizer(page_ptr->pageContents(), &parser_object);
+
+  // Obtain output from parser and transpose into a text table
+  auto TR = parser_object.output();
   auto TT = TR.transpose();
-  std::vector<std::string> glyph;     // Container for utf-glyphs
-  for(auto& i : TT.text) glyph.push_back(utf({i})); // Unicode to utf8
-  p->clearFontMap();
+
+  // Declare a container for utf-glyphs
+  vector<string> glyph;
+
+  // Convert Unicode to utf8
+  for(auto& i : TT.text) glyph.push_back(utf({i}));
+
+  // Ensure the static fontmap is cleared after use
+  page_ptr->clearFontMap();
+
   // Now create the data frame
   Rcpp::DataFrame db =  Rcpp::DataFrame::create(
                         Rcpp::Named("text") = glyph,
@@ -168,20 +238,33 @@ Rcpp::List getatomic(std::shared_ptr<page> p)
                         Rcpp::Named("font") = TT.fonts,
                         Rcpp::Named("size") = TT.size,
                         Rcpp::Named("stringsAsFactors") = false);
-  return Rcpp::List::create(Rcpp::Named("Box") = p->getminbox().vector(),
-                            Rcpp::Named("Elements") = std::move(db));
+
+  // Return it as a list along with the page dimensions
+  return Rcpp::List::create(
+                        Rcpp::Named("Box") = page_ptr->getminbox().vector(),
+                        Rcpp::Named("Elements") = move(db));
 }
 
 //---------------------------------------------------------------------------//
 
-Rcpp::List getgrid(std::shared_ptr<page> p)
+Rcpp::List getgrid(shared_ptr<page> page_ptr)
 {
-  parser G(p); // New parser
-  tokenizer(p->pageContents(), &G);   // Read page contents to graphic state
-  letter_grouper LG(G.output());
+  // Create new parser
+  parser parser_object(page_ptr);
+
+  // Read page contents to parser
+  tokenizer(page_ptr->pageContents(), &parser_object);
+
+  // Group letters and words
+  letter_grouper LG(parser_object.output());
   word_grouper WG(LG.output());
+
+  // Arrange text into text boxes separated by whitespace
   Whitespace WS(WG.output());
+
+  // Join lines of text within single text boxes
   line_grouper linegrouper(WS.output());
+
   std::vector<float> left, right, size, bottom;
   std::vector<std::string> glyph, font;
   std::vector<int> polygon;
@@ -205,7 +288,7 @@ Rcpp::List getgrid(std::shared_ptr<page> p)
     }
     polygonNumber++;
   }
-  p->clearFontMap();
+  page_ptr->clearFontMap();
   Rcpp::DataFrame db =  Rcpp::DataFrame::create(
                         Rcpp::Named("text") = std::move(glyph),
                         Rcpp::Named("left") = std::move(left),
@@ -215,132 +298,202 @@ Rcpp::List getgrid(std::shared_ptr<page> p)
                         Rcpp::Named("size") = std::move(size),
                         Rcpp::Named("box") = std::move(polygon),
                         Rcpp::Named("stringsAsFactors") = false);
-  return Rcpp::List::create(Rcpp::Named("Box") = p->getminbox().vector(),
+  return Rcpp::List::create(Rcpp::Named("Box") = page_ptr->getminbox().vector(),
                             Rcpp::Named("Elements") = std::move(db));
 }
 
 //---------------------------------------------------------------------------//
 
-Rcpp::List pdfpage(const std::string& s, int pagenum, bool g)
+Rcpp::List pdfpage(const string& file_name, int page_number, bool each_glyph)
 {
-  if(pagenum < 1) Rcpp::stop("Invalid page number");
-  auto myfile = std::make_shared<document>(s);
-  auto p = std::make_shared<page>(myfile, pagenum - 1);
-  if(!g) return getgrid(p);
-  else return getatomic(p);
+  // Create the page object
+  auto page_ptr = get_page(file_name, page_number);
+
+  // Process the page if requested
+  if(!each_glyph) return getgrid(page_ptr);
+
+  // Otherwise return a data frame of individual letters
+  else return getatomic(page_ptr);
 }
 
 //---------------------------------------------------------------------------//
 
-Rcpp::List pdfpageraw(const std::vector<uint8_t>& rawfile, int pagenum, bool g)
+Rcpp::List
+pdfpageraw(const vector<uint8_t>& raw_file, int page_number, bool each_glyph)
 {
-  if(pagenum < 1) Rcpp::stop("Invalid page number");
-  std::shared_ptr<document> myfile = std::make_shared<document>(rawfile);
-  std::shared_ptr<page> p = std::make_shared<page>(myfile, pagenum - 1);
-  if(!g) return getgrid(p);
-  else return getatomic(p);
+  // Create the page object
+  auto page_ptr = get_page(raw_file, page_number);
+
+  // Process the page if requested
+  if(!each_glyph) return getgrid(page_ptr);
+
+  // Otherwise return a data frame of individual letters
+  else return getatomic(page_ptr);
 }
 
 //---------------------------------------------------------------------------//
 
-Rcpp::DataFrame pdfdoc_common(std::shared_ptr<document> myfile)
+Rcpp::DataFrame pdfdoc_common(shared_ptr<document> document_ptr)
 {
-  auto pagenumbers = myfile->pagenums();
+  auto pagenumbers = document_ptr->pagenums();
   auto npages = pagenumbers.size();
-  std::vector<float> left, right, size, bottom;
-  std::vector<std::string> glyph, font;
-  std::vector<int> pagenums;
-  for(size_t pagenum = 0; pagenum < npages; pagenum++)
+  vector<float> left, right, size, bottom;
+  vector<string> glyph, font;
+  vector<int> pagenums;
+  for(size_t page_number = 0; page_number < npages; page_number++)
   {
-    std::shared_ptr<page> p = std::make_shared<page>(myfile, pagenum);
-    parser G(p); // New parser
-    tokenizer(p->pageContents(), &G);   // Read page contents to graphic state
-    letter_grouper LG(std::move(G.output()));
+    // Create a new page pbject
+    auto page_ptr = make_shared<page>(document_ptr, page_number);
+
+    // Create a new parser object
+    parser parser_object(page_ptr);
+
+    // Read page contents to parser object
+    tokenizer(page_ptr->pageContents(), &parser_object);
+
+    // Join individual letters into words
+    letter_grouper LG(move(parser_object.output()));
+
+    // Join individual words into lines or word clusters
     word_grouper WG(LG.output());
+
+    // Get a text table from the output
     text_table gridout = WG.out();
+
+    // Convert text from unicode to utf-8
     for(auto& i : gridout.text) glyph.push_back(utf(i));
+
+    // Join current page's output to final data frame columns
     concat(left, gridout.left);
     concat(right, gridout.right);
     concat(bottom, gridout.bottom);
     concat(font, gridout.fonts);
     concat(size, gridout.size);
-    while(pagenums.size() < size.size()) pagenums.push_back(pagenum + 1);
-    if(pagenum == (npages - 1)) p->clearFontMap();
+
+    // Add a page number entry for each text element
+    while(pagenums.size() < size.size()) pagenums.push_back(page_number + 1);
+
+    // Clear the static font map if we are on the last page.
+    if(page_number == (npages - 1)) page_ptr->clearFontMap();
   }
 
-  return Rcpp::DataFrame::create(
-                        Rcpp::Named("text") = glyph,
-                        Rcpp::Named("left") = left,
-                        Rcpp::Named("right") = right,
-                        Rcpp::Named("bottom") = bottom,
-                        Rcpp::Named("font") = font,
-                        Rcpp::Named("size") = size,
-                        Rcpp::Named("page") = pagenums,
-                        Rcpp::Named("stringsAsFactors") = false);
+  // Build and return an R data frame
+  return  Rcpp::DataFrame::create(
+          Rcpp::Named("text")             = glyph,
+          Rcpp::Named("left")             = left,
+          Rcpp::Named("right")            = right,
+          Rcpp::Named("bottom")           = bottom,
+          Rcpp::Named("font")             = font,
+          Rcpp::Named("size")             = size,
+          Rcpp::Named("page")             = pagenums,
+          Rcpp::Named("stringsAsFactors") = false);
+}
+
+//---------------------------------------------------------------------------//
+// This exported function takes a string representing a file path, creates a
+// new document object and sends it to pdfdoc_common to create an R data frame
+// containing all of the text elements in a document, including their location
+// and page number
+
+Rcpp::DataFrame pdfdoc(const string& file_name)
+{
+  // Simply create a new document pointer from the file name
+  auto document_ptr = make_shared<document>(file_name);
+
+  // Feed the document pointer to pdfdoc_common to get the whole document as
+  // an R data frame
+  return pdfdoc_common(document_ptr);
+}
+
+//---------------------------------------------------------------------------//
+// This exported function takes a raw vector of bytes comprising a pdf file,
+// creates a new document object and sends it to pdfdoc_common to create an R
+// data frame containing all of the text elements in a document, including their
+// location and page number.
+
+Rcpp::DataFrame pdfdocraw(const vector<uint8_t>& raw_data)
+{
+  // Simply create a new document pointer from the raw data
+  auto document_ptr = make_shared<document>(raw_data);
+
+  // Feed the document pointer to pdfdoc_common to get the whole document as
+  // an R data frame
+  return pdfdoc_common(document_ptr);
+}
+
+//---------------------------------------------------------------------------//
+// This exported function allows the page description program to be output to
+// the R console, given the pdf file as a path name
+
+string pagestring(const string& file_name, int page_number)
+{
+  // Create the page object
+  auto page_ptr = get_page(file_name, page_number);
+
+  // Clear the static font map
+  page_ptr->clearFontMap();
+
+  // Return a dereferenced pointer to the page contents
+  return *(page_ptr->pageContents());
+}
+
+//---------------------------------------------------------------------------//
+// This exported function allows the page description program to be output to
+// the R console, given the pdf file as a vector of bytes
+
+string pagestringraw(const vector<uint8_t>& raw_file, int page_number)
+{
+  // Create the page object
+  auto page_ptr = get_page(raw_file, page_number);
+
+  // Clear the static font map
+  page_ptr->clearFontMap();
+
+  // Return a dereferenced pointer to the page contents
+  return *(page_ptr->pageContents());
 }
 
 //---------------------------------------------------------------------------//
 
-Rcpp::DataFrame pdfdoc(const std::string& s)
+Rcpp::DataFrame pdf_boxes(shared_ptr<page> page_ptr)
 {
-  std::shared_ptr<document> myfile = std::make_shared<document>(s);
-  return pdfdoc_common(myfile);
-}
+  // Create an empty parser object
+  parser parser_object(page_ptr);
 
-//---------------------------------------------------------------------------//
+  // Read the page contents into the parser
+  tokenizer(page_ptr->pageContents(), &parser_object);
 
-Rcpp::DataFrame pdfdocraw(const std::vector<uint8_t>& s)
-{
-  std::shared_ptr<document> myfile = std::make_shared<document>(s);
-  return pdfdoc_common(myfile);
-}
+  // Group individual letters into words
+  letter_grouper LG(move(parser_object.output()));
 
-//---------------------------------------------------------------------------//
+  // Group words into lines or word clusters
+  word_grouper WG(move(LG.output()));
 
-std::string pagestring(const std::string& s, int pagenum)
-{
-  if(pagenum < 1) Rcpp::stop("Invalid page number");
-  std::shared_ptr<document> myfile = std::make_shared<document>(s);
-  std::shared_ptr<page> p = std::make_shared<page>(myfile, pagenum - 1);
-  std::string res = *(p->pageContents());
-  p->clearFontMap();
-  return res;
-}
+  // Separate page into text boxes and white space
+  Whitespace polygons(move(WG.output()));
 
-//---------------------------------------------------------------------------//
-
-std::string pagestringraw(const std::vector<uint8_t>& rawfile, int pagenum)
-{
-  if(pagenum < 1) Rcpp::stop("Invalid page number");
-  std::shared_ptr<document> myfile = std::make_shared<document>(rawfile);
-  std::shared_ptr<page> p = std::make_shared<page>(myfile, pagenum - 1);
-  p->clearFontMap();
-  return *(p->pageContents());
-}
-
-//---------------------------------------------------------------------------//
-
-Rcpp::DataFrame pdfboxescommon(std::shared_ptr<document> myfile, int pagenum)
-{
-  std::shared_ptr<page> p = std::make_shared<page>(myfile, pagenum);
-  parser G(p); // New parser
-  tokenizer(p->pageContents(), &G);   // Read page contents to graphic state
-  letter_grouper LG(std::move(G.output()));
-  word_grouper WG(std::move(LG.output()));
-  Whitespace polygons(std::move(WG.output()));
+  // This step outputs the data we need to create our data frame
   auto Poly = polygons.ws_box_out();
-  std::vector<float> xmin, ymin, xmax, ymax;
-  std::vector<int> groups;
+
+  // Declare holding variables used as columns in the returned dataframe
+  vector<float> xmin, ymin, xmax, ymax;
+  vector<int> groups;
   int group = 0;
-    for(auto j : Poly)
-    {
-      xmin.push_back(j.left);
-      ymin.push_back(j.bottom);
-      xmax.push_back(j.right);
-      ymax.push_back(j.top);
-      groups.push_back(group++);
-    }
-  p->clearFontMap();
+
+  // Fill our holding vectors from the output of the page parsing algorithm
+  for(auto bounding_box : Poly)
+  {
+    xmin.push_back(bounding_box.get_left());
+    ymin.push_back(bounding_box.get_bottom());
+    xmax.push_back(bounding_box.get_right());
+    ymax.push_back(bounding_box.get_top());
+    groups.push_back(group++);
+  }
+
+  // Clear the static font map
+  page_ptr->clearFontMap();
+
+  // Build and return an R dataframe
   return Rcpp::DataFrame::create(
     Rcpp::Named("xmin") = xmin,
     Rcpp::Named("ymin") = ymin,
@@ -353,20 +506,24 @@ Rcpp::DataFrame pdfboxescommon(std::shared_ptr<document> myfile, int pagenum)
 
 //---------------------------------------------------------------------------//
 
-Rcpp::DataFrame pdfboxesString(const std::string& s, int pagenum)
+Rcpp::DataFrame pdfboxesString(const string& file_name, int page_number)
 {
-  if(pagenum < 1) Rcpp::stop("Invalid page number");
-  std::shared_ptr<document> myfile = std::make_shared<document>(s);
-  return pdfboxescommon(myfile, pagenum - 1);
+  // Create the page object
+  auto page_ptr = get_page(file_name, page_number);
+
+  // Call on pdf_boxes to make our boxes dataframe
+  return pdf_boxes(page_ptr);
 }
 
 //---------------------------------------------------------------------------//
 
-Rcpp::DataFrame pdfboxesRaw(const std::vector<uint8_t>& s, int pagenum)
+Rcpp::DataFrame pdfboxesRaw(const vector<uint8_t>& raw_data, int page_number)
 {
-  if(pagenum < 1) Rcpp::stop("Invalid page number");
-  std::shared_ptr<document> myfile = std::make_shared<document>(s);
-  return pdfboxescommon(myfile, pagenum - 1);
+  // Create the page object
+  auto page_ptr = get_page(raw_data, page_number);
+
+  // Call on pdf_boxes to make our boxes dataframe
+  return pdf_boxes(page_ptr);
 }
 
 //---------------------------------------------------------------------------//

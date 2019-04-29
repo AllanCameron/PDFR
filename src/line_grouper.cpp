@@ -118,7 +118,8 @@ textbox line_grouper::splitbox(textbox& old_one, float top_edge)
                           });
   vector<text_ptr> new_contents(break_point, old_contents.end());
   old_contents.erase(break_point, old_contents.end());
-  old_box.bottom = new_box.top = old_contents.back()->get_bottom();
+  old_box.set_bottom(old_contents.back()->get_bottom());
+  new_box.set_top(old_contents.back()->get_bottom());
   return textbox(new_contents, new_box);
 }
 
