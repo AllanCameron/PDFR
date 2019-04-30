@@ -92,8 +92,8 @@ private:
   textbox m_page_text; // a copy of word grouper's output
   std::unordered_map<size_t, std::vector<Vertex>> polygonMap;// main polygon map
   float max_line_space;                // The average font size on the page
-  std::vector<Box> ws_boxes;         // used in construction AND output
-  std::vector<Vertex> vertices;        // The vertices used to make polygons
+  std::vector<Box> m_boxes;         // used in construction AND output
+  std::vector<Vertex> m_vertices;        // The vertices used to make polygons
   static const size_t DIVISIONS = 200; // number of strips used for whitespace
 
   void getMaxLineSize();

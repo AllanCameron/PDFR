@@ -175,7 +175,7 @@ std::vector<text_element> text_table::transpose()
 //---------------------------------------------------------------------------//
 // Join another text table to this one
 
-void text_table::join(const text_table& other)
+void text_table::join(text_table& other)
 {
   this->merge(other);
   concat(this->text, other.text);

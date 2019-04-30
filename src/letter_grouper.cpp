@@ -55,7 +55,7 @@ letter_grouper::letter_grouper(textbox text_box) : m_text_box(move(text_box))
 // This method creates a 16 x 16 grid of equally-sized bins across the page and
 // places each text_element from the parser into a vector in each bin. The
 // reason for doing this is speed up the search of potentially adjoining glyphs.
-// The naive method would comparine the right and bottom edge of every glyph
+// The naive method would compare the right and bottom edge of every glyph
 // to every other glyph. By putting the glyphs into bins, we only need to
 // compare the right edge of each glyph with glyphs in the same bin or the bin
 // immediately to the right. For completeness, to capture letters with low
@@ -68,10 +68,10 @@ letter_grouper::letter_grouper(textbox text_box) : m_text_box(move(text_box))
 void letter_grouper::makegrid()
 {
   // Grid column width in user space
-  float dx = (m_text_box.get_right() - m_text_box.get_left()) / 16;
+  float dx = (m_text_box.width()) / 16;
 
   // Grid row height in user space
-  float dy = (m_text_box.get_top() - m_text_box.get_bottom()) / 16;
+  float dy = (m_text_box.height()) / 16;
 
   // For each glyph
   for(auto& element : m_text_box)
@@ -130,29 +130,35 @@ textbox letter_grouper::output()
 void letter_grouper::compareCells()
 {
   // For each of 16 columns of cells on page
-  for(uint8_t i = 0; i < 16; ++i)
+  for(uint8_t column = 0; column < 16; ++column)
   {
-    // For each cell in the column
-    for(uint8_t j = 0; j < 16; ++j)
+    // For each row in the column
+    for(uint8_t row = 0; row < 16; ++row)
     {
-      uint8_t key = i | (j << 4);   // Get the 1-byte address of the cell
+      // Get the 1-byte address of the cell
+      uint8_t key = column | (row << 4);
 
       // Get a reference to the cell's contents
       vector<text_ptr>& maingroup = m_grid[key];
-      if(maingroup.empty()) continue;  // empty cell - nothing to be done
-      for(auto& k : maingroup) // for each glyph in the cell
-      {
-        // Check for matches in this cell
-        matchRight(k, key);
-        if(j < 15) matchRight(k, i | ((j + 1) << 4)); // and cell to North
-        if(j > 0)  matchRight(k, i | ((j - 1) << 4)); // and cell to South
-        if(!k->no_join()) continue; // If match, look no further
 
-        if(i < 15)
+      // Empty cell - nothing to be done
+      if(maingroup.empty()) continue;
+
+      // For each glyph in the cell
+      for(auto& element : maingroup)
+      {
+        // Check for matches in this cell, the cell to the North and the South
+        matchRight(element, key);
+        if(row < 15) matchRight(element, column | ((row + 1) << 4));
+        if(row > 0)  matchRight(element, column | ((row - 1) << 4));
+        if(!element->no_join()) continue; // If match, look no further
+
+        // Otherwise, if not last column, check East, NorthEast, SouthEast
+        if(column < 15)
         {
-          matchRight(k, (i + 1) | (j << 4)); // else check to the East,
-          if(j < 15) matchRight(k, (i + 1) | ((j + 1) << 4)); // NE,
-          if(j > 0)  matchRight(k, (i + 1) | ((j - 1) << 4)); // and SE
+          matchRight(element, (column + 1) | (row << 4));
+          if(row < 15) matchRight(element, (column + 1) | ((row + 1) << 4));
+          if(row > 0)  matchRight(element, (column + 1) | ((row - 1) << 4));
         }
       }
     }
@@ -164,7 +170,7 @@ void letter_grouper::compareCells()
 // by its cell and the order it appears in the vector of glyphs contained in
 // that cell.
 
-void letter_grouper::matchRight(text_ptr row, uint8_t key)
+void letter_grouper::matchRight(text_ptr element, uint8_t key)
 {
   // The key is the address of the cell in the m_grid.
   auto& cell = m_grid[key];
@@ -176,23 +182,23 @@ void letter_grouper::matchRight(text_ptr row, uint8_t key)
   for(uint16_t i = 0; i < cell.size(); ++i)
   {
     // If in good position to be next glyph
-    if(row->is_adjoining_letter(*(cell[i])))
+    if(element->is_adjoining_letter(*(cell[i])))
     {
       // Consume if identical. Skip if already consumed
-      if(*cell[i] == *row) row->consume();
+      if(*cell[i] == *element) element->consume();
       if(cell[i]->is_consumed()) continue; // ignore if marked for deletion
 
-      if(row->no_join())
+      if(element->no_join())
       {
-        row->set_join(key, i);
+        element->set_join(key, i);
         continue; // don't bother checking next statement
       }
 
       // If already a match but this one is better...
-      if(m_grid[row->grid_num()][row->vec_num()]->get_left() >
+      if(m_grid[element->grid_num()][element->vec_num()]->get_left() >
            cell[i]->get_left())
       {
-        row->set_join(key, i);
+        element->set_join(key, i);
       }
     }
   }
@@ -206,13 +212,13 @@ void letter_grouper::matchRight(text_ptr row, uint8_t key)
 void letter_grouper::merge()
 {
   // For each column in the x-axis
-  for(uint8_t i = 0; i < 16; ++i)
+  for(uint8_t column = 0; column < 16; ++column)
   {
     // For each cell in that column
-    for(uint8_t j = 0; j < 16; ++j)
+    for(uint8_t row = 0; row < 16; ++row)
     {
       // Get the cell's contents
-      vector<text_ptr>& cell = m_grid[i | (j << 4)];
+      vector<text_ptr>& cell = m_grid[column | (row << 4)];
 
       // If the cell is empty there's nothing to do
       if(cell.empty()) continue;

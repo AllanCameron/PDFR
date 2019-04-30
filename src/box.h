@@ -154,12 +154,13 @@ public:
 
   // Make the box dimensions equal to the smallest box that covers this box
   // AND the other box
-  inline void merge(const Box& other)
+  inline void merge(Box& other)
   {
     this->left   = std::min(this->left,   other.left  );
     this->right  = std::max(this->right,  other.right );
     this->bottom = std::min(this->bottom, other.bottom);
     this->top    = std::max(this->top,    other.top   );
+    other.remove();
   }
 
   // Make the box dimensions equal to the smallest box that covers this box
@@ -190,6 +191,11 @@ public:
   {
     return eq(left, other.left) && eq(right,  other.right) &&
            eq(top,  other.top)  && eq(bottom, other.bottom );
+  }
+
+  inline bool is_beyond(const Box& other) const
+  {
+    return this->get_left() > other.get_right();
   }
 
   // Mark for deletion

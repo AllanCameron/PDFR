@@ -190,7 +190,7 @@ struct text_table: public Box
   std::vector<float> top;                 // vector of glyphs' top edge
   std::vector<float> get_size();
   std::vector<text_element> transpose();
-  void join(const text_table& other);
+  void join(text_table& other);
 };
 
 #endif
