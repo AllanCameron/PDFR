@@ -38,6 +38,7 @@ line_grouper::line_grouper(vector<textbox> t): m_textboxes(t)
 {
   size_t i = 0;
   if(m_textboxes.empty()) throw runtime_error("No textboxes on page");
+
   while(i < m_textboxes.size())
   {
     if (m_textboxes[i].size() < 2){++i; continue;}
@@ -45,8 +46,7 @@ line_grouper::line_grouper(vector<textbox> t): m_textboxes(t)
     find_breaks(m_textboxes[i]);
     if (m_textboxes[i].size() < 2){++i; continue;}
     line_endings(m_textboxes[i]);
-    paste_lines(m_textboxes[i]);
-    ++i;
+    paste_lines(m_textboxes[i++]);
   }
 };
 
@@ -61,7 +61,7 @@ void line_grouper::find_breaks(textbox& text_box)
          &&
        text_box[i]->get_bottom() < text_box[i - 1]->get_bottom())
     {
-      m_textboxes.push_back(splitbox(text_box, text_box[i - 1]->get_bottom()));
+      splitbox(text_box, text_box[i - 1]->get_bottom());
       break;
     }
 
@@ -107,20 +107,26 @@ void line_grouper::paste_lines(textbox& text_box)
 //---------------------------------------------------------------------------//
 //
 
-textbox line_grouper::splitbox(textbox& old_one, float top_edge)
+void line_grouper::splitbox(textbox& old_one, float top_edge)
 {
-  auto& old_box      = old_one.m_box;
-  auto& old_contents = old_one.m_data;
-  Box new_box        = old_box;
-  auto break_point = find_if(old_contents.begin(), old_contents.end(),
-                          [&](text_ptr& textptr) -> bool {
-                            return textptr->get_bottom() < top_edge;
-                          });
-  vector<text_ptr> new_contents(break_point, old_contents.end());
-  old_contents.erase(break_point, old_contents.end());
-  old_box.set_bottom(old_contents.back()->get_bottom());
-  new_box.set_top(old_contents.back()->get_bottom());
-  return textbox(new_contents, new_box);
+  if(old_one.empty()) return;
+  textbox new_one = old_one;
+  new_one.clear();
+  size_t breakpoint = 0;
+
+  for(size_t i = 0; i < old_one.size(); ++i)
+  {
+    if(old_one[i]->get_bottom() < top_edge)
+    {
+      if(breakpoint != 0) breakpoint = i;
+      new_one.push_back(old_one[i]);
+    }
+  }
+  if(breakpoint > 0) old_one.resize(breakpoint - 1);
+
+  old_one.set_bottom(old_one.back()->get_bottom());
+  new_one.set_top(old_one.front()->get_top());
+  m_textboxes.push_back(new_one);
 }
 
 

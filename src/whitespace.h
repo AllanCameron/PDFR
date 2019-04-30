@@ -96,9 +96,6 @@ private:
   std::vector<Vertex> vertices;        // The vertices used to make polygons
   static const size_t DIVISIONS = 200; // number of strips used for whitespace
 
-  // We use this to map directions to vertices
-  static std::unordered_map<uint8_t, std::pair<Direction, Direction>> arrows;
-
   void getMaxLineSize();
   void pageDimensions();    // Gets page margins
   void cleanAndSortBoxes(); // Helper to remove Boxes flagged for deletion

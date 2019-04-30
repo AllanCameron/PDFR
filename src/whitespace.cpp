@@ -33,36 +33,6 @@ static const float MAXPAGE = 30000;
 static const float MAX_LINE_FACTOR = 0.3;
 
 //---------------------------------------------------------------------------//
-// Every vertex of the final polygon surrounding each text element contains
-// information about its position. However, to "connect" the vertices so as to
-// arrange them in clockwise order, it also needs to know which direction
-// the incoming and outgoing edges are "pointing". We do this by working out
-// for each vertex whether there is whitespace immediately to the NorthWest,
-// NorthEast, SouthEast and SouthWest of the vertex. These are recorded as the
-// four lowest order bits in a single "flags" byte; thus a vertex that had
-// whitespace to the NorthWest and SouthWest (as it would if it lay along the
-// middle of the left edge of a text polygon), would have its flags set to
-// 1001 in binary (or 0x9 in hexadecimal, or a byte value of 0x09 provided we
-// mask the flag byte with & 0x0f). Since we know that a masked flag value of
-// 0x09 must represent a point lying on a left edge, its "incoming" edge must
-// be travelling North (since we are concerned with clockwise ordering), and
-// its outgoing edge must also be pointing North. To make all this clearer we
-// want each Vertex to specify its incoming and outgoing directions. We can
-// therefore just look up the four lowest order bytes in each Vertex's flags
-// using this unordered map to get the implied direction based on the
-// surrounding whitespace.
-
-unordered_map<uint8_t, pair<Direction, Direction>> Whitespace::arrows =
-{
-  {0x00, {None, None}},   {0x01, {North, West}}, {0x02, {West, South}},
-  {0x03, {West, West}},   {0x04, {South, East}}, {0x05, {None, None}},
-  {0x06, {South, South}}, {0x07, {South, West}}, {0x08, {East, North}},
-  {0x09, {North, North}}, {0x0A, {None, None}},  {0x0B, {West, North}},
-  {0x0C, {East, East}},   {0x0D, {North, East}}, {0x0E, {East, South}},
-  {0x0F, {None, None}}
-};
-
-//---------------------------------------------------------------------------//
 // The constructor takes a const word grouper object. It calls all its
 // constructor helpers to get the page dimensions, construct a large number of
 // tall vertical strips across the page which do not cross any text elements,
@@ -113,24 +83,24 @@ void Whitespace::pageDimensions()
 {
   for(auto& i : m_page_text)
   {
-    if(i->get_right() > m_page_text.m_box.get_right())
+    if(i->get_right() > m_page_text.get_right())
     {
-      m_page_text.m_box.set_right(m_page_text.m_box.get_right() + 10.0);
+      m_page_text.set_right(m_page_text.get_right() + 10.0);
     }
 
-    if(i->get_left() < m_page_text.m_box.get_left())
+    if(i->get_left() < m_page_text.get_left())
     {
-      m_page_text.m_box.set_left(m_page_text.m_box.get_left() - 10.0);
+      m_page_text.set_left(m_page_text.get_left() - 10.0);
     }
 
-    if((i->get_bottom() + i->get_size()) > m_page_text.m_box.get_top())
+    if((i->get_bottom() + i->get_size()) > m_page_text.get_top())
     {
-      m_page_text.m_box.set_top(m_page_text.m_box.get_top() + 10.0);
+      m_page_text.set_top(m_page_text.get_top() + 10.0);
     }
 
-    if(i->get_bottom() < m_page_text.m_box.get_bottom())
+    if(i->get_bottom() < m_page_text.get_bottom())
     {
-      m_page_text.m_box.set_bottom(m_page_text.m_box.get_bottom() - 10.0);
+      m_page_text.set_bottom(m_page_text.get_bottom() - 10.0);
     }
   }
 }
@@ -185,18 +155,18 @@ void Whitespace::cleanAndSortBoxes()
 void Whitespace::makeStrips()
 {
   // Find strip widths
-  float pixwidth = m_page_text.m_box.width() / DIVISIONS;
+  float pixwidth = m_page_text.width() / DIVISIONS;
 
   // The first strip starts at the left edge and stops one stripwidth to right
-  float L_Edge = m_page_text.m_box.get_left();
+  float L_Edge = m_page_text.get_left();
   float R_Edge = L_Edge + pixwidth;
 
   // For each of these page divisions
   for(size_t i = 0; i < DIVISIONS; ++i)
   {
     // Create top/bottom bounds for boxes at top/bottom of page.
-    vector<float> tops = {m_page_text.m_box.get_top()};
-    vector<float> bottoms = {m_page_text.m_box.get_bottom()};
+    vector<float> tops = {m_page_text.get_top()};
+    vector<float> bottoms = {m_page_text.get_bottom()};
 
     // Now for each text element on the page
     for(const auto& j : m_page_text)
@@ -265,7 +235,7 @@ void Whitespace::removeSmall()
   {
     // Remove only undeleted boxes who are not at the page border and are short
     if(!i.is_deleted() &&
-       !i.shares_edge(m_page_text.m_box) &&
+       !i.shares_edge(m_page_text) &&
        i.height() < max_line_space)
     {
       i.remove();
@@ -335,13 +305,6 @@ void Whitespace::tidyVertices()
 
   // Swap rather than copy vector into vertices member
   swap(res, vertices);
-
-  // Look up the implied direction of the edges that enter and exit the vertex
-  for(auto& i : vertices)
-  {
-    i.In  = arrows[i.flags & 0x0f].first;
-    i.Out = arrows[i.flags & 0x0f].second;
-  }
 }
 
 //---------------------------------------------------------------------------//
@@ -356,10 +319,10 @@ void Whitespace::tracePolygons()
   for(auto& i : vertices)
   {
     // Use the Direction enum as an int to get points beyond page edges
-    float initialEdge = m_page_text.m_box[i.Out] + (2 * (i.Out / 2) - 1) * 100;
+    float outer_edge = m_page_text.edge(i.Out()) + (2*(i.Out() / 2) - 1) * 100;
 
     // "edge" keeps track of the nearest vertex
-    float edge = initialEdge;
+    float edge = outer_edge;
 
     // Now for every other vertex
     for(auto& j : vertices)
@@ -370,7 +333,7 @@ void Whitespace::tracePolygons()
         i.points_to = &j - &(vertices[0]);
 
         // Now we update "edge" to make it the closest yet
-        if(i.Out == North || i.Out == South)
+        if(i.Out() == North || i.Out() == South)
         {
           edge = j.y;
         }
@@ -381,7 +344,7 @@ void Whitespace::tracePolygons()
       }
     }
     // If the closest yet is not on the page, mark vertex for deletion
-    if(edge - initialEdge < 0.1 && initialEdge - edge < 0.1) i.flags |= 0x80;
+    if(edge - outer_edge < 0.1 && outer_edge - edge < 0.1) i.flags |= 0x80;
   }
 }
 
@@ -468,7 +431,7 @@ void Whitespace::polygonMax()
     }
 
     // if the box is not the page itself, append this polygon to our result
-    if(!bounding_box.is_approximately_same_as(m_page_text.m_box))
+    if(!bounding_box.is_approximately_same_as(m_page_text))
     {
       ws_boxes.emplace_back(move(bounding_box));
     }

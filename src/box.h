@@ -72,11 +72,16 @@ struct Vertex
 {
   float x, y;
   uint8_t flags; // bits denote delete-void-void-void-NW-NE-SE-SW
-  Direction In, Out;
   size_t points_to, group;
 
+  inline Direction In() const {return arrows.at(flags & 0x0f).first;}
+  inline Direction Out() const {return arrows.at(flags & 0x0f).second;}
+
+  // We use this to map directions to vertices
+  static std::unordered_map<uint8_t, std::pair<Direction, Direction>> arrows;
+
   Vertex(float a, float b, uint8_t c):
-    x(a), y(b), flags(c), In(None), Out(None), points_to(0), group(0) {}
+    x(a), y(b), flags(c), points_to(0), group(0) {}
 
   Vertex(const Vertex& v) = default;
   Vertex& operator=(const Vertex& v) = default;
@@ -85,10 +90,10 @@ struct Vertex
   inline bool is_closer_than(const Vertex& j, const float& edge)
   {
     return
-    (Out == North && j.x == x && j.In  == North && j.y >  y && j.y < edge) ||
-    (Out == South && j.x == x && j.In  == South && j.y <  y && j.y > edge) ||
-    (Out == East  && j.y == y && j.In  == East  && j.x >  x && j.x < edge) ||
-    (Out == West  && j.y == y && j.In  == West  && j.x <  x && j.x > edge) ;
+    (Out() == North && j.x == x && j.In() == North && j.y > y && j.y < edge) ||
+    (Out() == South && j.x == x && j.In() == South && j.y < y && j.y > edge) ||
+    (Out() == East  && j.y == y && j.In() == East  && j.x > x && j.x < edge) ||
+    (Out() == West  && j.y == y && j.In() == West  && j.x < x && j.x > edge) ;
   }
 };
 
@@ -98,10 +103,14 @@ struct Vertex
 // functions are boolean comparisons against other boxes and are inlined here.
 // For this reason there is no separate implementation file.
 
-struct Box
+class Box
 {
+  // Data members
+  float left, right, top, bottom;
+  bool deletion_flag;
 
-  // Constructors: from separate floats or a vector of floats
+public:
+  // Constructors: from separate floats, a vector of floats or default
   Box(float a, float b, float c, float d):
     left(a), right(b), top(c), bottom(d), deletion_flag(false) {}
 
@@ -116,9 +125,9 @@ struct Box
 
   Box(){}
 
-  // We can use the direction enum in square brackets instead of direct access
-  // of data members
-  inline float operator[](int a) const
+  // We can use the direction enum to access the edges of the box instead of
+  // using getters if we need to calculate the edge we're interested in getting.
+  inline float edge(int a) const
   {
     switch(a)
     {
@@ -130,23 +139,39 @@ struct Box
     }
   }
 
-  inline float get_left() const { return this->left;}
-  inline float get_right() const { return this->right;}
-  inline float get_top() const { return this->top;}
-  inline float get_bottom() const { return this->bottom;}
-  inline void set_left(float a) { left = a;}
-  inline void set_right(float a) { right = a;}
-  inline void set_top(float a) { top = a;}
-  inline void set_bottom(float a) { bottom = a;}
+  // Getters
+  inline float get_left()   const   { return this->left;}
+  inline float get_right()  const   { return this->right;}
+  inline float get_top()    const   { return this->top;}
+  inline float get_bottom() const   { return this->bottom;}
+
+  // Setters
+  inline void  set_left   (float a) { left   = a;}
+  inline void  set_right  (float a) { right  = a;}
+  inline void  set_top    (float a) { top    = a;}
+  inline void  set_bottom (float a) { bottom = a;}
+
+  // Make the box dimensions equal to the smallest box that covers this box
+  // AND the other box
   inline void merge(const Box& other)
   {
-    this->left = std::min(this->left, other.left);
-    this->right = std::max(this->right, other.right);
+    this->left   = std::min(this->left,   other.left  );
+    this->right  = std::max(this->right,  other.right );
     this->bottom = std::min(this->bottom, other.bottom);
-    this->top = std::max(this->top, other.top);
+    this->top    = std::max(this->top,    other.top   );
   }
 
-  // Compare two boxes for equality
+  // Make the box dimensions equal to the smallest box that covers this box
+  // and the given vertex
+  inline void expand_box_to_include_vertex(const Vertex& corner)
+  {
+      if(corner.x < left)    left   = corner.x;
+      if(corner.x > right)   right  = corner.x;
+      if(corner.y < bottom)  bottom = corner.y;
+      if(corner.y > top)     top    = corner.y;
+  }
+
+  // Compare two boxes for exact equality
   inline bool operator==(const Box& other) const
   {
     return left == other.left && right  == other.right &&
@@ -156,29 +181,53 @@ struct Box
   // Approximate equality between floats
   inline bool eq(const float& a, const float& b) const
   {
-    return a - b < 0.1 && b - a < 0.1;
-  }
-
-  // Enlarge a box to include a given vertex
-  inline void expand_box_to_include_vertex(const Vertex& corner)
-  {
-      if(corner.x < left)    left   = corner.x;
-      if(corner.x > right)   right  = corner.x;
-      if(corner.y < bottom)  bottom = corner.y;
-      if(corner.y > top)     top    = corner.y;
+    return (a - b < 0.1) && (b - a < 0.1);
   }
 
   // Test for non-strict equality
   inline bool is_approximately_same_as(const Box& other) const
   {
-    return eq(left, other.left) && eq(right, other.right) &&
-           eq(top, other.top)  && eq(bottom, other.bottom);
+    return eq(left, other.left) && eq(right,  other.right) &&
+           eq(top,  other.top)  && eq(bottom, other.bottom );
   }
 
   // Mark for deletion
   inline void remove() {deletion_flag = true;}
 
+  // Check for deletion status
   inline bool is_deleted() const { return deletion_flag;}
+
+  // Simple calculations of width and height
+  inline float width()  const { return right - left  ;}
+  inline float height() const { return top   - bottom;}
+
+  // Are two given boxes aligned on at least one side?
+  inline bool shares_edge(const Box& other) const
+  {
+    return top  == other.top  || bottom == other.bottom ||
+           left == other.left || right  == other.right  ;
+  }
+
+  // Is this box immediately to the right of the given box, sharing two
+  // vertices? This can be used to merge boxes
+  inline bool is_adjacent(const Box& j) const
+  {
+    return left == j.right && top == j.top && bottom == j.bottom;
+  }
+
+  // Check whether one box partially covers another box
+  inline bool encroaches(Box& other)
+  {
+    return (left < other.right && right > other.left) &&
+           (bottom < other.top && top > other.bottom);
+  }
+
+  // Is another box completely enclosed by this one?
+  inline bool engulfs(const Box& j) const
+  {
+    return  j.bottom - bottom > -0.1 && j.top - top < 0.1 &&
+            j.left - left > -0.1 && j.right - right < 0.1 && !(*this == j);
+  }
 
   // The following four functions determine whether, for any given Vertex,
   // moving an arbitrarily small distance in the stated direction will put
@@ -204,24 +253,6 @@ struct Box
     return right >= v.x && left < v.x && top >= v.y && bottom < v.y;
   }
 
-  // Simple calculations of width and height
-  inline float width() const { return right - left;}
-  inline float height() const { return top - bottom;}
-
-  // Are two given boxes aligned on at least one side?
-  inline bool shares_edge(const Box& other) const
-  {
-    return top  == other.top  || bottom == other.bottom ||
-           left == other.left || right  == other.right  ;
-  }
-
-  // Are two given boxes side-by-side with the same top and bottom edge?
-  // This can be used to merge boxes
-  inline bool is_adjacent(const Box& j) const
-  {
-    return left == j.right && top == j.top && bottom == j.bottom;
-  }
-
   // Create a vertex from a given corner of the box
   // (0 = top-left, 1 = top-right, 2 = bottom-left, 3 = bottom-right)
   // Note, the given vertex is automatically flagged as being impinged at the
@@ -239,7 +270,9 @@ struct Box
     return Vertex  (0, 0, 0);
   }
 
-  // Marks a box's impingement on a given vertex
+  // Marks a box's impingement on a given vertex. This records whether moving
+  // an arbitrarily small distance in a given direction from the vertex will
+  // place one inside the current box.
   void record_impingement_on(Vertex& v)
   {
     if(is_NW_of(v)) v.flags |= 0x08; // NW
@@ -248,20 +281,9 @@ struct Box
     if(is_SW_of(v)) v.flags |= 0x01; // SW
   }
 
-  // Is another box completely enclosed by this one?
-  inline bool engulfs(const Box& j) const
-  {
-    return  j.bottom - bottom > -0.1 && j.top - top < 0.1 &&
-            j.left - left > -0.1 && j.right - right < 0.1 && !(*this == j);
-  }
-
   // Return box dimensions as a vector for output
-  inline std::vector<float> vector() const { return {left, bottom, right, top};}
+  inline std::vector<float> vector() const {return {left, bottom, right, top};}
 
-  private:
-    // Data members
-  float left, right, top, bottom;
-  bool deletion_flag;
 };
 
 

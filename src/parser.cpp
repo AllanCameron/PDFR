@@ -68,7 +68,8 @@ parser::parser(shared_ptr<page> pag) : // long initializer list...
   m_Tl(1),                             // leading
   m_Tw(0),                             // word spacing
   m_Th(100),                           // horizontal scaling
-  m_Tc(0)                              // character spacing
+  m_Tc(0),                             // character spacing
+  m_db(Box(m_p->getminbox()))
 {}
 
 //---------------------------------------------------------------------------//
@@ -94,7 +95,6 @@ std::string parser::getOperand()
 
 textbox& parser::output()
 {
-  m_db.m_box = m_p->getminbox();
   return m_db;
 }
 
@@ -407,9 +407,10 @@ void parser::processRawChar(vector<RawChar>& raw, float& scale,
       // record width of char taking Th (horizontal scaling) into account
       width = scale * glyphwidth/1000 * m_Th/100;
       right = left + width;
-      m_db.push_back(make_shared<text_element>(left, right, bottom, scale,
-                                          m_wfont->fontname(),
-                                          vector<Unicode>{j.first}
+      m_db.push_back(make_shared<text_element>(left, right, bottom,
+                                               bottom + scale,
+                                               m_wfont->fontname(),
+                                               vector<Unicode>{j.first}
                                           )
                     );
     }

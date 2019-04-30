@@ -83,7 +83,7 @@ Rcpp::DataFrame getglyphmap(const string& file_name, int page_number)
   for(auto& font_string : page_ptr->getFontNames())
   {
     // Get a pointer to the font
-    shared_ptr<font>&& font_ptr = page_ptr->getFont(font_string);
+    auto&& font_ptr = page_ptr->getFont(font_string);
 
     // for each code point in the font, copy the fontname and input codepoint
     for(auto& key : font_ptr->getGlyphKeys())
@@ -217,14 +217,14 @@ Rcpp::List getatomic(shared_ptr<page> page_ptr)
   tokenizer(page_ptr->pageContents(), &parser_object);
 
   // Obtain output from parser and transpose into a text table
-  auto TR = parser_object.output();
-  auto TT = TR.transpose();
+  auto text_box = parser_object.output();
+  auto table = text_box.transpose();
 
   // Declare a container for utf-glyphs
   vector<string> glyph;
 
   // Convert Unicode to utf8
-  for(auto& i : TT.text) glyph.push_back(utf({i}));
+  for(auto& unicode_char : table.text) glyph.push_back(utf({unicode_char}));
 
   // Ensure the static fontmap is cleared after use
   page_ptr->clearFontMap();
@@ -232,11 +232,11 @@ Rcpp::List getatomic(shared_ptr<page> page_ptr)
   // Now create the data frame
   Rcpp::DataFrame db =  Rcpp::DataFrame::create(
                         Rcpp::Named("text") = glyph,
-                        Rcpp::Named("left") = TT.left,
-                        Rcpp::Named("bottom") = TT.bottom,
-                        Rcpp::Named("right") = TT.right,
-                        Rcpp::Named("font") = TT.fonts,
-                        Rcpp::Named("size") = TT.size,
+                        Rcpp::Named("left") = table.left,
+                        Rcpp::Named("bottom") = table.bottom,
+                        Rcpp::Named("right") = table.right,
+                        Rcpp::Named("font") = table.fonts,
+                        Rcpp::Named("size") = table.get_size(),
                         Rcpp::Named("stringsAsFactors") = false);
 
   // Return it as a list along with the page dimensions
@@ -247,7 +247,7 @@ Rcpp::List getatomic(shared_ptr<page> page_ptr)
 
 //---------------------------------------------------------------------------//
 
-Rcpp::List getgrid(shared_ptr<page> page_ptr)
+Rcpp::List get_text_boxes(shared_ptr<page> page_ptr)
 {
   // Create new parser
   parser parser_object(page_ptr);
@@ -256,11 +256,11 @@ Rcpp::List getgrid(shared_ptr<page> page_ptr)
   tokenizer(page_ptr->pageContents(), &parser_object);
 
   // Group letters and words
-  letter_grouper LG(parser_object.output());
-  word_grouper WG(LG.output());
+  letter_grouper grouped_letters(parser_object.output());
+  word_grouper grouped_words(grouped_letters.output());
 
   // Arrange text into text boxes separated by whitespace
-  Whitespace WS(WG.output());
+  Whitespace WS(grouped_words.output());
 
   // Join lines of text within single text boxes
   line_grouper linegrouper(WS.output());
@@ -269,20 +269,20 @@ Rcpp::List getgrid(shared_ptr<page> page_ptr)
   std::vector<std::string> glyph, font;
   std::vector<int> polygon;
   int polygonNumber = 0;
-  auto LGO = linegrouper.output();
+  auto text_boxes = linegrouper.output();
 
-  for(auto& i : LGO)
+  for(auto& box : text_boxes)
   {
-    for(auto& j : i)
+    for(auto& element : box)
     {
-      if(!j->is_consumed())
+      if(!element->is_consumed())
       {
-        left.push_back(j->get_left());
-        right.push_back(j->get_right());
-        size.push_back(j->get_size());
-        bottom.push_back(j->get_bottom());
-        glyph.push_back(utf(j->get_glyph()));
-        font.push_back(j->get_font());
+        left.push_back(element->get_left());
+        right.push_back(element->get_right());
+        size.push_back(element->get_size());
+        bottom.push_back(element->get_bottom());
+        glyph.push_back(utf(element->get_glyph()));
+        font.push_back(element->get_font());
         polygon.push_back(polygonNumber);
       }
     }
@@ -310,7 +310,7 @@ Rcpp::List pdfpage(const string& file_name, int page_number, bool each_glyph)
   auto page_ptr = get_page(file_name, page_number);
 
   // Process the page if requested
-  if(!each_glyph) return getgrid(page_ptr);
+  if(!each_glyph) return get_text_boxes(page_ptr);
 
   // Otherwise return a data frame of individual letters
   else return getatomic(page_ptr);
@@ -325,7 +325,7 @@ pdfpageraw(const vector<uint8_t>& raw_file, int page_number, bool each_glyph)
   auto page_ptr = get_page(raw_file, page_number);
 
   // Process the page if requested
-  if(!each_glyph) return getgrid(page_ptr);
+  if(!each_glyph) return get_text_boxes(page_ptr);
 
   // Otherwise return a data frame of individual letters
   else return getatomic(page_ptr);
@@ -352,23 +352,23 @@ Rcpp::DataFrame pdfdoc_common(shared_ptr<document> document_ptr)
     tokenizer(page_ptr->pageContents(), &parser_object);
 
     // Join individual letters into words
-    letter_grouper LG(move(parser_object.output()));
+    letter_grouper grouped_letters(move(parser_object.output()));
 
     // Join individual words into lines or word clusters
-    word_grouper WG(LG.output());
+    word_grouper grouped_words(grouped_letters.output());
 
     // Get a text table from the output
-    text_table gridout = WG.out();
+    text_table table = grouped_words.out();
 
     // Convert text from unicode to utf-8
-    for(auto& i : gridout.text) glyph.push_back(utf(i));
+    for(auto& unicode_char : table.text) glyph.push_back(utf(unicode_char));
 
     // Join current page's output to final data frame columns
-    concat(left, gridout.left);
-    concat(right, gridout.right);
-    concat(bottom, gridout.bottom);
-    concat(font, gridout.fonts);
-    concat(size, gridout.size);
+    concat(left, table.left);
+    concat(right, table.right);
+    concat(bottom, table.bottom);
+    concat(font, table.fonts);
+    concat(size, table.get_size());
 
     // Add a page number entry for each text element
     while(pagenums.size() < size.size()) pagenums.push_back(page_number + 1);
@@ -464,13 +464,13 @@ Rcpp::DataFrame pdf_boxes(shared_ptr<page> page_ptr)
   tokenizer(page_ptr->pageContents(), &parser_object);
 
   // Group individual letters into words
-  letter_grouper LG(move(parser_object.output()));
+  letter_grouper grouped_letters(move(parser_object.output()));
 
   // Group words into lines or word clusters
-  word_grouper WG(move(LG.output()));
+  word_grouper grouped_words(move(grouped_letters.output()));
 
   // Separate page into text boxes and white space
-  Whitespace polygons(move(WG.output()));
+  Whitespace polygons(move(grouped_words.output()));
 
   // This step outputs the data we need to create our data frame
   auto Poly = polygons.ws_box_out();

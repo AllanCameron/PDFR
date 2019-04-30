@@ -72,7 +72,7 @@ private:
   void find_breaks(textbox&);
   void line_endings(textbox&);
   void paste_lines(textbox&);
-  textbox splitbox(textbox&, float);
+  void splitbox(textbox&, float);
 
   struct reading_order
   {

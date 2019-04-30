@@ -88,10 +88,12 @@
 // or as a vector of bytes.
 
 // [[Rcpp::export(.get_xref)]]
-Rcpp::DataFrame get_xref(const std::string& filename);
+Rcpp::DataFrame
+get_xref(const std::string& file_name);
 
 // [[Rcpp::export(.get_xrefraw)]]
-Rcpp::DataFrame get_xrefraw(const std::vector<uint8_t>& rawfile);
+Rcpp::DataFrame
+get_xrefraw(const std::vector<uint8_t>& raw_file);
 
 //---------------------------------------------------------------------------//
 // Returns a specific object from the pdf file. It gives both the dictionary
@@ -101,10 +103,12 @@ Rcpp::DataFrame get_xrefraw(const std::vector<uint8_t>& rawfile);
 // following references in the object dictionary.
 
 // [[Rcpp::export(.get_obj)]]
-Rcpp::List get_object(const std::string& filename, int o);
+Rcpp::List
+get_object(const std::string& file_name, int object_number);
 
 // [[Rcpp::export(.get_objraw)]]
-Rcpp::List get_objectraw(const std::vector<uint8_t>& rawfile, int o);
+Rcpp::List
+get_objectraw(const std::vector<uint8_t>& raw_file, int object_number);
 
 //---------------------------------------------------------------------------//
 // The main output of the program is a dataframe of each glyph with its
@@ -115,10 +119,12 @@ Rcpp::List get_objectraw(const std::vector<uint8_t>& rawfile, int o);
 // respectively, and both take a page number (one-indexed) as a second parameter
 
 // [[Rcpp::export(.pdfpage)]]
-Rcpp::List pdfpage(const std::string& filename, int pagenum, bool g);
+Rcpp::List
+pdfpage(const std::string& file_name, int page_number, bool atomic);
 
 // [[Rcpp::export(.pdfpageraw)]]
-Rcpp::List pdfpageraw(const std::vector<uint8_t>& rawfile, int pagenum, bool g);
+Rcpp::List
+pdfpageraw(const std::vector<uint8_t>& raw_file, int page_number, bool atomic);
 
 //---------------------------------------------------------------------------//
 // This function takes a file path and page number as parameters (note there is
@@ -128,7 +134,8 @@ Rcpp::List pdfpageraw(const std::vector<uint8_t>& rawfile, int pagenum, bool g);
 // specified for that font.
 
 // [[Rcpp::export(.getglyphmap)]]
-Rcpp::DataFrame getglyphmap(const std::string& s, int pagenum);
+Rcpp::DataFrame
+getglyphmap(const std::string& file_name, int page_number);
 
 //---------------------------------------------------------------------------//
 // This function, used mainly for debugging, returns the uncompressed Postscript
@@ -136,26 +143,32 @@ Rcpp::DataFrame getglyphmap(const std::string& s, int pagenum);
 // which can be passed on to R for examination
 
 // [[Rcpp::export(.pagestring)]]
-std::string pagestring(const std::string& s, int pagenum);
+std::string
+pagestring(const std::string& file_name, int page_number);
 
 // [[Rcpp::export(.pagestringraw)]]
-std::string pagestringraw(const std::vector<uint8_t>& rawfile, int pagenum);
+std::string
+pagestringraw(const std::vector<uint8_t>& raw_file, int page_number);
 
 //---------------------------------------------------------------------------//
 // These two versions of the pdfdoc function return R dataframes with all of
 // the extracted text from an entire document.
 
 // [[Rcpp::export(.pdfdoc)]]
-Rcpp::DataFrame pdfdoc(const std::string& s);
+Rcpp::DataFrame
+pdfdoc(const std::string& file_name);
 
 // [[Rcpp::export(.pdfdocraw)]]
-Rcpp::DataFrame pdfdocraw(const std::vector<uint8_t>& s);
+Rcpp::DataFrame
+pdfdocraw(const std::vector<uint8_t>& file_name);
 
 // [[Rcpp::export(.pdfboxesString)]]
-Rcpp::DataFrame pdfboxesString(const std::string& s, int pagenum);
+Rcpp::DataFrame
+pdfboxesString(const std::string& file_name, int page_number);
 
 // [[Rcpp::export(.pdfboxesRaw)]]
-Rcpp::DataFrame pdfboxesRaw(const std::vector<uint8_t>& s, int pagenum);
+Rcpp::DataFrame
+pdfboxesRaw(const std::vector<uint8_t>& file_name, int page_number);
 
 
 //---------------------------------------------------------------------------//

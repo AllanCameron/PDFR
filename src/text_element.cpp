@@ -33,8 +33,8 @@ using namespace std;
 //---------------------------------------------------------------------------//
 
 text_element::text_element
-(float l, float r, float b, float s, string f, vector<Unicode> g):
-  left(l), right(r), bottom(b), size(s), font(f), glyph(g),
+(float l, float r, float b, float t, string f, vector<Unicode> g):
+  left(l), right(r), bottom(b), top(t), font(f), glyph(g),
   r_join(make_pair(-1, -1)), m_flags(0) {};
 
 
@@ -60,42 +60,47 @@ void text_element::merge_letters(text_element& matcher)
 
 //---------------------------------------------------------------------------//
 
-bool text_element::is_elligible_to_join(const text_element& j) const
+bool text_element::is_elligible_to_join(const text_element& other) const
 {
-  if(j.is_consumed() ||
-     (j.left < this->right) ||
-     (j.bottom - this->bottom > 0.7 * this->size) ||
-     (this->bottom - j.bottom > 0.7 * this->size) ||
-     (j.left - this->right > 2 * this->size) ||
-      ((j.is_left_edge()  || j.is_centred())           &&
-      (j.left - this->right > 0.51 * this->size)) ||
+  if(other.is_consumed() ||
+     (other.left < this->right) ||
+     (other.bottom - this->bottom > 0.7 * this->get_size()) ||
+     (this->bottom - other.bottom > 0.7 * this->get_size()) ||
+     (other.left - this->right > 2 * this->get_size()) ||
+      ((other.is_left_edge()  || other.is_centred())           &&
+      (other.left - this->right > 0.51 * this->get_size())) ||
      ((this->is_right_edge() || this->is_centred())   &&
-      (j.left - this->right > 0.51 * this->size))  )  return false;
-  else return true;
+      (other.left - this->right > 0.51 * this->get_size()))  )
+    return false;
+  else
+    return true;
 }
 
 //---------------------------------------------------------------------------//
 
-void text_element::join_words(text_element& j)
+void text_element::join_words(text_element& other)
 {
     // This element is elligible for joining - start by adding a space to it
     this->glyph.push_back(0x0020);
 
     // If the gap is wide enough, add two spaces
-    if(j.left - this->right > 1 * this->size) this->glyph.push_back(0x0020);
+    if(other.left - this->right > 1 * this->get_size())
+    {
+      this->glyph.push_back(0x0020);
+    }
 
     // Stick contents together
-    concat(this->glyph, j.glyph);
+    concat(this->glyph, other.glyph);
 
     // The rightmost glyph's right edge properties are also copied over
-    this->right = j.right;
-    if(j.is_right_edge()) this->make_right_edge();
+    this->right = other.right;
+    if(other.is_right_edge()) this->make_right_edge();
 
     // The word will take up the size of its largest glyph
-    this->size = max(this->size, j.size);
+    this->top = max(this->get_size(), other.get_size()) + this->bottom;
 
     // The element on the right is now consumed
-    j.consume();
+    other.consume();
 }
 
 
