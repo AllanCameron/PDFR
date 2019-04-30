@@ -218,7 +218,7 @@ Rcpp::List getatomic(shared_ptr<page> page_ptr)
 
   // Obtain output from parser and transpose into a text table
   auto text_box = parser_object.output();
-  auto table = text_box.transpose();
+  text_table table(text_box);
 
   // Declare a container for utf-glyphs
   vector<string> glyph;

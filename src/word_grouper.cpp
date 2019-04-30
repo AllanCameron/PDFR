@@ -63,7 +63,7 @@ textbox& word_grouper::output()
 
 text_table word_grouper::out()
 {
-  return m_allRows.transpose();
+  return text_table(m_allRows);
 }
 
 //---------------------------------------------------------------------------//

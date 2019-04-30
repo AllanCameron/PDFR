@@ -407,9 +407,8 @@ void parser::processRawChar(vector<RawChar>& raw, float& scale,
       // record width of char taking Th (horizontal scaling) into account
       width = scale * glyphwidth/1000 * m_Th/100;
       right = left + width;
-      m_db.push_back(make_shared<text_element>(left, right, bottom,
-                                               bottom + scale,
-                                               m_wfont->fontname(),
+      m_db.push_back(make_shared<text_element>(left, right, bottom + scale,
+                                               bottom, m_wfont->fontname(),
                                                vector<Unicode>{j.first}
                                           )
                     );

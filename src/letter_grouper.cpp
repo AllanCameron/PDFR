@@ -35,29 +35,7 @@ using namespace std;
 
 text_table letter_grouper::out()
 {
-
-  std::vector<float> left, right, bottom, size;
-  std::vector<std::string> font;
-  std::vector<std::vector<Unicode>> text;
-  for(auto& cell : m_grid)
-  {
-    // for each cell in the grid...
-    for(auto& element : cell.second)
-    {
-      if(!element->is_consumed())
-      {
-        // Copy its contents over
-        text.push_back(element->get_glyph());
-        left.push_back(element->get_left());
-        right.push_back(element->get_right());
-        size.push_back(element->get_size());
-        bottom.push_back(element->get_bottom());
-        font.push_back(element->get_font());
-      }
-    }
-  }
-  return text_table{move(text), move(left), move(bottom), move(right),
-                  move(font), move(size)};
+  return text_table(m_text_box);
 }
 
 //---------------------------------------------------------------------------//

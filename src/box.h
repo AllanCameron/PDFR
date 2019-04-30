@@ -144,6 +144,7 @@ public:
   inline float get_right()  const   { return this->right;}
   inline float get_top()    const   { return this->top;}
   inline float get_bottom() const   { return this->bottom;}
+  inline float get_size()   const   { return this->top - this->bottom;}
 
   // Setters
   inline void  set_left   (float a) { left   = a;}
