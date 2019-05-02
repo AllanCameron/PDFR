@@ -106,20 +106,20 @@ void text_element::concat_glyph(const std::vector<Unicode>& other)
 //---------------------------------------------------------------------------//
 // Converts textbox to text_table
 text_table::text_table(const textbox& text_box):
-Box(text_box.get_left(), text_box.get_right(),
-    text_box.get_top(), text_box.get_bottom())
+Box((Box) text_box)
 {
   for(auto ptr = text_box.cbegin(); ptr != text_box.cend(); ++ptr)
   {
     auto& element = *ptr;
     if(!element->is_consumed())
     {
-      this->text.push_back(element->get_glyph());
+      this->text.push_back(element->utf());
       this->left.push_back(element->get_left());
       this->bottom.push_back(element->get_bottom());
       this->right.push_back(element->get_right());
       this->fonts.push_back(element->get_font());
       this->top.push_back(element->get_top());
+      this->size.push_back(element->get_top() - element->get_bottom());
     }
   }
 }
@@ -144,16 +144,6 @@ void textbox::remove_duplicates()
 }
 
 //---------------------------------------------------------------------------//
-
-std::vector<float> text_table::get_size()
-{
-  std::vector<float> res;
-  if(bottom.size() != top.size() || bottom.empty()) return res;
-  for(size_t i = 0; i < bottom.size(); ++i) res.push_back(bottom[i] + top[i]);
-  return res;
-}
-
-//---------------------------------------------------------------------------//
 // Join another text table to this one
 
 void text_table::join(text_table& other)
@@ -165,4 +155,66 @@ void text_table::join(text_table& other)
   concat(this->right, other.right);
   concat(this->fonts, other.fonts);
   concat(this->top, other.top);
+}
+
+/*--------------------------------------------------------------------------*/
+// converts (16-bit) Unicode code points to multibyte utf-8 encoding.
+
+string text_element::utf()
+{
+  std::string result_string {}; // empty string for results
+  for(auto& point : this->glyph) // for each uint16_t in the input vector...
+  {
+    // values less than 128 are just single-byte ASCII
+    if(point < 0x0080)
+    {
+      result_string.push_back(point & 0x007f);
+      continue;
+    }
+
+    // values of 128 - 2047 are two bytes. The first byte starts 110xxxxx
+    // and the second starts 10xxxxxx. The remaining 11 x's are filled with the
+    // 11 bits representing a number between 128 and 2047. e.g. Unicode point
+    // U+061f (decimal 1567) is 11000011111 in 11 bits of binary, which we split
+    // into length-5 and length-6 pieces 11000 and 011111. These are appended on
+    // to 110 and 10 respectively to give the 16-bit number 110 11000 10 011111,
+    // which as two bytes is 11011000 10011111 or d8 9f. Thus the UTF-8
+    // encoding for character U+061f is the two-byte sequence d8 9f.
+    if(point > 0x007f && point < 0x0800)
+    {
+      // construct byte with bits 110 and first 5 bits of unicode point number
+      result_string.push_back((0x00c0 | ((point >> 6) & 0x001f)));
+
+      // construct byte with bits 10 and final 6 bits of unicode point number
+      result_string.push_back(0x0080 | (point & 0x003f));
+      continue;
+    }
+
+    // Unicode values between 2048 (0x0800) and the maximum uint16_t value
+    // (65535 or 0xffff) are given by 16 bits split over three bytes in the
+    // following format: 1110xxxx 10xxxxxx 10xxxxxx. Each x here takes one of
+    // the 16 bits representing 2048 - 65535.
+    if(point > 0x07ff)
+    {
+      // First we specifically change ligatures to appropriate Ascii values
+      if(point == 0xFB00) {result_string += "ff"; continue;}
+      if(point == 0xFB01) {result_string += "fi"; continue;}
+      if(point == 0xFB02) {result_string += "fl"; continue;}
+      if(point == 0xFB03) {result_string += "ffi"; continue;}
+      if(point == 0xFB04) {result_string += "ffl"; continue;}
+
+      // construct byte with 1110 and first 4 bits of unicode point number
+      result_string.push_back(0x00e0 | ((point >> 12) & 0x000f));
+
+      // construct byte with 10 and bits 5-10 of unicode point number
+      result_string.push_back(0x0080 | ((point >> 6) & 0x003f));
+
+      // construct byte with bits 10 and final 6 bits of unicode point number
+      result_string.push_back(0x0080 | ((point) & 0x003f));
+    }
+    // Although higher Unicode points are defined and can be encoded in utf8,
+    // the hex-strings in pdf seem to be two bytes wide at most. These are
+    // therefore not supported at present.
+  }
+  return result_string;
 }

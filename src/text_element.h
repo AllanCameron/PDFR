@@ -143,6 +143,7 @@ public:
   bool is_elligible_to_join(const text_element&) const;
   void join_words(text_element&);
   void concat_glyph(const std::vector<Unicode>&);
+  std::string utf();
 
 
 private:
@@ -210,10 +211,8 @@ private:
 struct text_table: public Box
 {
   text_table(const textbox&);
-  std::vector<std::vector<Unicode>> text;      // vector of unicode code points
-  std::vector<float> left, right, bottom, top; // vectors of glyphs' positions
-  std::vector<std::string> fonts;              // vector of glyphs' font names
-  std::vector<float> get_size();
+  std::vector<std::string> text, fonts;
+  std::vector<float> left, right, bottom, top, size;// glyph positions
   void join(text_table& other);
 };
 

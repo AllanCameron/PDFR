@@ -388,10 +388,4 @@ std::vector<float> getnums(const std::string&);
 
 std::string get_file(const std::string&);
 
-//---------------------------------------------------------------------------//
-// Converts a sequence of Unicode code points (given as a vector of 16 bit
-// unsigned integers) as a utf-8 encoded string
-
-std::string utf(const std::vector<uint16_t>& u);
-
 #endif

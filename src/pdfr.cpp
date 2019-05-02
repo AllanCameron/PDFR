@@ -220,23 +220,17 @@ Rcpp::List getatomic(shared_ptr<page> page_ptr)
   auto text_box = parser_object.output();
   text_table table(text_box);
 
-  // Declare a container for utf-glyphs
-  vector<string> glyph;
-
-  // Convert Unicode to utf8
-  for(auto& unicode_char : table.text) glyph.push_back(utf({unicode_char}));
-
   // Ensure the static fontmap is cleared after use
   page_ptr->clearFontMap();
 
   // Now create the data frame
   Rcpp::DataFrame db =  Rcpp::DataFrame::create(
-                        Rcpp::Named("text") = glyph,
+                        Rcpp::Named("text") = table.text,
                         Rcpp::Named("left") = table.left,
                         Rcpp::Named("bottom") = table.bottom,
                         Rcpp::Named("right") = table.right,
                         Rcpp::Named("font") = table.fonts,
-                        Rcpp::Named("size") = table.get_size(),
+                        Rcpp::Named("size") = table.size,
                         Rcpp::Named("stringsAsFactors") = false);
 
   // Return it as a list along with the page dimensions
@@ -281,7 +275,7 @@ Rcpp::List get_text_boxes(shared_ptr<page> page_ptr)
         right.push_back(element->get_right());
         size.push_back(element->get_size());
         bottom.push_back(element->get_bottom());
-        glyph.push_back(utf(element->get_glyph()));
+        glyph.push_back(element->utf());
         font.push_back(element->get_font());
         polygon.push_back(polygonNumber);
       }
@@ -358,17 +352,15 @@ Rcpp::DataFrame pdfdoc_common(shared_ptr<document> document_ptr)
     word_grouper grouped_words(grouped_letters.output());
 
     // Get a text table from the output
-    text_table table = grouped_words.out();
-
-    // Convert text from unicode to utf-8
-    for(auto& unicode_char : table.text) glyph.push_back(utf(unicode_char));
+    text_table table = grouped_words.out();;
 
     // Join current page's output to final data frame columns
     concat(left, table.left);
     concat(right, table.right);
     concat(bottom, table.bottom);
     concat(font, table.fonts);
-    concat(size, table.get_size());
+    concat(size, table.size);
+    concat(glyph, table.text);
 
     // Add a page number entry for each text element
     while(pagenums.size() < size.size()) pagenums.push_back(page_number + 1);
