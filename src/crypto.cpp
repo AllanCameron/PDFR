@@ -339,7 +339,7 @@ void crypto::decryptStream(string& stream, int object_num, int object_gen) const
 bytes crypto::getPassword(const string& key)
 {
    // Get raw bytes of owner password hash
-  string password(encdict.get(key));
+  string password(encdict.get_string(key));
   string temp;
   temp.reserve(32);
 
@@ -378,10 +378,10 @@ void crypto::getFilekey()
   concat(filekey, getPassword("/O"));
 
   // Stick permissions flags on
-  concat(filekey, permissions(encdict.get("/P")));
+  concat(filekey, permissions(encdict.get_string("/P")));
 
   // Get first 16 bytes of file ID and stick them on too
-  bytes idbytes = bytesFromArray(trailer.get("/ID"));
+  bytes idbytes = bytesFromArray(trailer.get_string("/ID"));
   idbytes.resize(16);
   concat(filekey, idbytes);
 
@@ -393,9 +393,9 @@ void crypto::getFilekey()
 
   // if the filekey length is not 5, it will be specified as a number of bits
   // so divide by 8 to get the number of bytes.
-  if(encdict.hasInts("/Length"))
+  if(encdict.contains_ints("/Length"))
   {
-    cryptlen = encdict.getInts("/Length")[0] / 8;
+    cryptlen = encdict.get_ints("/Length")[0] / 8;
   }
 
   // Resize the key as needed.
@@ -436,7 +436,7 @@ void crypto::checkKeyR3()
   bytes user_password = default_user_password;
 
   // We now append the bytes from the ID entry of the trailer dictionary
-  concat(user_password, bytesFromArray(trailer.get("/ID")));
+  concat(user_password, bytesFromArray(trailer.get_string("/ID")));
 
   // We only want the first 16 bytes from the ID so truncate to 48 bytes (32+16)
   user_password.resize(48);
@@ -483,7 +483,7 @@ crypto::crypto(dictionary enc, dictionary trail) :
   encdict(enc), trailer(trail), revision(2)
 {
   // Unless specified, the revision number used for encryption is 2
-  if(encdict.hasInts("/R")) revision = encdict.getInts("/R")[0];
+  if(encdict.contains_ints("/R")) revision = encdict.get_ints("/R")[0];
 
   getFilekey();
 

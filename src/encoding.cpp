@@ -115,10 +115,10 @@ void Encoding::Differences(const string& enc)
 void Encoding::mapUnicode(dictionary& fontref, shared_ptr<document> d)
 {
   // If no /ToUnicode entry, nothing to be done
-  if (!fontref.hasRefs("/ToUnicode")) return;
+  if (!fontref.contains_references("/ToUnicode")) return;
 
   // Otherwise, get the reference and get its stream
-  int tounicode_reference = fontref.getRefs("/ToUnicode")[0];
+  int tounicode_reference = fontref.get_references("/ToUnicode")[0];
   string x(d->getobject(tounicode_reference)->getStream());
 
   // multicarve gets all strings between the bookending strings. These are
@@ -205,16 +205,16 @@ void Encoding::getEncoding(dictionary& fontref, shared_ptr<document> d)
   dictionary encode_reference = fontref;
 
   // Read encoding entry
-  string encode_name = encode_reference.get("/Encoding");
+  string encode_name = encode_reference.get_string("/Encoding");
 
   // If an encoding dictionary exists, get it and read the baseencoding entry
-  if(fontref.hasRefs("/Encoding"))
+  if(fontref.contains_references("/Encoding"))
   {
-    auto myobj = d->getobject(fontref.getRefs("/Encoding")[0]);
+    auto myobj = d->getobject(fontref.get_references("/Encoding")[0]);
     encode_reference = myobj->getDict();
-    if(encode_reference.has("/BaseEncoding"))
+    if(encode_reference.has_key("/BaseEncoding"))
     {
-      encode_name = encode_reference.get("/BaseEncoding");
+      encode_name = encode_reference.get_string("/BaseEncoding");
     }
   }
   if( encode_name == "/WinAnsiEncoding") EncodingMap = winansi_to_unicode;
@@ -223,9 +223,9 @@ void Encoding::getEncoding(dictionary& fontref, shared_ptr<document> d)
   else for(RawChar i = 0; i < 256; ++i) EncodingMap[i] = (Unicode) i;
 
   // Call Differences() if a /Differences entry is found to modify encoding
-  if(encode_reference.has("/Differences"))
+  if(encode_reference.has_key("/Differences"))
   {
-    BaseEncoding = encode_reference.get("/Differences");
+    BaseEncoding = encode_reference.get_string("/Differences");
     Differences(BaseEncoding);
   }
 }

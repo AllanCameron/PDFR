@@ -112,9 +112,9 @@ void xref::locateXrefs()
 
   // Now we follow the pointers to all xrefs sequentially.
   dictionary tempdict = TrailerDictionary;
-  while (tempdict.hasInts("/Prev"))
+  while (tempdict.contains_ints("/Prev"))
   {
-    Xreflocations.emplace_back(tempdict.getInts("/Prev")[0]);
+    Xreflocations.emplace_back(tempdict.get_ints("/Prev")[0]);
     tempdict = dictionary(fs, Xreflocations.back());
   }
 }
@@ -189,7 +189,7 @@ void xref::xrefFromStream(int xref_loc)
 
 void xref::xrefFromString(std::string& xstr)
 {
-  auto allints = getints(xstr);
+  auto allints = parse_ints(xstr);
 
   // A valid xref has >= 4 ints in it and must have an even number of ints
   auto xrefsize = allints.size();
@@ -266,17 +266,17 @@ std::vector<int> xref::getObjects() const
 
 int xref::streamLength(const dictionary& dict) const
 {
-  if(dict.hasRefs("/Length"))
+  if(dict.contains_references("/Length"))
   {
-    int lengthob = dict.getRefs("/Length")[0]; // finds reference
+    int lengthob = dict.get_references("/Length")[0]; // finds reference
     size_t firstpos = getStart(lengthob);      // gets start of length obj
     size_t len = fs->find("endobj", firstpos) - firstpos; // and its length
     string objstr = fs->substr(firstpos, len); // from which we get a string
-    return getints(move(objstr)).back(); // from which we get a number
+    return parse_ints(move(objstr)).back(); // from which we get a number
   }
 
   // Thankfully though most lengths are just direct ints
-  else return dict.getInts("/Length")[0];
+  else return dict.get_ints("/Length")[0];
 }
 
 /*---------------------------------------------------------------------------*/
@@ -286,10 +286,10 @@ int xref::streamLength(const dictionary& dict) const
 array<size_t, 2> xref::getStreamLoc(int objstart) const
 {
   dictionary dict = dictionary(fs, objstart); // get the object dictionary
-  if(dict.has("stream") && dict.has("/Length")) // only if stream exists...
+  if(dict.has_key("stream") && dict.has_key("/Length")) // only if stream exists
   {
     int streamlen = streamLength(dict);
-    int strmstart = dict.getInts("stream")[0]; // now get stream's start
+    int strmstart = dict.get_ints("stream")[0]; // now get stream's start
     return array<size_t, 2>{(size_t) strmstart, (size_t) strmstart + streamlen};
   }
   return array<size_t, 2> {0,0}; // if no length, return empty length-2 array
@@ -326,9 +326,9 @@ dictionary xref::trailer() const
 void xref::get_crypto()
 {
    // if there's no encryption dictionary, there's nothing else to do
-  if(!TrailerDictionary.has("/Encrypt")) return;
+  if(!TrailerDictionary.has_key("/Encrypt")) return;
 
-  int encnum = TrailerDictionary.getRefs("/Encrypt").at(0);
+  int encnum = TrailerDictionary.get_references("/Encrypt").at(0);
 
   // No encryption dict - exception?
   if(xreftab.find(encnum) == xreftab.end()) return;
@@ -369,7 +369,8 @@ xrefstream::xrefstream(shared_ptr<xref> Xref, int starts) :
   m_dict(dictionary(m_XR->file(), m_objstart))
 {
   // If there is no /W entry, we don't know how to interpret the stream.
-  if(!m_dict.hasInts("/W")) throw std::runtime_error("No /W entry for stream.");
+  if(!m_dict.contains_ints("/W"))
+    throw std::runtime_error("No /W entry for stream.");
 
   getIndex();         // Read Index so we know which objects are in stream
   getParms();         // Read the PNG decoding parameters
@@ -399,7 +400,7 @@ xrefstream::xrefstream(shared_ptr<xref> Xref, int starts) :
 
 void xrefstream::getIndex()
 {
-  auto indexEntries = m_dict.getInts("/Index"); // Gets the numbers in the entry
+  auto indexEntries = m_dict.get_ints("/Index");// Gets the numbers in the entry
 
   if(!indexEntries.empty())
   {
@@ -422,21 +423,21 @@ void xrefstream::getParms()
 {
   string decodestring = "<<>>";
 
-  if(m_dict.has("/DecodeParms"))
+  if(m_dict.has_key("/DecodeParms"))
   {
-    decodestring = m_dict.get("/DecodeParms"); // string for subdict
+    decodestring = m_dict.get_string("/DecodeParms"); // string for subdict
   }
 
   dictionary subdict(make_shared<string>(decodestring));
 
-  if(subdict.hasInts("/Columns"))
+  if(subdict.contains_ints("/Columns"))
   {
-    m_ncols = subdict.getInts("/Columns")[0];
+    m_ncols = subdict.get_ints("/Columns")[0];
   }
 
-  if(subdict.hasInts("/Predictor"))
+  if(subdict.contains_ints("/Predictor"))
   {
-    m_predictor = subdict.getInts("/Predictor")[0];
+    m_predictor = subdict.get_ints("/Predictor")[0];
   }
 }
 
@@ -449,7 +450,7 @@ void xrefstream::getRawMatrix()
   auto sl = m_XR->getStreamLoc(m_objstart);// finds stream location
   std::string SS = m_XR->file()->substr(sl[0], sl[1] - sl[0]); // get stream
 
-  if(m_dict.get("/Filter").find("/FlateDecode", 0) != string::npos)
+  if(m_dict.get_string("/Filter").find("/FlateDecode", 0) != string::npos)
   {
     FlateDecode(SS); // applies decompression to stream if needed
   }
@@ -459,7 +460,7 @@ void xrefstream::getRawMatrix()
 
   // read the /W entry to get the width in bytes of each column in the table
   // check the widths for any zero values and skip them if present
-  m_arrayWidths = std::move(m_dict.getInts("/W"));
+  m_arrayWidths = m_dict.get_ints("/W");
   auto i = remove(m_arrayWidths.begin(), m_arrayWidths.end(), 0);
   m_arrayWidths.erase(i, m_arrayWidths.end());
 

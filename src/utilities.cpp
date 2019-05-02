@@ -294,7 +294,7 @@ vector<RawChar> StringToRawChar(const string& str)
 // even though the code is more unwieldy. It is essentially a finite state
 // machine that reads character by character and stores any matches found
 
-vector<int> getObjRefs(const string& s)
+vector<int> parse_references(const string& s)
 {
   enum RefState // defines the possible states of the finite state machine (fsm)
   {
@@ -346,7 +346,7 @@ vector<int> getObjRefs(const string& s)
 // If there are decimal points, it ignores the fractional part.
 // It will not accurately represent hex, octal or scientific notation (eg 10e5)
 
-std::vector<int> getints(const std::string& s)
+std::vector<int> parse_ints(const std::string& s)
 {
   std::vector<int> res; // vector to store results
   std::string buf;  // string buffer to hold characters which may be ints
@@ -395,7 +395,7 @@ std::vector<int> getints(const std::string& s)
 // result can be interpreted as a decimally represented number. It will also
 // include ints but not hex, octal or scientific notation (eg 10e5)
 
-std::vector<float> getnums(const std::string& s)
+std::vector<float> parse_floats(const std::string& s)
 {
   std::vector<float> res; // vector to store and return results
   std::string buf; // a buffer to hold characters until stored or discarded

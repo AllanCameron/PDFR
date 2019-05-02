@@ -69,7 +69,7 @@ object_class::object_class(shared_ptr<const xref> Xref, int object_num) :
     has_stream = m_streampos[1] > m_streampos[0];
 
     // The object may contain an object stream that needs unpacked
-    if(header.get("/Type") == "/ObjStm")
+    if(header.get_string("/Type") == "/ObjStm")
     {
       // Get the object stream
       stream = XR->file()->substr(m_streampos[0],
@@ -79,7 +79,7 @@ object_class::object_class(shared_ptr<const xref> Xref, int object_num) :
       if(XR->isEncrypted()) XR->decrypt(stream, number, 0);
 
       // De-deflate if necessary
-      if(header.get("/Filter").find("/FlateDecode") != string::npos)
+      if(header.get_string("/Filter").find("/FlateDecode") != string::npos)
       {
         FlateDecode(stream);
       }
@@ -108,7 +108,7 @@ void object_class::indexObjectStream()
   string pre(stream.begin(), stream.begin() + startbyte - 1);
 
   // extract these numbers to a vector
-  vector<int> index = getints(pre);
+  vector<int> index = parse_ints(pre);
 
   // If this is empty, something has gone wrong.
   if(index.empty()) throw runtime_error("Couldn't parse object stream");
@@ -166,7 +166,7 @@ object_class::object_class(shared_ptr<object_class> holder, int objnum)
     if(stream.size() < 15 && stream.find(" R", 0) < 15)
     {
       size_t oldnumber = this->number;
-      size_t newobjnum = getObjRefs(stream)[0];
+      size_t newobjnum = parse_references(stream)[0];
       size_t newholder = XR->inObject(newobjnum); // ensure no holding object
 
       if(newholder == 0)
@@ -215,7 +215,7 @@ string object_class::getStream()
   if(XR->isEncrypted()) XR->decrypt(stream, number, 0);
 
   // de-deflate if necessary
-  if(header.get("/Filter").find("/FlateDecode", 0) != string::npos)
+  if(header.get_string("/Filter").find("/FlateDecode", 0) != string::npos)
   {
     FlateDecode(stream);
   }

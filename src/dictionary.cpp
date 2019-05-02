@@ -439,7 +439,7 @@ dictionary::dictionary(std::unordered_map<string, string> dict)
 /*---------------------------------------------------------------------------*/
 // Simple getter of dictionary contents as a string from given key name
 
-string dictionary::get(const string& Key) const
+string dictionary::get_string(const string& Key) const
 {
   // A simple map index lookup with square brackets adds the key to
   // m_Map, which we don't want. Using find(key) leaves it unaltered
@@ -456,7 +456,7 @@ string dictionary::get(const string& Key) const
 /*---------------------------------------------------------------------------*/
 // Sometimes we just need a boolean check for the presence of a key
 
-bool dictionary::has(const string& Key) const
+bool dictionary::has_key(const string& Key) const
 {
   return m_Map.find(Key) != m_Map.end();
 }
@@ -466,55 +466,55 @@ bool dictionary::has(const string& Key) const
 // This should return true if the key is present AND its value contains
 // at least one object reference, and should be false in all other cases
 
-bool dictionary::hasRefs(const string& Key) const
+bool dictionary::contains_references(const string& Key) const
 {
-  return !this->getRefs(Key).empty();
+  return !this->get_references(Key).empty();
 }
 
 /*---------------------------------------------------------------------------*/
 // Check whether the key's values contains any integers. If a key is present
 // AND its value contains ints, return true. Otherwise false.
 
-bool dictionary::hasInts(const string& Key) const
+bool dictionary::contains_ints(const string& Key) const
 {
-  return !this->getInts(Key).empty();
+  return !this->get_ints(Key).empty();
 }
 
 /*---------------------------------------------------------------------------*/
 // Returns a vector of the object numbers from references found in the
 // given key's value. Uses the getObjRefs() global function from utilities.h
 
-vector<int> dictionary::getRefs(const string& Key) const
+vector<int> dictionary::get_references(const string& Key) const
 {
-  return getObjRefs(this->get(Key));
+  return parse_references(this->get_string(Key));
 }
 
 /*---------------------------------------------------------------------------*/
-// Returns any integers present in the value string as read by the getInts()
+// Returns any integers present in the value string as read by the parse_ints()
 // global function defined in utilities.cpp
 
-vector<int> dictionary::getInts(const string& Key) const
+vector<int> dictionary::get_ints(const string& Key) const
 {
-  return getints(this->get(Key));
+  return parse_ints(this->get_string(Key));
 }
 
 /*---------------------------------------------------------------------------*/
-// Returns any floats present in the value string as read by the getNums()
+// Returns any floats present in the value string as read by the parse_floats()
 // global function defined in utilities.cpp
 
-vector<float> dictionary::getNums(const string& Key) const
+vector<float> dictionary::get_floats(const string& Key) const
 {
-  return getnums(this->get(Key));
+  return parse_floats(this->get_string(Key));
 }
 
 /*---------------------------------------------------------------------------*/
 // This creates a new dictionary object on request if the value string contains
 // a subdictionary.
 
-dictionary dictionary::getDictionary(const string& Key) const
+dictionary dictionary::get_dictionary(const string& Key) const
 {
   // Get the value string
-  string dict = this->get(Key);
+  string dict = this->get_string(Key);
 
   // Test that it is a dictionary
   if(dict.find("<<") != string::npos)
@@ -531,9 +531,9 @@ dictionary dictionary::getDictionary(const string& Key) const
 // Checks whether a subdictionary is present in the value string by looking
 // for double angle brackets
 
-bool dictionary::hasDictionary(const string& Key) const
+bool dictionary::contains_dictionary(const string& Key) const
 {
-  string dict = this->get(Key);
+  string dict = this->get_string(Key);
   return dict.find("<<") != string::npos;
 }
 
@@ -541,7 +541,7 @@ bool dictionary::hasDictionary(const string& Key) const
 // Returns all the keys present in the dictionary using the getKeys() template
 // defined in utilities.cpp
 
-vector<string> dictionary::getDictKeys() const
+vector<string> dictionary::get_all_keys() const
 {
   return getKeys(this->m_Map);
 }

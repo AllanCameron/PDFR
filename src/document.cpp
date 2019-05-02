@@ -103,7 +103,7 @@ shared_ptr<object_class> document::getobject(int n)
 void document::getCatalog()
 {
   // The pointer to the catalog is given under /Root in the trailer dictionary
-  vector<int> rootnums = Xref->trailer().getRefs("/Root");
+  vector<int> rootnums = Xref->trailer().get_references("/Root");
 
   // This is the only place we look for the catalog, so it better be here...
   if (rootnums.empty()) throw runtime_error("Couldn't find catalog dictionary");
@@ -120,22 +120,24 @@ void document::getCatalog()
 void document::getPageDir()
 {
   // Throw an error if catalog has no /Pages entry
-  if(!catalog.hasRefs("/Pages")) throw runtime_error("No valid /Pages entry");
+  if(!catalog.contains_references("/Pages"))
+    throw runtime_error("No valid /Pages entry");
 
   // Else get the object number of the /Pages dictionary
-  int pagesobject = catalog.getRefs("/Pages")[0];
+  int pagesobject = catalog.get_references("/Pages")[0];
 
   // Now fetch that object and store it
   pagedir = getobject(pagesobject)->getDict();
 
   // Ensure /Pages has /kids entry
-  if (!pagedir.hasRefs("/Kids")) throw runtime_error("No Kids entry in /Pages");
+  if (!pagedir.contains_references("/Kids"))
+    throw runtime_error("No Kids entry in /Pages");
 
   // Create the page directory tree. Start with the pages object as root node
   auto root = make_shared<tree_node<int>>(pagesobject);
 
   // Populate the tree
-  expandKids(pagedir.getRefs("/Kids"), root);
+  expandKids(pagedir.get_references("/Kids"), root);
 
   // Get the leafs of the tree
   pageheaders = root->getLeafs();
@@ -176,10 +178,10 @@ void document::expandKids(const vector<int>& obs,
   // For each new node get a vector of ints for its kid nodes
   for(auto& kid : kidnodes)
   {
-    auto newnodes = getobject(kid->get())->getDict().getRefs("/Kids");
+    auto refs = getobject(kid->get())->getDict().get_references("/Kids");
 
     // If it has children, use recursion to get them
-    if (!newnodes.empty()) expandKids(newnodes, kid);
+    if (!refs.empty()) expandKids(refs, kid);
   }
 }
 

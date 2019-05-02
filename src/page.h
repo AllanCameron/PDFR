@@ -71,12 +71,12 @@ public:
   page& operator=(page&& p) noexcept { *this = std::move(p); return *this;}
 
   // public methods
-  std::vector<std::string> getFontNames();  // Returns PostScript font names
-  std::shared_ptr<std::string> pageContents(); // Returns page description program as string
-  std::shared_ptr<std::string> getXobject(const std::string&); // Return specified XObject string
-  std::shared_ptr<font> getFont(const std::string&);  // Get pointer to font
-  Box getminbox();
-  void clearFontMap();
+  std::vector<std::string> get_font_names();  // Returns PostScript font names
+  std::shared_ptr<std::string> get_page_contents(); // Returns page description program as string
+  std::shared_ptr<std::string> get_XObject(const std::string&); // Return specified XObject string
+  std::shared_ptr<font> get_font(const std::string&);  // Get pointer to font
+  Box get_minbox();
+  void clear_font_map();
 
 private:
   // private data members
@@ -96,15 +96,15 @@ private:
   static std::unordered_map<std::string, std::shared_ptr<font>> sm_fontmap;
 
   // private methods
-  void parseXObjStream(); // Write form XObjects to the xobject map
-  void boxes();           // Store bounding boxes and calculate the smallest
-  void getHeader();       // Find the correct page header dictionary in document
-  void getResources();    // Obtain the resource dictionary
-  void getFonts();        // Get font dictionary and build fontmap
-  void getContents();     // find content objects to Write contentstring
+  void read_XObjects(); // Write form XObjects to the xobject map
+  void read_boxes();           // Store bounding boxes and calculate the smallest
+  void read_header();       // Find the correct page header dictionary in document
+  void read_resources();    // Obtain the resource dictionary
+  void read_fonts();        // Get font dictionary and build fontmap
+  void read_contents();     // find content objects to Write contentstring
 
   // Gets the leaf nodes of a content tree
-  void expandContents(std::vector<int> obs,
+  void expand_contents(std::vector<int> obs,
                       std::shared_ptr<tree_node<int>> tree);
 };
 

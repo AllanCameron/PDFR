@@ -366,14 +366,14 @@ std::vector<RawChar> StringToRawChar(const std::string&);
 // even though the code is more unwieldy. It is essentially a finite state
 // machine that reads character by character and stores any matches found
 
-std::vector<int> getObjRefs(const std::string&);
+std::vector<int> parse_references(const std::string&);
 
 //---------------------------------------------------------------------------//
 // Another lexer. This one finds any integers in a string.
 // If there are decimal points, it ignores the fractional part.
 // It will not accurately represent hex, octal or scientific notation (eg 10e5)
 
-std::vector<int> getints(const std::string&);
+std::vector<int> parse_ints(const std::string&);
 
 //---------------------------------------------------------------------------//
 // This lexer retrieves floats from a string. It searches through the entire
@@ -381,7 +381,7 @@ std::vector<int> getints(const std::string&);
 // result can be interpreted as a decimally represented number. It will also
 // consume and convert integers but not hex, octal or scientific notation
 
-std::vector<float> getnums(const std::string&);
+std::vector<float> parse_floats(const std::string&);
 
 //---------------------------------------------------------------------------//
 // Loads a file's contents into a single std::string using <fstream>

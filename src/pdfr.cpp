@@ -80,10 +80,10 @@ Rcpp::DataFrame getglyphmap(const string& file_name, int page_number)
   vector<string> font_names;
 
   // For each font string on the page...
-  for(auto& font_string : page_ptr->getFontNames())
+  for(auto& font_string : page_ptr->get_font_names())
   {
     // Get a pointer to the font
-    auto&& font_ptr = page_ptr->getFont(font_string);
+    auto&& font_ptr = page_ptr->get_font(font_string);
 
     // for each code point in the font, copy the fontname and input codepoint
     for(auto& key : font_ptr->getGlyphKeys())
@@ -96,7 +96,7 @@ Rcpp::DataFrame getglyphmap(const string& file_name, int page_number)
   }
 
   // Clear the static font map
-  page_ptr->clearFontMap();
+  page_ptr->clear_font_map();
 
   // put all the glyphs in a single dataframe and return
   return  Rcpp::DataFrame::create(Rcpp::Named("Font")      = font_names,
@@ -214,14 +214,14 @@ Rcpp::List getatomic(shared_ptr<page> page_ptr)
   parser parser_object = parser(page_ptr);
 
   // Read page contents to parser
-  tokenizer(page_ptr->pageContents(), &parser_object);
+  tokenizer(page_ptr->get_page_contents(), &parser_object);
 
   // Obtain output from parser and transpose into a text table
   auto text_box = parser_object.output();
   text_table table(text_box);
 
   // Ensure the static fontmap is cleared after use
-  page_ptr->clearFontMap();
+  page_ptr->clear_font_map();
 
   // Now create the data frame
   Rcpp::DataFrame db =  Rcpp::DataFrame::create(
@@ -235,7 +235,7 @@ Rcpp::List getatomic(shared_ptr<page> page_ptr)
 
   // Return it as a list along with the page dimensions
   return Rcpp::List::create(
-                        Rcpp::Named("Box") = page_ptr->getminbox().vector(),
+                        Rcpp::Named("Box") = page_ptr->get_minbox().vector(),
                         Rcpp::Named("Elements") = move(db));
 }
 
@@ -247,7 +247,7 @@ Rcpp::List get_text_boxes(shared_ptr<page> page_ptr)
   parser parser_object(page_ptr);
 
   // Read page contents to parser
-  tokenizer(page_ptr->pageContents(), &parser_object);
+  tokenizer(page_ptr->get_page_contents(), &parser_object);
 
   // Group letters and words
   letter_grouper grouped_letters(parser_object.output());
@@ -282,7 +282,7 @@ Rcpp::List get_text_boxes(shared_ptr<page> page_ptr)
     }
     polygonNumber++;
   }
-  page_ptr->clearFontMap();
+  page_ptr->clear_font_map();
   Rcpp::DataFrame db =  Rcpp::DataFrame::create(
                         Rcpp::Named("text") = std::move(glyph),
                         Rcpp::Named("left") = std::move(left),
@@ -292,8 +292,8 @@ Rcpp::List get_text_boxes(shared_ptr<page> page_ptr)
                         Rcpp::Named("size") = std::move(size),
                         Rcpp::Named("box") = std::move(polygon),
                         Rcpp::Named("stringsAsFactors") = false);
-  return Rcpp::List::create(Rcpp::Named("Box") = page_ptr->getminbox().vector(),
-                            Rcpp::Named("Elements") = std::move(db));
+return Rcpp::List::create(Rcpp::Named("Box") = page_ptr->get_minbox().vector(),
+                          Rcpp::Named("Elements") = std::move(db));
 }
 
 //---------------------------------------------------------------------------//
@@ -343,7 +343,7 @@ Rcpp::DataFrame pdfdoc_common(shared_ptr<document> document_ptr)
     parser parser_object(page_ptr);
 
     // Read page contents to parser object
-    tokenizer(page_ptr->pageContents(), &parser_object);
+    tokenizer(page_ptr->get_page_contents(), &parser_object);
 
     // Join individual letters into words
     letter_grouper grouped_letters(move(parser_object.output()));
@@ -366,7 +366,7 @@ Rcpp::DataFrame pdfdoc_common(shared_ptr<document> document_ptr)
     while(pagenums.size() < size.size()) pagenums.push_back(page_number + 1);
 
     // Clear the static font map if we are on the last page.
-    if(page_number == (npages - 1)) page_ptr->clearFontMap();
+    if(page_number == (npages - 1)) page_ptr->clear_font_map();
   }
 
   // Build and return an R data frame
@@ -423,10 +423,10 @@ string pagestring(const string& file_name, int page_number)
   auto page_ptr = get_page(file_name, page_number);
 
   // Clear the static font map
-  page_ptr->clearFontMap();
+  page_ptr->clear_font_map();
 
   // Return a dereferenced pointer to the page contents
-  return *(page_ptr->pageContents());
+  return *(page_ptr->get_page_contents());
 }
 
 //---------------------------------------------------------------------------//
@@ -439,10 +439,10 @@ string pagestringraw(const vector<uint8_t>& raw_file, int page_number)
   auto page_ptr = get_page(raw_file, page_number);
 
   // Clear the static font map
-  page_ptr->clearFontMap();
+  page_ptr->clear_font_map();
 
   // Return a dereferenced pointer to the page contents
-  return *(page_ptr->pageContents());
+  return *(page_ptr->get_page_contents());
 }
 
 //---------------------------------------------------------------------------//
@@ -453,7 +453,7 @@ Rcpp::DataFrame pdf_boxes(shared_ptr<page> page_ptr)
   parser parser_object(page_ptr);
 
   // Read the page contents into the parser
-  tokenizer(page_ptr->pageContents(), &parser_object);
+  tokenizer(page_ptr->get_page_contents(), &parser_object);
 
   // Group individual letters into words
   letter_grouper grouped_letters(move(parser_object.output()));
@@ -483,7 +483,7 @@ Rcpp::DataFrame pdf_boxes(shared_ptr<page> page_ptr)
   }
 
   // Clear the static font map
-  page_ptr->clearFontMap();
+  page_ptr->clear_font_map();
 
   // Build and return an R dataframe
   return Rcpp::DataFrame::create(

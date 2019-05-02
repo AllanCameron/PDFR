@@ -69,7 +69,7 @@ parser::parser(shared_ptr<page> pag) : // long initializer list...
   m_Tw(0),                             // word spacing
   m_Th(100),                           // horizontal scaling
   m_Tc(0),                             // character spacing
-  m_db(Box(m_p->getminbox()))
+  m_db(Box(m_p->get_minbox()))
 {}
 
 //---------------------------------------------------------------------------//
@@ -127,7 +127,7 @@ void parser::Q()
     m_currfontsize = m_fontsizestack.back();
   }
   // The top of stack is now working font
-  m_wfont = m_p->getFont(m_currentfont);
+  m_wfont = m_p->get_font(m_currentfont);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -187,7 +187,7 @@ void parser::Tf()
   if(m_Operands.size() > 1)
   {
     m_currentfont = m_Operands[0];           // Read fontID
-    m_wfont = m_p->getFont(m_currentfont);   // Get font from fontID
+    m_wfont = m_p->get_font(m_currentfont);   // Get font from fontID
     m_currfontsize = stof(m_Operands[1]);    // Get font size
     m_fontsizestack.back() = m_currfontsize; // Remember changes to state
     m_fontstack.back() = m_currentfont;      // Remember changes to state

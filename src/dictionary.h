@@ -83,21 +83,23 @@ class dictionary
   dictionary& operator=(const dictionary& d){m_Map = d.m_Map; return *this;}
 
   // Public member functions
-  std::string get(const std::string&) const;  // get value as string given name
-  bool has(const std::string&) const;         // confirms a key is present
-  bool hasRefs(const std::string&) const;   // tests if given key has references
-  bool hasInts(const std::string&) const;     // tests if given key has ints
-  bool hasDictionary(const std::string&) const; // tests if key has dictionary
-  std::vector<int> getRefs(const std::string&) const; // gets obj refs from key
-  std::vector<int> getInts(const std::string&) const; // gets ints from key
-  std::vector<float> getNums(const std::string&) const; // gets floats from key
-  std::vector<std::string> getDictKeys() const; // gets all keys from dictionary
-  dictionary getDictionary(const std::string&) const; // gets sub-dict from key
+  std::string get_string(const std::string&) const;  // get value as string given name
+  bool has_key(const std::string&) const;         // confirms a key is present
+  bool contains_references(const std::string&) const;   // tests if given key has references
+  bool contains_ints(const std::string&) const;     // tests if given key has ints
+  bool contains_dictionary(const std::string&) const; // tests if key has dictionary
+  std::vector<int> get_references(const std::string&) const;
+  std::vector<int> get_ints(const std::string&) const;
+  std::vector<float> get_floats(const std::string&) const;
+  std::vector<std::string> get_all_keys() const;
+  dictionary get_dictionary(const std::string&) const;
   const std::unordered_map<std::string, std::string>& R_out() const;
+
   std::unordered_map<std::string, std::string>::const_iterator begin()
   {
     return m_Map.cbegin();
   }
+
   std::unordered_map<std::string, std::string>::const_iterator end()
   {
     return m_Map.cend();
