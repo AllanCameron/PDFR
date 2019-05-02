@@ -119,17 +119,17 @@ Rcpp::DataFrame xrefcreator(shared_ptr<const string> file_string)
   vector<int> object {}, start_byte {}, in_object {};
 
   // If the xref has entries
-  if(!Xref.getObjects().empty())
+  if(!Xref.get_all_object_numbers().empty())
   {
     // Get all of its object numbers
-    vector<int>&& all_objects = Xref.getObjects();
+    vector<int>&& all_objects = Xref.get_all_object_numbers();
 
     // Then for each listed object, store its number, start byte and container
     for(int object_num : all_objects)
     {
       object.push_back(object_num);
-      start_byte.push_back(Xref.getStart(object_num));
-      in_object.push_back(Xref.inObject(object_num));
+      start_byte.push_back(Xref.get_object_start_byte(object_num));
+      in_object.push_back(Xref.get_holding_object_number_of(object_num));
     }
   }
 

@@ -101,32 +101,32 @@ public:
   xref(std::shared_ptr<const std::string>); // Constructor
 
   // public methods
-  bool isEncrypted() const;           // Eeturns encryption state
-  dictionary trailer() const;         // Get the trailer dictionary
-  size_t getStart(int) const;         // Byyte offset of a given object
-  size_t getEnd(int) const;           // Byte offset of end of given object
-  size_t inObject(int) const;         // The object that the given object is in
-  std::vector<int> getObjects() const;// List all objects recorded in xref
-  std::array<size_t, 2> getStreamLoc(int) const; // finds start / stop of stream
+  bool is_encrypted() const;           // Eeturns encryption state
+  dictionary get_trailer() const;
+  size_t get_object_start_byte(int) const;   // Byyte offset of a given object
+  size_t get_object_end_byte(int) const;  // Byte offset of end of given object
+  size_t get_holding_object_number_of(int) const;
+  std::vector<int> get_all_object_numbers() const;
+  std::array<size_t, 2> get_stream_location(int) const;
   void decrypt(std::string&, int, int) const; // Decrypt a stream
   std::shared_ptr<const std::string> file() const;// pointer to main file string
 
 private:
-  std::shared_ptr<const std::string> fs;  // pointer to the creating file string
-  std::unordered_map<int, xrefrow> xreftab; // This is the main data member
-  std::vector<int> Xreflocations;         // vector of offsets of xref starts
-  dictionary TrailerDictionary;           // Canonical trailer dictionary
-  bool encrypted;                         // Flag to indicate if encryption used
-  std::shared_ptr<crypto> encryption;     // crypto object for decrypting files
+  std::shared_ptr<const std::string> m_file_string;
+  std::unordered_map<int, xrefrow> m_xref_table; // This is the main data member
+  std::vector<int> m_xref_locations;         // vector of offsets of xref starts
+  dictionary m_trailer_dictionary;           // Canonical trailer dictionary
+  bool m_encrypted;                     // Flag to indicate if encryption used
+  std::shared_ptr<crypto> m_encryption; // crypto object for decrypting files
 
 // private methods
   xref& operator=(const xref&);
-  int streamLength(const dictionary& dict) const;
-  void locateXrefs();                     // Finds xref locations
-  void xrefstrings();                     // Gets strings from xref locations
-  void xrefFromStream(int);               // Uses xrefstream class to get xref
-  void xrefFromString(std::string&);      // parses xref directly
-  void get_crypto();                      // Allows decryption of encrypted docs
+  int get_stream_length(const dictionary& dict) const;
+  void locate_xrefs();                     // Finds xref locations
+  void read_xref_strings();               // Gets strings from xref locations
+  void read_xref_from_stream(int);        // Uses xrefstream class to get xref
+  void read_xref_from_string(std::string&);   // parses xref directly
+  void create_crypto();                     // Allows decryption of encrypted docs
 };
 
 //---------------------------------------------------------------------------//

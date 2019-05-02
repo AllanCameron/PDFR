@@ -39,8 +39,8 @@ object_class::object_class(shared_ptr<const xref> Xref, int object_num) :
   XR(Xref), number(object_num), has_stream(false), m_streampos({0, 0})
 {
   // Find start and end of object
-  size_t startbyte = XR->getStart(object_num);
-  size_t stopbyte  = XR->getEnd(object_num);
+  size_t startbyte = XR->get_object_start_byte(object_num);
+  size_t stopbyte  = XR->get_object_end_byte(object_num);
 
   // We check to see if the object has a header dictionary by finding '<<'
   if(XR->file()->substr(startbyte, 20).find("<<") == string::npos)
@@ -63,7 +63,7 @@ object_class::object_class(shared_ptr<const xref> Xref, int object_num) :
     header = dictionary(XR->file(), startbyte);
 
     // Find the stream (if any)
-    m_streampos = XR->getStreamLoc(startbyte);
+    m_streampos = XR->get_stream_location(startbyte);
 
      // Record stream's existence
     has_stream = m_streampos[1] > m_streampos[0];
@@ -76,7 +76,7 @@ object_class::object_class(shared_ptr<const xref> Xref, int object_num) :
                                   m_streampos[1] - m_streampos[0]);
 
       // Decrypt if necessary
-      if(XR->isEncrypted()) XR->decrypt(stream, number, 0);
+      if(XR->is_encrypted()) XR->decrypt(stream, number, 0);
 
       // De-deflate if necessary
       if(header.get_string("/Filter").find("/FlateDecode") != string::npos)
@@ -167,7 +167,7 @@ object_class::object_class(shared_ptr<object_class> holder, int objnum)
     {
       size_t oldnumber = this->number;
       size_t newobjnum = parse_references(stream)[0];
-      size_t newholder = XR->inObject(newobjnum); // ensure no holding object
+      size_t newholder = XR->get_holding_object_number_of(newobjnum);
 
       if(newholder == 0)
       {
@@ -212,7 +212,7 @@ string object_class::getStream()
   }
 
   // decrypt if necessary
-  if(XR->isEncrypted()) XR->decrypt(stream, number, 0);
+  if(XR->is_encrypted()) XR->decrypt(stream, number, 0);
 
   // de-deflate if necessary
   if(header.get_string("/Filter").find("/FlateDecode", 0) != string::npos)

@@ -82,7 +82,7 @@ shared_ptr<object_class> document::getobject(int n)
   if(objects.find(n) == objects.end())
   {
     // If it is not stored, check whether it is in an object stream
-    size_t holder = Xref->inObject(n);
+    size_t holder = Xref->get_holding_object_number_of(n);
 
     // If object is in a stream, create it recursively from the stream object
     if(holder) objects[n] = make_shared<object_class>(getobject(holder), n);
@@ -103,7 +103,7 @@ shared_ptr<object_class> document::getobject(int n)
 void document::getCatalog()
 {
   // The pointer to the catalog is given under /Root in the trailer dictionary
-  vector<int> rootnums = Xref->trailer().get_references("/Root");
+  vector<int> rootnums = Xref->get_trailer().get_references("/Root");
 
   // This is the only place we look for the catalog, so it better be here...
   if (rootnums.empty()) throw runtime_error("Couldn't find catalog dictionary");
