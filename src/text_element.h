@@ -61,28 +61,37 @@
 
 class text_element : public Box
 {
+
+typedef std::shared_ptr<text_element> text_ptr;
+
 public:
-  text_element(float, float, float, float, std::string, std::vector<Unicode>);
+  text_element(float, float, float, float,
+               std::shared_ptr<font>, std::vector<Unicode>);
+
+  // Inevitably, we need to define some "magic number" constants to define
+  // how close together text elements have to be to clump together
 
   constexpr static float CLUMP_H = 0.01; // horizontal clumping, high = sticky
   constexpr static float CLUMP_V = 0.1;  // vertical clumping, high = sticky
+  constexpr static float LINE_CLUMP = 0.7;
+  constexpr static float MAX_WORD_GAP = 2.0;
+  constexpr static float MAX_ALIGN_IGNORE = 0.41;
 
-  inline void make_left_edge()           { m_flags |= 0x08;                 }
-  inline void make_right_edge()          { m_flags |= 0x02;                 }
-  inline void make_centred()             { m_flags |= 0x04;                 }
-  inline void consume()                  { m_flags |= 0x01;                 }
-  inline void set_join(int key, int ind) { r_join = {key, ind};             }
-  inline void add_space()                { glyph.push_back(0x0020);         }
-  inline bool is_left_edge()    const    { return (m_flags & 0x08) == 0x08; }
-  inline bool is_right_edge()   const    { return (m_flags & 0x02) == 0x02; }
-  inline bool is_centred()      const    { return (m_flags & 0x04) == 0x04; }
-  inline bool is_consumed()     const    { return (m_flags & 0x01) == 0x01; }
-  inline int  grid_num()        const    { return this->r_join.first;       }
-  inline int  vec_num()         const    { return this->r_join.second;      }
-  inline bool no_join()         const    { return this-> r_join.first == -1;}
-  inline std::string get_font() const    { return this->font;               }
+  inline void make_left_edge()  { this->set_flag(0x08); }
+  inline void make_right_edge() { this->set_flag(0x02); }
+  inline void make_centred()    { this->set_flag(0x04); }
 
+  inline bool is_left_edge()  const { return this->has_flag(0x08); }
+  inline bool is_right_edge() const { return this->has_flag(0x02); }
+  inline bool is_centred()    const { return this->has_flag(0x04); }
+
+  inline void set_join(text_ptr element) { this->m_join = element;}
+  inline text_ptr get_join()             { return this->m_join; }
+  inline bool has_join() const { if(m_join) return true; else return false;}
+
+  inline std::string get_font() const { return this->m_font->fontname();}
   inline std::vector<Unicode> get_glyph() const { return this->glyph;}
+  inline void add_space() { glyph.push_back(0x0020);         }
 
   inline void pop_last_glyph()
   {
@@ -109,6 +118,27 @@ public:
       ) ;
   }
 
+  inline bool is_on_same_line_as(const text_element& other) const
+  {
+    return
+    (other.get_bottom() - this->get_bottom() < LINE_CLUMP * this->get_size()) &&
+    (this->get_bottom() - other.get_bottom() < LINE_CLUMP * this->get_size());
+  }
+
+  inline bool is_way_beyond(const text_element& other) const
+  {
+    return get_left() - other.get_right() > MAX_WORD_GAP * other.get_size();
+  }
+
+  inline bool cannot_join_left_of(const text_element& other) const
+  {
+    return
+    ((other.is_left_edge()  || other.is_centred())  &&
+    (other.get_left() - get_right() > MAX_ALIGN_IGNORE * get_size())) ||
+    ((this->is_right_edge() || this->is_centred())   &&
+    (other.get_left() - get_right() > MAX_ALIGN_IGNORE * this->get_size()));
+  }
+
   void merge_letters(text_element&);
   bool is_elligible_to_join(const text_element&) const;
   void join_words(text_element&);
@@ -116,10 +146,9 @@ public:
 
 
 private:
-  std::string font;             // Name of font used to draw text
-  std::vector<Unicode> glyph;   // The actual Unicode glyphs encoded
-  std::pair<int, int> r_join;   // address of closest adjacent element
-  uint8_t m_flags;
+  std::shared_ptr<font> m_font;         // Name of font used to draw text
+  std::vector<Unicode> glyph;           // The actual Unicode glyphs encoded
+  std::shared_ptr<text_element> m_join; // address of closest adjacent element
 };
 
 //---------------------------------------------------------------------------//
@@ -153,24 +182,23 @@ public:
   typedef std::vector<text_ptr>::const_iterator textbox_const_iterator;
 
   // Functions to copy the methods of vectors to access main data object
-  inline textbox_iterator begin() {return m_data.begin();}
-  inline textbox_iterator end()   {return m_data.end();  }
-  inline textbox_const_iterator cbegin() const {return m_data.cbegin();}
-  inline textbox_const_iterator cend() const {return m_data.cend();}
-
-  inline text_ptr& operator[](int n)             { return m_data[n];     }
-  inline text_ptr front() const {return m_data.front();}
-  inline text_ptr back() const { return m_data.back();}
-  inline size_t size() const {return m_data.size();}
-  inline bool empty(){return m_data.empty();}
-  inline void push_back(text_ptr t){m_data.push_back(t);}
-  inline void clear(){ m_data.clear();}
-  inline void resize(int a){ m_data.resize(a);}
+  inline textbox_iterator begin() {return m_data.begin(); }
+  inline textbox_iterator end()   {return m_data.end(); }
+  inline textbox_const_iterator cbegin() const {return m_data.cbegin(); }
+  inline textbox_const_iterator cend() const {return m_data.cend(); }
+  inline text_ptr& operator[](int n) { return m_data[n]; }
+  inline text_ptr front() const {return m_data.front(); }
+  inline text_ptr back() const { return m_data.back(); }
+  inline size_t size() const { return m_data.size(); }
+  inline bool empty() const { return m_data.empty(); }
+  inline void push_back(text_ptr t) { m_data.push_back(t); }
+  inline void clear() { m_data.clear(); }
+  inline void resize(int a) { m_data.resize(a); }
   inline void swap_data(std::vector<text_ptr>& other){std::swap(m_data, other);}
   void remove_duplicates();
 
 private:
-  // The data members
+  // The data member
   std::vector<text_ptr> m_data;
 };
 
@@ -182,14 +210,10 @@ private:
 struct text_table: public Box
 {
   text_table(const textbox&);
-  std::vector<std::vector<Unicode>> text; // vector of unicode code points
-  std::vector<float> left;                // vector of glyphs' left edges
-  std::vector<float> bottom;              // vector of glyphs' bottom edges
-  std::vector<float> right;               // vector of glyphs' right edges
-  std::vector<std::string> fonts;         // vector of glyphs' font names
-  std::vector<float> top;                 // vector of glyphs' top edge
+  std::vector<std::vector<Unicode>> text;      // vector of unicode code points
+  std::vector<float> left, right, bottom, top; // vectors of glyphs' positions
+  std::vector<std::string> fonts;              // vector of glyphs' font names
   std::vector<float> get_size();
-  std::vector<text_element> transpose();
   void join(text_table& other);
 };
 

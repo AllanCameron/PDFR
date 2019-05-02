@@ -107,14 +107,14 @@ class Box
 {
   // Data members
   float left, right, top, bottom;
-  bool deletion_flag;
+  uint8_t m_flags;
 
 public:
   // Constructors: from separate floats, a vector of floats or default
   Box(float a, float b, float c, float d):
-    left(a), right(b), top(c), bottom(d), deletion_flag(false) {}
+    left(a), right(b), top(c), bottom(d), m_flags(0) {}
 
-  Box(std::vector<float> v): deletion_flag(false)
+  Box(std::vector<float> v): m_flags(0)
   {
     if(v.size() < 4) throw std::runtime_error("Box creation needs four floats");
     left = v[0];
@@ -127,9 +127,9 @@ public:
 
   // We can use the direction enum to access the edges of the box instead of
   // using getters if we need to calculate the edge we're interested in getting.
-  inline float edge(int a) const
+  inline float edge(int side) const
   {
-    switch(a)
+    switch(side)
     {
       case 0: return left;
       case 1: return bottom;
@@ -138,6 +138,9 @@ public:
       default: throw std::runtime_error("Invalid box index");
     }
   }
+
+  inline void set_flag(uint8_t flag) { m_flags |= flag;}
+  inline bool has_flag(uint8_t flag) const { return (m_flags & flag) == flag; }
 
   // Getters
   inline float get_left()   const   { return this->left;}
@@ -160,7 +163,7 @@ public:
     this->right  = std::max(this->right,  other.right );
     this->bottom = std::min(this->bottom, other.bottom);
     this->top    = std::max(this->top,    other.top   );
-    other.remove();
+    other.consume();
   }
 
   // Make the box dimensions equal to the smallest box that covers this box
@@ -176,7 +179,7 @@ public:
   // Compare two boxes for exact equality
   inline bool operator==(const Box& other) const
   {
-    return left == other.left && right  == other.right &&
+    return left == other.left && right  == other.right  &&
            top  == other.top  && bottom == other.bottom;
   }
 
@@ -199,10 +202,8 @@ public:
   }
 
   // Mark for deletion
-  inline void remove() {deletion_flag = true;}
-
-  // Check for deletion status
-  inline bool is_deleted() const { return deletion_flag;}
+  inline void consume() { m_flags |= 0x01; }
+  inline bool is_consumed() const { return (m_flags & 0x01) == 0x01; }
 
   // Simple calculations of width and height
   inline float width()  const { return right - left  ;}
@@ -238,7 +239,7 @@ public:
 
   // The following four functions determine whether, for any given Vertex,
   // moving an arbitrarily small distance in the stated direction will put
-  // us inside the box. This allows us to work out on which edges of which
+  // us inside this box. This allows us to work out on which edges of which
   // boxes the point lies.
   inline bool is_NW_of(Vertex& v) const
   {
@@ -264,17 +265,17 @@ public:
   // (0 = top-left, 1 = top-right, 2 = bottom-left, 3 = bottom-right)
   // Note, the given vertex is automatically flagged as being impinged at the
   // correct compass direction
-  Vertex get_vertex(int j)
+  std::shared_ptr<Vertex> get_vertex(int j)
   {
     switch(j)
     {
-      case 0 : return Vertex  (left, top, 0x02);
-      case 1 : return Vertex  (right, top, 0x01);
-      case 2 : return Vertex  (left, bottom, 0x04);
-      case 3 : return Vertex  (right, bottom, 0x08);
-      default: return Vertex  (0, 0, 0);
+      case 0 : return std::make_shared<Vertex>(left,  top,    0x02);
+      case 1 : return std::make_shared<Vertex>(right, top,    0x01);
+      case 2 : return std::make_shared<Vertex>(left,  bottom, 0x04);
+      case 3 : return std::make_shared<Vertex>(right, bottom, 0x08);
+      default: return std::make_shared<Vertex>(0, 0, 0);
     }
-    return Vertex  (0, 0, 0);
+    return std::make_shared<Vertex>  (0, 0, 0);
   }
 
   // Marks a box's impingement on a given vertex. This records whether moving
@@ -282,10 +283,10 @@ public:
   // place one inside the current box.
   void record_impingement_on(Vertex& v)
   {
-    if(is_NW_of(v)) v.flags |= 0x08; // NW
-    if(is_NE_of(v)) v.flags |= 0x04; // NE
-    if(is_SE_of(v)) v.flags |= 0x02; // SE
-    if(is_SW_of(v)) v.flags |= 0x01; // SW
+    if(is_NW_of(v)) v.flags |= 0x08;
+    if(is_NE_of(v)) v.flags |= 0x04;
+    if(is_SE_of(v)) v.flags |= 0x02;
+    if(is_SW_of(v)) v.flags |= 0x01;
   }
 
   // Return box dimensions as a vector for output

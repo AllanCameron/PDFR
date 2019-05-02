@@ -33,8 +33,8 @@ using namespace std;
 //---------------------------------------------------------------------------//
 
 text_element::text_element
-(float l, float r, float t, float b, string f, std::vector<Unicode> g):
-Box(l, r, t, b), font(f), glyph(g), r_join(make_pair(-1, -1)), m_flags(0) {};
+(float l, float r, float t, float b, shared_ptr<font> f, std::vector<Unicode> g):
+Box(l, r, t, b), m_font(f), glyph(g), m_join(nullptr) {};
 
 
 //---------------------------------------------------------------------------//
@@ -62,18 +62,11 @@ void text_element::merge_letters(text_element& matcher)
 
 bool text_element::is_elligible_to_join(const text_element& other) const
 {
-  if(other.is_consumed() ||
-     (other.get_left() < this->get_right()) ||
-     (other.get_bottom() - this->get_bottom() > 0.7 * this->get_size()) ||
-     (this->get_bottom() - other.get_bottom() > 0.7 * this->get_size()) ||
-     (other.get_left() - this->get_right() > 2 * this->get_size()) ||
-      ((other.is_left_edge()  || other.is_centred())           &&
-      (other.get_left() - this->get_right() > 0.51 * this->get_size())) ||
-     ((this->is_right_edge() || this->is_centred())   &&
-      (other.get_left() - this->get_right() > 0.51 * this->get_size()))  )
-    return false;
-  else
-    return true;
+  return  !other.is_consumed()                     &&
+           other.is_beyond(*this)                  &&
+           other.is_on_same_line_as(*this)         &&
+          !other.is_way_beyond(*this)              &&
+          !this->cannot_join_left_of(other)         ;
 }
 
 //---------------------------------------------------------------------------//
@@ -157,18 +150,6 @@ std::vector<float> text_table::get_size()
   std::vector<float> res;
   if(bottom.size() != top.size() || bottom.empty()) return res;
   for(size_t i = 0; i < bottom.size(); ++i) res.push_back(bottom[i] + top[i]);
-  return res;
-}
-
-//---------------------------------------------------------------------------//
-
-std::vector<text_element> text_table::transpose()
-{
-  std::vector<text_element> res;
-  if(!left.empty())
-    for(size_t i = 0; i < left.size(); ++i)
-      res.emplace_back(text_element(left[i], right[i], top[i],
-                                    bottom[i], fonts[i], text[i]));
   return res;
 }
 

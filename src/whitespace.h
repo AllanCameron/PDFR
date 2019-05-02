@@ -90,11 +90,11 @@ public:
 private:
   //The main output is a collection of pairs of text boxes with their elements
   textbox m_page_text; // a copy of word grouper's output
-  std::unordered_map<size_t, std::vector<Vertex>> polygonMap;// main polygon map
+  std::unordered_map<size_t, std::vector<std::shared_ptr<Vertex>>> polygonMap;
   float max_line_space;                // The average font size on the page
-  std::vector<Box> m_boxes;         // used in construction AND output
-  std::vector<Vertex> m_vertices;        // The vertices used to make polygons
-  static const size_t DIVISIONS = 200; // number of strips used for whitespace
+  std::vector<Box> m_boxes;            // used in construction AND output
+  std::vector<std::shared_ptr<Vertex>> m_vertices; // Used to make polygons
+  static const size_t DIVISIONS = 400; // number of strips used for whitespace
 
   void getMaxLineSize();
   void pageDimensions();    // Gets page margins

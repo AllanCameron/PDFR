@@ -40,7 +40,7 @@ constexpr int EDGECOUNT = 4;
 // and finds its column edges, then joins elligible words together as long as
 // they do not belong to different columns.
 
-word_grouper::word_grouper(textbox&& g): m_allRows(move(g))
+word_grouper::word_grouper(textbox&& g): m_textbox(move(g))
 {
   findEdges();
   assignEdges();
@@ -52,7 +52,7 @@ word_grouper::word_grouper(textbox&& g): m_allRows(move(g))
 
 textbox& word_grouper::output()
 {
-  return m_allRows;
+  return m_textbox;
 }
 
 //---------------------------------------------------------------------------//
@@ -63,7 +63,7 @@ textbox& word_grouper::output()
 
 text_table word_grouper::out()
 {
-  return text_table(m_allRows);
+  return text_table(m_textbox);
 }
 
 //---------------------------------------------------------------------------//
@@ -74,28 +74,28 @@ text_table word_grouper::out()
 // return are data members of the class, we need to pass the map we wish to
 // create by reference.
 
-void word_grouper::tabulate(const vector<float>& a,
-                            unordered_map<int, size_t>& b)
+void word_grouper::tabulate(const vector<float>& supplied_vector,
+                            unordered_map<int, size_t>& table   )
 {
   // Take each member of the supplied vector
-  for (const auto& i : a)
+  for (const auto& element : supplied_vector)
   {
     // Multiply it by 10 and use it as a key in the map with value 1
-    auto k = b.insert(std::pair<int, size_t>((int) 10 * i, 1));
+    auto inserter = table.insert(pair<int, size_t>((int) 10 * element, 1));
 
     // If the key already exists in the map, increment the value by 1
-    if(!k.second) k.first->second++;
+    if (!inserter.second) inserter.first->second++;
   }
 
   // Now take each key in the resulting map
-  for(auto i = b.begin(); i != b.end(); )
+  for (auto key_value_pair = table.begin(); key_value_pair != table.end(); )
   {
     // if value is below the number needed to declare a column, delete it
-    if(i->second < EDGECOUNT)
+    if (key_value_pair->second < EDGECOUNT)
     {
-      b.erase(i++);
+      table.erase(key_value_pair++);
     }
-    else ++i;
+    else ++key_value_pair;
   }
 }
 
@@ -107,17 +107,17 @@ void word_grouper::findEdges()
 {
   // Create vectors of left and right edges of text elements
   vector<float> left, right;
-  for(auto& i : m_allRows)
+  for(auto& element : m_textbox)
   {
-    left.push_back(i->get_left());
-    right.push_back(i->get_right());
+    left.push_back(element->get_left());
+    right.push_back(element->get_right());
   }
 
   // Create a vector of midpoints of text elements
   vector<float> midvec;
   for(size_t i = 0; i < right.size(); ++i)
   {
-    midvec.emplace_back((right[i] + left[i])/2);
+    midvec.emplace_back((right[i] + left[i]) / 2);
   }
 
   // Use tabulate to find left and right edges as well as midpoints
@@ -133,24 +133,28 @@ void word_grouper::findEdges()
 
 void word_grouper::assignEdges()
 {
-  for(auto& i : m_allRows)
+  for(auto& element : m_textbox)
   {
+    int left_int = element->get_left() * 10;
+    int right_int = element->get_right() * 10;
+    int mid_int = (element->get_right() + element->get_left()) * 5;
+
     // Non-unique left edge - assume column edge
-    if(m_leftEdges.find((int) (i->get_left() * 10)) != m_leftEdges.end())
+    if(m_leftEdges.find(left_int) != m_leftEdges.end())
     {
-      i->make_left_edge();
+      element->make_left_edge();
     }
 
     // Non-unique right edge - assume column edge
-    if(m_rightEdges.find((int) (i->get_right() * 10)) != m_rightEdges.end())
+    if(m_rightEdges.find(right_int) != m_rightEdges.end())
     {
-      i->make_right_edge();
+      element->make_right_edge();
     }
 
     // Non-unique centre value - assume centred column
-    if(m_mids.find((int)((i->get_right() + i->get_left()) * 5)) != m_mids.end())
+    if(m_mids.find(mid_int) != m_mids.end())
     {
-      i->make_centred();
+      element->make_centred();
     }
   }
 }
@@ -165,24 +169,24 @@ void word_grouper::assignEdges()
 void word_grouper::findRightMatch()
 {
   // Handle empty data
-  if(m_allRows.empty()) throw runtime_error("empty data");
+  if(m_textbox.empty()) throw runtime_error("empty data");
 
-  for(auto i = m_allRows.begin(); i != m_allRows.end(); ++i)
+  for(auto element = m_textbox.begin(); element != m_textbox.end(); ++element)
   {
     // Check the row is elligible for matching
-    if( (*i)->is_consumed()) continue;
+    if( (*element)->is_consumed()) continue;
 
     // If elligible, check every other word for the best match
-    for(auto j = i; j != m_allRows.end(); ++j)
+    for(auto other = element; other != m_textbox.end(); ++other)
     {
       // Don't match against itself
-      if(i == j) continue;
+      if(element == other) continue;
 
       // These text_element functions are quite complex in themselves
-      if((*i)->is_elligible_to_join(**j))
+      if((*element)->is_elligible_to_join(**other))
       {
-        (*i)->join_words(**j);
-        --i;  // Keep matching same text_element until no further matches found
+        (*element)->join_words(**other);
+        --element;  // Keep matching same element until no otehr matches found
         break;
       }
     }

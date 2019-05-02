@@ -147,18 +147,15 @@ void letter_grouper::compareCells()
       // For each glyph in the cell
       for(auto& element : maingroup)
       {
-        // Check for matches in this cell, the cell to the North and the South
-        matchRight(element, key);
-        if(row < 15) matchRight(element, column | ((row + 1) << 4));
-        if(row > 0)  matchRight(element, column | ((row - 1) << 4));
-        if(!element->no_join()) continue; // If match, look no further
-
-        // Otherwise, if not last column, check East, NorthEast, SouthEast
-        if(column < 15)
+        for(int index = 0; index < 6; ++index)
         {
-          matchRight(element, (column + 1) | (row << 4));
-          if(row < 15) matchRight(element, (column + 1) | ((row + 1) << 4));
-          if(row > 0)  matchRight(element, (column + 1) | ((row - 1) << 4));
+          if(column == 15 &&  index > 2) break;
+          if(element->has_join() && index == 3 ) break;
+          if(row == 0 && (index % 3 == 2)) continue;
+          if(row == 15 && (index % 3 == 1)) continue;
+
+          uint8_t cell = (column + (index / 3)) | ((row + index % 3 - 1) << 4);
+          matchRight(element, cell);
         }
       }
     }
@@ -188,17 +185,16 @@ void letter_grouper::matchRight(text_ptr element, uint8_t key)
       if(*cell[i] == *element) element->consume();
       if(cell[i]->is_consumed()) continue; // ignore if marked for deletion
 
-      if(element->no_join())
+      if(!element->has_join())
       {
-        element->set_join(key, i);
+        element->set_join(cell[i]);
         continue; // don't bother checking next statement
       }
 
       // If already a match but this one is better...
-      if(m_grid[element->grid_num()][element->vec_num()]->get_left() >
-           cell[i]->get_left())
+      if(element->get_join()->get_left() > cell[i]->get_left())
       {
-        element->set_join(key, i);
+        element->set_join(cell[i]);
       }
     }
   }
@@ -227,10 +223,10 @@ void letter_grouper::merge()
       for(auto& element : cell)
       {
         // If glyph is viable and matches another glyph to the right
-        if(element->is_consumed() || element->no_join()) continue;
+        if(element->is_consumed() || !element->has_join()) continue;
 
         // Look up the right-matching glyph
-        auto& matcher = m_grid[element->grid_num()][element->vec_num()];
+        auto matcher = element->get_join();
 
         // Use the text_element member function to merge the two glyphs
         element->merge_letters(*matcher);

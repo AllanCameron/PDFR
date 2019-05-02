@@ -96,7 +96,7 @@ private:
   std::unordered_map<int, size_t> m_leftEdges, m_rightEdges, m_mids;
 
   // The main data member
-  textbox m_allRows;
+  textbox m_textbox;
 };
 
 //---------------------------------------------------------------------------//

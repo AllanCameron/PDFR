@@ -114,7 +114,7 @@ void Whitespace::pageDimensions()
 void Whitespace::cleanAndSortBoxes()
 {
   // Define a lambda to identify boxes flagged for deletion
-  auto del = [&](Box x){return x.is_deleted();};
+  auto del = [&](Box x){return x.is_consumed();};
 
   // Define a lambda to sort boxes left to right
   auto l = [](const Box& a, const Box& b) -> bool {
@@ -233,11 +233,11 @@ void Whitespace::removeSmall()
   for(auto& box : m_boxes)
   {
     // Remove only undeleted boxes who are not at the page border and are short
-    if(!box.is_deleted()             &&
+    if(!box.is_consumed()            &&
        !box.shares_edge(m_page_text) &&
        box.height() < max_line_space  )
     {
-      box.remove();
+      box.consume();
     }
   }
   cleanAndSortBoxes();
@@ -263,19 +263,19 @@ void Whitespace::makeVertices()
     // For each of its four vertices
     for(int corner_number = 0; corner_number < 4; ++corner_number)
     {
-      // Create a vertex object at this corner
-      Vertex this_corner = owner_box.get_vertex(corner_number);
+      // Create a vertex shared pointer object at this corner
+      auto this_corner = owner_box.get_vertex(corner_number);
 
       // Now compare the other boxes to find neighbours and flag as needed
       for(auto& other_box : m_boxes)
       {
-        other_box.record_impingement_on(this_corner);
+        other_box.record_impingement_on(*this_corner);
 
         // Since m_boxes are sorted, skip to next corner if no effect possible.
         if(other_box.is_beyond(owner_box)) continue;
       }
       // Now we can push our vertex to the list
-      m_vertices.emplace_back(move(this_corner));
+      m_vertices.push_back(this_corner);
     }
   }
 }
@@ -291,12 +291,12 @@ void Whitespace::makeVertices()
 
 void Whitespace::tidyVertices()
 {
-  std::vector<Vertex> tmp_vertices;
+  vector<shared_ptr<Vertex>> tmp_vertices;
 
   // For each vertex, if 1 or 3 corners have whitespace, push to result
   for(auto& corner : m_vertices)
   {
-    if((corner.flags % 3) != 0)
+    if((corner->flags % 3) != 0)
     {
       tmp_vertices.push_back(corner);
     }
@@ -318,7 +318,7 @@ void Whitespace::tracePolygons()
   for(auto& i : m_vertices)
   {
     // Use the Direction enum as an int to get points beyond page edges
-    float outer_edge = m_page_text.edge(i.Out()) + (2*(i.Out() / 2) - 1) * 100;
+    float outer_edge = m_page_text.edge(i->Out()) + (2*(i->Out()/2) - 1) * 100;
 
     // "edge" keeps track of the nearest vertex
     float edge = outer_edge;
@@ -326,24 +326,24 @@ void Whitespace::tracePolygons()
     // Now for every other vertex
     for(auto& j : m_vertices)
     {
-      if(i.is_closer_than(j, edge))
+      if(i->is_closer_than(*j, edge))
       {
         // i provisionally points to j
-        i.points_to = &j - &(m_vertices[0]);
+        i->points_to = &j - &(m_vertices[0]);
 
         // Now we update "edge" to make it the closest yet
-        if(i.Out() == North || i.Out() == South)
+        if(i->Out() == North || i->Out() == South)
         {
-          edge = j.y;
+          edge = j->y;
         }
         else
         {
-          edge = j.x;
+          edge = j->x;
         }
       }
     }
     // If the closest yet is not on the page, mark vertex for deletion
-    if(edge - outer_edge < 0.1 && outer_edge - edge < 0.1) i.flags |= 0x80;
+    if(edge - outer_edge < 0.1 && outer_edge - edge < 0.1) i->flags |= 0x80;
   }
 }
 
@@ -372,16 +372,16 @@ void Whitespace::makePolygonMap()
   for(size_t i = 0 ; i < m_vertices.size(); ++i)
   {
     // If this vertex is taken, move along.
-    if(m_vertices[i].group) continue;
+    if(m_vertices[i]->group) continue;
 
     // we now know we're at the first unlabelled vertex
     size_t j = i;
 
     // While we're not back at the first vertex of our set
-    while(m_vertices[j].group == 0)
+    while(m_vertices[j]->group == 0)
     {
       // Label the vertex with polygon number
-      m_vertices[j].group = polygonNumber;
+      m_vertices[j]->group = polygonNumber;
 
       // If this is a new polygon number, start a new vector
       if(polygonMap.find(polygonNumber) == polygonMap.end())
@@ -392,7 +392,7 @@ void Whitespace::makePolygonMap()
       else polygonMap[polygonNumber].push_back(m_vertices[j]);
 
       // Our loop now jumps to next clockwise vertex
-      j = m_vertices[j].points_to;
+      j = m_vertices[j]->points_to;
     }
 
     // we've come back to start of polygon - start a new one
@@ -410,7 +410,10 @@ std::vector<Box> Whitespace::ws_box_out() const
 
 //---------------------------------------------------------------------------//
 // Now we have our polygons. Perhaps the simplest way of dealing with them is
-// to find their bounding rectangles. This does that by finding minmax x and y
+// to find their bounding rectangles. This does that by finding minmax x and y.
+// Clearly, we don't want the entire page to be a bounding box, as this will
+// go on to engulf all the other boxes. Therefore if we find that a box matches
+// the page box, we don't include this.
 
 void Whitespace::polygonMax()
 {
@@ -426,7 +429,7 @@ void Whitespace::polygonMax()
     // Shrink and invert the edges of our bounding box
     for(auto& corner : shape.second)
     {
-      bounding_box.expand_box_to_include_vertex(corner);
+      bounding_box.expand_box_to_include_vertex(*corner);
     }
 
     // if the box is not the page itself, append this polygon to our result
@@ -449,13 +452,13 @@ void Whitespace::removeEngulfed()
   // For each box check whether it engulfs another box
   for(auto outer = m_boxes.begin(); outer != m_boxes.end(); ++outer)
   {
-    if(outer->is_deleted()) continue;
+    if(outer->is_consumed()) continue;
 
     for(auto inner = outer; inner != m_boxes.end(); ++inner)
     {
       if(inner->is_beyond(*outer)) break;
-      if(inner->is_deleted()) continue;
-      if(outer->engulfs(*inner)) inner->remove();
+      if(inner->is_consumed())     continue;
+      if(outer->engulfs(*inner))   inner->consume();
     }
   }
 
