@@ -89,6 +89,7 @@ class dictionary
   bool contains_ints(const std::string&) const;     // tests if given key has ints
   bool contains_dictionary(const std::string&) const; // tests if key has dictionary
   std::vector<int> get_references(const std::string&) const;
+  int get_reference(const std::string& Key) const;
   std::vector<int> get_ints(const std::string&) const;
   std::vector<float> get_floats(const std::string&) const;
   std::vector<std::string> get_all_keys() const;

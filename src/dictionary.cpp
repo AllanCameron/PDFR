@@ -490,6 +490,16 @@ vector<int> dictionary::get_references(const string& Key) const
 }
 
 /*---------------------------------------------------------------------------*/
+// Returns a vector of the object numbers from references found in the
+// given key's value. Uses the getObjRefs() global function from utilities.h
+
+int dictionary::get_reference(const string& Key) const
+{
+  vector<int> all_references = parse_references(this->get_string(Key));
+  if(all_references.empty()) throw runtime_error("No reference found");
+  return all_references[0];
+}
+/*---------------------------------------------------------------------------*/
 // Returns any integers present in the value string as read by the parse_ints()
 // global function defined in utilities.cpp
 

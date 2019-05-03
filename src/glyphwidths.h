@@ -108,10 +108,10 @@ public:
 
 private:
   // private data
-  std::unordered_map<RawChar, int> Width;         // The main data member
-  dictionary fontref;                             // the font dictionary
-  std::shared_ptr<document> d;                    // pointer to document
-  std::string basefont;                           // the base font (if any)
+  std::unordered_map<RawChar, int> m_width_map;   // The main data member
+  dictionary m_font_dictionary;                   // the font dictionary
+  std::shared_ptr<document> m_document;           // pointer to document
+  std::string m_base_font;                        // the base font (if any)
   bool widthFromCharCodes;                        // are widths for code points?
 
   // private methods
@@ -123,15 +123,15 @@ private:
 
 //-- The core fonts as defined in corefonts.cpp ------------------------//
                                                                         //
-  static std::unordered_map<Unicode, int> courierwidths;                //
-  static std::unordered_map<Unicode, int> helveticawidths;              //
-  static std::unordered_map<Unicode, int> helveticaboldwidths;          //
-  static std::unordered_map<Unicode, int> symbolwidths;                 //
-  static std::unordered_map<Unicode, int> timesboldwidths;              //
-  static std::unordered_map<Unicode, int> timesbolditalicwidths;        //
-  static std::unordered_map<Unicode, int> timesitalicwidths;            //
-  static std::unordered_map<Unicode, int> timesromanwidths;             //
-  static std::unordered_map<Unicode, int> dingbatswidths;               //
+  static std::unordered_map<Unicode, int> courier_widths;                //
+  static std::unordered_map<Unicode, int> helvetica_widths;              //
+  static std::unordered_map<Unicode, int> helvetica_bold_widths;          //
+  static std::unordered_map<Unicode, int> symbol_widths;                 //
+  static std::unordered_map<Unicode, int> times_bold_widths;              //
+  static std::unordered_map<Unicode, int> times_bold_italic_widths;        //
+  static std::unordered_map<Unicode, int> times_italic_widths;            //
+  static std::unordered_map<Unicode, int> times_roman_widths;             //
+  static std::unordered_map<Unicode, int> dingbats_widths;               //
                                                                         //
 //----------------------------------------------------------------------//
 };

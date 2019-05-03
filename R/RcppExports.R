@@ -2,55 +2,55 @@
 # Generator token: 10BE3573-1514-4C36-9D1C-5A225CD40393
 
 .get_xref <- function(file_name) {
-    .Call(`_PDFR_get_xref`, file_name)
+    .Call(`_PDFR_get_xref_from_string`, file_name)
 }
 
 .get_xrefraw <- function(raw_file) {
-    .Call(`_PDFR_get_xrefraw`, raw_file)
+    .Call(`_PDFR_get_xref_from_raw`, raw_file)
 }
 
 .get_obj <- function(file_name, object_number) {
-    .Call(`_PDFR_get_object`, file_name, object_number)
+    .Call(`_PDFR_get_object_from_string`, file_name, object_number)
 }
 
 .get_objraw <- function(raw_file, object_number) {
-    .Call(`_PDFR_get_objectraw`, raw_file, object_number)
+    .Call(`_PDFR_get_object_from_raw`, raw_file, object_number)
 }
 
-.pdfpage <- function(file_name, page_number, atomic) {
-    .Call(`_PDFR_pdfpage`, file_name, page_number, atomic)
+.pdfpage <- function(file_name, page_number, each_glyph) {
+    .Call(`_PDFR_get_pdf_page_from_string`, file_name, page_number, each_glyph)
 }
 
-.pdfpageraw <- function(raw_file, page_number, atomic) {
-    .Call(`_PDFR_pdfpageraw`, raw_file, page_number, atomic)
+.pdfpageraw <- function(raw_file, page_number, atoms) {
+    .Call(`_PDFR_get_pdf_page_from_raw`, raw_file, page_number, atoms)
 }
 
 .getglyphmap <- function(file_name, page_number) {
-    .Call(`_PDFR_getglyphmap`, file_name, page_number)
+    .Call(`_PDFR_get_glyph_map`, file_name, page_number)
 }
 
 .pagestring <- function(file_name, page_number) {
-    .Call(`_PDFR_pagestring`, file_name, page_number)
+    .Call(`_PDFR_get_page_string_from_string`, file_name, page_number)
 }
 
 .pagestringraw <- function(raw_file, page_number) {
-    .Call(`_PDFR_pagestringraw`, raw_file, page_number)
+    .Call(`_PDFR_get_page_string_from_raw`, raw_file, page_number)
 }
 
 .pdfdoc <- function(file_name) {
-    .Call(`_PDFR_pdfdoc`, file_name)
+    .Call(`_PDFR_get_pdf_document_from_string`, file_name)
 }
 
 .pdfdocraw <- function(file_name) {
-    .Call(`_PDFR_pdfdocraw`, file_name)
+    .Call(`_PDFR_get_pdf_document_from_raw`, file_name)
 }
 
 .pdfboxesString <- function(file_name, page_number) {
-    .Call(`_PDFR_pdfboxesString`, file_name, page_number)
+    .Call(`_PDFR_get_pdf_boxes_from_string`, file_name, page_number)
 }
 
 .pdfboxesRaw <- function(file_name, page_number) {
-    .Call(`_PDFR_pdfboxesRaw`, file_name, page_number)
+    .Call(`_PDFR_get_pdf_boxes_from_raw`, file_name, page_number)
 }
 
 .stopCpp <- function() {

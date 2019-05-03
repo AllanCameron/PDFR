@@ -65,7 +65,7 @@ class page
 {
 public:
   // constructor
-  page(std::shared_ptr<document>, int this_is_the_page_number);
+  page(std::shared_ptr<document>, int);
   page(page&& p) noexcept {*this = std::move(p);}
   page& operator=(const page& p){ *this = p; return *this; }
   page& operator=(page&& p) noexcept { *this = std::move(p); return *this;}

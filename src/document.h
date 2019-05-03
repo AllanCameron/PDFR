@@ -83,38 +83,41 @@ class document
 
 public:
   // constructors
-  document(const std::string& filename);          // create doc from filepath
-  document(const std::vector<uint8_t>& rawfile);  // create doc from raw data
+  document(const std::string&);          // create doc from filepath
+  document(const std::vector<uint8_t>&);  // create doc from raw data
   document();                                     // default constructor
 
   // public member functions
-  std::shared_ptr<object_class> getobject(int objnum); // creates object and
-                                                       // returns pointer
-  dictionary pageHeader(int p);       // returns header dictionary for page p
-  std::vector<int> pagenums(){return pageheaders;};
+  std::shared_ptr<object_class> get_object(int); // creates object and
+                                                 // returns pointer
+  dictionary get_page_header(int);  // returns header dictionary for page p
+
+  inline std::vector<int> get_page_object_numbers()
+  {
+    return m_page_object_numbers;
+  };
 
 private:
   // private data members
-  std::string file;                   // Path used to create file (if used)
-  const std::string filestring;       // Full contents of file
-  std::shared_ptr<const xref> Xref;   // Contains the xref object for navigation
-  dictionary pagedir;                 // dict containing pointers to pages
-  dictionary catalog;                 // The pdf catalog dictionary
-  std::vector<int> pageheaders;       // A vector containing page dictionaries
+  std::string m_file_path;            // Path used to create file (if used)
+  const std::string m_file_string;    // Full contents of file
+  std::shared_ptr<const xref> m_xref; // Contains the xref object for navigation
+  dictionary m_page_directory;        // dict containing pointers to pages
+  dictionary m_catalog;               // The pdf catalog dictionary
+  std::vector<int> m_page_object_numbers;
 
   // This map holds object_class objects. Since some objects may be read
   // multiple times, it is best to store them when they are first created,
   // then return the stored object on request rather than creating a new
   // instance of the object every time it is requested.
-  std::unordered_map <int, std::shared_ptr<object_class>> objects;
+  std::unordered_map <int, std::shared_ptr<object_class>> m_objects;
 
   // private member functions used in construction only
-
-  void getCatalog();    // finds and stores the catalog dictionary
-  void getPageDir();    // finds and stores the /Pages dictionary
-  void buildDoc();      // the constructors use this as a common pathway
-  void expandKids(const std::vector<int>&, Node); // descendants
-};                                                // of /Pages object
+  void read_catalog();        // finds and stores the catalog dictionary
+  void read_page_directory(); // finds and stores the /Pages dictionary
+  void build_document();      // the constructors use this as a common pathway
+  void expand_kids(const std::vector<int>&, Node); // descendants
+};                                                 // of /Pages object
 
 //---------------------------------------------------------------------------//
 

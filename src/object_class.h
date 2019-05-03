@@ -71,9 +71,9 @@ public:
                     // initialize its vector of objects)
 
   // public member functions
-  bool hasStream();               // returns has_stream boolean
-  std::string getStream();        // returns stream as string
-  dictionary getDict();           // returns header as dictionary object
+  bool has_stream();               // returns has_stream boolean
+  std::string get_stream();        // returns stream as string
+  dictionary get_dictionary();    // returns header as dictionary object
   std::string objFromStream(int); // returns object from this object's stream
 
 private:
@@ -83,7 +83,6 @@ private:
       startpos;                   // The object knows its own starting position
   dictionary header;              // The object's dictionary
   std::string stream;             // The object's stream or contents
-  bool has_stream;                // Records whether stream is zero length
   std::array<size_t, 2> m_streampos; // start/stop offsets for stream position
 
   // index for object stream holders

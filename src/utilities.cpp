@@ -253,7 +253,7 @@ char symbol_type(const char c)
 // Returns the data represented by an Ascii encoded hex string as a vector
 // of two-byte numbers
 
-vector<RawChar> HexstringToRawChar(string& s)
+vector<RawChar> convert_hex_to_raw(string& s)
 {
   while(s.size() % 4) s = '0' + s;
   vector<RawChar> raw_vector; // vector to store results

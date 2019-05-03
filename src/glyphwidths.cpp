@@ -44,11 +44,11 @@ using namespace std;
 // built in static corefont tables. Otherwise find and interpret widths.
 
 glyphwidths::glyphwidths(dictionary& dic, shared_ptr<document> doc):
-  fontref(dic), d(doc)
+  m_font_dictionary(dic), m_document(doc)
 {
-  basefont = fontref.get_string("/BaseFont");
+  m_base_font = m_font_dictionary.get_string("/BaseFont");
   getCoreFont();
-  if(Width.empty()) getWidthTable();
+  if(m_width_map.empty()) getWidthTable();
 }
 
 /*---------------------------------------------------------------------------*/
@@ -60,10 +60,11 @@ glyphwidths::glyphwidths(dictionary& dic, shared_ptr<document> doc):
 void glyphwidths::getWidthTable()
 {
   // If widths entry specified, use this by calling parsewidths method
-  if (fontref.has_key("/Widths")) parseWidths();
+  if (m_font_dictionary.has_key("/Widths")) parseWidths();
 
   // otherwise look in descendants using parseDescendants method
-  else if(fontref.contains_references("/DescendantFonts")) parseDescendants();
+  else if(m_font_dictionary.contains_references("/DescendantFonts"))
+    parseDescendants();
 
   // otherwise we have no font widths specified and need to use default values
 }
@@ -83,28 +84,29 @@ void glyphwidths::parseWidths()
   RawChar firstchr = 0x0000;
 
   // Otherwise we read the firstchar entry
-  if(fontref.contains_ints("/FirstChar"))
+  if(m_font_dictionary.contains_ints("/FirstChar"))
   {
-    firstchr = fontref.get_ints("/FirstChar")[0];
+    firstchr = m_font_dictionary.get_ints("/FirstChar")[0];
   }
   // Annoyingly, widths sometimes contains a pointer to another object that
   // contains the width array, either in a stream or as a 'naked object'.
   // Note that contents of a naked object are stored as the object's 'stream'.
 
   // Handle /widths being a reference to another object
-  if (fontref.contains_references("/Widths"))
+  if (m_font_dictionary.contains_references("/Widths"))
   {
     // Get the referenced object
-    auto width_object = d->getobject(fontref.get_references("/Widths").at(0));
+    auto width_object =
+      m_document->get_object(m_font_dictionary.get_reference("/Widths"));
 
     // Get the referenced object's stream
-    string ostring(width_object->getStream());
+    string ostring(width_object->get_stream());
 
     // Get the numbers from the width array in the stream
     widtharray = parse_floats(ostring);
   }
   // If /Widths is not a reference get the widths directly
-  else  widtharray = fontref.get_floats("/Widths");
+  else  widtharray = m_font_dictionary.get_floats("/Widths");
 
   // If a width array was found
   if (!widtharray.empty())
@@ -114,7 +116,7 @@ void glyphwidths::parseWidths()
 
     // Now we can fill the width map from the width array
     for (size_t i = 0; i < widtharray.size(); ++i)
-      Width[firstchr + i] = (int) widtharray[i];
+      m_width_map[firstchr + i] = (int) widtharray[i];
   }
 }
 
@@ -127,16 +129,18 @@ void glyphwidths::parseWidths()
 void glyphwidths::parseDescendants()
 {
   // get a pointer to the descendantfonts object
-  auto desc = d->getobject(fontref.get_references("/DescendantFonts")[0]);
+  auto desc =
+    m_document->get_object(m_font_dictionary.get_reference("/DescendantFonts"));
 
   // Extract its dictionary and its stream
-  dictionary descdict = desc->getDict();
-  string descstream(desc->getStream());
+  dictionary descdict = desc->get_dictionary();
+  string descstream(desc->get_stream());
 
   // Handle descendantfonts being just a reference to another object
   if(!parse_references(descstream).empty())
   {
-    descdict = d->getobject(parse_references(descstream)[0])->getDict();
+    descdict =
+      m_document->get_object(parse_references(descstream)[0])->get_dictionary();
   }
 
   // We now look for the /W key and if it is found parse its contents
@@ -148,7 +152,8 @@ void glyphwidths::parseDescendants()
     // sometimes the /W entry only contains a pointer to the containing object
     if (descdict.contains_references("/W"))
     {
-      widthstring = d->getobject(descdict.get_references("/W")[0])->getStream();
+      widthstring =
+        m_document->get_object(descdict.get_reference("/W"))->get_stream();
     }
 
     // otherwise we assume /W contains the widths needed
@@ -177,17 +182,28 @@ void glyphwidths::getCoreFont()
   // that will result from the given RawChar codes. This is therefore flagged
   // by the boolean widthsFromCharCodes.
 
-  if (basefont.find("/Courier") != string::npos) Width = courierwidths;
-  else if(basefont == "/Helvetica"            ||
-          basefont == "/Helvetica-Oblique"    )  Width = helveticawidths;
-  else if(basefont == "/Helvetica-Bold"       ||
-          basefont == "/Helvetica-Boldoblique")  Width = helveticaboldwidths;
-  else if(basefont == "/Symbol")                 Width = symbolwidths;
-  else if(basefont == "/Times-Bold")             Width = timesboldwidths;
-  else if(basefont == "/Times-BoldItalic")       Width = timesbolditalicwidths;
-  else if(basefont == "/Times-Italic")           Width =timesitalicwidths;
-  else if(basefont == "/Times-Roman")            Width = timesromanwidths;
-  else if(basefont == "/ZapfDingbats")           Width = dingbatswidths;
+  if (m_base_font.find("/Courier") != string::npos)
+    m_width_map = courier_widths;
+  else if(m_base_font == "/Helvetica")
+    m_width_map = helvetica_widths;
+  else if(m_base_font == "/Helvetica-Oblique")
+    m_width_map = helvetica_widths;
+  else if(m_base_font == "/Helvetica-Bold")
+    m_width_map = helvetica_bold_widths;
+  else if(m_base_font == "/Helvetica-Boldoblique")
+    m_width_map = helvetica_bold_widths;
+  else if(m_base_font == "/Symbol")
+    m_width_map = symbol_widths;
+  else if(m_base_font == "/Times-Bold")
+    m_width_map = times_bold_widths;
+  else if(m_base_font == "/Times-BoldItalic")
+    m_width_map = times_bold_italic_widths;
+  else if(m_base_font == "/Times-Italic")
+    m_width_map = times_italic_widths;
+  else if(m_base_font == "/Times-Roman")
+    m_width_map = times_roman_widths;
+  else if(m_base_font == "/ZapfDingbats")
+    m_width_map = dingbats_widths;
 
   // No unicode -> width mapping - using RawChar
   else widthFromCharCodes = true;
@@ -200,8 +216,8 @@ void glyphwidths::getCoreFont()
 int glyphwidths::getwidth(const RawChar& raw)
 {
   // Look up the supplied rawChar
-  auto found = Width.find(raw);
-  if(found != Width.end()) return found->second;
+  auto found = m_width_map.find(raw);
+  if(found != m_width_map.end()) return found->second;
 
   // No width found - return the default width
   else return DEFAULT_WIDTH;
@@ -213,7 +229,7 @@ int glyphwidths::getwidth(const RawChar& raw)
 
 vector<RawChar> glyphwidths::widthKeys()
 {
-  return getKeys(this->Width); // getKeys template function is from utilities.h
+  return getKeys(this->m_width_map);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -316,7 +332,7 @@ void glyphwidths::parsewidtharray(const string& s)
         for(size_t j = 0; j < resultvec[i].size(); j++)
         {
           // map sequential values of char codes to stated widths
-          Width[(RawChar) resultint[i] + j] = (int) resultvec[i][j];
+          m_width_map[(RawChar) resultint[i] + j] = (int) resultvec[i][j];
         }
       }
     }

@@ -83,8 +83,8 @@ void page::read_boxes()
       // Find the parent object number and get its object dictionary
       if(box_header.contains_references("/Parent"))
       {
-        int parent = box_header.get_references("/Parent")[0];
-        box_header = m_doc->getobject(parent)->getDict();
+        int parent = box_header.get_reference("/Parent");
+        box_header = m_doc->get_object(parent)->get_dictionary();
       }
 
       // The loop will exit if it doesn't find a parent node
@@ -108,7 +108,7 @@ void page::read_boxes()
 void page::read_header()
 {
   // uses public member of document class to get the appropriate header
-  m_header = m_doc->pageHeader(m_page_number);
+  m_header = m_doc->get_page_header(m_page_number);
 
   // if the header is not of /type /page, throw an error
   if (m_header.get_string("/Type") != "/Page")
@@ -130,12 +130,10 @@ void page::read_resources()
   // If /Resources doesn't contain a dictionary it must be a reference
   if (!m_header.contains_dictionary("/Resources"))
   {
-    // Ensure it's only one resource reference
-    vector<int> resource_objs = m_header.get_references("/Resources");
-
-    if(!resource_objs.empty())
+    if(m_header.contains_references("/Resources"))
     {
-      m_resources = m_doc->getobject(resource_objs[0])->getDict();
+      m_resources =
+      m_doc->get_object(m_header.get_reference("/Resources"))->get_dictionary();
     }
   }
   else // Resources contains a subdictionary
@@ -155,10 +153,10 @@ void page::read_fonts()
   if (!m_resources.contains_dictionary("/Font"))
   {
     // It must be a reference - follow this to get the dictionary
-    std::vector<int> font_objs = m_resources.get_references("/Font");
-    if (font_objs.size() == 1)
+    if (m_resources.contains_references("/Font"))
     {
-      m_fonts = m_doc->getobject(font_objs.at(0))->getDict();
+      m_fonts =
+        m_doc->get_object(m_resources.get_reference("/Font"))->get_dictionary();
     }
   }
   // Otherwise, it is a dictionary, so we get the result
@@ -176,9 +174,10 @@ void page::read_fonts()
       // Find the reference for each font name
       for(auto reference : m_fonts.get_references(font_label.first))
       {
-        sm_fontmap[font_label.first] =  make_shared<font>(m_doc,
-                                        m_doc->getobject(reference)->getDict(),
-                                        font_label.first);
+        sm_fontmap[font_label.first] =
+          make_shared<font>(m_doc,
+                            m_doc->get_object(reference)->get_dictionary(),
+                            font_label.first);
       }
     }
   }
@@ -203,7 +202,7 @@ void page::read_contents()
     // of the pagestring with a line break after each one
     for (auto m : contents)
     {
-      m_content_string.append(m_doc->getobject(m)->getStream());
+      m_content_string.append(m_doc->get_object(m)->get_stream());
       m_content_string.append(std::string("\n"));
     }
 }
@@ -234,13 +233,11 @@ void page::read_XObjects()
   }
 
   // If the /XObject string is a reference, follow the reference to dictionary
-  else
+  else if (m_resources.contains_references("/XObject"))
   {
-    std::vector<int> xobject_refs = m_resources.get_references("/XObject");
-    if (xobject_refs.size() == 1)
-    {
-      xobject_dict = m_doc->getobject(xobject_refs[0])->getDict();
-    }
+    xobject_dict =
+    m_doc->get_object(m_resources.get_reference("/XObject"))->get_dictionary();
+
   }
 
   // We now have a dictionary of {xobject name: ref} from which to get xobjects
@@ -251,7 +248,7 @@ void page::read_XObjects()
     // map xobject strings to the xobject names
     if(!xobj_objs.empty())
     {
-      m_XObjects[i.first] = m_doc->getobject(xobj_objs[0])->getStream();
+      m_XObjects[i.first] = m_doc->get_object(xobj_objs[0])->get_stream();
     }
   }
 }
@@ -276,7 +273,7 @@ void page::expand_contents(vector<int> objs, shared_ptr<tree_node<int>> tree)
   {
     // Read the contents from the dictionary entry
     auto nodes =
-    m_doc->getobject(kid->get())->getDict().get_references("/Contents");
+    m_doc->get_object(kid->get())->get_dictionary().get_references("/Contents");
 
     // If it has kids, use recursion to get them
     if (!nodes.empty()) expand_contents(nodes, kid);

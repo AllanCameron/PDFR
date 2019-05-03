@@ -36,7 +36,7 @@ using namespace std;
 // representing the object's number as set out in the xref table.
 
 object_class::object_class(shared_ptr<const xref> Xref, int object_num) :
-  XR(Xref), number(object_num), has_stream(false), m_streampos({0, 0})
+  XR(Xref), number(object_num), m_streampos({0, 0})
 {
   // Find start and end of object
   size_t startbyte = XR->get_object_start_byte(object_num);
@@ -50,11 +50,6 @@ object_class::object_class(shared_ptr<const xref> Xref, int object_num) :
 
     // find start and end of contents
     m_streampos = {XR->file()->find(" obj", startbyte) + 4, stopbyte - 1};
-
-    // Ensure the resulting "stream" has positive length
-    // The scare quotes are there because it is not a true stream, but
-    // direct contents such as a string, array or just an int
-    has_stream = m_streampos[1] > m_streampos[0];
   }
 
   else // Else the object has a header dictionary
@@ -64,9 +59,6 @@ object_class::object_class(shared_ptr<const xref> Xref, int object_num) :
 
     // Find the stream (if any)
     m_streampos = XR->get_stream_location(startbyte);
-
-     // Record stream's existence
-    has_stream = m_streampos[1] > m_streampos[0];
 
     // The object may contain an object stream that needs unpacked
     if(header.get_string("/Type") == "/ObjStm")
@@ -152,13 +144,11 @@ object_class::object_class(shared_ptr<object_class> holder, int objnum)
   {
     header = dictionary(make_shared<string>(H)); // read dict as object's header
     stream = "";             // stream objects don't have their own stream
-    has_stream = false;      // stream objects don't have their own stream
   }
   else // The object is not a dictionary - maybe just an array or int etc
   {
     header = dictionary();   // gets an empty dictionary as header
     stream = H;              // We'll call the contents a stream for ease
-    has_stream = true;       // We'll call the contents a stream for ease
 
     // Annoyingly, some "objects" in an object stream are just pointers
     // to other objects. This is pointless but does happen and needs to
@@ -187,7 +177,7 @@ object_class::object_class(shared_ptr<object_class> holder, int objnum)
 /*---------------------------------------------------------------------------*/
 // Simple public getter for the header dictionary
 
-dictionary object_class::getDict()
+dictionary object_class::get_dictionary()
 {
   return header;
 }
@@ -196,10 +186,10 @@ dictionary object_class::getDict()
 // We have to create the stream on the fly when it is needed rather than
 // calculating and storing all the streams upon document creation
 
-string object_class::getStream()
+string object_class::get_stream()
 {
   // no stream - return empty string
-  if(!hasStream()) return string {};
+  if(!has_stream()) return string {};
 
   // stream already calculated - return
   else if(!stream.empty()) return stream;
@@ -226,9 +216,9 @@ string object_class::getStream()
 /*---------------------------------------------------------------------------*/
 // Simple public getter that is a check of whether the object has a stream
 
-bool object_class::hasStream()
+bool object_class::has_stream()
 {
-  return has_stream;
+  return this->stream.empty();
 }
 
 

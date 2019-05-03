@@ -97,7 +97,7 @@ void font::makeGlyphTable()
   glyphwidths widths(m_fontref, m_d);
 
   // get all the mapped RawChars from the Encoding object
-  auto encoding_map = encodings.encKeys();
+  auto encoding_map = encodings.encoding_keys();
 
   // We need to know whether the width code points refer to the width of raw
   // character codes or to the final Unicode translations
@@ -108,7 +108,7 @@ void font::makeGlyphTable()
     for(auto& key_value_pair : *encoding_map)
     {
       auto& key = key_value_pair.first;
-      m_glyphmap[key] = make_pair(encodings.Interpret(key),
+      m_glyphmap[key] = make_pair(encodings.interpret(key),
                                   widths.getwidth(key));
     }
   }
@@ -118,8 +118,8 @@ void font::makeGlyphTable()
     for(auto& key_value_pair : *encoding_map)
     {
       auto& key = key_value_pair.first;
-      m_glyphmap[key] = make_pair(encodings.Interpret(key),
-                                  widths.getwidth(encodings.Interpret(key)));
+      m_glyphmap[key] = make_pair(encodings.interpret(key),
+                                  widths.getwidth(encodings.interpret(key)));
     }
   }
 }

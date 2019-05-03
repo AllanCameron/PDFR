@@ -351,7 +351,7 @@ char symbol_type(const char);
 // Returns the data represented by an Ascii encoded hex string as a vector
 // of two-byte numbers
 
-std::vector<RawChar> HexstringToRawChar(std::string&);
+std::vector<RawChar> convert_hex_to_raw(std::string&);
 
 //---------------------------------------------------------------------------//
 // Converts normal string to a vector of 2-byte width numbers (RawChar)

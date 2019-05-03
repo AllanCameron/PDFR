@@ -41,9 +41,9 @@ using namespace std;
 // from which buildDoc() then creates the object
 
 document::document(const string& filename) :
-  file(filename), filestring(get_file(file))
+  m_file_path(filename), m_file_string(get_file(m_file_path))
 {
-  buildDoc(); // Call constructor helper to build document
+  build_document(); // Call constructor helper to build document
 }
 
 /*---------------------------------------------------------------------------*/
@@ -52,9 +52,9 @@ document::document(const string& filename) :
 // to construct the document object
 
 document::document(const vector<uint8_t>& bytevector) :
-  filestring(std::string(bytevector.begin(), bytevector.end()))
+  m_file_string(std::string(bytevector.begin(), bytevector.end()))
 {
-  buildDoc(); // Call constructor helper to build document
+  build_document(); // Call constructor helper to build document
 }
 
 /*---------------------------------------------------------------------------*/
@@ -62,11 +62,11 @@ document::document(const vector<uint8_t>& bytevector) :
 // "final common pathway" of both non-default document constructor functions
 // and is seperated out to make this clear and avoid duplication of code
 
-void document::buildDoc()
+void document::build_document()
 {
-  Xref = make_shared<const xref>(make_shared<string>(filestring));
-  getCatalog();             // Gets the catalog dictionary
-  getPageDir();             // Gets the /Pages dictionary
+  m_xref = make_shared<const xref>(make_shared<string>(m_file_string));
+  read_catalog();             // Gets the catalog dictionary
+  read_page_directory();             // Gets the /Pages dictionary
 }
 
 /*---------------------------------------------------------------------------*/
@@ -76,22 +76,22 @@ void document::buildDoc()
 // returns it from the 'objects' vector. If not, it creates the object then
 // stores a copy in the 'objects' vector before returning the requested object.
 
-shared_ptr<object_class> document::getobject(int n)
+shared_ptr<object_class> document::get_object(int n)
 {
   // Check if object n is already stored
-  if(objects.find(n) == objects.end())
+  if(m_objects.find(n) == m_objects.end())
   {
     // If it is not stored, check whether it is in an object stream
-    size_t holder = Xref->get_holding_object_number_of(n);
+    size_t holder = m_xref->get_holding_object_number_of(n);
 
     // If object is in a stream, create it recursively from the stream object
-    if(holder) objects[n] = make_shared<object_class>(getobject(holder), n);
+    if(holder) m_objects[n] = make_shared<object_class>(get_object(holder), n);
 
     // Otherwise create & store it directly
-    else objects[n] = make_shared<object_class>(Xref, n);
+    else m_objects[n] = make_shared<object_class>(m_xref, n);
   }
 
-  return objects[n];
+  return m_objects[n];
 }
 
 /*---------------------------------------------------------------------------*/
@@ -100,16 +100,13 @@ shared_ptr<object_class> document::getobject(int n)
 // This finds the catalog object from the trailer dictionary which is read as
 // part of xref creation
 
-void document::getCatalog()
+void document::read_catalog()
 {
   // The pointer to the catalog is given under /Root in the trailer dictionary
-  vector<int> rootnums = Xref->get_trailer().get_references("/Root");
-
-  // This is the only place we look for the catalog, so it better be here...
-  if (rootnums.empty()) throw runtime_error("Couldn't find catalog dictionary");
+  int root_number = m_xref->get_trailer().get_reference("/Root");
 
   // With errors handled, we can now just get the pointed-to object's dictionary
-  catalog = getobject(rootnums[0])->getDict();
+  m_catalog = get_object(root_number)->get_dictionary();
 }
 
 /*---------------------------------------------------------------------------*/
@@ -117,30 +114,26 @@ void document::getCatalog()
 // file. There should be a pointer to it in the catalog dictionary. If its not
 // there, the pdf structure is unspecified and we throw an error
 
-void document::getPageDir()
+void document::read_page_directory()
 {
-  // Throw an error if catalog has no /Pages entry
-  if(!catalog.contains_references("/Pages"))
-    throw runtime_error("No valid /Pages entry");
-
   // Else get the object number of the /Pages dictionary
-  int pagesobject = catalog.get_references("/Pages")[0];
+  int page_object_number = m_catalog.get_reference("/Pages");
 
   // Now fetch that object and store it
-  pagedir = getobject(pagesobject)->getDict();
+  m_page_directory = get_object(page_object_number)->get_dictionary();
 
   // Ensure /Pages has /kids entry
-  if (!pagedir.contains_references("/Kids"))
+  if (!m_page_directory.contains_references("/Kids"))
     throw runtime_error("No Kids entry in /Pages");
 
   // Create the page directory tree. Start with the pages object as root node
-  auto root = make_shared<tree_node<int>>(pagesobject);
+  auto root = make_shared<tree_node<int>>(page_object_number);
 
   // Populate the tree
-  expandKids(pagedir.get_references("/Kids"), root);
+  expand_kids(m_page_directory.get_references("/Kids"), root);
 
   // Get the leafs of the tree
-  pageheaders = root->getLeafs();
+  m_page_object_numbers = root->getLeafs();
 }
 
 /*---------------------------------------------------------------------------*/
@@ -163,41 +156,42 @@ void document::getPageDir()
 // promising, but it is likely to be complex, and it is not clear that it would
 // lead to a major speedup. Getting an object at present takes about 36us.
 
-void document::expandKids(const vector<int>& obs,
+void document::expand_kids(const vector<int>& object_numbers,
                           shared_ptr<tree_node<int>> tree)
 {
   // This function is only called from a single point that is already range
   // checked, so does not need error checked.
 
   // Create new children tree nodes with this one as parent
-  tree->add_kids(obs);
+  tree->add_kids(object_numbers);
 
   // Get a vector of pointers to the new nodes
-  auto kidnodes = tree->getkids();
+  auto kid_nodes = tree->getkids();
 
   // For each new node get a vector of ints for its kid nodes
-  for(auto& kid : kidnodes)
+  for(auto& kid : kid_nodes)
   {
-    auto refs = getobject(kid->get())->getDict().get_references("/Kids");
+    auto refs =
+      get_object(kid->get())->get_dictionary().get_references("/Kids");
 
     // If it has children, use recursion to get them
-    if (!refs.empty()) expandKids(refs, kid);
+    if (!refs.empty()) expand_kids(refs, kid);
   }
 }
 
 /*---------------------------------------------------------------------------*/
 // Public function that gets a specific page header from the pageheader vector
 
-dictionary document::pageHeader(int pagenumber)
+dictionary document::get_page_header(int page_number)
 {
   // Ensure the pagenumber is valid
-  if((pageheaders.size() < (size_t) pagenumber) || pagenumber < 0)
+  if((m_page_object_numbers.size() < (size_t) page_number) || page_number < 0)
   {
     throw runtime_error("Invalid page number");
   }
 
   // All good - return the requested header
-  return objects[pageheaders[pagenumber]]->getDict();
+  return m_objects[m_page_object_numbers[page_number]]->get_dictionary();
 }
 
 

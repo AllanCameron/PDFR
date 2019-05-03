@@ -42,20 +42,20 @@
 // program. However, the vectors are included here in case they are required
 // for future feature development. The names are self-explanatory
 
-static std::vector<float> courierbox              = {-23,  -250, 715,   805};
-static std::vector<float> courierboldobliquebox   = {-57,  -250, 869,   801};
-static std::vector<float> courierboldbox          = {-113, -250, 749,   801};
-static std::vector<float> courierobliquebox       = {-27,  -250, 849,   805};
-static std::vector<float> helveticabox            = {-166, -225, 1000,  931};
-static std::vector<float> helveticaboldbox        = {-170, -228, 1003,  962};
-static std::vector<float> helveticaboldobliquebox = {-174, -228, 1114,  962};
-static std::vector<float> helveticaobliquebox     = {-170, -225, 1116,  931};
-static std::vector<float> symbolbox               = {-180, -293, 1090, 1010};
-static std::vector<float> timesboldbox            = {-168, -218, 1000,  935};
-static std::vector<float> timesbolditalicbox      = {-200, -218, 996,   921};
-static std::vector<float> timesitalicbox          = {-169, -217, 1010,  883};
-static std::vector<float> timesromanbox           = {-168, -218, 1000,  898};
-static std::vector<float> dingbatsbox             = {-1,   -143, 981,   820};
+static std::vector<float> courier_box                = {-23,  -250, 715,   805};
+static std::vector<float> courier_bold_oblique_box   = {-57,  -250, 869,   801};
+static std::vector<float> courier_bold_box           = {-113, -250, 749,   801};
+static std::vector<float> courier_oblique_box        = {-27,  -250, 849,   805};
+static std::vector<float> helvetica_box              = {-166, -225, 1000,  931};
+static std::vector<float> helvetica_bold_box         = {-170, -228, 1003,  962};
+static std::vector<float> helvetica_bold_oblique_box = {-174, -228, 1114,  962};
+static std::vector<float> helvetica_oblique_box      = {-170, -225, 1116,  931};
+static std::vector<float> symbol_box                 = {-180, -293, 1090, 1010};
+static std::vector<float> times_bold_box             = {-168, -218, 1000,  935};
+static std::vector<float> times_bold_italic_box      = {-200, -218, 996,   921};
+static std::vector<float> times_italic_box           = {-169, -217, 1010,  883};
+static std::vector<float> times_roman_box            = {-168, -218, 1000,  898};
+static std::vector<float> dingbats_box               = {-1,   -143, 981,   820};
 
 //---------------------------------------------------------------------------//
 // Courier is a monospaced font and it seems a bit silly to specifically declare
@@ -66,7 +66,7 @@ static std::vector<float> dingbatsbox             = {-1,   -143, 981,   820};
 // define the whole map for Courier and copy that map to the Courier variants
 // which are all also of the same width and map the same code points.
 
-std::unordered_map<Unicode, int> glyphwidths::courierwidths =
+std::unordered_map<Unicode, int> glyphwidths::courier_widths =
 {
   {0x0020, 0x0258}, {0x0021, 0x0258}, {0x0022, 0x0258}, {0x0023, 0x0258},
   {0x0024, 0x0258}, {0x0025, 0x0258}, {0x0026, 0x0258}, {0x0027, 0x0258},
@@ -118,7 +118,7 @@ std::unordered_map<Unicode, int> glyphwidths::courierwidths =
 // The data themselves are not really human-readable, so any problems will only
 // be found by testing the output.
 
-std::unordered_map<Unicode, int> glyphwidths::helveticawidths =
+std::unordered_map<Unicode, int> glyphwidths::helvetica_widths =
 {
   {0x0020, 0x0116}, {0x0021, 0x0116}, {0x0022, 0x0163}, {0x0023, 0x022c},
   {0x0024, 0x022c}, {0x0025, 0x0379}, {0x0026, 0x029b}, {0x0027, 0x00de},
@@ -162,7 +162,7 @@ std::unordered_map<Unicode, int> glyphwidths::helveticawidths =
 
 //---------------------------------------------------------------------------//
 
-std::unordered_map<Unicode, int> glyphwidths::helveticaboldwidths =
+std::unordered_map<Unicode, int> glyphwidths::helvetica_bold_widths =
 {
   {0x0020, 0x0116}, {0x0021, 0x014d}, {0x0022, 0x01da}, {0x0023, 0x022c},
   {0x0024, 0x022c}, {0x0025, 0x0379}, {0x0026, 0x02d2}, {0x0027, 0x0116},
@@ -206,7 +206,7 @@ std::unordered_map<Unicode, int> glyphwidths::helveticaboldwidths =
 
 //---------------------------------------------------------------------------//
 
-std::unordered_map<Unicode, int> glyphwidths::symbolwidths =
+std::unordered_map<Unicode, int> glyphwidths::symbol_widths =
 {
   {0x0020, 0x00fa}, {0x0021, 0x014d}, {0x0022, 0x02c9}, {0x0023, 0x01f4},
   {0x0024, 0x0225}, {0x0025, 0x0341}, {0x0026, 0x030a}, {0x0027, 0x01b7},
@@ -260,7 +260,7 @@ std::unordered_map<Unicode, int> glyphwidths::symbolwidths =
 
 //---------------------------------------------------------------------------//
 
-std::unordered_map<Unicode, int> glyphwidths::timesboldwidths =
+std::unordered_map<Unicode, int> glyphwidths::times_bold_widths =
 {
   {0x0020, 0x00fa}, {0x0021, 0x014d}, {0x0022, 0x022b}, {0x0023, 0x01f4},
   {0x0024, 0x01f4}, {0x0025, 0x03e8}, {0x0026, 0x0341}, {0x0027, 0x014d},
@@ -304,7 +304,7 @@ std::unordered_map<Unicode, int> glyphwidths::timesboldwidths =
 
 //---------------------------------------------------------------------------//
 
-std::unordered_map<Unicode, int> glyphwidths::timesbolditalicwidths =
+std::unordered_map<Unicode, int> glyphwidths::times_bold_italic_widths =
 {
   {0x0020, 0x00fa}, {0x0021, 0x0185}, {0x0022, 0x022b}, {0x0023, 0x01f4},
   {0x0024, 0x01f4}, {0x0025, 0x0341}, {0x0026, 0x030a}, {0x0027, 0x014d},
@@ -348,7 +348,7 @@ std::unordered_map<Unicode, int> glyphwidths::timesbolditalicwidths =
 
 //---------------------------------------------------------------------------//
 
-std::unordered_map<Unicode, int> glyphwidths::timesitalicwidths =
+std::unordered_map<Unicode, int> glyphwidths::times_italic_widths =
 {
   {0x0020, 0x00fa}, {0x0021, 0x014d}, {0x0022, 0x01a4}, {0x0023, 0x01f4},
   {0x0024, 0x01f4}, {0x0025, 0x0341}, {0x0026, 0x030a}, {0x0027, 0x014d},
@@ -392,7 +392,7 @@ std::unordered_map<Unicode, int> glyphwidths::timesitalicwidths =
 
 //---------------------------------------------------------------------------//
 
-std::unordered_map<Unicode, int> glyphwidths::timesromanwidths =
+std::unordered_map<Unicode, int> glyphwidths::times_roman_widths =
 {
   {0x0020, 0x00fa}, {0x0021, 0x014d}, {0x0022, 0x0198}, {0x0023, 0x01f4},
   {0x0024, 0x01f4}, {0x0025, 0x0341}, {0x0026, 0x030a}, {0x0027, 0x014d},
@@ -436,7 +436,7 @@ std::unordered_map<Unicode, int> glyphwidths::timesromanwidths =
 
 //---------------------------------------------------------------------------//
 
-std::unordered_map<Unicode, int> glyphwidths::dingbatswidths =
+std::unordered_map<Unicode, int> glyphwidths::dingbats_widths =
 {
   {0x0020, 0x0116}, {0x0021, 0x03ce}, {0x0022, 0x03c1}, {0x0023, 0x03ce},
   {0x0024, 0x03d4}, {0x0025, 0x02cf}, {0x0026, 0x0315}, {0x0027, 0x0316},

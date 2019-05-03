@@ -269,7 +269,7 @@ int xref::get_stream_length(const dictionary& dict) const
 {
   if(dict.contains_references("/Length"))
   {
-    int lengthob = dict.get_references("/Length")[0]; // finds reference
+    int lengthob = dict.get_reference("/Length"); // finds reference
     size_t firstpos = get_object_start_byte(lengthob);
     size_t len = m_file_string->find("endobj", firstpos) - firstpos;
     string objstr = m_file_string->substr(firstpos, len);
@@ -333,7 +333,7 @@ void xref::create_crypto()
    // if there's no encryption dictionary, there's nothing else to do
   if(!m_trailer_dictionary.has_key("/Encrypt")) return;
 
-  int encryption_number = m_trailer_dictionary.get_references("/Encrypt").at(0);
+  int encryption_number = m_trailer_dictionary.get_reference("/Encrypt");
 
   // No encryption dict - exception?
   if(m_xref_table.find(encryption_number) == m_xref_table.end()) return;
@@ -378,14 +378,14 @@ xrefstream::xrefstream(shared_ptr<xref> Xref, int starts) :
   if(!m_dict.contains_ints("/W"))
     throw std::runtime_error("No /W entry for stream.");
 
-  read_index();         // Read Index so we know which objects are in stream
-  read_parameters();         // Read the PNG decoding parameters
+  read_index();       // Read Index so we know which objects are in stream
+  read_parameters();  // Read the PNG decoding parameters
   get_raw_matrix();   // Arrange the raw data in stream into correct table form
-  diff_up();           // Undiff the raw data
-  modulo_transpose();  // Transposes table which ensuring all numbers are <256
+  diff_up();          // Undiff the raw data
+  modulo_transpose(); // Transposes table which ensuring all numbers are <256
   expand_bytes();     // Multiply bytes to intended size based on their position
-  merge_columns();     // Sum adjacent columns that represent large numbers
-  number_rows();       // Marry rows to the object numbers from the /Index entry
+  merge_columns();    // Sum adjacent columns that represent large numbers
+  number_rows();      // Marry rows to the object numbers from the /Index entry
 }
 
 /*---------------------------------------------------------------------------*/

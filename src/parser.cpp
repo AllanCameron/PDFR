@@ -342,7 +342,7 @@ void parser::TJ()
       textspace[6] = PRscaled + txtspcinit;
 
       // Convert the hexstring to raw char
-      raw = HexstringToRawChar(m_Operands[z]);
+      raw = convert_hex_to_raw(m_Operands[z]);
     }
 
     // cast "(cat on mat)" style string to vector of RawChar (uint16_t)
