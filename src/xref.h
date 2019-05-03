@@ -102,7 +102,7 @@ public:
 
   // public methods
   bool is_encrypted() const;           // Eeturns encryption state
-  dictionary get_trailer() const;
+  Dictionary get_trailer() const;
   size_t get_object_start_byte(int) const;   // Byyte offset of a given object
   size_t get_object_end_byte(int) const;  // Byte offset of end of given object
   size_t get_holding_object_number_of(int) const;
@@ -115,13 +115,13 @@ private:
   std::shared_ptr<const std::string> m_file_string;
   std::unordered_map<int, xrefrow> m_xref_table; // This is the main data member
   std::vector<int> m_xref_locations;         // vector of offsets of xref starts
-  dictionary m_trailer_dictionary;           // Canonical trailer dictionary
+  Dictionary m_trailer_dictionary;           // Canonical trailer dictionary
   bool m_encrypted;                     // Flag to indicate if encryption used
-  std::shared_ptr<crypto> m_encryption; // crypto object for decrypting files
+  std::shared_ptr<Crypto> m_encryption; // crypto object for decrypting files
 
 // private methods
   xref& operator=(const xref&);
-  int get_stream_length(const dictionary& dict) const;
+  int get_stream_length(const Dictionary& dict) const;
   void locate_xrefs();                     // Finds xref locations
   void read_xref_strings();               // Gets strings from xref locations
   void read_xref_from_stream(int);        // Uses xrefstream class to get xref

@@ -342,7 +342,7 @@ void parser::TJ()
       textspace[6] = PRscaled + txtspcinit;
 
       // Convert the hexstring to raw char
-      raw = convert_hex_to_raw(m_Operands[z]);
+      raw = convert_hex_to_rawchar(m_Operands[z]);
     }
 
     // cast "(cat on mat)" style string to vector of RawChar (uint16_t)
@@ -354,7 +354,7 @@ void parser::TJ()
       // translate user space per kerning
       textspace[6] = PRscaled + txtspcinit;
 
-      raw = StringToRawChar(m_Operands[z]);
+      raw = convert_string_to_rawchar(m_Operands[z]);
     }
 
     // Now we can process the string given the current user space and font

@@ -182,7 +182,7 @@ void document::expand_kids(const vector<int>& object_numbers,
 /*---------------------------------------------------------------------------*/
 // Public function that gets a specific page header from the pageheader vector
 
-dictionary document::get_page_header(int page_number)
+Dictionary document::get_page_header(int page_number)
 {
   // Ensure the pagenumber is valid
   if((m_page_object_numbers.size() < (size_t) page_number) || page_number < 0)

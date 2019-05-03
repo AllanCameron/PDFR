@@ -307,9 +307,9 @@ private:
 // This can be used e.g. to find the byte position that always sits between
 // "startxref" and "%%EOF"
 
-std::string carveout(const std::string&,
-                     const std::string&,
-                     const std::string&);
+std::string carve_out(const std::string&,
+                      const std::string&,
+                      const std::string&);
 
 //---------------------------------------------------------------------------//
 // finds all closest pairs of strings a, b and returns the substring between.
@@ -324,19 +324,19 @@ std::vector<std::string> multicarve(const std::string&,
 // Decent approximation of whether a string contains binary data or not
 // Uses <algorithm> from std
 
-bool IsAscii(const std::string&);
+bool is_ascii(const std::string&);
 
 //---------------------------------------------------------------------------//
 //Takes a string of bytes represented in ASCII and converts to actual bytes
 // eg "48656c6c6f20576f726c6421" -> "Hello World!"
 
-std::vector<unsigned char> bytesFromArray(const std::string&);
+std::vector<unsigned char> convert_hex_to_bytes(const std::string&);
 
 //---------------------------------------------------------------------------//
 //Converts an int to the relevant 2-byte ASCII hex (4 characters long)
 // eg 161 -> "00A1"
 
-std::string intToHexstring(int);
+std::string convert_int_to_hex(int);
 
 //---------------------------------------------------------------------------//
 // Classify characters for use in lexers. This allows the use of switch
@@ -345,20 +345,20 @@ std::string intToHexstring(int);
 // For cases where the lexer needs to find a specific symbol, this function
 // returns the original character if it is not a digit, a letter or whitespace
 
-char symbol_type(const char);
+char get_symbol_type(const char);
 
 //---------------------------------------------------------------------------//
 // Returns the data represented by an Ascii encoded hex string as a vector
 // of two-byte numbers
 
-std::vector<RawChar> convert_hex_to_raw(std::string&);
+std::vector<RawChar> convert_hex_to_rawchar(std::string&);
 
 //---------------------------------------------------------------------------//
 // Converts normal string to a vector of 2-byte width numbers (RawChar)
 // This requires sequential conversion from char to uint8_t to uint16_t
 // (RawChar is just a synonym for uint16_t)
 
-std::vector<RawChar> StringToRawChar(const std::string&);
+std::vector<RawChar> convert_string_to_rawchar(const std::string&);
 
 //---------------------------------------------------------------------------//
 // This is a simple lexer to find any object references in the given string,

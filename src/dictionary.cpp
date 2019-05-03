@@ -50,9 +50,9 @@ using namespace std;
  *
  * The state is described by an enum, and the character of interest is tested
  * for its type - either letter, digit, whitespace or miscellaneous using the
- * symbol_type function defined in utilities.cpp. Any miscellaneous chars
+ * get_symbol_type function defined in utilities.cpp. Any miscellaneous chars
  * that need to be handled by a specific state can be done so because
- * symbol_type returns the original char if it is not a letter, digit or
+ * get_symbol_type returns the original char if it is not a letter, digit or
  * whitespace.
  *
  * The rest of the functions are essentially just getters, which request or
@@ -138,7 +138,7 @@ void dict_builder::tokenize_dict()
   while(i < s->length() && i < maxlen)
   {
     S = (*s)[i];
-    char n = symbol_type(S); // determine char type at start of each loop
+    char n = get_symbol_type(S); // determine char type at start of each loop
     switch(state)
     {
       case PREENTRY:    if(n == '<')  state = MAYBE;                    break;
@@ -353,7 +353,7 @@ void dict_builder::handleClose(char n)
                 if((*s).substr(i, 6) == "stream") // OK, so is it "stream"?
                 {
                   int ex = 7;
-                  while(symbol_type((*s)[i + ex]) == ' ')
+                  while(get_symbol_type((*s)[i + ex]) == ' ')
                     ex++; // read the whitespace characters after word "stream"
                   // Now store the location of the start of the stream
                   m_Map["stream"] = to_string(i + ex);
@@ -407,21 +407,21 @@ dict_builder::dict_builder()
 
 /*---------------------------------------------------------------------------*/
 
-dictionary::dictionary(shared_ptr<const string> s)
+Dictionary::Dictionary(shared_ptr<const string> s)
 {
   m_Map = move(dict_builder(s).get());
 }
 
 /*---------------------------------------------------------------------------*/
 
-dictionary::dictionary(shared_ptr<const string> s, size_t pos)
+Dictionary::Dictionary(shared_ptr<const string> s, size_t pos)
 {
   m_Map = move(dict_builder(s, pos).get());
 }
 
 /*---------------------------------------------------------------------------*/
 
-dictionary::dictionary()
+Dictionary::Dictionary()
 {
   unordered_map<string, string> Empty;
   m_Map = Empty;
@@ -431,7 +431,7 @@ dictionary::dictionary()
 // A dictionary can be created from an existing map. Not used but appears
 // in case required for future feature development
 
-dictionary::dictionary(std::unordered_map<string, string> dict)
+Dictionary::Dictionary(std::unordered_map<string, string> dict)
 {
   m_Map = dict;
 };
@@ -439,7 +439,7 @@ dictionary::dictionary(std::unordered_map<string, string> dict)
 /*---------------------------------------------------------------------------*/
 // Simple getter of dictionary contents as a string from given key name
 
-string dictionary::get_string(const string& Key) const
+string Dictionary::get_string(const string& Key) const
 {
   // A simple map index lookup with square brackets adds the key to
   // m_Map, which we don't want. Using find(key) leaves it unaltered
@@ -456,7 +456,7 @@ string dictionary::get_string(const string& Key) const
 /*---------------------------------------------------------------------------*/
 // Sometimes we just need a boolean check for the presence of a key
 
-bool dictionary::has_key(const string& Key) const
+bool Dictionary::has_key(const string& Key) const
 {
   return m_Map.find(Key) != m_Map.end();
 }
@@ -466,7 +466,7 @@ bool dictionary::has_key(const string& Key) const
 // This should return true if the key is present AND its value contains
 // at least one object reference, and should be false in all other cases
 
-bool dictionary::contains_references(const string& Key) const
+bool Dictionary::contains_references(const string& Key) const
 {
   return !this->get_references(Key).empty();
 }
@@ -475,7 +475,7 @@ bool dictionary::contains_references(const string& Key) const
 // Check whether the key's values contains any integers. If a key is present
 // AND its value contains ints, return true. Otherwise false.
 
-bool dictionary::contains_ints(const string& Key) const
+bool Dictionary::contains_ints(const string& Key) const
 {
   return !this->get_ints(Key).empty();
 }
@@ -484,7 +484,7 @@ bool dictionary::contains_ints(const string& Key) const
 // Returns a vector of the object numbers from references found in the
 // given key's value. Uses the getObjRefs() global function from utilities.h
 
-vector<int> dictionary::get_references(const string& Key) const
+vector<int> Dictionary::get_references(const string& Key) const
 {
   return parse_references(this->get_string(Key));
 }
@@ -493,7 +493,7 @@ vector<int> dictionary::get_references(const string& Key) const
 // Returns a vector of the object numbers from references found in the
 // given key's value. Uses the getObjRefs() global function from utilities.h
 
-int dictionary::get_reference(const string& Key) const
+int Dictionary::get_reference(const string& Key) const
 {
   vector<int> all_references = parse_references(this->get_string(Key));
   if(all_references.empty()) throw runtime_error("No reference found");
@@ -503,7 +503,7 @@ int dictionary::get_reference(const string& Key) const
 // Returns any integers present in the value string as read by the parse_ints()
 // global function defined in utilities.cpp
 
-vector<int> dictionary::get_ints(const string& Key) const
+vector<int> Dictionary::get_ints(const string& Key) const
 {
   return parse_ints(this->get_string(Key));
 }
@@ -512,7 +512,7 @@ vector<int> dictionary::get_ints(const string& Key) const
 // Returns any floats present in the value string as read by the parse_floats()
 // global function defined in utilities.cpp
 
-vector<float> dictionary::get_floats(const string& Key) const
+vector<float> Dictionary::get_floats(const string& Key) const
 {
   return parse_floats(this->get_string(Key));
 }
@@ -521,7 +521,7 @@ vector<float> dictionary::get_floats(const string& Key) const
 // This creates a new dictionary object on request if the value string contains
 // a subdictionary.
 
-dictionary dictionary::get_dictionary(const string& Key) const
+Dictionary Dictionary::get_dictionary(const string& Key) const
 {
   // Get the value string
   string dict = this->get_string(Key);
@@ -530,18 +530,18 @@ dictionary dictionary::get_dictionary(const string& Key) const
   if(dict.find("<<") != string::npos)
   {
     // If so, create a new dictionary
-    return dictionary(make_shared<string> (dict));
+    return Dictionary(make_shared<string> (dict));
   }
 
   // Otherwise return an empty dictionary
-  return dictionary();
+  return Dictionary();
 }
 
 /*---------------------------------------------------------------------------*/
 // Checks whether a subdictionary is present in the value string by looking
 // for double angle brackets
 
-bool dictionary::contains_dictionary(const string& Key) const
+bool Dictionary::contains_dictionary(const string& Key) const
 {
   string dict = this->get_string(Key);
   return dict.find("<<") != string::npos;
@@ -551,7 +551,7 @@ bool dictionary::contains_dictionary(const string& Key) const
 // Returns all the keys present in the dictionary using the getKeys() template
 // defined in utilities.cpp
 
-vector<string> dictionary::get_all_keys() const
+vector<string> Dictionary::get_all_keys() const
 {
   return getKeys(this->m_Map);
 }
@@ -560,7 +560,7 @@ vector<string> dictionary::get_all_keys() const
 // Returns the entire map. This is useful for passing dictionaries out of
 // the program, for example in debugging
 
-const std::unordered_map<string, string>& dictionary::R_out() const
+const std::unordered_map<string, string>& Dictionary::R_out() const
 {
   return this->m_Map;
 }

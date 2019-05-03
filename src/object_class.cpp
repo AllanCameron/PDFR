@@ -46,7 +46,7 @@ object_class::object_class(shared_ptr<const xref> Xref, int object_num) :
   if(XR->file()->substr(startbyte, 20).find("<<") == string::npos)
   {
     // No dictionary found - make blank dictionary for header
-    header = dictionary();
+    header = Dictionary();
 
     // find start and end of contents
     m_streampos = {XR->file()->find(" obj", startbyte) + 4, stopbyte - 1};
@@ -55,7 +55,7 @@ object_class::object_class(shared_ptr<const xref> Xref, int object_num) :
   else // Else the object has a header dictionary
   {
     // Construct the dictionary
-    header = dictionary(XR->file(), startbyte);
+    header = Dictionary(XR->file(), startbyte);
 
     // Find the stream (if any)
     m_streampos = XR->get_stream_location(startbyte);
@@ -142,12 +142,12 @@ object_class::object_class(shared_ptr<object_class> holder, int objnum)
   // Most stream objects consist of just a dictionary
   if(H[0] == '<')
   {
-    header = dictionary(make_shared<string>(H)); // read dict as object's header
+    header = Dictionary(make_shared<string>(H)); // read dict as object's header
     stream = "";             // stream objects don't have their own stream
   }
   else // The object is not a dictionary - maybe just an array or int etc
   {
-    header = dictionary();   // gets an empty dictionary as header
+    header = Dictionary();   // gets an empty dictionary as header
     stream = H;              // We'll call the contents a stream for ease
 
     // Annoyingly, some "objects" in an object stream are just pointers
@@ -177,7 +177,7 @@ object_class::object_class(shared_ptr<object_class> holder, int objnum)
 /*---------------------------------------------------------------------------*/
 // Simple public getter for the header dictionary
 
-dictionary object_class::get_dictionary()
+Dictionary object_class::get_dictionary()
 {
   return header;
 }

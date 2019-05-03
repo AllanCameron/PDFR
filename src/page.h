@@ -82,7 +82,7 @@ private:
   // private data members
   std::shared_ptr<document> m_doc;        // Pointer to containing document
   int                 m_page_number;     // [Zero-indexed] page number
-  dictionary          m_header,         // The page's header dictionary
+  Dictionary          m_header,         // The page's header dictionary
                       m_resources,      // Resource sub-dictionary
                       m_fonts;          // Font sub-dictionary
   Box  m_minbox;

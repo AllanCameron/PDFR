@@ -90,7 +90,7 @@ public:
   // public member functions
   std::shared_ptr<object_class> get_object(int); // creates object and
                                                  // returns pointer
-  dictionary get_page_header(int);  // returns header dictionary for page p
+  Dictionary get_page_header(int);  // returns header dictionary for page p
 
   inline std::vector<int> get_page_object_numbers()
   {
@@ -102,8 +102,8 @@ private:
   std::string m_file_path;            // Path used to create file (if used)
   const std::string m_file_string;    // Full contents of file
   std::shared_ptr<const xref> m_xref; // Contains the xref object for navigation
-  dictionary m_page_directory;        // dict containing pointers to pages
-  dictionary m_catalog;               // The pdf catalog dictionary
+  Dictionary m_page_directory;        // dict containing pointers to pages
+  Dictionary m_catalog;               // The pdf catalog dictionary
   std::vector<int> m_page_object_numbers;
 
   // This map holds object_class objects. Since some objects may be read

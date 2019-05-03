@@ -94,7 +94,7 @@ class Encoding
 {
 public:
   // constructor
-  Encoding(const dictionary&, std::shared_ptr<document>);
+  Encoding(const Dictionary&, std::shared_ptr<document>);
 
   // public member functions
   Unicode interpret(const RawChar&);  // Maps given code point to Unicode
@@ -113,7 +113,7 @@ private:
   std::unordered_map<RawChar, Unicode> m_encoding_map;
 
   // private data members used as variables in creating encoding map
-  dictionary m_font_dictionary;       // the main font dictionary
+  Dictionary m_font_dictionary;       // the main font dictionary
   std::shared_ptr<document> m_document;  // pointer to the containing document
   std::string m_base_encoding; // value of /BaseEncoding entry
   enum differences_state { NEWSYMB, NUM, NAME, STOP };

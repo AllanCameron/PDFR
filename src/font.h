@@ -73,7 +73,7 @@ class font
 {
 public:
   // constructors
-  font(std::shared_ptr<document>, dictionary, const std::string&);
+  font(std::shared_ptr<document>, Dictionary, const std::string&);
   font(){};
 
   // public methods
@@ -88,7 +88,7 @@ public:
 private:
   // private data members
   std::shared_ptr<document> m_d;  // Pointer to the containing document
-  dictionary m_fontref;           // The font dictionary
+  Dictionary m_fontref;           // The font dictionary
   std::string m_FontID,           // The name the font as given in the PDF
               m_FontName;         // The actual name of the font
   GlyphMap m_glyphmap;  // Main data member, mapping RawChar to {Unicode, width}

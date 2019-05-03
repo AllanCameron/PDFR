@@ -35,7 +35,7 @@ using namespace std;
 // any /ToUnicode entry. The first three are co-ordinated by read_encoding()
 // and the last is co-ordinated by map_unicode()
 
-Encoding::Encoding(const dictionary& font_dictionary, shared_ptr<document> doc):
+Encoding::Encoding(const Dictionary& font_dictionary, shared_ptr<document> doc):
   m_font_dictionary(font_dictionary), m_document(doc)
 {
   read_encoding();
@@ -68,7 +68,7 @@ void Encoding::read_differences(const string& differences_string)
 
   for(auto i : differences_string)
   {
-    char n = symbol_type(i);  // determine character type
+    char n = get_symbol_type(i);  // determine character type
     switch(state)             // state switch
     {
       case NEWSYMB:   switch(n)   // if number switch to NUM, if / to NAME
@@ -167,8 +167,8 @@ void Encoding::process_unicode_chars(vector<string>& bf_chars)
     // to Unicode and makes them the raw key's mapped value in the encoding map
     for(size_t i = 0; i < (all_entries.size() - 1); i += 2)
     {
-        RawChar key = convert_hex_to_raw(all_entries[i])[0];
-        m_encoding_map[key] = convert_hex_to_raw(all_entries[i + 1])[0];
+        RawChar key = convert_hex_to_rawchar(all_entries[i])[0];
+        m_encoding_map[key] = convert_hex_to_rawchar(all_entries[i + 1])[0];
     }
   }
 }
@@ -195,14 +195,14 @@ void Encoding::process_unicode_range(vector<string>& bf_ranges)
     for(size_t j = 2; j < all_entries.size(); j += 3)
     {
       // first column == first code point
-      RawChar first = convert_hex_to_raw(all_entries[j - 2]).at(0);
+      RawChar first = convert_hex_to_rawchar(all_entries[j - 2]).at(0);
 
       // second column == first code point
-      RawChar last  = convert_hex_to_raw(all_entries[j - 1]).at(0);
+      RawChar last  = convert_hex_to_rawchar(all_entries[j - 1]).at(0);
 
-      // We call the HexstringtoRawChar function as it outputs uint16
+      // We call the hex to rawchar function as it outputs uint16
       // However, 'start' is Unicode and we make this explicit
-      Unicode start = (Unicode) convert_hex_to_raw(all_entries[j]).at(0);
+      Unicode start = (Unicode) convert_hex_to_rawchar(all_entries[j]).at(0);
 
       // Now we can fill the encoding map from the data in the row
       for(int increment = 0; increment <= (last - first); ++increment)
@@ -220,7 +220,7 @@ void Encoding::process_unicode_range(vector<string>& bf_ranges)
 void Encoding::read_encoding()
 {
   // start with font dictionary
-  dictionary encoding_dictionary = m_font_dictionary;
+  Dictionary encoding_dictionary = m_font_dictionary;
 
   // Read encoding entry
   string encoding_name = encoding_dictionary.get_string("/Encoding");

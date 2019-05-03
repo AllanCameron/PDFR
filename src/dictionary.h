@@ -66,21 +66,21 @@
 
 //---------------------------------------------------------------------------//
 
-class dictionary
+class Dictionary
 {
   std::unordered_map<std::string, std::string> m_Map; // data holder
 
   public:
   // Constructors
-  dictionary(std::shared_ptr<const std::string>); // make dictionary from string
-  dictionary(std::shared_ptr<const std::string>, size_t); // dict from pos + str
-  dictionary(std::unordered_map<std::string, std::string>); // create from map
-  dictionary(const dictionary& d): m_Map(d.m_Map){};
-  dictionary(dictionary&& d) noexcept {std::swap(this->m_Map, d.m_Map);};
-  dictionary& operator=(dictionary&& d) noexcept {
+  Dictionary(std::shared_ptr<const std::string>); // make dictionary from string
+  Dictionary(std::shared_ptr<const std::string>, size_t); // dict from pos + str
+  Dictionary(std::unordered_map<std::string, std::string>); // create from map
+  Dictionary(const Dictionary& d): m_Map(d.m_Map){};
+  Dictionary(Dictionary&& d) noexcept {std::swap(this->m_Map, d.m_Map);};
+  Dictionary& operator=(Dictionary&& d) noexcept {
     std::swap(m_Map, d.m_Map); return *this;}
-  dictionary(); // empty dictionary
-  dictionary& operator=(const dictionary& d){m_Map = d.m_Map; return *this;}
+  Dictionary(); // empty dictionary
+  Dictionary& operator=(const Dictionary& d){m_Map = d.m_Map; return *this;}
 
   // Public member functions
   std::string get_string(const std::string&) const;  // get value as string given name
@@ -93,7 +93,7 @@ class dictionary
   std::vector<int> get_ints(const std::string&) const;
   std::vector<float> get_floats(const std::string&) const;
   std::vector<std::string> get_all_keys() const;
-  dictionary get_dictionary(const std::string&) const;
+  Dictionary get_dictionary(const std::string&) const;
   const std::unordered_map<std::string, std::string>& R_out() const;
 
   std::unordered_map<std::string, std::string>::const_iterator begin()

@@ -36,7 +36,7 @@ using namespace std;
 // getFontName() to get the postscript font title, and then makeGlyphTable()
 // to create the main data member
 
-font::font(shared_ptr<document> doc, dictionary Fontref, const string& fontid) :
+font::font(shared_ptr<document> doc, Dictionary Fontref, const string& fontid) :
 m_d(doc), m_fontref(Fontref), m_FontID(fontid)
 {
   getFontName();

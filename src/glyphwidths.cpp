@@ -43,7 +43,7 @@ using namespace std;
 // the containing document. If the font is a core font, get the widths from
 // built in static corefont tables. Otherwise find and interpret widths.
 
-glyphwidths::glyphwidths(dictionary& dic, shared_ptr<document> doc):
+glyphwidths::glyphwidths(Dictionary& dic, shared_ptr<document> doc):
   m_font_dictionary(dic), m_document(doc)
 {
   m_base_font = m_font_dictionary.get_string("/BaseFont");
@@ -133,7 +133,7 @@ void glyphwidths::parseDescendants()
     m_document->get_object(m_font_dictionary.get_reference("/DescendantFonts"));
 
   // Extract its dictionary and its stream
-  dictionary descdict = desc->get_dictionary();
+  Dictionary descdict = desc->get_dictionary();
   string descstream(desc->get_stream());
 
   // Handle descendantfonts being just a reference to another object
@@ -252,7 +252,7 @@ void glyphwidths::parsewidtharray(const string& s)
   // main loop - straight iteration through all the characters in s
   for(const auto& i : s)
   {
-    char a = symbol_type(i); // determine symbol type from method in utilities.h
+    char a = get_symbol_type(i);
 
     // If opening of array not first character, simply wait for '['
     if(state == NEWSYMB)

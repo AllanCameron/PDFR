@@ -53,7 +53,7 @@ class xrefstream
   int         m_ncols,              // Number of Columns in table
               m_predictor,          // Specifies decoding algorithm
               m_objstart;           // Byte offset of the xrefstream's container
-  dictionary  m_dict;               // Dictionary of object containing stream
+  Dictionary  m_dict;               // Dictionary of object containing stream
 
   xrefstream(shared_ptr<xref>, int);// private constructor
   void read_index();                // Reads the index entry of main dict
@@ -97,8 +97,8 @@ void xref::locate_xrefs()
   // Get last 50 chars of the file
   string&& last_50_chars = m_file_string->substr(m_file_string->size()-50, 50);
 
-  // Use carveout() from utilities.h to find the first xref offset
-  string&& xref_string =  carveout(last_50_chars, "startxref", "%%EOF");
+  // Use carve_out() from utilities.h to find the first xref offset
+  string&& xref_string =  carve_out(last_50_chars, "startxref", "%%EOF");
 
   // Convert the number string to an int
   m_xref_locations.emplace_back(stoi(xref_string));
@@ -109,14 +109,14 @@ void xref::locate_xrefs()
   // The first dictionary found after any xref offset is always a trailer
   // dictionary, though sometimes it doubles as an xrefstream dictionary.
   // We make this first one found the canonical trailer dictionary
-  m_trailer_dictionary = dictionary(m_file_string, m_xref_locations[0]);
+  m_trailer_dictionary = Dictionary(m_file_string, m_xref_locations[0]);
 
   // Now we follow the pointers to all xrefs sequentially.
-  dictionary temp_dictionary = m_trailer_dictionary;
+  Dictionary temp_dictionary = m_trailer_dictionary;
   while (temp_dictionary.contains_ints("/Prev"))
   {
     m_xref_locations.emplace_back(temp_dictionary.get_ints("/Prev")[0]);
-    temp_dictionary = dictionary(m_file_string, m_xref_locations.back());
+    temp_dictionary = Dictionary(m_file_string, m_xref_locations.back());
   }
 }
 
@@ -139,7 +139,7 @@ void xref::read_xref_strings()
     string&& fullxref = m_file_string->substr(start, len);
 
     // Carve out the actual string
-    string xref_string = carveout(move(fullxref), "xref", "trailer");
+    string xref_string = carve_out(move(fullxref), "xref", "trailer");
 
     // If it contains a dictionary, process as a stream, otherwise as a string
     if(xref_string.substr(0, 15).find("<<", 0) != string::npos)
@@ -265,7 +265,7 @@ std::vector<int> xref::get_all_object_numbers() const
 
 /*---------------------------------------------------------------------------*/
 
-int xref::get_stream_length(const dictionary& dict) const
+int xref::get_stream_length(const Dictionary& dict) const
 {
   if(dict.contains_references("/Length"))
   {
@@ -287,7 +287,7 @@ int xref::get_stream_length(const dictionary& dict) const
 array<size_t, 2> xref::get_stream_location(int object_start) const
 {
   // Get the object dictionary
-  dictionary dict = dictionary(m_file_string, object_start);
+  Dictionary dict = Dictionary(m_file_string, object_start);
 
   // If the stream exists, get its start / stop positions as a length-2 array
   if(dict.has_key("stream") && dict.has_key("/Length"))
@@ -319,7 +319,7 @@ bool xref::is_encrypted() const
 /*---------------------------------------------------------------------------*/
 // getter function to access the trailer dictionary - a private data member
 
-dictionary xref::get_trailer() const
+Dictionary xref::get_trailer() const
 {
   return m_trailer_dictionary;
 }
@@ -341,8 +341,8 @@ void xref::create_crypto()
   // mark file as encrypted and read the encryption dictionary
   m_encrypted = true;
   size_t starts_at = get_object_start_byte(encryption_number);
-  dictionary&& dict = dictionary(m_file_string, starts_at);
-  m_encryption = make_shared<crypto>(move(dict), m_trailer_dictionary);
+  Dictionary&& dict = Dictionary(m_file_string, starts_at);
+  m_encryption = make_shared<Crypto>(move(dict), m_trailer_dictionary);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -372,7 +372,7 @@ xrefstream::xrefstream(shared_ptr<xref> Xref, int starts) :
   m_ncols(0),
   m_predictor(0),
   m_objstart(starts),
-  m_dict(dictionary(m_XR->file(), m_objstart))
+  m_dict(Dictionary(m_XR->file(), m_objstart))
 {
   // If there is no /W entry, we don't know how to interpret the stream.
   if(!m_dict.contains_ints("/W"))
@@ -434,7 +434,7 @@ void xrefstream::read_parameters()
     decodestring = m_dict.get_string("/DecodeParms"); // string for subdict
   }
 
-  dictionary subdict(make_shared<string>(decodestring));
+  Dictionary subdict(make_shared<string>(decodestring));
 
   if(subdict.contains_ints("/Columns"))
   {

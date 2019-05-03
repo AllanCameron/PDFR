@@ -33,7 +33,7 @@ using namespace std;
 // The default user password cipher is required to construct the file key and is
 // declared as a static member of the crypto class; it is defined here
 
-bytes crypto::default_user_password =
+bytes Crypto::default_user_password =
 {
   0x28, 0xBF, 0x4E, 0x5E, 0x4E, 0x75, 0x8A, 0x41,
   0x64, 0x00, 0x4E, 0x56, 0xFF, 0xFA, 0x01, 0x08,
@@ -82,7 +82,7 @@ std::vector<std::vector<four_bytes>> mixarray =
 // This simple function "chops" a four-byte int to a vector of four bytes.
 // The bytes are returned lowest-order first as this is the typical use.
 
-bytes crypto::chopLong(four_bytes longInt) const
+bytes Crypto::chopLong(four_bytes longInt) const
 {
   // The mask specifies that only the last byte is read when used with &
   four_bytes mask = 0x000000ff;
@@ -107,7 +107,7 @@ bytes crypto::chopLong(four_bytes longInt) const
 // appropriately. For the purposes of text extraction however, this is not
 // required, and we just need the permissions flag to produce the file key.
 
-bytes crypto::permissions(std::string str)
+bytes Crypto::permissions(std::string str)
 {
   // No string == no permissions. Can't decode pdf, so throw an error
   if(str.empty()) throw runtime_error("No permission flags");
@@ -138,7 +138,7 @@ bytes crypto::permissions(std::string str)
 // This function is called several times with different parameters as part
 // of the main md5 algorithm. It can be considered a "shuffler" of bytes
 
-void crypto::md5mix(int n, deque<four_bytes>& m, vector<four_bytes>& x) const
+void Crypto::md5mix(int n, deque<four_bytes>& m, vector<four_bytes>& x) const
 {
   // Declare and define some pseudorandom numbers
   four_bytes mixer, e, f = md5_table[n], g = mixarray[n / 16][n % 4];
@@ -169,7 +169,7 @@ void crypto::md5mix(int n, deque<four_bytes>& m, vector<four_bytes>& x) const
 // The main md5 algorithm. This version of it was modified from various
 // open source online implementations.
 
-bytes crypto::md5(bytes msg) const
+bytes Crypto::md5(bytes msg) const
 {
   // The length of the message
   int len = msg.size();
@@ -238,7 +238,7 @@ bytes crypto::md5(bytes msg) const
 // conversion. It simply converts a string to bytes than puts it
 // into the "bytes" version of the function
 
-bytes crypto::md5(std::string input) const
+bytes Crypto::md5(std::string input) const
 {
   bytes res(input.begin(), input.end());
 
@@ -253,7 +253,7 @@ bytes crypto::md5(std::string input) const
 // directly back into the original message using exactly the same key.
 // The algorithm is now in the public domain
 
-void crypto::rc4(bytes& message, bytes key) const
+void Crypto::rc4(bytes& message, bytes key) const
 {
   int key_length = key.size(), message_length = message.size();
   uint8_t a = 0, b = 0, x = 0, y = 0;
@@ -296,7 +296,7 @@ void crypto::rc4(bytes& message, bytes key) const
 // key length plus 5, is then used as the key with which to decrypt the
 // stream using the rc4 algorithm.
 
-void crypto::decryptStream(string& stream, int object_num, int object_gen) const
+void Crypto::decryptStream(string& stream, int object_num, int object_gen) const
 {
   // Stream as bytes
   bytes stream_as_bytes(stream.begin(), stream.end());
@@ -336,7 +336,7 @@ void crypto::decryptStream(string& stream, int object_num, int object_gen) const
 // Gets the bytes comprising the hashed owner password from the encryption
 // dictionary
 
-bytes crypto::getPassword(const string& key)
+bytes Crypto::getPassword(const string& key)
 {
    // Get raw bytes of owner password hash
   string password(encdict.get_string(key));
@@ -369,7 +369,7 @@ bytes crypto::getPassword(const string& key)
 // The decryption key is needed to decrypt all streams except the xrefstream
 // Its creation is described in ISO 3200 and implented here
 
-void crypto::getFilekey()
+void Crypto::getFilekey()
 {
   // Get the generic user password
   filekey = default_user_password;
@@ -381,7 +381,7 @@ void crypto::getFilekey()
   concat(filekey, permissions(encdict.get_string("/P")));
 
   // Get first 16 bytes of file ID and stick them on too
-  bytes idbytes = bytesFromArray(trailer.get_string("/ID"));
+  bytes idbytes = convert_hex_to_bytes(trailer.get_string("/ID"));
   idbytes.resize(16);
   concat(filekey, idbytes);
 
@@ -407,7 +407,7 @@ void crypto::getFilekey()
 // cipher of the default user password matches the user password hash in
 // the encoding dictionary
 
-void crypto::checkKeyR2()
+void Crypto::checkKeyR2()
 {
   // Get the pdf's hashed user password
   bytes ubytes = getPassword("/U");
@@ -430,13 +430,13 @@ void crypto::checkKeyR2()
 // I couldn't get it to work for ages until I realised that the user and owner
 // passwords sometimes contain backslash-escaped characters
 
-void crypto::checkKeyR3()
+void Crypto::checkKeyR3()
 {
   // We start with the default user password
   bytes user_password = default_user_password;
 
   // We now append the bytes from the ID entry of the trailer dictionary
-  concat(user_password, bytesFromArray(trailer.get_string("/ID")));
+  concat(user_password, convert_hex_to_bytes(trailer.get_string("/ID")));
 
   // We only want the first 16 bytes from the ID so truncate to 48 bytes (32+16)
   user_password.resize(48);
@@ -479,7 +479,7 @@ void crypto::checkKeyR3()
 // file key and to check it's right. The crypto object is then kept alive to
 // decode any encoded strings in the file
 
-crypto::crypto(dictionary enc, dictionary trail) :
+Crypto::Crypto(Dictionary enc, Dictionary trail) :
   encdict(enc), trailer(trail), revision(2)
 {
   // Unless specified, the revision number used for encryption is 2

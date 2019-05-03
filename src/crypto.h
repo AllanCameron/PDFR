@@ -68,12 +68,12 @@ typedef uint32_t four_bytes;
 //---------------------------------------------------------------------------//
 // Class definition for crypto
 
-class crypto
+class Crypto
 {
 public:
 // Constructors
-  crypto(){};
-  crypto(dictionary, dictionary);
+  Crypto(){};
+  Crypto(Dictionary, Dictionary);
 
 // This is the main decryption function which is also the public interface for
 // the class. It takes the raw stream, the object and generation numbers then
@@ -82,8 +82,8 @@ public:
 
 private:
 // private data members
-  dictionary encdict;
-  dictionary trailer;
+  Dictionary encdict;
+  Dictionary trailer;
   int revision;
   bytes filekey;
   static bytes default_user_password;

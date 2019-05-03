@@ -61,7 +61,7 @@ void page::read_boxes()
   // sometimes the box dimensions are inherited from an ancestor node of the
   // page header. We therefore need to look for the boxes in the page header,
   // then, if they are not found, iteratively search the parent nodes
-  dictionary box_header = m_header;
+  Dictionary box_header = m_header;
   vector<string> box_names {"/BleedBox", "/CropBox", "/MediaBox",
                            "/ArtBox", "/TrimBox"};
   vector<float> minbox;
@@ -226,10 +226,10 @@ void page::read_XObjects()
   if(xobject_string.empty()) return;
 
   // If /xobject entry is a dictionary, create a dictionary object
-  dictionary xobject_dict;
+  Dictionary xobject_dict;
   if(xobject_string.find("<<") != string::npos)
   {
-    xobject_dict = dictionary(make_shared<string>(xobject_string));
+    xobject_dict = Dictionary(make_shared<string>(xobject_string));
   }
 
   // If the /XObject string is a reference, follow the reference to dictionary
