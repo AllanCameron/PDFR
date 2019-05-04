@@ -89,7 +89,7 @@ class parser
 {
 public:
   // Basic constructor
-  parser(std::shared_ptr<page>);
+  parser(std::shared_ptr<Page>);
 
   // Copy constructor
   parser(const parser& prs): m_db(prs.m_db){}
@@ -104,7 +104,7 @@ public:
   void reader(std::string&, Token::TState);
 
   // Access results
-  textbox& output();
+  TextBox& output();
 
   // To recursively pass xobjects, we need to be able to see the operand
   std::string getOperand();
@@ -116,8 +116,8 @@ public:
 
 private:
   //private data members - used to maintain state between calls to parser
-  std::shared_ptr<page>             m_p;              // pointer to this page
-  std::shared_ptr<font>             m_wfont;          // pointer to working font
+  std::shared_ptr<Page>             m_p;              // pointer to this page
+  std::shared_ptr<Font>             m_wfont;          // pointer to working font
   float                             m_currfontsize;   // Current font size
   std::vector<float>                m_fontsizestack;  // stack of font size
   std::array<float, 9>              m_Tmstate,        // Text matrix state
@@ -132,7 +132,7 @@ private:
                                     m_Tw,             // Word spacing
                                     m_Th,             // Horizontal scaling
                                     m_Tc;             // Character spacing
-  textbox                           m_db;             // The main output struct
+  TextBox                           m_db;             // The main output struct
 
   // This typedef allows us to create a map of function pointers
   typedef void (parser::*fptr)();

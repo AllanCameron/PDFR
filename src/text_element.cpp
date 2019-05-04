@@ -32,14 +32,14 @@ using namespace std;
 
 //---------------------------------------------------------------------------//
 
-text_element::text_element
-(float l, float r, float t, float b, shared_ptr<font> f, std::vector<Unicode> g):
+TextElement::TextElement
+(float l, float r, float t, float b, shared_ptr<Font> f, std::vector<Unicode> g):
 Box(l, r, t, b), m_font(f), glyph(g), m_join(nullptr) {};
 
 
 //---------------------------------------------------------------------------//
 
-void text_element::merge_letters(text_element& matcher)
+void TextElement::merge_letters(TextElement& matcher)
 {
    // paste the left glyph to the right glyph
   this->concat_glyph(matcher.glyph);
@@ -60,7 +60,7 @@ void text_element::merge_letters(text_element& matcher)
 
 //---------------------------------------------------------------------------//
 
-bool text_element::is_elligible_to_join(const text_element& other) const
+bool TextElement::is_elligible_to_join(const TextElement& other) const
 {
   return  !other.is_consumed()                     &&
            other.is_beyond(*this)                  &&
@@ -71,7 +71,7 @@ bool text_element::is_elligible_to_join(const text_element& other) const
 
 //---------------------------------------------------------------------------//
 
-void text_element::join_words(text_element& other)
+void TextElement::join_words(TextElement& other)
 {
     // This element is elligible for joining - start by adding a space to it
     this->glyph.push_back(0x0020);
@@ -98,14 +98,14 @@ void text_element::join_words(text_element& other)
 
 //---------------------------------------------------------------------------//
 
-void text_element::concat_glyph(const std::vector<Unicode>& other)
+void TextElement::concat_glyph(const std::vector<Unicode>& other)
 {
   concat(glyph, other);
 }
 
 //---------------------------------------------------------------------------//
-// Converts textbox to text_table
-text_table::text_table(const textbox& text_box):
+// Converts TextBox to TextTable
+TextTable::TextTable(const TextBox& text_box):
 Box((Box) text_box)
 {
   for(auto ptr = text_box.cbegin(); ptr != text_box.cend(); ++ptr)
@@ -126,7 +126,7 @@ Box((Box) text_box)
 
 //---------------------------------------------------------------------------//
 
-void textbox::remove_duplicates()
+void TextBox::remove_duplicates()
 {
   for (auto this_row = m_data.begin(); this_row != m_data.end(); ++this_row)
   {
@@ -146,7 +146,7 @@ void textbox::remove_duplicates()
 //---------------------------------------------------------------------------//
 // Join another text table to this one
 
-void text_table::join(text_table& other)
+void TextTable::join(TextTable& other)
 {
   this->merge(other);
   concat(this->text, other.text);
@@ -160,7 +160,7 @@ void text_table::join(text_table& other)
 /*--------------------------------------------------------------------------*/
 // converts (16-bit) Unicode code points to multibyte utf-8 encoding.
 
-string text_element::utf()
+string TextElement::utf()
 {
   std::string result_string {}; // empty string for results
   for(auto& point : this->glyph) // for each uint16_t in the input vector...

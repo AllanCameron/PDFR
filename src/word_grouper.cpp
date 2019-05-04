@@ -40,7 +40,7 @@ constexpr int EDGECOUNT = 4;
 // and finds its column edges, then joins elligible words together as long as
 // they do not belong to different columns.
 
-word_grouper::word_grouper(textbox&& g): m_textbox(move(g))
+word_grouper::word_grouper(TextBox&& g): m_textbox(move(g))
 {
   findEdges();
   assignEdges();
@@ -50,7 +50,7 @@ word_grouper::word_grouper(textbox&& g): m_textbox(move(g))
 //---------------------------------------------------------------------------//
 // This returns a single text box of the page for further processing if needed
 
-textbox& word_grouper::output()
+TextBox& word_grouper::output()
 {
   return m_textbox;
 }
@@ -61,9 +61,9 @@ textbox& word_grouper::output()
 // the results of word_grouper to be passed out to an API if no further
 // processing is required.
 
-text_table word_grouper::out()
+TextTable word_grouper::out()
 {
-  return text_table(m_textbox);
+  return TextTable(m_textbox);
 }
 
 //---------------------------------------------------------------------------//
@@ -182,7 +182,7 @@ void word_grouper::findRightMatch()
       // Don't match against itself
       if(element == other) continue;
 
-      // These text_element functions are quite complex in themselves
+      // These TextElement functions are quite complex in themselves
       if((*element)->is_elligible_to_join(**other))
       {
         (*element)->join_words(**other);

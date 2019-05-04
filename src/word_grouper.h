@@ -69,13 +69,13 @@ class word_grouper
 {
 public:
   // Constructor
-  word_grouper(textbox&&);
+  word_grouper(TextBox&&);
 
   // Output individual text elements for next phase of layout analysis
-  textbox& output();
+  TextBox& output();
 
   // Output text elements with sizes, fonts, positions to API
-  text_table out();
+  TextTable out();
 
 private:
   // Make a table of values in a vector of floats rounded to one decimal place
@@ -96,7 +96,7 @@ private:
   std::unordered_map<int, size_t> m_leftEdges, m_rightEdges, m_mids;
 
   // The main data member
-  textbox m_textbox;
+  TextBox m_textbox;
 };
 
 //---------------------------------------------------------------------------//

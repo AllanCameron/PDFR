@@ -43,7 +43,7 @@ static const float MAX_LINE_FACTOR = 0.3;
 // then trace round all the vertices, storing every connected loop as a
 // polygon surrounding a text element.
 
-Whitespace::Whitespace(textbox word_grouper_output):
+Whitespace::Whitespace(TextBox word_grouper_output):
   m_page_text(move(word_grouper_output))
 {
   getMaxLineSize();
@@ -469,12 +469,12 @@ void Whitespace::removeEngulfed()
 // Finally we need to group our text items together in the text boxes for
 // joining and analysis.
 
-vector<textbox> Whitespace::output()
+vector<TextBox> Whitespace::output()
 {
-  vector<textbox> res;
+  vector<TextBox> res;
   for(auto& box : m_boxes)
   {
-    vector<text_ptr> text_vec;
+    vector<TextPointer> text_vec;
     int start_at = 0;
     for(auto text_it = m_page_text.begin() + start_at;
              text_it != m_page_text.end(); ++text_it)
@@ -486,7 +486,7 @@ vector<textbox> Whitespace::output()
       }
       if((*text_it)->is_beyond(box)) break;
     }
-    res.emplace_back(textbox(move(text_vec), move(box)));
+    res.emplace_back(TextBox(move(text_vec), move(box)));
   }
 
   return res;

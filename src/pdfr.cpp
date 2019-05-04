@@ -39,28 +39,28 @@ using namespace std;
 // page object. This is a common task in the exported functions, so we need to
 // seperate these functions out to reduce replication
 
-shared_ptr<page> get_page(string file_name, int page_number)
+shared_ptr<Page> get_page(string file_name, int page_number)
 {
   // Pages are numbered from 1. Any less than this should throw an error
   if(page_number < 1) Rcpp::stop("Invalid page number");
 
-  // Create the document object
-  auto document_ptr = make_shared<document>(file_name);
+  // Create the Document object
+  auto document_ptr = make_shared<Document>(file_name);
 
   // Create the page object and return it
-  return make_shared<page>(document_ptr, page_number - 1);
+  return make_shared<Page>(document_ptr, page_number - 1);
 }
 
-shared_ptr<page> get_page(vector<uint8_t> raw_file, int page_number)
+shared_ptr<Page> get_page(vector<uint8_t> raw_file, int page_number)
 {
   // Pages are numbered from 1. Any less than this should throw an error
   if(page_number < 1) Rcpp::stop("Invalid page number");
 
-  // Create the document object
-  auto document_ptr = make_shared<document>(raw_file);
+  // Create the Document object
+  auto document_ptr = make_shared<Document>(raw_file);
 
   // Create the page object and return it
-  return make_shared<page>(document_ptr, page_number - 1);
+  return make_shared<Page>(document_ptr, page_number - 1);
 }
 
 //---------------------------------------------------------------------------//
@@ -72,7 +72,7 @@ shared_ptr<page> get_page(vector<uint8_t> raw_file, int page_number)
 
 Rcpp::DataFrame get_glyph_map(const string& file_name, int page_number)
 {
-  // Create document and page objects
+  // Create Document and page objects
   auto page_ptr = get_page(file_name, page_number);
 
   // Declare containers for the R dataframe columns
@@ -129,7 +129,7 @@ Rcpp::DataFrame xrefcreator(shared_ptr<const string> file_string)
     {
       object.push_back(object_num);
       start_byte.push_back(Xref.get_object_start_byte(object_num));
-      holding_object.push_back(Xref.get_holding_object_number_of(object_num));
+      holding_object.push_back(Xref.get_holding_number_of(object_num));
     }
   }
 
@@ -167,16 +167,16 @@ Rcpp::DataFrame get_xref_from_raw(const vector<uint8_t>& raw_file)
 
 //---------------------------------------------------------------------------//
 // The file string version of get_object. It takes a file path as a parameter,
-// from which it loads the entire file into a string to create a document.
+// from which it loads the entire file into a string to create a Document.
 // The second parameter is the actual pdf object number, which is found by
-// the public get_object() method from document class. It returns a list
+// the public get_object() method from Document class. It returns a list
 // of two named values - the dictionary, as a named character vector, and the
 // decrypted / decompressed stream as a single string
 
 Rcpp::List get_object_from_string(const string& file_name, int object)
 {
-  // Create the document
-  auto document_ptr = make_shared<document>(file_name);
+  // Create the Document
+  auto document_ptr = make_shared<Document>(file_name);
 
   // Fill an Rcpp::List with the requested object's elements and return
   return Rcpp::List::create(
@@ -187,16 +187,16 @@ Rcpp::List get_object_from_string(const string& file_name, int object)
 
 //---------------------------------------------------------------------------//
 // The raw data version of get_object. It takes a raw vector as a parameter,
-// which it recasts as a single large string to create a document.
+// which it recasts as a single large string to create a Document.
 // The second parameter is the actual pdf object number, which is found by
-// the public get_object() method from document class. It returns a list
+// the public get_object() method from Document class. It returns a list
 // of two named values - the dictionary, as a named character vector, and the
 // decrypted / decompressed stream as a single string
 
 Rcpp::List get_object_from_raw(const vector<uint8_t>& raw_file, int object)
 {
-  // Create the document
-  auto document_ptr = make_shared<document>(raw_file);
+  // Create the Document
+  auto document_ptr = make_shared<Document>(raw_file);
 
   // Fill an Rcpp::List with the requested object and return
   return Rcpp::List::create(
@@ -210,7 +210,7 @@ Rcpp::List get_object_from_raw(const vector<uint8_t>& raw_file, int object)
 // from the parser. It packages the dataframe with a vector of page
 // dimensions to allow plotting etc
 
-Rcpp::List get_single_text_elements(shared_ptr<page> page_ptr)
+Rcpp::List get_single_text_elements(shared_ptr<Page> page_ptr)
 {
   // Create new parser
   parser parser_object = parser(page_ptr);
@@ -220,7 +220,7 @@ Rcpp::List get_single_text_elements(shared_ptr<page> page_ptr)
 
   // Obtain output from parser and transpose into a text table
   auto text_box = parser_object.output();
-  text_table table(text_box);
+  TextTable table(text_box);
 
   // Ensure the static fontmap is cleared after use
   page_ptr->clear_font_map();
@@ -243,7 +243,7 @@ Rcpp::List get_single_text_elements(shared_ptr<page> page_ptr)
 
 //---------------------------------------------------------------------------//
 
-Rcpp::List get_text_boxes(shared_ptr<page> page_ptr)
+Rcpp::List get_text_boxes(shared_ptr<Page> page_ptr)
 {
   // Create new parser
   parser parser_object(page_ptr);
@@ -332,7 +332,7 @@ Rcpp::List get_pdf_page_from_raw(const vector<uint8_t>& raw_file,
 
 //---------------------------------------------------------------------------//
 
-Rcpp::DataFrame pdfdoc_common(shared_ptr<document> document_ptr)
+Rcpp::DataFrame pdfdoc_common(shared_ptr<Document> document_ptr)
 {
   auto number_of_pages = document_ptr->get_page_object_numbers().size();
   vector<float> left, right, size, bottom;
@@ -343,7 +343,7 @@ Rcpp::DataFrame pdfdoc_common(shared_ptr<document> document_ptr)
   for(size_t page_number = 0; page_number < number_of_pages; page_number++)
   {
     // Create a new page pbject
-    auto page_ptr = make_shared<page>(document_ptr, page_number);
+    auto page_ptr = make_shared<Page>(document_ptr, page_number);
 
     // Create a new parser object
     parser parser_object(page_ptr);
@@ -358,7 +358,7 @@ Rcpp::DataFrame pdfdoc_common(shared_ptr<document> document_ptr)
     word_grouper grouped_words(grouped_letters.output());
 
     // Get a text table from the output
-    text_table table = grouped_words.out();;
+    TextTable table = grouped_words.out();;
 
     // Join current page's output to final data frame columns
     concat(left,   table.left);
@@ -392,32 +392,32 @@ Rcpp::DataFrame pdfdoc_common(shared_ptr<document> document_ptr)
 
 //---------------------------------------------------------------------------//
 // This exported function takes a string representing a file path, creates a
-// new document object and sends it to pdfdoc_common to create an R data frame
-// containing all of the text elements in a document, including their location
+// new Document object and sends it to pdfdoc_common to create an R data frame
+// containing all of the text elements in a Document, including their location
 // and page number
 
 Rcpp::DataFrame get_pdf_document_from_string(const string& file_name)
 {
-  // Simply create a new document pointer from the file name
-  auto document_ptr = make_shared<document>(file_name);
+  // Simply create a new Document pointer from the file name
+  auto document_ptr = make_shared<Document>(file_name);
 
-  // Feed the document pointer to pdfdoc_common to get the whole document as
+  // Feed the Document pointer to pdfdoc_common to get the whole Document as
   // an R data frame
   return pdfdoc_common(document_ptr);
 }
 
 //---------------------------------------------------------------------------//
 // This exported function takes a raw vector of bytes comprising a pdf file,
-// creates a new document object and sends it to pdfdoc_common to create an R
+// creates a new Document object and sends it to pdfdoc_common to create an R
 // data frame containing all of the text elements in a document, including their
 // location and page number.
 
 Rcpp::DataFrame get_pdf_document_from_raw(const vector<uint8_t>& raw_data)
 {
-  // Simply create a new document pointer from the raw data
-  auto document_ptr = make_shared<document>(raw_data);
+  // Simply create a new Document pointer from the raw data
+  auto document_ptr = make_shared<Document>(raw_data);
 
-  // Feed the document pointer to pdfdoc_common to get the whole document as
+  // Feed the Document pointer to pdfdoc_common to get the whole document as
   // an R data frame
   return pdfdoc_common(document_ptr);
 }
@@ -457,7 +457,7 @@ string get_page_string_from_raw(const vector<uint8_t>& raw_file,
 
 //---------------------------------------------------------------------------//
 
-Rcpp::DataFrame pdf_boxes(shared_ptr<page> page_ptr)
+Rcpp::DataFrame pdf_boxes(shared_ptr<Page> page_ptr)
 {
   // Create an empty parser object
   parser parser_object(page_ptr);
