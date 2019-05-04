@@ -105,7 +105,7 @@ public:
   Dictionary get_trailer() const;
   size_t get_object_start_byte(int) const;   // Byyte offset of a given object
   size_t get_object_end_byte(int) const;  // Byte offset of end of given object
-  size_t get_holding_object_number_of(int) const;
+  size_t get_holding_number_of(int) const;
   std::vector<int> get_all_object_numbers() const;
   std::array<size_t, 2> get_stream_location(int) const;
   void decrypt(std::string&, int, int) const; // Decrypt a stream

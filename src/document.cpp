@@ -1,6 +1,6 @@
 //---------------------------------------------------------------------------//
 //                                                                           //
-//  PDFR document implementation file                                        //
+//  PDFR Document implementation file                                        //
 //                                                                           //
 //  Copyright (C) 2018 by Allan Cameron                                      //
 //                                                                           //
@@ -36,33 +36,33 @@
 using namespace std;
 
 /*---------------------------------------------------------------------------*/
-// Constructor for document class. This takes a file location as an argument
+// Constructor for Document class. This takes a file location as an argument
 // then uses the get_file() function from utilities.h to read in the filestring
 // from which buildDoc() then creates the object
 
-document::document(const string& filename) :
+Document::Document(const string& filename) :
   m_file_path(filename), m_file_string(get_file(m_file_path))
 {
-  build_document(); // Call constructor helper to build document
+  build_document(); // Call constructor helper to build Document
 }
 
 /*---------------------------------------------------------------------------*/
-// Constructor for document class. This takes raw data in the form of a vector
+// Constructor for Document class. This takes raw data in the form of a vector
 // of bytes and converts it to the filestring before calling the helper function
-// to construct the document object
+// to construct the Document object
 
-document::document(const vector<uint8_t>& bytevector) :
+Document::Document(const vector<uint8_t>& bytevector) :
   m_file_string(std::string(bytevector.begin(), bytevector.end()))
 {
-  build_document(); // Call constructor helper to build document
+  build_document(); // Call constructor helper to build Document
 }
 
 /*---------------------------------------------------------------------------*/
-// buildDoc is just a helper function to create document objects. It is the
-// "final common pathway" of both non-default document constructor functions
+// buildDoc is just a helper function to create Document objects. It is the
+// "final common pathway" of both non-default Document constructor functions
 // and is seperated out to make this clear and avoid duplication of code
 
-void document::build_document()
+void Document::build_document()
 {
   m_xref = make_shared<const xref>(make_shared<string>(m_file_string));
   read_catalog();             // Gets the catalog dictionary
@@ -70,19 +70,19 @@ void document::build_document()
 }
 
 /*---------------------------------------------------------------------------*/
-// One of two public interface functions after document object creation. This
+// One of two public interface functions after Document object creation. This
 // returns an object of Object class with the requested object number. It first
 // checks to see whether that object has been retrieved before. If so, it
 // returns it from the 'objects' vector. If not, it creates the object then
 // stores a copy in the 'objects' vector before returning the requested object.
 
-shared_ptr<Object> document::get_object(int n)
+shared_ptr<Object> Document::get_object(int n)
 {
   // Check if object n is already stored
   if(m_objects.find(n) == m_objects.end())
   {
     // If it is not stored, check whether it is in an object stream
-    size_t holder = m_xref->get_holding_object_number_of(n);
+    size_t holder = m_xref->get_holding_number_of(n);
 
     // If object is in a stream, create it recursively from the stream object
     if(holder) m_objects[n] = make_shared<Object>(get_object(holder), n);
@@ -100,7 +100,7 @@ shared_ptr<Object> document::get_object(int n)
 // This finds the catalog object from the trailer dictionary which is read as
 // part of xref creation
 
-void document::read_catalog()
+void Document::read_catalog()
 {
   // The pointer to the catalog is given under /Root in the trailer dictionary
   int root_number = m_xref->get_trailer().get_reference("/Root");
@@ -114,7 +114,7 @@ void document::read_catalog()
 // file. There should be a pointer to it in the catalog dictionary. If its not
 // there, the pdf structure is unspecified and we throw an error
 
-void document::read_page_directory()
+void Document::read_page_directory()
 {
   // Else get the object number of the /Pages dictionary
   int page_object_number = m_catalog.get_reference("/Pages");
@@ -156,7 +156,7 @@ void document::read_page_directory()
 // promising, but it is likely to be complex, and it is not clear that it would
 // lead to a major speedup. Getting an object at present takes about 36us.
 
-void document::expand_kids(const vector<int>& object_numbers,
+void Document::expand_kids(const vector<int>& object_numbers,
                           shared_ptr<tree_node<int>> tree)
 {
   // This function is only called from a single point that is already range
@@ -182,7 +182,7 @@ void document::expand_kids(const vector<int>& object_numbers,
 /*---------------------------------------------------------------------------*/
 // Public function that gets a specific page header from the pageheader vector
 
-Dictionary document::get_page_header(int page_number)
+Dictionary Document::get_page_header(int page_number)
 {
   // Ensure the pagenumber is valid
   if((m_page_object_numbers.size() < (size_t) page_number) || page_number < 0)

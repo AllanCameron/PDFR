@@ -1,6 +1,6 @@
 //---------------------------------------------------------------------------//
 //                                                                           //
-//  PDFR page implementation file                                            //
+//  PDFR Page implementation file                                            //
 //                                                                           //
 //  Copyright (C) 2018 by Allan Cameron                                      //
 //                                                                           //
@@ -32,13 +32,13 @@
 
 using namespace std;
 
-unordered_map<string, shared_ptr<font>> page::sm_fontmap;
+unordered_map<string, shared_ptr<Font>> Page::sm_fontmap;
 
 /*--------------------------------------------------------------------------*/
-// The page constructor calls private methods to build its data members after
+// The Page constructor calls private methods to build its data members after
 // its initializer list
 
-page::page(shared_ptr<document> doc, int pagenum) :
+Page::Page(shared_ptr<Document> doc, int pagenum) :
   m_doc(doc), m_page_number(pagenum), m_rotate(0)
 {
   read_header();        // find the page header
@@ -56,7 +56,7 @@ page::page(shared_ptr<document> doc, int pagenum) :
 // because this will be exported as the page's dimensions. This private method
 // finds and stores the minbox
 
-void page::read_boxes()
+void Page::read_boxes()
 {
   // sometimes the box dimensions are inherited from an ancestor node of the
   // page header. We therefore need to look for the boxes in the page header,
@@ -105,12 +105,12 @@ void page::read_boxes()
 // Page creation starts with identifying the appropriate page header dictionary.
 // This private method is called by the constructor to do that.
 
-void page::read_header()
+void Page::read_header()
 {
   // uses public member of document class to get the appropriate header
   m_header = m_doc->get_page_header(m_page_number);
 
-  // if the header is not of /type /page, throw an error
+  // if the header is not of /type /Page, throw an error
   if (m_header.get_string("/Type") != "/Page")
   {
     // create an error message in case of missing page
@@ -121,11 +121,11 @@ void page::read_header()
 }
 
 /*--------------------------------------------------------------------------*/
-// This is the second private method called as part of page construction.
+// This is the second private method called as part of Page construction.
 // It finds the resources dicionary whether it is located in another object or
 // as a subdictionary of the page header
 
-void page::read_resources()
+void Page::read_resources()
 {
   // If /Resources doesn't contain a dictionary it must be a reference
   if (!m_header.contains_dictionary("/Resources"))
@@ -143,11 +143,11 @@ void page::read_resources()
 }
 
 /*--------------------------------------------------------------------------*/
-// The page's fonts dictionary bears a similar relationship to the resource
+// The Page's fonts dictionary bears a similar relationship to the resource
 // dictionary as the resource dictionary does to the page header. It may be
 // a subdictionary, or it may have its own dictionary in another object.
 
-void page::read_fonts()
+void Page::read_fonts()
 {
   // If /Font entry of m_resources isn't a dictionary
   if (!m_resources.contains_dictionary("/Font"))
@@ -175,7 +175,7 @@ void page::read_fonts()
       for(auto reference : m_fonts.get_references(font_label.first))
       {
         sm_fontmap[font_label.first] =
-          make_shared<font>(m_doc,
+          make_shared<Font>(m_doc,
                             m_doc->get_object(reference)->get_dictionary(),
                             font_label.first);
       }
@@ -189,7 +189,7 @@ void page::read_fonts()
 // that one reference contains a bunch of other references rather than the
 // content stream itself.
 
-void page::read_contents()
+void Page::read_contents()
 {
      // get all leaf nodes of the contents tree using expandContents()
     auto root = make_shared<tree_node<int>>(0);
@@ -214,7 +214,7 @@ void page::read_contents()
 // xobjects in the resources dictionary therefore needs to be examined for
 // textual components and its uncompressed contents stored for later use
 
-void page::read_XObjects()
+void Page::read_XObjects()
 {
   string xobject_string {};
 
@@ -260,7 +260,7 @@ void page::read_XObjects()
 // but it is possible to have nested content trees. In any case we only want
 // the leaves of the content tree, which are found by this algorithm
 
-void page::expand_contents(vector<int> objs, shared_ptr<tree_node<int>> tree)
+void Page::expand_contents(vector<int> objs, shared_ptr<tree_node<int>> tree)
 {
   // Create new children tree nodes with this one as parent
   tree->add_kids(objs);
@@ -283,15 +283,15 @@ void page::expand_contents(vector<int> objs, shared_ptr<tree_node<int>> tree)
 /*--------------------------------------------------------------------------*/
 // Simple getter for the PDF-style font names used in a page
 
-vector<string> page::get_font_names()
+vector<string> Page::get_font_names()
 {
   return this->m_fonts.get_all_keys();
 }
 
 /*--------------------------------------------------------------------------*/
-// Simple getter for the content string of a page
+// Simple getter for the content string of a Page
 
-shared_ptr<string> page::get_page_contents()
+shared_ptr<string> Page::get_page_contents()
 {
   return make_shared<string>(this->m_content_string);
 }
@@ -299,7 +299,7 @@ shared_ptr<string> page::get_page_contents()
 /*--------------------------------------------------------------------------*/
 // Finds and returns a particular XObject used on the page
 
-shared_ptr<string> page::get_XObject(const string& object_ID)
+shared_ptr<string> Page::get_XObject(const string& object_ID)
 {
   // Use a non-inserting finder. If object not found return empty string
   if(m_XObjects.find(object_ID) == m_XObjects.end())
@@ -315,7 +315,7 @@ shared_ptr<string> page::get_XObject(const string& object_ID)
 // The parser class needs to use fonts stored in the fontmap. This getter
 // will return a pointer to the requested font.
 
-shared_ptr<font> page::get_font(const string& fontID)
+shared_ptr<Font> Page::get_font(const string& fontID)
 {
   // If no fonts on the page, throw an error
   if(sm_fontmap.empty()) throw runtime_error("No fonts available for page");
@@ -329,9 +329,9 @@ shared_ptr<font> page::get_font(const string& fontID)
 }
 
 /*--------------------------------------------------------------------------*/
-// simple getter for page margins
+// simple getter for Page margins
 
-Box page::get_minbox()
+Box Page::get_minbox()
 {
   return m_minbox;
 }
@@ -340,7 +340,7 @@ Box page::get_minbox()
 // Important! Run this function when a document is destroyed or else the font
 // map may accrue name clashes which will screw up encoding
 
-void page::clear_font_map()
+void Page::clear_font_map()
 {
   this->sm_fontmap.clear();
 }

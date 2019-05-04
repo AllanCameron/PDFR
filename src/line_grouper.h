@@ -57,7 +57,7 @@
  * joined to the one below but already ends in a space or ends in a hyphen,
  * it should be joined without a space.
  *
- * The line_grouper class modifies the std::vector<textbox> class, so we only
+ * The line_grouper class modifies the std::vector<TextBox> class, so we only
  * need to pass a pointer to this
  *
  */
@@ -65,18 +65,18 @@
 class line_grouper
 {
 public:
-  line_grouper(std::vector<textbox> t);
-  std::vector<textbox>& output();
+  line_grouper(std::vector<TextBox> t);
+  std::vector<TextBox>& output();
 
 private:
-  void find_breaks(textbox&);
-  void line_endings(textbox&);
-  void paste_lines(textbox&);
-  void splitbox(textbox&, float);
+  void find_breaks(TextBox&);
+  void line_endings(TextBox&);
+  void paste_lines(TextBox&);
+  void splitbox(TextBox&, float);
 
   struct reading_order
   {
-    bool operator() (const text_ptr& row1, const text_ptr& row2) const
+    bool operator() (const TextPointer& row1, const TextPointer& row2) const
     {
       if (row1->get_bottom()  > row2->get_bottom() ) return true;
       if (row1->get_bottom() == row2->get_bottom() &&
@@ -86,7 +86,7 @@ private:
   };
 
   // private data members
-  std::vector<textbox> m_textboxes;
+  std::vector<TextBox> m_textboxes;
 };
 
 

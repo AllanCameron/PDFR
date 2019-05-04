@@ -55,7 +55,7 @@ const std::array<float, 9> parser::sm_initstate = {1, 0, 0, 0, 1, 0, 0, 0, 1};
 // it to track state once instructions are passed to it. After these are set,
 // it does no work unless passed instructions by the tokenizer
 
-parser::parser(shared_ptr<page> pag) : // long initializer list...
+parser::parser(shared_ptr<Page> pag) : // long initializer list...
   m_p(pag),                            // pointer to page of interest
   m_currfontsize(0),                   // pointsize specified by page program
   m_fontsizestack({m_currfontsize}),   // history of pointsize
@@ -93,7 +93,7 @@ std::string parser::getOperand()
 //---------------------------------------------------------------------------//
 // The public getter of the main data member
 
-textbox& parser::output()
+TextBox& parser::output()
 {
   return m_db;
 }
@@ -407,7 +407,7 @@ void parser::processRawChar(vector<RawChar>& raw, float& scale,
       // record width of char taking Th (horizontal scaling) into account
       width = scale * glyphwidth/1000 * m_Th/100;
       right = left + width;
-      m_db.push_back(make_shared<text_element>(left, right, bottom + scale,
+      m_db.push_back(make_shared<TextElement>(left, right, bottom + scale,
                                                bottom, m_wfont,
                                                vector<Unicode>{j.first}
                                           )

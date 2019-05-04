@@ -1,6 +1,6 @@
 //---------------------------------------------------------------------------//
 //                                                                           //
-//  PDFR font implementation file                                            //
+//  PDFR Font implementation file                                            //
 //                                                                           //
 //  Copyright (C) 2018 by Allan Cameron                                      //
 //                                                                           //
@@ -32,11 +32,11 @@
 using namespace std;
 
 /*---------------------------------------------------------------------------*/
-// The font constructor simply initializes the private data members, calls
+// The Font constructor simply initializes the private data members, calls
 // getFontName() to get the postscript font title, and then makeGlyphTable()
 // to create the main data member
 
-font::font(shared_ptr<document> doc, Dictionary Fontref, const string& fontid) :
+Font::Font(shared_ptr<Document> doc, Dictionary Fontref, const string& fontid) :
 m_d(doc), m_fontref(Fontref), m_FontID(fontid)
 {
   getFontName();
@@ -46,7 +46,7 @@ m_d(doc), m_fontref(Fontref), m_FontID(fontid)
 /*---------------------------------------------------------------------------*/
 // Obtains the font's PostScript name from the font dictionary
 
-void font::getFontName()
+void Font::getFontName()
 {
   string BaseFont(m_fontref.get_string("/BaseFont")); // reads BaseFont entry
 
@@ -61,14 +61,14 @@ void font::getFontName()
 }
 
 /*---------------------------------------------------------------------------*/
-// Most of the work asked of an object of the font class will be to provide
+// Most of the work asked of an object of the Font class will be to provide
 // interpretations of raw character codes, in terms of the actual glyphs and
 // their sizes intended by the document. This public method allows a vector
 // of raw characters to be interpreted. It returns a vector of the same length
 // as the input vector, containing a pair of {Unicode glyph, width} at each
 // position
 
-vector<pair<Unicode, int>> font::mapRawChar(const vector<RawChar>& raw)
+vector<pair<Unicode, int>> Font::mapRawChar(const vector<RawChar>& raw)
 {
   vector<pair<Unicode, int>> res;
   res.reserve(raw.size());
@@ -84,11 +84,11 @@ vector<pair<Unicode, int>> font::mapRawChar(const vector<RawChar>& raw)
 }
 
 /*---------------------------------------------------------------------------*/
-// The font class subcontracts most of the work of its own construction out to
+// The Font class subcontracts most of the work of its own construction out to
 // the encoding and glyphwidth classes. This private method co-ordinates the
 // building of the glyphmap using these two component classes
 
-void font::makeGlyphTable()
+void Font::makeGlyphTable()
 {
   // Create Encoding object
   Encoding encodings(m_fontref, m_d);
@@ -127,7 +127,7 @@ void font::makeGlyphTable()
 /*---------------------------------------------------------------------------*/
 // Public getter for FontName
 
-std::string font::fontname()
+std::string Font::fontname()
 {
   return m_FontName;
 }
@@ -136,7 +136,7 @@ std::string font::fontname()
 // Public getter for the keys of the glyphmap, needed to output the map from
 // the program if required
 
-std::vector<RawChar> font::getGlyphKeys()
+std::vector<RawChar> Font::getGlyphKeys()
 {
   return getKeys(m_glyphmap);
 }

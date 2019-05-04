@@ -33,9 +33,9 @@ using namespace std;
 //---------------------------------------------------------------------------//
 // Output words without first joining them into lines
 
-text_table letter_grouper::out()
+TextTable letter_grouper::out()
 {
-  return text_table(m_text_box);
+  return TextTable(m_text_box);
 }
 
 //---------------------------------------------------------------------------//
@@ -43,7 +43,7 @@ text_table letter_grouper::out()
 // page into an easily addressable 16 x 16 grid, find glyphs in close proximity
 // to each other, and glue them together, respectively.
 
-letter_grouper::letter_grouper(textbox text_box) : m_text_box(move(text_box))
+letter_grouper::letter_grouper(TextBox text_box) : m_text_box(move(text_box))
 {
   m_text_box.remove_duplicates();
   makegrid();     // Split the glyphs into 256 cells to reduce search space
@@ -53,7 +53,7 @@ letter_grouper::letter_grouper(textbox text_box) : m_text_box(move(text_box))
 
 //---------------------------------------------------------------------------//
 // This method creates a 16 x 16 grid of equally-sized bins across the page and
-// places each text_element from the parser into a vector in each bin. The
+// places each TextElement from the parser into a vector in each bin. The
 // reason for doing this is speed up the search of potentially adjoining glyphs.
 // The naive method would compare the right and bottom edge of every glyph
 // to every other glyph. By putting the glyphs into bins, we only need to
@@ -84,7 +84,7 @@ void letter_grouper::makegrid()
     // Convert the two 4-bit row and column numbers to a single byte
     uint8_t index = (row << 4) | column;
 
-    // Append a pointer to the glyph's text_element to the vector in that cell
+    // Append a pointer to the glyph's TextElement to the vector in that cell
     m_grid[index].push_back(element);
   }
 }
@@ -92,18 +92,18 @@ void letter_grouper::makegrid()
 //---------------------------------------------------------------------------//
 // Allows the main data object to be output after calculations done
 
-textbox letter_grouper::output()
+TextBox letter_grouper::output()
 {
   // This lambda is used to find text_ptrs that aren't flagged for deletion
-  auto extant = [&](const text_ptr& elem) -> bool
+  auto extant = [&](const TextPointer& elem) -> bool
                         {return !(elem->is_consumed());};
 
-  // This lambda defines a text_ptr sort from left to right
-  auto left_sort = [](const text_ptr& a, const text_ptr& b) -> bool
+  // This lambda defines a TextPointer sort from left to right
+  auto left_sort = [](const TextPointer& a, const TextPointer& b) -> bool
                      { return a->get_left() < b->get_left();};
 
   // Now copy all the text_ptrs from the grid to a vector
-  vector<text_ptr> v;
+  vector<TextPointer> v;
   for(auto& cell : m_grid)
   {
     copy_if(cell.second.begin(), cell.second.end(), back_inserter(v), extant);
@@ -139,7 +139,7 @@ void letter_grouper::compareCells()
       uint8_t key = column | (row << 4);
 
       // Get a reference to the cell's contents
-      vector<text_ptr>& maingroup = m_grid[key];
+      vector<TextPointer>& maingroup = m_grid[key];
 
       // Empty cell - nothing to be done
       if(maingroup.empty()) continue;
@@ -167,7 +167,7 @@ void letter_grouper::compareCells()
 // by its cell and the order it appears in the vector of glyphs contained in
 // that cell.
 
-void letter_grouper::matchRight(text_ptr element, uint8_t key)
+void letter_grouper::matchRight(TextPointer element, uint8_t key)
 {
   // The key is the address of the cell in the m_grid.
   auto& cell = m_grid[key];
@@ -214,7 +214,7 @@ void letter_grouper::merge()
     for(uint8_t row = 0; row < 16; ++row)
     {
       // Get the cell's contents
-      vector<text_ptr>& cell = m_grid[column | (row << 4)];
+      vector<TextPointer>& cell = m_grid[column | (row << 4)];
 
       // If the cell is empty there's nothing to do
       if(cell.empty()) continue;
@@ -228,7 +228,7 @@ void letter_grouper::merge()
         // Look up the right-matching glyph
         auto matcher = element->get_join();
 
-        // Use the text_element member function to merge the two glyphs
+        // Use the TextElement member function to merge the two glyphs
         element->merge_letters(*matcher);
       }
     }

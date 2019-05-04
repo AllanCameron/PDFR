@@ -35,7 +35,7 @@ using namespace std;
 // any /ToUnicode entry. The first three are co-ordinated by read_encoding()
 // and the last is co-ordinated by map_unicode()
 
-Encoding::Encoding(const Dictionary& font_dictionary, shared_ptr<document> doc):
+Encoding::Encoding(const Dictionary& font_dictionary, shared_ptr<Document> doc):
   m_font_dictionary(font_dictionary), m_document(doc)
 {
   read_encoding();

@@ -34,7 +34,7 @@ using namespace std;
 //---------------------------------------------------------------------------//
 //
 
-line_grouper::line_grouper(vector<textbox> t): m_textboxes(t)
+line_grouper::line_grouper(vector<TextBox> t): m_textboxes(t)
 {
   size_t i = 0;
   if(m_textboxes.empty()) throw runtime_error("No textboxes on page");
@@ -53,7 +53,7 @@ line_grouper::line_grouper(vector<textbox> t): m_textboxes(t)
 //---------------------------------------------------------------------------//
 //
 
-void line_grouper::find_breaks(textbox& text_box)
+void line_grouper::find_breaks(TextBox& text_box)
 {
   for(size_t i = 1; i < text_box.size(); ++i)
   {
@@ -71,7 +71,7 @@ void line_grouper::find_breaks(textbox& text_box)
 //---------------------------------------------------------------------------//
 //
 
-void line_grouper::line_endings(textbox& text_box)
+void line_grouper::line_endings(TextBox& text_box)
 {
   for(size_t i = 0; i < text_box.size() - 1; ++i)
   {
@@ -95,7 +95,7 @@ void line_grouper::line_endings(textbox& text_box)
 //---------------------------------------------------------------------------//
 //
 
-void line_grouper::paste_lines(textbox& text_box)
+void line_grouper::paste_lines(TextBox& text_box)
 {
   for(size_t i = 1; i < text_box.size(); ++i)
   {
@@ -107,10 +107,10 @@ void line_grouper::paste_lines(textbox& text_box)
 //---------------------------------------------------------------------------//
 //
 
-void line_grouper::splitbox(textbox& old_one, float top_edge)
+void line_grouper::splitbox(TextBox& old_one, float top_edge)
 {
   if(old_one.empty()) return;
-  textbox new_one = old_one;
+  TextBox new_one = old_one;
   new_one.clear();
   size_t breakpoint = 0;
 
@@ -132,7 +132,7 @@ void line_grouper::splitbox(textbox& old_one, float top_edge)
 
 //---------------------------------------------------------------------------//
 
-vector<textbox>& line_grouper::output()
+vector<TextBox>& line_grouper::output()
 {
   return m_textboxes;
 }

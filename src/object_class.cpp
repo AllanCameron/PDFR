@@ -87,13 +87,13 @@ void Object::index_object_stream()
   int startbyte = m_stream.find_first_not_of("\n\r\t 0123456789");
 
   // Now get the substring with the objects proper...
-  string s(m_stream.begin() + startbyte, m_stream.end());
+  string stream_string(m_stream.begin() + startbyte, m_stream.end());
 
   // ...and the substring with the registration numbers...
-  string pre(m_stream.begin(), m_stream.begin() + startbyte - 1);
+  string index_string(m_stream.begin(), m_stream.begin() + startbyte - 1);
 
   // extract these numbers to a vector
-  vector<int> index = parse_ints(pre);
+  vector<int> index = parse_ints(index_string);
 
   // If this is empty, something has gone wrong.
   if(index.empty()) throw runtime_error("Couldn't parse object stream");
@@ -102,7 +102,7 @@ void Object::index_object_stream()
   // which are byte offsets
   for(size_t byte_length, i = 1; i < index.size(); i += 2)
   {
-    if(i == (index.size() - 1)) byte_length = s.size() - index[i];
+    if(i == (index.size() - 1)) byte_length = stream_string.size() - index[i];
     else byte_length = index[i + 2] - index[i];
     auto&& index_pair = make_pair(index[i] + startbyte, byte_length);
     m_object_stream_index[index[i - 1]] = index_pair;
@@ -119,46 +119,37 @@ Object::Object(shared_ptr<Object> t_holder, int t_object_number):
   m_object_number(t_object_number),
   m_stream_location({0, 0})
 {
-  auto i = t_holder->m_object_stream_index.find(m_object_number);
+  auto finder = t_holder->m_object_stream_index.find(m_object_number);
 
-  if(i == t_holder->m_object_stream_index.end())
+  if(finder == t_holder->m_object_stream_index.end())
   {
     throw runtime_error("Object not found in stream");
   }
 
-  string stream_object_string =
-    t_holder->m_stream.substr(i->second.first, i->second.second);
+  auto index_position = finder->second.first;
+  auto index_length = finder->second.second;
+  auto stream_string = t_holder->m_stream.substr(index_position, index_length);
 
   // Most stream objects consist of just a dictionary
-  if(stream_object_string[0] == '<')
+  if(stream_string[0] == '<')
   {
-    m_header = Dictionary(make_shared<string>(stream_object_string));
+    m_header = Dictionary(make_shared<string>(stream_string));
     m_stream = "";             // stream objects don't have their own stream
   }
   else // The object is not a dictionary - maybe just an array or int etc
   {
     m_header = Dictionary();   // gets an empty dictionary as header
-    m_stream = stream_object_string;  // Call the contents a stream for ease
+    m_stream = stream_string;  // Call the contents a stream for ease
 
     // Annoyingly, some "objects" in an object stream are just pointers
     // to other objects. This is pointless but does happen and needs to
     // be handled by recursively calling the main creator function
     if(m_stream.size() < 15 && m_stream.find(" R", 0) < 15)
     {
-      size_t new_object_number = parse_references(m_stream)[0];
-      size_t holder_object_number =
-        m_xref->get_holding_object_number_of(new_object_number);
-
-      if(holder_object_number == 0)
-      {
-        *this = Object(m_xref, new_object_number);
-      }
-      else
-      {
-        auto holder_object = make_shared<Object>(m_xref, holder_object_number);
-        *this = Object(holder_object, new_object_number);
-      }
-
+      size_t new_number = parse_references(m_stream)[0];
+      size_t holder = m_xref->get_holding_number_of(new_number);
+      if(holder == 0) *this = Object(m_xref, new_number);
+      else *this = Object(make_shared<Object>(m_xref, holder), new_number);
       this->m_object_number = t_object_number;
     }
   }
@@ -178,14 +169,8 @@ Dictionary Object::get_dictionary()
 
 string Object::get_stream()
 {
-  // no stream - return empty string
-  if(!has_stream()) return string {};
-
-  // stream already calculated - return
-  else if(!m_stream.empty()) return m_stream;
-
-  // get the stream from known stream locations
-  else read_stream_from_stream_locations();
+  // If the stream has not already been processed, do it now
+  if(m_stream.empty()) read_stream_from_stream_locations();
 
   return m_stream;
 }
@@ -196,12 +181,15 @@ string Object::get_stream()
 
 void Object::apply_filters()
 {
-  // decrypt if necessary
+  // Decrypt if necessary
   if(m_xref->is_encrypted()) m_xref->decrypt(m_stream, m_object_number, 0);
-  if(m_header.get_string("/Filter").find("/FlateDecode") != string::npos)
-  {
-    FlateDecode(m_stream);
-  }
+
+  // Read filters
+  string filters = m_header.get_string("/Filter");
+
+  // Apply filters
+  if(filters.find("/FlateDecode") != string::npos) FlateDecode(m_stream);
+
 }
 
 /*---------------------------------------------------------------------------*/
@@ -218,8 +206,13 @@ bool Object::has_stream()
 
 void Object::read_stream_from_stream_locations()
 {
+  // Find the stream's start position and length
   int stream_length = m_stream_location[1] - m_stream_location[0];
-  int stream_start = m_stream_location[0];
-  m_stream = m_xref->file()->substr(stream_start, stream_length);
+  int stream_start  = m_stream_location[0];
+
+  // Read the string from the current positions
+  m_stream          = m_xref->file()->substr(stream_start, stream_length);
+
+  // Apply necessary decryption and deflation
   apply_filters();
 }

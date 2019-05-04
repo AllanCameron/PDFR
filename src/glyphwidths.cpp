@@ -43,7 +43,7 @@ using namespace std;
 // the containing document. If the font is a core font, get the widths from
 // built in static corefont tables. Otherwise find and interpret widths.
 
-glyphwidths::glyphwidths(Dictionary& dic, shared_ptr<document> doc):
+glyphwidths::glyphwidths(Dictionary& dic, shared_ptr<Document> doc):
   m_font_dictionary(dic), m_document(doc)
 {
   m_base_font = m_font_dictionary.get_string("/BaseFont");

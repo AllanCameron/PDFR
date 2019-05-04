@@ -246,7 +246,7 @@ size_t xref::get_object_end_byte(int object_number) const
 // If an object is part of an objectstream, this tells us which object forms
 // the objectstream.
 
-size_t xref::get_holding_object_number_of(int object_number) const
+size_t xref::get_holding_number_of(int object_number) const
 {
   auto row = m_xref_table.find(object_number);
 

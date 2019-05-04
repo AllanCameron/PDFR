@@ -49,7 +49,7 @@
 // The letter_grouper class contains a constructor, an output map of results,
 // and a method for passing out the minimum text bounding box found in page
 // construction. Its private methods are used only in construction of the
-// output. The main private member is a map of vectors of text_elements, each
+// output. The main private member is a map of vectors of TextElements, each
 // vector representing all glyphs in one of 256 equally sized cells on the page.
 // Each glyph is addressable by two numbers - the grid number and the position
 // of the glyph in the cell's vector.
@@ -58,24 +58,24 @@ class letter_grouper
 {
 public:
   // constructor.
-  letter_grouper(textbox);
+  letter_grouper(TextBox);
 
   // public methods
   // Passes text elements to word_grouper for further construction if needed
-  textbox output();
-  text_table out(); // output table to interface if ungrouped words needed
+  TextBox output();
+  TextTable out(); // output table to interface if ungrouped words needed
 
 private:
   // private data members
-  textbox m_text_box; // a copy of the parser output used to create grid
+  TextBox m_text_box; // a copy of the parser output used to create grid
 
-  // Main data member - a 16 x 16 grid of cells, each with a text_ptr vector
-  std::unordered_map<uint8_t, std::vector<text_ptr>> m_grid;
+  // Main data member - a 16 x 16 grid of cells, each with a TextPointer vector
+  std::unordered_map<uint8_t, std::vector<TextPointer>> m_grid;
 
   // private methods
   void makegrid();                    // assigns each glyph to a 16 x 16 grid
   void compareCells();                // co-ordinates matching between cells
-  void matchRight(text_ptr, uint8_t); // compare all glyphs in cell
+  void matchRight(TextPointer, uint8_t); // compare all glyphs in cell
   void merge();                       // join matching glyphs together
 };
 
