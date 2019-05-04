@@ -378,7 +378,7 @@ void Whitespace::makePolygonMap()
     size_t j = i;
 
     // While we're not back at the first vertex of our set
-    while(m_vertices[j]->group == 0)
+    while (m_vertices[j]->group == 0)
     {
       // Label the vertex with polygon number
       m_vertices[j]->group = polygonNumber;

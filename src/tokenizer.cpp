@@ -66,6 +66,7 @@ std::array<tokenizer::chartype, 256> tokenizer::char_lookup = {
   OTH, OTH, OTH, OTH, OTH, OTH, OTH, OTH,
   OTH, OTH, OTH, OTH, OTH, OTH, OTH, OTH
 };
+
 /*---------------------------------------------------------------------------*/
 // constructor of tokenizer - initializes members and starts main
 // lexer function
@@ -109,9 +110,9 @@ void tokenizer::pushbuf(const TState type, const TState statename)
 
 void tokenizer::tokenize()
 {
-  while(i != s->end()) // ensure the iterator doesn't exceed string length
+  while (i != s->end()) // ensure the iterator doesn't exceed string length
   {
-    switch(state)
+    switch (state)
     {
       // Each state has its own handler subroutine - self explanatory
       case NEWSYMBOL:   newsymbolState();         break;
@@ -134,7 +135,7 @@ void tokenizer::tokenize()
 
 void tokenizer::resourceState()
 {
-  switch(char_lookup[*i])
+  switch (char_lookup[*i])
   {
     case LAB:   pushbuf(RESOURCE, HEXSTRING);               break;
     case LET:   buf.append(i, i + 1);                       break;
@@ -160,7 +161,7 @@ void tokenizer::resourceState()
 void tokenizer::newsymbolState()
 {
   // get symbol_type of current char
-  switch(char_lookup[*i])
+  switch (char_lookup[*i])
   {
     case LAB:                             state = HEXSTRING;   break;
     case LET:   buf.append(i, i + 1);     state = IDENTIFIER;  break;
@@ -183,7 +184,7 @@ void tokenizer::newsymbolState()
 void tokenizer::identifierState()
 {
   // get symbol_type of current char
-  switch(char_lookup[*i])
+  switch (char_lookup[*i])
   {
     case LAB:   pushbuf(IDENTIFIER, HEXSTRING); break;
     case LET:   buf.append(i, i + 1);           break;
@@ -207,7 +208,7 @@ void tokenizer::identifierState()
 void tokenizer::numberState()
 {
   // get symbol_type of current char
-  switch(char_lookup[*i])
+  switch (char_lookup[*i])
   {
     case LAB:   pushbuf(NUMBER, HEXSTRING);           break;
     case DIG:   buf.append(i, i + 1);                 break;
@@ -230,7 +231,7 @@ void tokenizer::numberState()
 void tokenizer::stringState()
 {
   // get symbol_type of current char
-  switch(char_lookup[*i])
+  switch (char_lookup[*i])
   {
     case RCB:   pushbuf(STRING, NEWSYMBOL);       break;
     case BSL:   escapeState();                    break;
@@ -253,7 +254,7 @@ void tokenizer::arrayState()
 void tokenizer::hexstringState()
 {
   // get symbol_type of current char
-  switch(char_lookup[*i])
+  switch (char_lookup[*i])
   {
     case RAB:   if (!buf.empty()) pushbuf(HEXSTRING, NEWSYMBOL);
                 state = NEWSYMBOL;                                break;
@@ -270,7 +271,7 @@ void tokenizer::hexstringState()
 void tokenizer::dictState()
 {
   // get symbol_type of current char
-  switch(char_lookup[*i])
+  switch (char_lookup[*i])
   {
     case BSL:  buf.append(i, i + 1); ++i; buf.append(i, i + 1);   break;
     case RAB:  pushbuf(DICT, HEXSTRING);                          break;
@@ -292,7 +293,7 @@ void tokenizer::escapeState()
     pushbuf(STRING, STRING);
 
     // Add consecutive chars to octal (up to 3)
-    while(char_lookup[*i] == DIG && octcount < 3)
+    while (char_lookup[*i] == DIG && octcount < 3)
     {
       buf.append(i, i + 1); ++i;
       octcount++;

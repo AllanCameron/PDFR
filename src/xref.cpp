@@ -127,7 +127,7 @@ void xref::locate_xrefs()
 void xref::read_xref_strings()
 {
   // Get a string from each xref location or throw exception
-  for(auto& start : m_xref_locations)
+  for (auto& start : m_xref_locations)
   {
     // Find the length of xref in chars
     int len = m_file_string->find("startxref", start) - start;
@@ -198,7 +198,7 @@ void xref::read_xref_from_string(string& xref_string)
 
   // This loop starts on the second row of the table. Even numbers are the
   // byte offsets and odd numbers are the in_use numbers
-  for(int bytestore = 0, i = 2; i < (int) all_ints.size(); ++i)
+  for (int bytestore = 0, i = 2; i < (int) all_ints.size(); ++i)
   {
     // If an odd number index and the integer is in use, store to map
     if(i % 2 && all_ints[i] < 0xffff)
@@ -305,7 +305,7 @@ array<size_t, 2> xref::get_stream_location(int object_start) const
 
 void xref::decrypt(string& s, int obj, int gen) const
 {
-  m_encryption->decryptStream(s, obj, gen);
+  m_encryption->decrypt_stream(s, obj, gen);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -410,7 +410,7 @@ void xrefstream::read_index()
 
   if(!indexEntries.empty())
   {
-    for(size_t i = 0; i < indexEntries.size(); i += 2)
+    for (size_t i = 0; i < indexEntries.size(); i += 2)
     {
       // Fill object numbers with consecutive ints starting at the even index
       // entries for a length specified by the odd index entries
@@ -486,7 +486,7 @@ void xrefstream::get_raw_matrix()
     throw runtime_error("Unmatched row and column numbers");
   }
 
-  for(int i = 0; i < nrows; ++i) // now fill the raw matrix with stream data
+  for (int i = 0; i < nrows; ++i) // now fill the raw matrix with stream data
   {
     m_rawMatrix.emplace_back(intstrm.begin() + m_ncols * i,
                              intstrm.begin() + m_ncols * (i + 1));
@@ -503,10 +503,10 @@ void xrefstream::diff_up()
   if(m_predictor == 12)
   {
     // For each row
-    for(size_t i = 1; i < m_rawMatrix.size(); ++i )
+    for (size_t i = 1; i < m_rawMatrix.size(); ++i )
     {
       // Take each entry & add the one above
-      for(size_t j = 0; j < m_rawMatrix.at(i).size(); ++j)
+      for (size_t j = 0; j < m_rawMatrix.at(i).size(); ++j)
       {
         m_rawMatrix.at(i).at(j) += m_rawMatrix.at(i - 1).at(j);
       }
@@ -519,13 +519,13 @@ void xrefstream::diff_up()
 
 void xrefstream::modulo_transpose()
 {
-  for(size_t i = 0; i < m_rawMatrix.at(0).size(); ++i)
+  for (size_t i = 0; i < m_rawMatrix.at(0).size(); ++i)
   {
     // Create a new column vector
     vector<int> tempcol;
 
     // Then for each entry in the row make it modulo 256 and push to new column
-    for(auto& j : m_rawMatrix) tempcol.push_back(j[i] & 0x00ff);
+    for (auto& j : m_rawMatrix) tempcol.push_back(j[i] & 0x00ff);
 
     // the new column is pushed to the final array unless it is the first
     // column (which is skipped when the predictor is > 9)
@@ -541,12 +541,12 @@ void xrefstream::expand_bytes()
 {
   // Calculate the byte shift for each column (with 1:1 correspondence);
   int ncol = 0;
-  for(auto i : m_arrayWidths)
+  for (auto i : m_arrayWidths)
   {
-    while(i)
+    while (i)
     {
       int byte_shift = 8 * (i-- - 1);
-      for(auto &j : m_finalArray.at(ncol)) j <<= byte_shift;
+      for (auto &j : m_finalArray.at(ncol)) j <<= byte_shift;
       ++ncol;
     }
   }
@@ -559,13 +559,13 @@ void xrefstream::expand_bytes()
 void xrefstream::merge_columns()
 {
   // For each of the final columns
-  for(int k = 0, cumsum = 0; k < (int) m_arrayWidths.size(); ++k)
+  for (int k = 0, cumsum = 0; k < (int) m_arrayWidths.size(); ++k)
   {
     // take a zero-filled column the size of those in the unmerged array
     vector<int> newCol(m_finalArray[0].size(), 0);
 
     // for each width value
-    for(int j = 0; j < m_arrayWidths[k]; j++)
+    for (int j = 0; j < m_arrayWidths[k]; j++)
     {
       // Add the column to be merged to the new column
       transform(newCol.begin(), newCol.end(),

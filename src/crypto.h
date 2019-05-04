@@ -54,16 +54,16 @@
 #include<deque> // needed for md5mix function
 
 //---------------------------------------------------------------------------//
-// A std::vector<uint8_t> is more succinctly described by the type name "bytes"
+// A std::vector<uint8_t> is more succinctly described by the type name "Bytes"
 
-typedef std::vector<uint8_t> bytes;
+typedef std::vector<unsigned char> ByteVector;
 
 //---------------------------------------------------------------------------//
 // The md5 algorithm makes use of 4-byte numbers (unsigned long or uint32_t).
 // To shorten the name and make it explicit what we are talking about I have
-// typedef'd uint32_t as four_bytes
+// typedef'd uint32_t as FourBytes
 
-typedef uint32_t four_bytes;
+typedef uint32_t FourBytes;
 
 //---------------------------------------------------------------------------//
 // Class definition for crypto
@@ -71,35 +71,53 @@ typedef uint32_t four_bytes;
 class Crypto
 {
 public:
-// Constructors
+  // Constructors
   Crypto(){};
   Crypto(Dictionary, Dictionary);
 
-// This is the main decryption function which is also the public interface for
-// the class. It takes the raw stream, the object and generation numbers then
-// returns the decrypted stream.
-  void decryptStream(std::string&, int obj, int gen) const;
+  // This is the main decryption function which is also the public interface for
+  // the class. It takes the raw stream, the object and generation numbers then
+  // returns the decrypted stream.
+  void decrypt_stream(std::string&, int obj, int gen) const;
 
 private:
-// private data members
-  Dictionary encdict;
-  Dictionary trailer;
-  int revision;
-  bytes filekey;
-  static bytes default_user_password;
+  // private data members
+  Dictionary m_encryption_dictionary;
+  Dictionary m_trailer;
+  int        m_revision;
+  ByteVector m_filekey;
 
-// private member functions
-  bytes chopLong(four_bytes) const;    // Chops four_bytes into 4 bytes
-  bytes permissions(std::string);     // Return permission flags for file
-  void md5mix(int, std::deque<four_bytes>&, std::vector<four_bytes>&) const;
-  bytes md5(bytes input) const;       // Gives md5 hash of a vector of raw bytes
-  bytes md5(std::string input) const; // Gives md5 hash of a string (as bytes)
-  void rc4(bytes&, bytes) const; // Gives rc4 cipher of message:key pair, or the
-                                 // original message, given a key and the cipher
-  bytes getPassword(const std::string&);   // gets /O and /U cipher
-  void getFilekey();                       // constructs file key
-  void checkKeyR2();                       // checks file key (revision 2)
-  void checkKeyR3();                       // checks file key (revision 3)
+  static  ByteVector sm_default_user_password;
+
+  // Chops FourBytes into 4 bytes
+  ByteVector chop_long(FourBytes) const;
+
+  // Return permission flags for file
+  ByteVector read_permissions(std::string);
+
+  // Helper function for md5
+  void md5_mix(int, std::deque<FourBytes>&, std::vector<FourBytes>&) const;
+
+  // Gives md5 hash of a vector of raw bytes
+  ByteVector md5(ByteVector input) const;
+
+  // Gives md5 hash of a string (as bytes)
+  ByteVector md5(std::string input) const;
+
+  // Gives rc4 cipher of message:key pair, given key and message
+  void rc4(ByteVector&, ByteVector) const;
+
+  // Gets /O and /U cipher
+  ByteVector get_password(const std::string&);
+
+  // Constructs file key
+  void get_file_key();
+
+  // Checks file key (revision 2)
+  void check_key_r2();
+
+  // Checks file key (revision 3)
+  void check_key_r3();
 };
 
 //---------------------------------------------------------------------------//

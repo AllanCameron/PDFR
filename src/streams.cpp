@@ -45,7 +45,7 @@ void FlateDecode(string& s)
   z_stream stream ; // create a new z_stream object
   int factor = 20;  // initialize the anticipated maximum decompression factor
   size_t len = s.length();  // get input string length
-  while(true) //  loop will continue until explicitly exited
+  while (true) //  loop will continue until explicitly exited
   {
     char * out = new char[len * factor];  // create array big enough for result
     stream.zalloc = 0;    //----//

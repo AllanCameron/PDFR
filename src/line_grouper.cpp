@@ -39,7 +39,7 @@ line_grouper::line_grouper(vector<TextBox> t): m_textboxes(t)
   size_t i = 0;
   if(m_textboxes.empty()) throw runtime_error("No textboxes on page");
 
-  while(i < m_textboxes.size())
+  while (i < m_textboxes.size())
   {
     if (m_textboxes[i].size() < 2){++i; continue;}
     sort(m_textboxes[i].begin(), m_textboxes[i].end(), reading_order());

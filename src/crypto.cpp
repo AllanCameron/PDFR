@@ -33,7 +33,7 @@ using namespace std;
 // The default user password cipher is required to construct the file key and is
 // declared as a static member of the crypto class; it is defined here
 
-bytes Crypto::default_user_password =
+ByteVector Crypto::sm_default_user_password =
 {
   0x28, 0xBF, 0x4E, 0x5E, 0x4E, 0x75, 0x8A, 0x41,
   0x64, 0x00, 0x4E, 0x56, 0xFF, 0xFA, 0x01, 0x08,
@@ -43,11 +43,11 @@ bytes Crypto::default_user_password =
 
 //---------------------------------------------------------------------------//
 // The md5 algorithm uses pseudorandom numbers to chop its message into bytes.
-// Having them in a vector stops us from having to call the md5mix function
+// Having them in a vector stops us from having to call the md5_mix function
 // with each seperate number 64 times. These numbers come from the function
 // md5_table[i] = abs(sin(i + 1)) * 2^32, but it is quicker to pre-compute them
 
-static vector<four_bytes> md5_table =
+static vector<FourBytes> md5_table =
 {
   0xD76AA478, 0xE8C7B756, 0x242070DB, 0xC1BDCEEE,
   0xF57C0FAF, 0x4787C62A, 0xA8304613, 0xFD469501,
@@ -70,7 +70,7 @@ static vector<four_bytes> md5_table =
 //---------------------------------------------------------------------------//
 // More pseudorandom numbers for the md5 hash
 
-std::vector<std::vector<four_bytes>> mixarray =
+std::vector<std::vector<FourBytes>> mixarray =
 {
   {7, 12, 17, 22},
   {5,  9, 14, 20},
@@ -82,16 +82,16 @@ std::vector<std::vector<four_bytes>> mixarray =
 // This simple function "chops" a four-byte int to a vector of four bytes.
 // The bytes are returned lowest-order first as this is the typical use.
 
-bytes Crypto::chopLong(four_bytes longInt) const
+ByteVector Crypto::chop_long(FourBytes t_long_int) const
 {
   // The mask specifies that only the last byte is read when used with &
-  four_bytes mask = 0x000000ff;
+  FourBytes mask = 0x000000ff;
 
   // Create a length-4 vector of bytes filled with low-high bytes from longint
-  bytes result(4, 0);
-  for(int i = 0; i < 4; ++i)
+  ByteVector result(4, 0);
+  for (int i = 0; i < 4; ++i)
   {
-    result[i] = (longInt >> (8 * i)) & mask;
+    result[i] = (t_long_int >> (8 * i)) & mask;
   }
 
   return result;
@@ -107,16 +107,16 @@ bytes Crypto::chopLong(four_bytes longInt) const
 // appropriately. For the purposes of text extraction however, this is not
 // required, and we just need the permissions flag to produce the file key.
 
-bytes Crypto::permissions(std::string str)
+ByteVector Crypto::read_permissions(std::string t_string)
 {
   // No string == no permissions. Can't decode pdf, so throw an error
-  if(str.empty()) throw runtime_error("No permission flags");
+  if (t_string.empty()) throw runtime_error("No permission flags");
 
   // Convert the string to a 4-byte int
-  int flags = stoi(str);
+  int flags = stoi(t_string);
 
   // This reads off the bytes from lowest order to highest order
-  return chopLong(flags);
+  return chop_long(flags);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -138,22 +138,32 @@ bytes Crypto::permissions(std::string str)
 // This function is called several times with different parameters as part
 // of the main md5 algorithm. It can be considered a "shuffler" of bytes
 
-void Crypto::md5mix(int n, deque<four_bytes>& m, vector<four_bytes>& x) const
+void Crypto::md5_mix(int n, deque<FourBytes>& m, vector<FourBytes>& x) const
 {
   // Declare and define some pseudorandom numbers
-  four_bytes mixer, e, f = md5_table[n], g = mixarray[n / 16][n % 4];
+  FourBytes mixer, e, f = md5_table[n], g = mixarray[n / 16][n % 4];
 
   // Mangle bytes in various ways as per md5 algorithm
   switch(n / 16 + 1)
   {
     case 1  : e = x[(1 * n + 0) % 16];
-              mixer = (m[0] + ((m[1] & m[2]) | (~m[1] & m[3])) + e + f); break;
+              mixer = (m[0] + ((m[1] & m[2]) |
+                      (~m[1] & m[3])) + e + f);
+              break;
+
     case 2  : e = x[(5 * n + 1) % 16];
-              mixer = (m[0] + ((m[1] & m[3]) | (m[2] & ~m[3])) + e + f); break;
+              mixer = (m[0] + ((m[1] & m[3]) |
+                      (m[2] & ~m[3])) + e + f);
+              break;
+
     case 3  : e = x[(3 * n + 5) % 16];
-              mixer = (m[0] + (m[1] ^ m[2] ^ m[3]) + e + f);             break;
+              mixer = (m[0] + (m[1] ^ m[2] ^ m[3]) + e + f);
+              break;
+
     case 4  : e = x[(7 * n + 0) % 16];
-              mixer = (m[0] + (m[2] ^ (m[1] | ~m[3])) + e + f);          break;
+              mixer = (m[0] + (m[2] ^ (m[1] | ~m[3])) + e + f);
+              break;
+
     default: throw runtime_error("md5 error: n > 63");
   }
 
@@ -169,66 +179,83 @@ void Crypto::md5mix(int n, deque<four_bytes>& m, vector<four_bytes>& x) const
 // The main md5 algorithm. This version of it was modified from various
 // open source online implementations.
 
-bytes Crypto::md5(bytes msg) const
+ByteVector Crypto::md5(ByteVector t_message) const
 {
   // The length of the message
-  int len = msg.size();
+  int message_length = t_message.size();
 
-  // 16 * four_bytes will contain "fingerprint"
-  std::vector<four_bytes> x(16, 0);
+  // 16 * FourBytes will contain "fingerprint"
+  std::vector<FourBytes> fingerprint(16, 0);
 
   // The number of 64-byte blocks to be processed plus extra 8-byte filler
-  int nblocks = (len + 72) / 64;
+  int number_of_blocks = (message_length + 72) / 64;
                                  //
   // Starting pseudorandom numbers
-  deque<four_bytes> mixvars = {0x67452301, 0xEFCDAB89, 0x98BADCFE, 0x10325476};
+  deque<FourBytes> mixvars = {0x67452301, 0xEFCDAB89, 0x98BADCFE, 0x10325476};
 
-  // This next block fills the 16-element long "fingerprint" of the message (x)
+  // This next block fills the 16-element long "fingerprint" of the message
   // with up to 64 bytes from each block of the message, mangles them and
   // turns them into the pseudorandom seed for the next block
-  int i, j, k = 0;
-  for (i = 0; i < nblocks; ++i)
+  int block, fourbyte_it, message_it = 0;
+  for (block = 0; block < number_of_blocks; ++block)
   {
     // For each 4 bytes of block create a fourbyte from 4 bytes, low-order first
-    for (j = 0; j < 16 && k < len - 3; ++j, k += 4)
+    for (fourbyte_it = 0;
+         fourbyte_it < 16 && message_it < message_length - 3;
+         fourbyte_it++, message_it += 4)
     {
-      x[j] = (((((msg[k+3] << 8) + msg[k+2]) << 8) + msg[k+1]) << 8) + msg[k];
+      fingerprint[fourbyte_it] = (t_message[message_it + 3] << 24) |
+                                 (t_message[message_it + 2] << 16) |
+                                 (t_message[message_it + 1] <<  8) |
+                                 (t_message[message_it + 0] <<  0) ;
     }
 
     // If this is the last block...
-    if (i == nblocks - 1)
+    if (block == number_of_blocks - 1)
     {
       // create a fourbyte from the remaining bytes (low order first), with a
       // left-sided padding of (binary) 10000000...
-      if (k == len - 3)
+      if (message_it == message_length - 3)
       {
-        x[j++] = 0x80000000 + (((msg[k+2] << 8) + msg[k+1]) << 8) + msg[k];
+        fingerprint[fourbyte_it++] = 0x80000000                        |
+                                     (t_message[message_it + 2] << 16) |
+                                     (t_message[message_it + 1] <<  8) |
+                                     (t_message[message_it + 0] <<  0) ;
       }
-      else if (k == len - 2) x[j++] = 0x800000 + (msg[k + 1] << 8) + msg[k];
-      else if (k == len - 1) x[j++] = 0x8000 + msg[k];
-      else x[j++] = 0x80;
+      else if (message_it == message_length - 2)
+      {
+        fingerprint[fourbyte_it++] = 0x800000                          |
+                                     (t_message[message_it + 1] << 8)  |
+                                     (t_message[message_it + 0] << 0)  ;
+      }
 
-      // Right pad x with zeros to total 16 bytes
-      while (j < 16) x[j++] = 0;
+      else if (message_it == message_length - 1)
+      {
+        fingerprint[fourbyte_it++] = 0x8000 + t_message[message_it];
+      }
+      else fingerprint[fourbyte_it++] = 0x80;
+
+      // Right pad fingerprint with zeros to total 16 bytes
+      while (fourbyte_it < 16) fingerprint[fourbyte_it++] = 0;
 
       // Store a mangled copy of length in the fingerprint
-      x[14] = len << 3;
+      fingerprint[14] = message_length << 3;
     }
 
     // Store a copy of initial random numbers
-    deque<four_bytes> initvars = mixvars;
+    deque<FourBytes> initial_deque = mixvars;
 
-    // Shuffle x 64 times
-    for(int n = 0; n < 64; n++) md5mix(n, mixvars, x);
+    // Shuffle fingerprint 64 times
+    for (int n = 0; n < 64; n++) md5_mix(n, mixvars, fingerprint);
 
     // Add initial random numbers
-    for(int m = 0; m < 4;  m++) mixvars[m] += initvars[m];
+    for (int m = 0; m < 4;  m++) mixvars[m] += initial_deque[m];
   }
 
-  bytes output; // create empty output vector for output
+  ByteVector output; // create empty output vector for output
 
-  // Split the resultant 4 x four_bytes into a single 16-byte vector
-  for(auto m : mixvars) concat(output, chopLong(m));
+  // Split the resultant 4 x FourBytes into a single 16-byte vector
+  for (auto fourbyte : mixvars) concat(output, chop_long(fourbyte));
 
   return output;
 }
@@ -238,11 +265,9 @@ bytes Crypto::md5(bytes msg) const
 // conversion. It simply converts a string to bytes than puts it
 // into the "bytes" version of the function
 
-bytes Crypto::md5(std::string input) const
+ByteVector Crypto::md5(std::string t_input) const
 {
-  bytes res(input.begin(), input.end());
-
-  return md5(res);
+  return md5(ByteVector(t_input.begin(), t_input.end()));
 }
 
 //-------------------------------------------------------------------------//
@@ -253,13 +278,13 @@ bytes Crypto::md5(std::string input) const
 // directly back into the original message using exactly the same key.
 // The algorithm is now in the public domain
 
-void Crypto::rc4(bytes& message, bytes key) const
+void Crypto::rc4(ByteVector& t_message, ByteVector t_key) const
 {
-  int key_length = key.size(), message_length = message.size();
+  int key_length = t_key.size(), message_length = t_message.size();
   uint8_t a = 0, b = 0, x = 0, y = 0;
 
   // Create state and fill with 0 - 0xff
-  bytes state;
+  ByteVector state;
   for (int i = 0; i <= 0xff; ++i) state.push_back(i);
 
   // No key - can't modify message
@@ -268,19 +293,19 @@ void Crypto::rc4(bytes& message, bytes key) const
   // for each element in state, mix the state around according to the key
   for (auto& element : state)
   {
-    b = (key[a] + element + b) % 256;
+    b = (t_key[a] + element + b) % 256;
     swap(element, state[b]);
     a = (a + 1) % key_length;
   }
 
   // For each character in the message, mix as per rc4 algorithm
-  for(int k = 0; k < message_length; k++)
+  for (int k = 0; k < message_length; k++)
   {
     uint8_t x1, y1;
     x1 = x = (x + 1) % 256;
     y1 = y = (state[x] + y) % 256;
     iter_swap(state.begin() + x1, state.begin() + y1);
-    message[k] = message[k] ^ state[(state[x1] + state[y1]) % 256];
+    t_message[k] = t_message[k] ^ state[(state[x1] + state[y1]) % 256];
   }
 }
 
@@ -296,25 +321,27 @@ void Crypto::rc4(bytes& message, bytes key) const
 // key length plus 5, is then used as the key with which to decrypt the
 // stream using the rc4 algorithm.
 
-void Crypto::decryptStream(string& stream, int object_num, int object_gen) const
+void Crypto::decrypt_stream(string& t_stream,
+                           int t_object_number,
+                           int t_object_gen) const
 {
-  // Stream as bytes
-  bytes stream_as_bytes(stream.begin(), stream.end());
+  // t_stream as bytes
+  ByteVector stream_as_bytes(t_stream.begin(), t_stream.end());
 
   // Start building the object key with the file key
-  bytes object_key = filekey;
+  ByteVector object_key = m_filekey;
 
   // Append the bytes of the object number
-  concat(object_key, chopLong(object_num));
+  concat(object_key, chop_long(t_object_number));
 
   // We only want the three lowest order bytes; pop the last
   object_key.pop_back();
 
   // Append lowest order byte of gen number
-  object_key.push_back( object_gen & 0xff);
+  object_key.push_back( t_object_gen & 0xff);
 
   // Then append the second lowest byte of gen number
-  object_key.push_back((object_gen >> 8) & 0xff);
+  object_key.push_back((t_object_gen >> 8) & 0xff);
 
   // Store the object key's size
   uint8_t object_key_size = object_key.size();
@@ -329,29 +356,29 @@ void Crypto::decryptStream(string& stream, int object_num, int object_gen) const
   rc4(stream_as_bytes, object_key);
 
   // finally we convert the resultant bytes back to a string
-  stream = string(stream_as_bytes.begin(), stream_as_bytes.end());
+  t_stream = string(stream_as_bytes.begin(), stream_as_bytes.end());
 }
 
 /*---------------------------------------------------------------------------*/
 // Gets the bytes comprising the hashed owner password from the encryption
 // dictionary
 
-bytes Crypto::getPassword(const string& key)
+ByteVector Crypto::get_password(const string& t_key)
 {
    // Get raw bytes of owner password hash
-  string password(encdict.get_string(key));
+  string password(m_encryption_dictionary.get_string(t_key));
   string temp;
   temp.reserve(32);
 
   // This loop removes backslash escapes.
-  for(auto i = password.begin() + 1; i != password.end(); ++i)
+  for (auto i = password.begin() + 1; i != password.end(); ++i)
   {
-    if(*i == '\\')
+    if (*i == '\\')
     {
-      if(*(i + 1) == '\\') temp.push_back('\\');
+      if (*(i + 1) == '\\') temp.push_back('\\');
     }
     else temp.push_back(*i);
-    if(temp.size() == 32)
+    if (temp.size() == 32)
     {
       swap(temp, password);
       break;
@@ -359,47 +386,47 @@ bytes Crypto::getPassword(const string& key)
   }
 
   // The owner password should have 32 or more characters
-  if(password.size() < 32) throw runtime_error("Corrupted password hash");
+  if (password.size() < 32) throw runtime_error("Corrupted password hash");
 
   // Return first 32 bytes (skip the first char which is the opening bracket)
-  return bytes(password.begin(), password.end());
+  return ByteVector(password.begin(), password.end());
 }
 
 /*---------------------------------------------------------------------------*/
 // The decryption key is needed to decrypt all streams except the xrefstream
 // Its creation is described in ISO 3200 and implented here
 
-void Crypto::getFilekey()
+void Crypto::get_file_key()
 {
   // Get the generic user password
-  filekey = default_user_password;
+  m_filekey = sm_default_user_password;
 
   // Stick the owner password on
-  concat(filekey, getPassword("/O"));
+  concat(m_filekey, get_password("/O"));
 
   // Stick permissions flags on
-  concat(filekey, permissions(encdict.get_string("/P")));
+  concat(m_filekey, read_permissions(m_encryption_dictionary.get_string("/P")));
 
   // Get first 16 bytes of file ID and stick them on too
-  bytes idbytes = convert_hex_to_bytes(trailer.get_string("/ID"));
+  ByteVector idbytes = convert_hex_to_bytes(m_trailer.get_string("/ID"));
   idbytes.resize(16);
-  concat(filekey, idbytes);
+  concat(m_filekey, idbytes);
 
   // now md5 hash the result
-  filekey = md5(filekey);
+  m_filekey = md5(m_filekey);
 
   // Set the default filekey size
   size_t cryptlen = 5;
 
   // if the filekey length is not 5, it will be specified as a number of bits
   // so divide by 8 to get the number of bytes.
-  if(encdict.contains_ints("/Length"))
+  if (m_encryption_dictionary.contains_ints("/Length"))
   {
-    cryptlen = encdict.get_ints("/Length")[0] / 8;
+    cryptlen = m_encryption_dictionary.get_ints("/Length")[0] / 8;
   }
 
   // Resize the key as needed.
-  filekey.resize(cryptlen);
+  m_filekey.resize(cryptlen);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -407,19 +434,19 @@ void Crypto::getFilekey()
 // cipher of the default user password matches the user password hash in
 // the encoding dictionary
 
-void Crypto::checkKeyR2()
+void Crypto::check_key_r2()
 {
   // Get the pdf's hashed user password
-  bytes ubytes = getPassword("/U");
+  ByteVector ubytes = get_password("/U");
 
   // Get the default (unhashed) user password
-  bytes checkans = default_user_password;
+  ByteVector checkans = sm_default_user_password;
 
   // rc4 the default user password using the supplied filekey
-  rc4(checkans, filekey);
+  rc4(checkans, m_filekey);
 
   // This should be the same as the pdf's hashed user password
-  if(checkans.size() == 32 && checkans == ubytes) return;
+  if (checkans.size() == 32 && checkans == ubytes) return;
 
   // Otherwise, this key will not decrypt the pdf - throw an error
   throw runtime_error("Incorrect cryptkey");
@@ -430,44 +457,41 @@ void Crypto::checkKeyR2()
 // I couldn't get it to work for ages until I realised that the user and owner
 // passwords sometimes contain backslash-escaped characters
 
-void Crypto::checkKeyR3()
+void Crypto::check_key_r3()
 {
   // We start with the default user password
-  bytes user_password = default_user_password;
+  ByteVector user_password = sm_default_user_password;
 
   // We now append the bytes from the ID entry of the trailer dictionary
-  concat(user_password, convert_hex_to_bytes(trailer.get_string("/ID")));
+  concat(user_password, convert_hex_to_bytes(m_trailer.get_string("/ID")));
 
   // We only want the first 16 bytes from the ID so truncate to 48 bytes (32+16)
   user_password.resize(48);
 
   // As per ISO 32000 we now md5 the result and rc4 using the filekey
   user_password = md5(user_password);
-  rc4(user_password, filekey);
+  rc4(user_password, m_filekey);
 
   // From ISO 32000: Take the result of the rc4 and do the following 19 times:
   for (uint8_t iteration = 1; iteration < 20; ++iteration)
   {
     // Create a new key by doing an XOR of each byte of the filekey with
     // the iteration number (1 to 19) of the loop.
-    bytes temp_key;
-    for (auto byte : filekey)
-    {
-      temp_key.push_back(byte ^ iteration);
-    }
+    ByteVector temp_key;
+    for (auto byte : m_filekey) temp_key.push_back(byte ^ iteration);
 
     // Create an rc4 hash of the ongoing hash which is fed to next iteration
     rc4(user_password, temp_key);
   }
 
   // Now get the pdf's user password to test against our calculated password
-  bytes test_against = getPassword("/U");
+  ByteVector test_against = get_password("/U");
 
   // Check the first 16 bytes of the two vectors to confirm the match
-  for(int i = 0; i < 16; ++i)
+  for (int i = 0; i < 16; ++i)
   {
     // If any of the bytes do not match, we have the incorrect filekey
-    if(test_against[i] != user_password[i])
+    if (test_against[i] != user_password[i])
     {
       throw runtime_error("cryptkey doesn't match");
     }
@@ -479,27 +503,33 @@ void Crypto::checkKeyR3()
 // file key and to check it's right. The crypto object is then kept alive to
 // decode any encoded strings in the file
 
-Crypto::Crypto(Dictionary enc, Dictionary trail) :
-  encdict(enc), trailer(trail), revision(2)
+Crypto::Crypto(Dictionary t_encrypt_dict, Dictionary t_trailer) :
+  m_encryption_dictionary(t_encrypt_dict),
+  m_trailer(t_trailer),
+  m_revision(2)
 {
   // Unless specified, the revision number used for encryption is 2
-  if(encdict.contains_ints("/R")) revision = encdict.get_ints("/R")[0];
+  if (m_encryption_dictionary.contains_ints("/R"))
+  {
+    m_revision = m_encryption_dictionary.get_ints("/R")[0];
+  }
 
-  getFilekey();
+  get_file_key();
 
-  if(revision == 2) checkKeyR2(); // if rnum 2, check it and we're done
+  if (m_revision == 2) check_key_r2(); // if rnum 2, check it and we're done
 
   //  Otherwise we're going to md5 and trim the filekey 50 times
   else
   {
-    size_t key_length = filekey.size();
-    for(int i = 0; i < 50; ++i)
+    size_t key_length = m_filekey.size();
+
+    for (int i = 0; i < 50; ++i)
     {
-      filekey = md5(filekey);
-      filekey.resize(key_length);
+      m_filekey = md5(m_filekey);
+      m_filekey.resize(key_length);
     }
 
     // Check the filekey and we're done
-    checkKeyR3();
+    check_key_r3();
   }
 }

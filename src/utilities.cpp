@@ -139,10 +139,10 @@ vector<string> multicarve(const string& t_string,
   // This loop progressively finds matches in s and removes from the start
   // of the string all characters up to the end of matched b.
   // It does this until there are no paired matches left in the string
-  while(true)
+  while (true)
   {
     int start = trimmed.find(t_left);
-    if(start == -1) break;
+    if (start == -1) break;
 
     // chop start off string up to end of first match of a
     int end_of_match     = start + t_left.length();
@@ -150,7 +150,7 @@ vector<string> multicarve(const string& t_string,
     trimmed              = trimmed.substr(end_of_match, remaining_length);
 
     int stop = trimmed.find(t_right);
-    if(stop == -1) break;
+    if (stop == -1) break;
 
     // Target found - push to result
     result.push_back(trimmed.substr(0, stop));
@@ -170,7 +170,7 @@ vector<string> multicarve(const string& t_string,
 
 bool is_ascii(const string& t_string)
 {
-  if(t_string.empty()) return false;
+  if (t_string.empty()) return false;
 
   // Use minmax to get a pair of iterators pointing to min & max char values
   auto minmax_ptrs = minmax_element(t_string.begin(), t_string.end());
@@ -187,23 +187,23 @@ vector<uint8_t> convert_hex_to_bytes(const string& t_hexstring)
    vector<uint8_t> byte_vector{};
 
   // If hexstring is empty, return an empty vector;
-  if(t_hexstring.empty()) return byte_vector;
+  if (t_hexstring.empty()) return byte_vector;
 
-  for(auto hexchar : t_hexstring)
+  for (auto hexchar : t_hexstring)
   {
     const auto& found = s_hexmap.find(hexchar);
-    if(found != s_hexmap.end()) byte_vector.push_back(found->second);
+    if (found != s_hexmap.end()) byte_vector.push_back(found->second);
   }
 
   // We cannot allow odd-length vectors;
-  if(byte_vector.size() | 0x01) byte_vector.push_back(0);
+  if (byte_vector.size() | 0x01) byte_vector.push_back(0);
 
   // Now take each pair of four-bit bytes, left shift the first by four bits
   // and add them together using a bitwise OR, overwriting the source as we go
-  for(size_t i = 0; i < byte_vector.size(); i += 2)
+  for (size_t i = 0; i < byte_vector.size(); i += 2)
   {
-    byte_vector[i / 2] = (0xf0 & (byte_vector[i] << 4)) |
-                         (0x0f &  byte_vector[i + 1]);
+    byte_vector[i / 2] = (0xf0 & (byte_vector[i + 0] << 4)) |
+                         (0x0f &  byte_vector[i + 1] << 0);
   }
 
   // Remove the non-overwritten part of the vector.
@@ -217,7 +217,7 @@ vector<uint8_t> convert_hex_to_bytes(const string& t_hexstring)
 
 string convert_int_to_hex(int t_int)
 {
-  if(t_int < 0 || t_int > 0xffff) return "FFFF"; // returns max if out of range
+  if (t_int < 0 || t_int > 0xffff) return "FFFF"; // returns max if out of range
   string hex {"0123456789ABCDEF"};
   hex += hex[(t_int & 0xf000) >> 12]; // gets index of hex from first 4 bits
   hex += hex[(t_int & 0x0f00) >>  8]; // gets index of hex from second 4 bits
@@ -245,15 +245,15 @@ char get_symbol_type(const char t_char)
 
 vector<RawChar> convert_hex_to_rawchar(string& t_string)
 {
-  while(t_string.size() % 4) t_string = '0' + t_string;
+  while (t_string.size() % 4) t_string = '0' + t_string;
   vector<RawChar> raw_vector; // vector to store results
   raw_vector.reserve(t_string.size() / 4);
-  for(size_t i = 0; i < (t_string.size() - 3); i += 4)
+  for (size_t i = 0; i < (t_string.size() - 3); i += 4)
   {
-    raw_vector.emplace_back(((s_hexmap[t_string[i]] & 0x000f) << 12)      |
-                            ((s_hexmap[t_string[i + 1]] & 0x000f) << 8)  |
-                            ((s_hexmap[t_string[i + 2]] & 0x000f) << 4)  |
-                             (s_hexmap[t_string[i + 3]] & 0x000f));
+    raw_vector.emplace_back(((s_hexmap[t_string[i + 0]] & 0x000f) << 12)  |
+                            ((s_hexmap[t_string[i + 1]] & 0x000f) <<  8)  |
+                            ((s_hexmap[t_string[i + 2]] & 0x000f) <<  4)  |
+                            ((s_hexmap[t_string[i + 3]] & 0x000f) <<  0)  );
   }
   return raw_vector;
 }
@@ -266,15 +266,9 @@ vector<RawChar> convert_hex_to_rawchar(string& t_string)
 vector<RawChar> convert_string_to_rawchar(const string& t_string)
 {
   vector<RawChar> result; // vector to hold results
+  if (t_string.empty()) return result;
   result.reserve(t_string.size());
-
-  if(!t_string.empty())
-  {
-    for(auto string_char : t_string)
-    {
-      result.emplace_back(0x00ff & ((uint8_t) string_char)); // convert uint16
-    }
-  }
+  for (auto string_char : t_string) result.emplace_back(0x00ff & string_char);
   return result;
 }
 
@@ -286,45 +280,75 @@ vector<RawChar> convert_string_to_rawchar(const string& t_string)
 
 vector<int> parse_references(const string& t_string)
 {
-  enum RefState // defines the possible states of the finite state machine (fsm)
+  // Defines the possible states of the finite state machine (fsm)
+  enum ReferenceState
   {
     WAIT_FOR_START, // Waiting for an integer
     IN_FIRST_INT,   // In an integer
     WAIT_FOR_GEN,   // Waiting for a generation number
-    IN_GEN,         // In a second integer
+    IN_GEN,         // In a second integer (generation number)
     WAIT_FOR_R      // Wait to see if next char is R to confirm this is a ref
   };
+
   vector<int> result; // vector to hold result
-  string buf; // a buffer to hold characters until stored or discarded
-  RefState state = WAIT_FOR_START; // the current state of the fsm
-  for(const auto& i : t_string)
+  string buffer; // a buffer to hold characters until stored or discarded
+  ReferenceState state = WAIT_FOR_START; // the current state of the fsm
+
+  // The main loop cycles through each char in the string to write the result
+  for (const auto& chr : t_string)
   {
-    char m = get_symbol_type(i);
+    char m = get_symbol_type(chr);
     switch(state)
     {
-      case WAIT_FOR_START:  if(m == 'D'){ buf += i; state = IN_FIRST_INT;}
+      // To begin with, ignore all input until a digit is reached
+      case WAIT_FOR_START:  if (m == 'D'){ buffer += chr; state = IN_FIRST_INT;}
                             break;
+
+      // Now in the first int. Write digits to the buffer until a space is
+      // reached, at which point we assume we have found the object number
+      // and are waiting for the generation number. If we come across anything
+      // other than a space or digit, we were not in the object number and we
+      // go back to a waiting state while progressing through the string.
       case IN_FIRST_INT:    switch(m)
                             {
-                              case 'D' : buf += i;              break;
+                              case 'D' : buffer += chr;         break;
                               case ' ' : state = WAIT_FOR_GEN;  break;
-                              default  : buf.clear();
+                              default  : buffer.clear();
                                          state = WAIT_FOR_START;
                             }
                             break;
-      case WAIT_FOR_GEN:    if(m == 'D') state = IN_GEN;
-                            else         state = WAIT_FOR_START;
+
+      // We have come across a single int, which is sitting in the buffer, and
+      // a subsequent space, so if all goes to plan the next char should be a
+      // digit. If so, we proceed; otherwise, we start looking again from the
+      // current point in the string
+      case WAIT_FOR_GEN:    if (m == 'D') state = IN_GEN;
+                            else {buffer.clear(); state = WAIT_FOR_START;}
                             break;
+
+      // We now have an integer stored in the buffer, and confirmed this was
+      // followed by a space then another digit. We expect the next char to be
+      // a space, or very rarely a digit followed by a space if the generation
+      // number is >9. A digit therefore means we stay in this state waiting for
+      // a space. A space means we should switch to waiting for an R. Any other
+      // char means this is not a reference and we start looking again from
+      // this point in the string
       case IN_GEN:          switch(m)
                             {
                               case 'D' :                        break;
                               case ' ' : state = WAIT_FOR_R;    break;
-                              default  : buf.clear();
+                              default  : buffer.clear();
                                          state = WAIT_FOR_START;
                             }
                             break;
-      case WAIT_FOR_R:      if(i == 'R') result.push_back(stoi(buf));
-                            buf.clear(); state = WAIT_FOR_START;
+
+      // If we get here, we have come through two integers, each of which has
+      // been followed by a space. The first is stored in the buffer. If the
+      // next char is 'R', this was a reference and we store the integer in
+      // the buffer as an int. In either case, we wipe the buffer and start
+      // looking for the next reference until the end of the given string
+      case WAIT_FOR_R:      if (chr == 'R') result.push_back(stoi(buffer));
+                            buffer.clear(); state = WAIT_FOR_START;
                             break;
     }
   }
@@ -338,44 +362,48 @@ vector<int> parse_references(const string& t_string)
 
 vector<int> parse_ints(const string& t_string)
 {
-  vector<int> result; // vector to store results
-  string buf;  // string buffer to hold characters which may be ints
-  enum IntState
+  // Define the possible states of the lexer
+    enum IntState
   {
-    WAITING,// waiting for digit or minus sign
-    NEG,    // found a minus sign, looking to see if this starts a negative int
-    INT,    // found a digit, now recording successive digits to buffer
-    IGNORE  // ignoring any digits between decimal point and next non-number
+    WAITING,// Waiting for digit or minus sign
+    NEG,    // Found a minus sign, looking to see if this starts a negative int
+    INT,    // Found a digit, now recording successive digits to buffer
+    IGNORE  // Ignoring any digits between decimal point and next non-number
   };
+
+  vector<int> result; // vector to store results
+  string buffer;      // string buffer to hold characters which may be ints
   IntState state = WAITING; // current state of fsm.
-  for(auto i : t_string)
+
+  // The main loop cycles through each char in the string to write the result
+  for (auto chr : t_string)
   {
-    char m = get_symbol_type(i);
+    char m = get_symbol_type(chr);
     switch(state)
     {
-      case WAITING: if(m == 'D')
+      case WAITING: if (m == 'D')
                     {
-                      if(buf.length() > 10) state = IGNORE;
-                      else {buf += i;state = INT;}
+                      if (buffer.length() > 10) state = IGNORE;
+                      else {buffer += chr;state = INT;}
                     }
-                    else if(i == '-'){ buf += i; state = NEG;}
+                    else if (chr == '-'){ buffer += chr; state = NEG;}
                     break;
-      case NEG    : if(m == 'D'){buf += i; state = INT;}
-                    else { buf.clear(); state = WAITING;}
+      case NEG    : if (m == 'D'){buffer += chr; state = INT;}
+                    else { buffer.clear(); state = WAITING;}
                     break;
-      case INT    : if(m == 'D') buf += i;
+      case INT    : if (m == 'D') buffer += chr;
                     else
                     {
-                      if(buf != "-") result.push_back(stoi(buf));
-                      buf.clear();
-                      if(i == '.') state = IGNORE;
+                      if (buffer != "-") result.push_back(stoi(buffer));
+                      buffer.clear();
+                      if (chr == '.') state = IGNORE;
                       else         state = WAITING;
                     }
                     break;
-      case IGNORE : if(m != 'D') state = WAITING; break;
+      case IGNORE : if (m != 'D') state = WAITING; break;
     }
   }
-  if(state == INT && !buf.empty()) result.push_back(stoi(buf));
+  if (state == INT && !buffer.empty()) result.push_back(stoi(buffer));
   return result;
 }
 
@@ -388,7 +416,7 @@ vector<int> parse_ints(const string& t_string)
 vector<float> parse_floats(const string& t_string)
 {
   vector<float> result; // vector to store and return results
-  string buf; // a buffer to hold characters until stored or discarded
+  string buffer; // a buffer to hold characters until stored or discarded
   enum FloatState // The possible states of the fsm
   {
     WAITING,// awaiting the first character that might represent a number
@@ -397,65 +425,67 @@ vector<float> parse_floats(const string& t_string)
     POST    // Have read integer and found point, now reading fractional number
   };
   FloatState state = WAITING; // current state of fsm
-  for(const auto& i : t_string)
+  for (const auto& chr : t_string)
   {
-    char m = get_symbol_type(i);
+    char m = get_symbol_type(chr);
     switch(state)
     {
-    case WAITING: if(m == 'D'){ buf += i; state = PRE;}
-                  else if(i == '-'){ buf += i; state = NEG;}
-                  else if(i == '.'){ buf += i; state = POST;}
+    case WAITING: if (m == 'D'){ buffer += chr; state = PRE;}
+                  else if (chr == '-'){ buffer += chr; state = NEG;}
+                  else if (chr == '.'){ buffer += chr; state = POST;}
                   break;
-    case NEG:     if(m == 'D'){ buf += i; state = PRE;}
-                  else if (i == '.'){ buf = "-0."; state = POST;}
-                  else {buf.clear(); state = WAITING;}
+    case NEG:     if (m == 'D'){ buffer += chr; state = PRE;}
+                  else if (chr == '.'){ buffer = "-0."; state = POST;}
+                  else {buffer.clear(); state = WAITING;}
                   break;
-    case PRE:     if(m == 'D') buf += i;
-                  else if (i == '.'){ buf += i; state = POST;}
+    case PRE:     if (m == 'D') buffer += chr;
+                  else if (chr == '.'){ buffer += chr; state = POST;}
                   else
                   {
-                    if(buf != "-") result.push_back(stof(buf));
-                    buf.clear(); state = WAITING;
+                    if (buffer != "-") result.push_back(stof(buffer));
+                    buffer.clear(); state = WAITING;
                   }
                   break;
-    case POST:    if(m == 'D') buf += i;
-                  else{ result.push_back(stof(buf));
-                        state = WAITING; buf.clear();}
+    case POST:    if (m == 'D') buffer += chr;
+                  else{ result.push_back(stof(buffer));
+                        state = WAITING; buffer.clear();}
                   break;
     }
   }
-  if(state == PRE && !buf.empty()) result.push_back(stof(buf));
-  if(state == POST && buf != "-0.") result.push_back(stof(buf));
+  if (state == PRE  && !buffer.empty()) result.push_back(stof(buffer));
+  if (state == POST && buffer != "-0.") result.push_back(stof(buffer));
   return result;
 }
 
 /*--------------------------------------------------------------------------*/
 // Loads a file's contents into a single std::string using <fstream>
 
-string get_file(const string& file)
+string get_file(const string& t_file)
 {
   // A new string in which to store file contents.
-  string filestring;
+  string file_string;
 
   // Open connection to file
-  ifstream fileCon(file.c_str(), ios::in | ios::binary);
+  ifstream file_stream(t_file.c_str(), ios::in | ios::binary);
+
+  if (!file_stream) throw runtime_error("Couldn't open file.");
 
   // Move to end of file
-  fileCon.seekg(0, ios::end);
+  file_stream.seekg(0, ios::end);
 
   // Ensure string is big enough
-  filestring.resize(fileCon.tellg());
+  file_string.resize(file_stream.tellg());
 
   // Move to start of file
-  fileCon.seekg(0, ios::beg);
+  file_stream.seekg(0, ios::beg);
 
   // Copy contents
-  fileCon.read(&filestring[0], filestring.size());
+  file_stream.read(&file_string[0], file_string.size());
 
   // Ensure the connection is closed before proceeding
-  fileCon.close();
+  file_stream.close();
 
-  return filestring;
+  return file_string;
 }
 
 

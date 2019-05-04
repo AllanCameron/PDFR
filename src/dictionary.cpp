@@ -135,7 +135,7 @@ void dict_builder::tokenize_dict()
   // set a limit on how far the lexer will read into a string
   size_t maxlen = i + MAX_DICT_LEN;
   // Main loop : read next char from string and pass to state handling function
-  while(i < s->length() && i < maxlen)
+  while (i < s->length() && i < maxlen)
   {
     S = (*s)[i];
     char n = get_symbol_type(S); // determine char type at start of each loop
@@ -353,7 +353,7 @@ void dict_builder::handleClose(char n)
                 if((*s).substr(i, 6) == "stream") // OK, so is it "stream"?
                 {
                   int ex = 7;
-                  while(get_symbol_type((*s)[i + ex]) == ' ')
+                  while (get_symbol_type((*s)[i + ex]) == ' ')
                     ex++; // read the whitespace characters after word "stream"
                   // Now store the location of the start of the stream
                   m_Map["stream"] = to_string(i + ex);

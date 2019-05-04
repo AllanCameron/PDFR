@@ -197,7 +197,7 @@ public:
     Node next_node_up = parent;
 
     // While next_node_up has a valid parent, make its parent next_node_up
-    while(next_node_up->parent)
+    while (next_node_up->parent)
     {
       next_node_up = next_node_up->parent;
     }
@@ -224,7 +224,7 @@ public:
 
     // Now for the parent node, we append its object to our result, and repeat
     // the process until we hit a nullptr, at which point we're done
-    while(next_parent)
+    while (next_parent)
     {
       res.push_back(next_parent->objnum);
       next_parent = next_parent->parent;

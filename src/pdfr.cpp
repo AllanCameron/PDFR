@@ -369,7 +369,7 @@ Rcpp::DataFrame pdfdoc_common(shared_ptr<Document> document_ptr)
     concat(glyph,  table.text);
 
     // Add a page number entry for each text element
-    while(page_number_of_element.size() < glyph.size())
+    while (page_number_of_element.size() < glyph.size())
     {
       page_number_of_element.push_back(page_number + 1);
     }
