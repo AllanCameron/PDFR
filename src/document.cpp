@@ -71,12 +71,12 @@ void document::build_document()
 
 /*---------------------------------------------------------------------------*/
 // One of two public interface functions after document object creation. This
-// returns an object of object_class with the requested object number. It first
+// returns an object of Object class with the requested object number. It first
 // checks to see whether that object has been retrieved before. If so, it
 // returns it from the 'objects' vector. If not, it creates the object then
 // stores a copy in the 'objects' vector before returning the requested object.
 
-shared_ptr<object_class> document::get_object(int n)
+shared_ptr<Object> document::get_object(int n)
 {
   // Check if object n is already stored
   if(m_objects.find(n) == m_objects.end())
@@ -85,10 +85,10 @@ shared_ptr<object_class> document::get_object(int n)
     size_t holder = m_xref->get_holding_object_number_of(n);
 
     // If object is in a stream, create it recursively from the stream object
-    if(holder) m_objects[n] = make_shared<object_class>(get_object(holder), n);
+    if(holder) m_objects[n] = make_shared<Object>(get_object(holder), n);
 
     // Otherwise create & store it directly
-    else m_objects[n] = make_shared<object_class>(m_xref, n);
+    else m_objects[n] = make_shared<Object>(m_xref, n);
   }
 
   return m_objects[n];

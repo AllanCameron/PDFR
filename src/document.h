@@ -88,7 +88,7 @@ public:
   document();                                     // default constructor
 
   // public member functions
-  std::shared_ptr<object_class> get_object(int); // creates object and
+  std::shared_ptr<Object> get_object(int); // creates object and
                                                  // returns pointer
   Dictionary get_page_header(int);  // returns header dictionary for page p
 
@@ -106,11 +106,11 @@ private:
   Dictionary m_catalog;               // The pdf catalog dictionary
   std::vector<int> m_page_object_numbers;
 
-  // This map holds object_class objects. Since some objects may be read
+  // This map holds Object objects. Since some objects may be read
   // multiple times, it is best to store them when they are first created,
   // then return the stored object on request rather than creating a new
   // instance of the object every time it is requested.
-  std::unordered_map <int, std::shared_ptr<object_class>> m_objects;
+  std::unordered_map <int, std::shared_ptr<Object>> m_objects;
 
   // private member functions used in construction only
   void read_catalog();        // finds and stores the catalog dictionary

@@ -71,7 +71,7 @@ class xrefstream
 // The xref constructor. It takes the entire file contents as a string
 // then sequentially runs the steps in creation of an xref master map
 
-xref::xref(shared_ptr<const std::string> s) :
+xref::xref(shared_ptr<const string> s) :
   m_file_string(s), m_encrypted(false)
 {
   locate_xrefs();           // Find all xrefs
@@ -133,7 +133,7 @@ void xref::read_xref_strings()
     int len = m_file_string->find("startxref", start) - start;
 
     // Throw error if no xref found
-    if (len <= 0) throw std::runtime_error("No object found at location");
+    if (len <= 0) throw runtime_error("No object found at location");
 
     // Extract the xref string
     string&& fullxref = m_file_string->substr(start, len);
@@ -188,7 +188,7 @@ void xref::read_xref_from_stream(int xref_location)
 // described, respectively. Thereafter the rows represent sequential objects
 // counted from the first.
 
-void xref::read_xref_from_string(std::string& xref_string)
+void xref::read_xref_from_string(string& xref_string)
 {
   auto all_ints = parse_ints(xref_string);
 
@@ -258,7 +258,7 @@ size_t xref::get_holding_object_number_of(int object_number) const
 /*---------------------------------------------------------------------------*/
 // Returns vector of all objects listed in the xrefs
 
-std::vector<int> xref::get_all_object_numbers() const
+vector<int> xref::get_all_object_numbers() const
 {
   return getKeys(this->m_xref_table);
 }
@@ -303,7 +303,7 @@ array<size_t, 2> xref::get_stream_location(int object_start) const
 /*---------------------------------------------------------------------------*/
 // Wrapper for Encryption object so that xref is the only class that uses it
 
-void xref::decrypt(std::string& s, int obj, int gen) const
+void xref::decrypt(string& s, int obj, int gen) const
 {
   m_encryption->decryptStream(s, obj, gen);
 }
@@ -348,7 +348,7 @@ void xref::create_crypto()
 /*---------------------------------------------------------------------------*/
 // simple getter for the output of an xrefstream
 
-std::vector<std::vector<int>> xrefstream::table()
+vector<vector<int>> xrefstream::table()
 {
   return m_result;
 }
@@ -356,7 +356,7 @@ std::vector<std::vector<int>> xrefstream::table()
 /*---------------------------------------------------------------------------*/
 // get a pointer to the original document
 
-std::shared_ptr<const std::string> xref::file() const
+shared_ptr<const string> xref::file() const
 {
   return this->m_file_string;
 }
@@ -376,7 +376,7 @@ xrefstream::xrefstream(shared_ptr<xref> Xref, int starts) :
 {
   // If there is no /W entry, we don't know how to interpret the stream.
   if(!m_dict.contains_ints("/W"))
-    throw std::runtime_error("No /W entry for stream.");
+    throw runtime_error("No /W entry for stream.");
 
   read_index();       // Read Index so we know which objects are in stream
   read_parameters();  // Read the PNG decoding parameters
@@ -454,15 +454,15 @@ void xrefstream::read_parameters()
 void xrefstream::get_raw_matrix()
 {
   auto sl = m_XR->get_stream_location(m_objstart);// finds stream location
-  std::string SS = m_XR->file()->substr(sl[0], sl[1] - sl[0]); // get stream
+  string SS = m_XR->file()->substr(sl[0], sl[1] - sl[0]); // get stream
 
   if(m_dict.get_string("/Filter").find("/FlateDecode", 0) != string::npos)
   {
     FlateDecode(SS); // applies decompression to stream if needed
   }
 
-  std::vector<uint8_t> conv(SS.begin(), SS.end());  // convert string to bytes..
-  std::vector<int> intstrm(conv.begin(), conv.end()); // and bytes to ints
+  vector<uint8_t> conv(SS.begin(), SS.end());  // convert string to bytes..
+  vector<int> intstrm(conv.begin(), conv.end()); // and bytes to ints
 
   // read the /W entry to get the width in bytes of each column in the table
   // check the widths for any zero values and skip them if present
@@ -522,7 +522,7 @@ void xrefstream::modulo_transpose()
   for(size_t i = 0; i < m_rawMatrix.at(0).size(); ++i)
   {
     // Create a new column vector
-    std::vector<int> tempcol;
+    vector<int> tempcol;
 
     // Then for each entry in the row make it modulo 256 and push to new column
     for(auto& j : m_rawMatrix) tempcol.push_back(j[i] & 0x00ff);
@@ -562,19 +562,19 @@ void xrefstream::merge_columns()
   for(int k = 0, cumsum = 0; k < (int) m_arrayWidths.size(); ++k)
   {
     // take a zero-filled column the size of those in the unmerged array
-    std::vector<int> newCol(m_finalArray[0].size(), 0);
+    vector<int> newCol(m_finalArray[0].size(), 0);
 
     // for each width value
     for(int j = 0; j < m_arrayWidths[k]; j++)
     {
       // Add the column to be merged to the new column
-      std::transform(newCol.begin(), newCol.end(),
+      transform(newCol.begin(), newCol.end(),
                      m_finalArray[cumsum + j].begin(),
-                     newCol.begin(), std::plus<int>());
+                     newCol.begin(), plus<int>());
     }
 
     // This is a final column - push it to result
-    m_result.emplace_back(std::move(newCol));
+    m_result.emplace_back(move(newCol));
 
     // move to the next column in the final result
     cumsum += m_arrayWidths[k];

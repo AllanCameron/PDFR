@@ -36,7 +36,7 @@
  * the last step before the main document class is declared.
  *
  * The object class comprises the data and functions needed to represent a pdf
- * object. Each object_class object is made of two main items of data: a
+ * object. Each Object object is made of two main items of data: a
  * dictionary (which can be empty), and a pair of size_t indicating the offset
  * of the stream's start and stop. The reason we don't just build the stream
  * is that decryption and deflation of large streams is computationally
@@ -61,36 +61,35 @@
 
 //---------------------------------------------------------------------------//
 
-class object_class
+class Object
 {
 public:
   // constructors
-  object_class(std::shared_ptr<const xref>, int objnum);  // get direct object
-  object_class(std::shared_ptr<object_class>, int objnum);
-  object_class(){}; // default constructor (needed for document class to
+  Object(std::shared_ptr<const xref>, int);  // get direct object
+  Object(std::shared_ptr<Object>, int);
+  Object(){}; // default constructor (needed for document class to
                     // initialize its vector of objects)
 
   // public member functions
   bool has_stream();               // returns has_stream boolean
   std::string get_stream();        // returns stream as string
   Dictionary get_dictionary();    // returns header as dictionary object
-  std::string objFromStream(int); // returns object from this object's stream
 
 private:
   // private data members
-  std::shared_ptr<const xref> XR; // Pointer to xref allows data to be found
-  int number,                     // The object knows its own number
-      startpos;                   // The object knows its own starting position
-  Dictionary header;              // The object's dictionary
-  std::string stream;             // The object's stream or contents
-  std::array<size_t, 2> m_streampos; // start/stop offsets for stream position
+  std::shared_ptr<const xref> m_xref; // Pointer to xref allows data to be found
+  int m_object_number;            // The object knows its own number
+  Dictionary m_header;              // The object's dictionary
+  std::string m_stream;             // The object's stream or contents
+  std::array<size_t, 2> m_stream_location; // start/stop for stream position
 
   // index for object stream holders
-  std::unordered_map<int, std::pair<int, int>> objstmIndex;
+  std::unordered_map<int, std::pair<int, int>> m_object_stream_index;
 
   // private methods
-
-  void indexObjectStream();       // gets index of objects held by a stream
+  void index_object_stream();       // gets index of objects held by a stream
+  void read_stream_from_stream_locations();
+  void apply_filters();
 };
 
 //---------------------------------------------------------------------------//

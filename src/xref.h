@@ -98,7 +98,7 @@ class xref
 public:
   // constructors
   xref(){};
-  xref(std::shared_ptr<const std::string>); // Constructor
+  xref(std::shared_ptr<const std::string>);
 
   // public methods
   bool is_encrypted() const;           // Eeturns encryption state
@@ -126,7 +126,7 @@ private:
   void read_xref_strings();               // Gets strings from xref locations
   void read_xref_from_stream(int);        // Uses xrefstream class to get xref
   void read_xref_from_string(std::string&);   // parses xref directly
-  void create_crypto();                     // Allows decryption of encrypted docs
+  void create_crypto();                   // Allows decryption of encrypted docs
 };
 
 //---------------------------------------------------------------------------//
