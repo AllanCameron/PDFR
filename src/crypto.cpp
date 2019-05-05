@@ -89,10 +89,7 @@ ByteVector Crypto::chop_long(FourBytes t_long_int) const
 
   // Create a length-4 vector of bytes filled with low-high bytes from longint
   ByteVector result(4, 0);
-  for (int i = 0; i < 4; ++i)
-  {
-    result[i] = (t_long_int >> (8 * i)) & mask;
-  }
+  for (int i = 0; i < 4; ++i) result[i] = (t_long_int >> (8 * i)) & mask;
 
   return result;
 }
@@ -138,41 +135,48 @@ ByteVector Crypto::read_permissions(std::string t_string)
 // This function is called several times with different parameters as part
 // of the main md5 algorithm. It can be considered a "shuffler" of bytes
 
-void Crypto::md5_mix(int n, deque<FourBytes>& m, vector<FourBytes>& x) const
+void Crypto::md5_mix(int t_cycle,
+                     deque<FourBytes>& t_deque,
+                     vector<FourBytes>& t_fingerprint) const
 {
   // Declare and define some pseudorandom numbers
-  FourBytes mixer, e, f = md5_table[n], g = mixarray[n / 16][n % 4];
+  FourBytes mixer,
+            e,
+            f = md5_table[t_cycle],
+            g = mixarray[t_cycle / 16][t_cycle % 4];
 
   // Mangle bytes in various ways as per md5 algorithm
-  switch(n / 16 + 1)
+  switch(t_cycle / 16 + 1)
   {
-    case 1  : e = x[(1 * n + 0) % 16];
-              mixer = (m[0] + ((m[1] & m[2]) |
-                      (~m[1] & m[3])) + e + f);
+    case 1  : e     = t_fingerprint[(1 * t_cycle + 0) % 16];
+              mixer = (t_deque[0] + ((t_deque[1] & t_deque[2]) |
+                      (~t_deque[1] & t_deque[3])) + e + f);
               break;
 
-    case 2  : e = x[(5 * n + 1) % 16];
-              mixer = (m[0] + ((m[1] & m[3]) |
-                      (m[2] & ~m[3])) + e + f);
+    case 2  : e     = t_fingerprint[(5 * t_cycle + 1) % 16];
+              mixer = (t_deque[0] + ((t_deque[1] & t_deque[3]) |
+                      (t_deque[2] & ~t_deque[3])) + e + f);
               break;
 
-    case 3  : e = x[(3 * n + 5) % 16];
-              mixer = (m[0] + (m[1] ^ m[2] ^ m[3]) + e + f);
+    case 3  : e     = t_fingerprint[(3 * t_cycle + 5) % 16];
+              mixer = (t_deque[0] + (t_deque[1] ^ t_deque[2] ^
+                       t_deque[3]) + e + f);
               break;
 
-    case 4  : e = x[(7 * n + 0) % 16];
-              mixer = (m[0] + (m[2] ^ (m[1] | ~m[3])) + e + f);
+    case 4  : e     = t_fingerprint[(7 * t_cycle + 0) % 16];
+              mixer = (t_deque[0] + (t_deque[2] ^
+                      (t_deque[1] | ~t_deque[3])) + e + f);
               break;
 
     default: throw runtime_error("md5 error: n > 63");
   }
 
   // further bit shuffling:
-  m[0] = m[1] + (((mixer << g) | (mixer >> (32 - g))) & 0xffffffff);
+  t_deque[0] = t_deque[1] + (((mixer << g) | (mixer >> (32 - g))) & 0xffffffff);
 
   // now push all elements to the left (with aliasing)
-  m.push_front(m.back());
-  m.pop_back();
+  t_deque.push_front(t_deque.back());
+  t_deque.pop_back();
 }
 
 /*---------------------------------------------------------------------------*/
@@ -246,10 +250,10 @@ ByteVector Crypto::md5(ByteVector t_message) const
     deque<FourBytes> initial_deque = mixvars;
 
     // Shuffle fingerprint 64 times
-    for (int n = 0; n < 64; n++) md5_mix(n, mixvars, fingerprint);
+    for (int i = 0; i < 64; i++) md5_mix(i, mixvars, fingerprint);
 
     // Add initial random numbers
-    for (int m = 0; m < 4;  m++) mixvars[m] += initial_deque[m];
+    for (int i = 0; i < 4;  i++) mixvars[i] += initial_deque[i];
   }
 
   ByteVector output; // create empty output vector for output
@@ -378,6 +382,7 @@ ByteVector Crypto::get_password(const string& t_key)
       if (*(i + 1) == '\\') temp.push_back('\\');
     }
     else temp.push_back(*i);
+
     if (temp.size() == 32)
     {
       swap(temp, password);
@@ -436,11 +441,8 @@ void Crypto::get_file_key()
 
 void Crypto::check_key_r2()
 {
-  // Get the pdf's hashed user password
-  ByteVector ubytes = get_password("/U");
-
-  // Get the default (unhashed) user password
-  ByteVector checkans = sm_default_user_password;
+  // Get the pdf's hashed user password and the default user password
+  ByteVector ubytes = get_password("/U"), checkans = sm_default_user_password;
 
   // rc4 the default user password using the supplied filekey
   rc4(checkans, m_filekey);
@@ -459,7 +461,15 @@ void Crypto::check_key_r2()
 
 void Crypto::check_key_r3()
 {
-  // We start with the default user password
+  // We start by md5 hashing the filekey 50 times
+  size_t key_length = m_filekey.size();
+  for (int i = 0; i < 50; ++i)
+  {
+    m_filekey = md5(m_filekey);
+    m_filekey.resize(key_length);
+  }
+
+  // Next get the default user password
   ByteVector user_password = sm_default_user_password;
 
   // We now append the bytes from the ID entry of the trailer dictionary
@@ -516,20 +526,8 @@ Crypto::Crypto(Dictionary t_encrypt_dict, Dictionary t_trailer) :
 
   get_file_key();
 
-  if (m_revision == 2) check_key_r2(); // if rnum 2, check it and we're done
+  // if revision 2, check it and we're done. Otherwise use revision 3
+  if (m_revision == 2) check_key_r2();
+  else check_key_r3();
 
-  //  Otherwise we're going to md5 and trim the filekey 50 times
-  else
-  {
-    size_t key_length = m_filekey.size();
-
-    for (int i = 0; i < 50; ++i)
-    {
-      m_filekey = md5(m_filekey);
-      m_filekey.resize(key_length);
-    }
-
-    // Check the filekey and we're done
-    check_key_r3();
-  }
 }
