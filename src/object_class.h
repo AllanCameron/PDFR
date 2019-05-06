@@ -65,7 +65,7 @@ class Object
 {
 public:
   // constructors
-  Object(std::shared_ptr<const xref>, int);  // get direct object
+  Object(std::shared_ptr<const XRef>, int);  // get direct object
   Object(std::shared_ptr<Object>, int);
   Object(){}; // default constructor (needed for document class to
                     // initialize its vector of objects)
@@ -77,7 +77,7 @@ public:
 
 private:
   // private data members
-  std::shared_ptr<const xref> m_xref; // Pointer to xref allows data to be found
+  std::shared_ptr<const XRef> m_xref; // Pointer to xref allows data to be found
   int m_object_number;            // The object knows its own number
   Dictionary m_header;              // The object's dictionary
   std::string m_stream;             // The object's stream or contents

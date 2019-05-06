@@ -82,12 +82,12 @@ public:
 
 private:
   // private data members
-  Dictionary m_encryption_dictionary;
-  Dictionary m_trailer;
-  int        m_revision;
-  ByteVector m_filekey;
+  Dictionary encryption_dictionary_;
+  Dictionary trailer_;
+  int        revision_;
+  ByteVector filekey_;
 
-  static  ByteVector sm_default_user_password;
+  static  ByteVector default_user_password_;
 
   // Chops FourBytes into 4 bytes
   ByteVector chop_long(FourBytes) const;

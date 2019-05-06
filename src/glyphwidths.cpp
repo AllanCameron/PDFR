@@ -46,7 +46,7 @@ using namespace std;
 glyphwidths::glyphwidths(Dictionary& dic, shared_ptr<Document> doc):
   m_font_dictionary(dic), m_document(doc)
 {
-  m_base_font = m_font_dictionary.get_string("/BaseFont");
+  m_base_font = m_font_dictionary.GetString("/BaseFont");
   getCoreFont();
   if(m_width_map.empty()) getWidthTable();
 }
@@ -60,10 +60,10 @@ glyphwidths::glyphwidths(Dictionary& dic, shared_ptr<Document> doc):
 void glyphwidths::getWidthTable()
 {
   // If widths entry specified, use this by calling parsewidths method
-  if (m_font_dictionary.has_key("/Widths")) parseWidths();
+  if (m_font_dictionary.HasKey("/Widths")) parseWidths();
 
   // otherwise look in descendants using parseDescendants method
-  else if(m_font_dictionary.contains_references("/DescendantFonts"))
+  else if(m_font_dictionary.ContainsReferences("/DescendantFonts"))
     parseDescendants();
 
   // otherwise we have no font widths specified and need to use default values
@@ -84,20 +84,20 @@ void glyphwidths::parseWidths()
   RawChar firstchr = 0x0000;
 
   // Otherwise we read the firstchar entry
-  if(m_font_dictionary.contains_ints("/FirstChar"))
+  if(m_font_dictionary.ContainsInts("/FirstChar"))
   {
-    firstchr = m_font_dictionary.get_ints("/FirstChar")[0];
+    firstchr = m_font_dictionary.GetInts("/FirstChar")[0];
   }
   // Annoyingly, widths sometimes contains a pointer to another object that
   // contains the width array, either in a stream or as a 'naked object'.
   // Note that contents of a naked object are stored as the object's 'stream'.
 
   // Handle /widths being a reference to another object
-  if (m_font_dictionary.contains_references("/Widths"))
+  if (m_font_dictionary.ContainsReferences("/Widths"))
   {
     // Get the referenced object
     auto width_object =
-      m_document->get_object(m_font_dictionary.get_reference("/Widths"));
+      m_document->get_object(m_font_dictionary.GetReference("/Widths"));
 
     // Get the referenced object's stream
     string ostring(width_object->get_stream());
@@ -106,7 +106,7 @@ void glyphwidths::parseWidths()
     widtharray = parse_floats(ostring);
   }
   // If /Widths is not a reference get the widths directly
-  else  widtharray = m_font_dictionary.get_floats("/Widths");
+  else  widtharray = m_font_dictionary.GetFloats("/Widths");
 
   // If a width array was found
   if (!widtharray.empty())
@@ -130,7 +130,7 @@ void glyphwidths::parseDescendants()
 {
   // get a pointer to the descendantfonts object
   auto desc =
-    m_document->get_object(m_font_dictionary.get_reference("/DescendantFonts"));
+    m_document->get_object(m_font_dictionary.GetReference("/DescendantFonts"));
 
   // Extract its dictionary and its stream
   Dictionary descdict = desc->get_dictionary();
@@ -144,20 +144,20 @@ void glyphwidths::parseDescendants()
   }
 
   // We now look for the /W key and if it is found parse its contents
-  if (descdict.has_key("/W"))
+  if (descdict.HasKey("/W"))
   {
     // We will fill this string with width array when found
     string widthstring;
 
     // sometimes the /W entry only contains a pointer to the containing object
-    if (descdict.contains_references("/W"))
+    if (descdict.ContainsReferences("/W"))
     {
       widthstring =
-        m_document->get_object(descdict.get_reference("/W"))->get_stream();
+        m_document->get_object(descdict.GetReference("/W"))->get_stream();
     }
 
     // otherwise we assume /W contains the widths needed
-    else widthstring = descdict.get_string("/W");
+    else widthstring = descdict.GetString("/W");
 
     // in either case widthstring should now contain the /W array which we
     // now need to parse using our lexer method

@@ -48,7 +48,7 @@ m_d(doc), m_fontref(Fontref), m_FontID(fontid)
 
 void Font::getFontName()
 {
-  string BaseFont(m_fontref.get_string("/BaseFont")); // reads BaseFont entry
+  string BaseFont(m_fontref.GetString("/BaseFont")); // reads BaseFont entry
 
   if(BaseFont.size() > 7 && BaseFont[7] == '+')
   {

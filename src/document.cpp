@@ -41,7 +41,7 @@ using namespace std;
 // from which buildDoc() then creates the object
 
 Document::Document(const string& filename) :
-  m_file_path(filename), m_file_string(get_file(m_file_path))
+  file_path_(filename), file_string_(get_file(file_path_))
 {
   build_document(); // Call constructor helper to build Document
 }
@@ -52,7 +52,7 @@ Document::Document(const string& filename) :
 // to construct the Document object
 
 Document::Document(const vector<uint8_t>& bytevector) :
-  m_file_string(std::string(bytevector.begin(), bytevector.end()))
+  file_string_(std::string(bytevector.begin(), bytevector.end()))
 {
   build_document(); // Call constructor helper to build Document
 }
@@ -64,7 +64,7 @@ Document::Document(const vector<uint8_t>& bytevector) :
 
 void Document::build_document()
 {
-  m_xref = make_shared<const xref>(make_shared<string>(m_file_string));
+  xref_ = make_shared<const XRef>(make_shared<string>(file_string_));
   read_catalog();             // Gets the catalog dictionary
   read_page_directory();             // Gets the /Pages dictionary
 }
@@ -79,19 +79,19 @@ void Document::build_document()
 shared_ptr<Object> Document::get_object(int n)
 {
   // Check if object n is already stored
-  if(m_objects.find(n) == m_objects.end())
+  if(objects_.find(n) == objects_.end())
   {
     // If it is not stored, check whether it is in an object stream
-    size_t holder = m_xref->get_holding_number_of(n);
+    size_t holder = xref_->GetHoldingNumberOf(n);
 
     // If object is in a stream, create it recursively from the stream object
-    if(holder) m_objects[n] = make_shared<Object>(get_object(holder), n);
+    if(holder) objects_[n] = make_shared<Object>(get_object(holder), n);
 
     // Otherwise create & store it directly
-    else m_objects[n] = make_shared<Object>(m_xref, n);
+    else objects_[n] = make_shared<Object>(xref_, n);
   }
 
-  return m_objects[n];
+  return objects_[n];
 }
 
 /*---------------------------------------------------------------------------*/
@@ -103,10 +103,10 @@ shared_ptr<Object> Document::get_object(int n)
 void Document::read_catalog()
 {
   // The pointer to the catalog is given under /Root in the trailer dictionary
-  int root_number = m_xref->get_trailer().get_reference("/Root");
+  int root_number = xref_->GetTrailer().GetReference("/Root");
 
   // With errors handled, we can now just get the pointed-to object's dictionary
-  m_catalog = get_object(root_number)->get_dictionary();
+  catalog_ = get_object(root_number)->get_dictionary();
 }
 
 /*---------------------------------------------------------------------------*/
@@ -117,23 +117,23 @@ void Document::read_catalog()
 void Document::read_page_directory()
 {
   // Else get the object number of the /Pages dictionary
-  int page_object_number = m_catalog.get_reference("/Pages");
+  int page_object_number = catalog_.GetReference("/Pages");
 
   // Now fetch that object and store it
-  m_page_directory = get_object(page_object_number)->get_dictionary();
+  page_directory_ = get_object(page_object_number)->get_dictionary();
 
   // Ensure /Pages has /kids entry
-  if (!m_page_directory.contains_references("/Kids"))
+  if (!page_directory_.ContainsReferences("/Kids"))
     throw runtime_error("No Kids entry in /Pages");
 
   // Create the page directory tree. Start with the pages object as root node
   auto root = make_shared<tree_node<int>>(page_object_number);
 
   // Populate the tree
-  expand_kids(m_page_directory.get_references("/Kids"), root);
+  expand_kids(page_directory_.GetReferences("/Kids"), root);
 
   // Get the leafs of the tree
-  m_page_object_numbers = root->getLeafs();
+  page_object_numbers_ = root->getLeafs();
 }
 
 /*---------------------------------------------------------------------------*/
@@ -172,7 +172,7 @@ void Document::expand_kids(const vector<int>& object_numbers,
   for(auto& kid : kid_nodes)
   {
     auto refs =
-      get_object(kid->get())->get_dictionary().get_references("/Kids");
+      get_object(kid->get())->get_dictionary().GetReferences("/Kids");
 
     // If it has children, use recursion to get them
     if (!refs.empty()) expand_kids(refs, kid);
@@ -185,13 +185,13 @@ void Document::expand_kids(const vector<int>& object_numbers,
 Dictionary Document::get_page_header(int page_number)
 {
   // Ensure the pagenumber is valid
-  if((m_page_object_numbers.size() < (size_t) page_number) || page_number < 0)
+  if((page_object_numbers_.size() < (size_t) page_number) || page_number < 0)
   {
     throw runtime_error("Invalid page number");
   }
 
   // All good - return the requested header
-  return m_objects[m_page_object_numbers[page_number]]->get_dictionary();
+  return objects_[page_object_numbers_[page_number]]->get_dictionary();
 }
 
 

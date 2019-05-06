@@ -113,23 +113,23 @@ Rcpp::DataFrame get_glyph_map(const string& file_name, int page_number)
 Rcpp::DataFrame xrefcreator(shared_ptr<const string> file_string)
 {
   // Create the xref from the given string pointer
-  xref Xref(file_string);
+  XRef Xref(file_string);
 
   // Declare containers used to fill dataframe
   vector<int> object {}, start_byte {}, holding_object {};
 
   // If the xref has entries
-  if(!Xref.get_all_object_numbers().empty())
+  if(!Xref.GetAllObjectNumbers().empty())
   {
     // Get all of its object numbers
-    vector<int>&& all_objects = Xref.get_all_object_numbers();
+    vector<int>&& all_objects = Xref.GetAllObjectNumbers();
 
     // Then for each listed object, store its number, start byte and container
     for(int object_num : all_objects)
     {
       object.push_back(object_num);
-      start_byte.push_back(Xref.get_object_start_byte(object_num));
-      holding_object.push_back(Xref.get_holding_number_of(object_num));
+      start_byte.push_back(Xref.GetObjectStartByte(object_num));
+      holding_object.push_back(Xref.GetHoldingNumberOf(object_num));
     }
   }
 
@@ -216,7 +216,7 @@ Rcpp::List get_single_text_elements(shared_ptr<Page> page_ptr)
   parser parser_object = parser(page_ptr);
 
   // Read page contents to parser
-  tokenizer(page_ptr->get_page_contents(), &parser_object);
+  Tokenizer(page_ptr->get_page_contents(), &parser_object);
 
   // Obtain output from parser and transpose into a text table
   auto text_box = parser_object.output();
@@ -249,7 +249,7 @@ Rcpp::List get_text_boxes(shared_ptr<Page> page_ptr)
   parser parser_object(page_ptr);
 
   // Read page contents to parser
-  tokenizer(page_ptr->get_page_contents(), &parser_object);
+  Tokenizer(page_ptr->get_page_contents(), &parser_object);
 
   // Group letters and words
   letter_grouper grouped_letters(parser_object.output());
@@ -349,7 +349,7 @@ Rcpp::DataFrame pdfdoc_common(shared_ptr<Document> document_ptr)
     parser parser_object(page_ptr);
 
     // Read page contents to parser object
-    tokenizer(page_ptr->get_page_contents(), &parser_object);
+    Tokenizer(page_ptr->get_page_contents(), &parser_object);
 
     // Join individual letters into words
     letter_grouper grouped_letters(move(parser_object.output()));
@@ -463,7 +463,7 @@ Rcpp::DataFrame pdf_boxes(shared_ptr<Page> page_ptr)
   parser parser_object(page_ptr);
 
   // Read the page contents into the parser
-  tokenizer(page_ptr->get_page_contents(), &parser_object);
+  Tokenizer(page_ptr->get_page_contents(), &parser_object);
 
   // Group individual letters into words
   letter_grouper grouped_letters(move(parser_object.output()));

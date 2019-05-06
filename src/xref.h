@@ -1,6 +1,6 @@
 //---------------------------------------------------------------------------//
 //                                                                           //
-//  PDFR xref header file                                                    //
+//  PDFR XRef header file                                                    //
 //                                                                           //
 //  Copyright (C) 2018 by Allan Cameron                                      //
 //                                                                           //
@@ -36,7 +36,7 @@
  * It also includes a couple of other headers which are needed to decrypt and
  * decode encrypted and compressed streams (streams.h and crypto.h)
  *
- * The cross reference table (xref) is a data structure (or more accurately a
+ * The cross reference table (XRef) is a data structure (or more accurately a
  * group of data structures) that forms part of the pdf file format and allows
  * for the rapid random access of the pdf objects from which a document is
  * comprised. At its simplest, this is a table containing the object number,
@@ -44,15 +44,15 @@
  * of the file where that object is located.
  *
  * However, it is not always quite that simple. Firstly, documents can and do
- * have more than one xref that lists different objects. Secondly, the xref
+ * have more than one XRef that lists different objects. Secondly, the XRef
  * can itself be a compressed stream which must be found and translated before
- * being read. This means the xref class must have access to decryption and
+ * being read. This means the XRef class must have access to decryption and
  * decoding algorithms.
  *
- * Fortunately, the location of the start of an xref table (as number of bytes
+ * Fortunately, the location of the start of an XRef table (as number of bytes
  * offset from the start of the file) is given right at the end of a file, just
  * before the %%EOF on the last line. It is thus simple to get to the start of
- * an xref from this number. For a normal uncompressed xref, this takes us to
+ * an XRef from this number. For a normal uncompressed XRef, this takes us to
  * the top of a table which is just read and parsed. At the end of the table is
  * a special dictionary which does not belong to any object. This is the
  * trailer dictionary. If there are other xrefs in the file, this tells us
@@ -60,14 +60,14 @@
  * until none are left and we have a complete "roadmap" of where the objects
  * are in the file.
  *
- * If, however, the xref is located in a stream, things get more complicated.
+ * If, however, the XRef is located in a stream, things get more complicated.
  * The stream belongs to an object, and the dictionary at the beginning of that
  * object doubles as the trailer dictionary. As well as being compressed, the
- * stream containing the xref is usually encoded as a string of bytes which
+ * stream containing the XRef is usually encoded as a string of bytes which
  * then need to be interpreted using the algorithm normally used for
- * decompressing PNG files. This makes handling xref streams complex enough to
+ * decompressing PNG files. This makes handling XRef streams complex enough to
  * warrant their own class. However, since this class only has to perform a part
- * of xref implementation, it has no public interface and is therefore not
+ * of XRef implementation, it has no public interface and is therefore not
  * defined in this header file, but rather within xref.cpp
 */
 #include<utility>
@@ -75,10 +75,10 @@
 #include "crypto.h"
 
 /*---------------------------------------------------------------------------*/
-// The main xref data member is an unordered map with the key being the object
+// The main XRef data member is an unordered map with the key being the object
 // number and the value being a struct of named ints as defined here
 
-struct xrefrow
+struct XRefRow
 {
   int startbyte,  // Its byte offset
       stopbyte,   // The offset of the corresponding endobj marker
@@ -86,47 +86,47 @@ struct xrefrow
 };                // located? Has value of 0 if the object is not in a stream
 
 /*---------------------------------------------------------------------------*/
-// The main xref class definition. Since this is the main "skeleton" of the pdf
+// The main XRef class definition. Since this is the main "skeleton" of the pdf
 // which is used by other classes to negotiate and parse the pdf, and because it
 // can be complex to construct, it is a fairly large and complex class.
 //
 // Where possible I have tried to delegate some of its work to other classes
 // or subclasses, but even still it is a little unwieldy.
 
-class xref
+class XRef
 {
 public:
   // constructors
-  xref(){};
-  xref(std::shared_ptr<const std::string>);
+  XRef(){};
+  XRef(std::shared_ptr<const std::string>);
 
   // public methods
-  bool is_encrypted() const;           // Eeturns encryption state
-  Dictionary get_trailer() const;
-  size_t get_object_start_byte(int) const;   // Byyte offset of a given object
-  size_t get_object_end_byte(int) const;  // Byte offset of end of given object
-  size_t get_holding_number_of(int) const;
-  std::vector<int> get_all_object_numbers() const;
-  std::array<size_t, 2> get_stream_location(int) const;
-  void decrypt(std::string&, int, int) const; // Decrypt a stream
-  std::shared_ptr<const std::string> file() const;// pointer to main file string
+  bool IsEncrypted() const;           // Eeturns encryption state
+  Dictionary GetTrailer() const;
+  size_t GetObjectStartByte(int) const;   // Byyte offset of a given object
+  size_t GetObjectEndByte(int) const;  // Byte offset of end of given object
+  size_t GetHoldingNumberOf(int) const;
+  std::vector<int> GetAllObjectNumbers() const;
+  std::array<size_t, 2> GetStreamLocation(int) const;
+  void Decrypt(std::string&, int, int) const; // Decrypt a stream
+  std::shared_ptr<const std::string> File() const;// pointer to main file string
 
 private:
-  std::shared_ptr<const std::string> m_file_string;
-  std::unordered_map<int, xrefrow> m_xref_table; // This is the main data member
-  std::vector<int> m_xref_locations;         // vector of offsets of xref starts
-  Dictionary m_trailer_dictionary;           // Canonical trailer dictionary
-  bool m_encrypted;                     // Flag to indicate if encryption used
-  std::shared_ptr<Crypto> m_encryption; // crypto object for decrypting files
+  std::shared_ptr<const std::string> file_string_;
+  std::unordered_map<int, XRefRow> xref_table_; // This is the main data member
+  std::vector<int> xref_locations_;         // vector of offsets of XRef starts
+  Dictionary trailer_dictionary_;           // Canonical trailer dictionary
+  bool encrypted_;                     // Flag to indicate if encryption used
+  std::shared_ptr<Crypto> encryption_; // crypto object for decrypting files
 
 // private methods
-  xref& operator=(const xref&);
-  int get_stream_length(const Dictionary& dict) const;
-  void locate_xrefs();                     // Finds xref locations
-  void read_xref_strings();               // Gets strings from xref locations
-  void read_xref_from_stream(int);        // Uses xrefstream class to get xref
-  void read_xref_from_string(std::string&);   // parses xref directly
-  void create_crypto();                   // Allows decryption of encrypted docs
+  XRef& operator=(const XRef&);
+  int GetStreamLength(const Dictionary& dict) const;
+  void LocateXRefs();                    // Finds XRef locations
+  void ReadXRefStrings();                // Gets strings from XRef locations
+  void ReadXRefFromStream(int);          // Uses xrefstream class to get XRef
+  void ReadXRefFromString(std::string&); // parses XRef directly
+  void CreateCrypto();                   // Allows decryption of encrypted docs
 };
 
 //---------------------------------------------------------------------------//

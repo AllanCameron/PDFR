@@ -73,7 +73,7 @@ void Page::read_boxes()
     // For each of the box names
     for(auto& i : box_names)
     {
-      vector<float>&& this_box = box_header.get_floats(i);
+      vector<float>&& this_box = box_header.GetFloats(i);
       if (!this_box.empty()) minbox = this_box;
     }
 
@@ -81,9 +81,9 @@ void Page::read_boxes()
     if(minbox.empty())
     {
       // Find the parent object number and get its object dictionary
-      if(box_header.contains_references("/Parent"))
+      if(box_header.ContainsReferences("/Parent"))
       {
-        int parent = box_header.get_reference("/Parent");
+        int parent = box_header.GetReference("/Parent");
         box_header = m_doc->get_object(parent)->get_dictionary();
       }
 
@@ -97,8 +97,8 @@ void Page::read_boxes()
   m_minbox = Box(minbox);
 
   // Get the "rotate" value - will need in future feature development
-  if (m_header.has_key("/Rotate"))
-    m_rotate = m_header.get_floats("/Rotate").at(0);
+  if (m_header.HasKey("/Rotate"))
+    m_rotate = m_header.GetFloats("/Rotate").at(0);
 }
 
 /*--------------------------------------------------------------------------*/
@@ -111,7 +111,7 @@ void Page::read_header()
   m_header = m_doc->get_page_header(m_page_number);
 
   // if the header is not of /type /Page, throw an error
-  if (m_header.get_string("/Type") != "/Page")
+  if (m_header.GetString("/Type") != "/Page")
   {
     // create an error message in case of missing page
     std::string error_message("No header found for page ");
@@ -128,17 +128,17 @@ void Page::read_header()
 void Page::read_resources()
 {
   // If /Resources doesn't contain a dictionary it must be a reference
-  if (!m_header.contains_dictionary("/Resources"))
+  if (!m_header.ContainsDictionary("/Resources"))
   {
-    if(m_header.contains_references("/Resources"))
+    if(m_header.ContainsReferences("/Resources"))
     {
       m_resources =
-      m_doc->get_object(m_header.get_reference("/Resources"))->get_dictionary();
+      m_doc->get_object(m_header.GetReference("/Resources"))->get_dictionary();
     }
   }
   else // Resources contains a subdictionary
   {
-    m_resources = m_header.get_dictionary("/Resources");
+    m_resources = m_header.GetDictionary("/Resources");
   }
 }
 
@@ -150,17 +150,17 @@ void Page::read_resources()
 void Page::read_fonts()
 {
   // If /Font entry of m_resources isn't a dictionary
-  if (!m_resources.contains_dictionary("/Font"))
+  if (!m_resources.ContainsDictionary("/Font"))
   {
     // It must be a reference - follow this to get the dictionary
-    if (m_resources.contains_references("/Font"))
+    if (m_resources.ContainsReferences("/Font"))
     {
       m_fonts =
-        m_doc->get_object(m_resources.get_reference("/Font"))->get_dictionary();
+        m_doc->get_object(m_resources.GetReference("/Font"))->get_dictionary();
     }
   }
   // Otherwise, it is a dictionary, so we get the result
-  else m_fonts = m_resources.get_dictionary("/Font");
+  else m_fonts = m_resources.GetDictionary("/Font");
 
   // We can now iterate through the font names using getFontNames(), create
   // each font in turn and store it in the fontmap
@@ -172,7 +172,7 @@ void Page::read_fonts()
     if(found_font == sm_fontmap.end())
     {
       // Find the reference for each font name
-      for(auto reference : m_fonts.get_references(font_label.first))
+      for(auto reference : m_fonts.GetReferences(font_label.first))
       {
         sm_fontmap[font_label.first] =
           make_shared<Font>(m_doc,
@@ -195,7 +195,7 @@ void Page::read_contents()
     auto root = make_shared<tree_node<int>>(0);
 
     // use expand_contents() to get page header object numbers
-    expand_contents(m_header.get_references("/Contents"), root);
+    expand_contents(m_header.GetReferences("/Contents"), root);
     auto contents = root->getLeafs();
 
     // Get the contents from each object stream and paste them at the bottom
@@ -219,8 +219,8 @@ void Page::read_XObjects()
   string xobject_string {};
 
   // first find any xobject entries in the resource dictionary
-  if (m_resources.has_key("/XObject"))
-    xobject_string = m_resources.get_string("/XObject");
+  if (m_resources.HasKey("/XObject"))
+    xobject_string = m_resources.GetString("/XObject");
 
   // Sanity check - the entry shouldn't be empty
   if(xobject_string.empty()) return;
@@ -233,17 +233,17 @@ void Page::read_XObjects()
   }
 
   // If the /XObject string is a reference, follow the reference to dictionary
-  else if (m_resources.contains_references("/XObject"))
+  else if (m_resources.ContainsReferences("/XObject"))
   {
     xobject_dict =
-    m_doc->get_object(m_resources.get_reference("/XObject"))->get_dictionary();
+    m_doc->get_object(m_resources.GetReference("/XObject"))->get_dictionary();
 
   }
 
   // We now have a dictionary of {xobject name: ref} from which to get xobjects
   for(auto& i : xobject_dict)
   {
-    std::vector<int> xobj_objs = xobject_dict.get_references(i.first);
+    std::vector<int> xobj_objs = xobject_dict.GetReferences(i.first);
 
     // map xobject strings to the xobject names
     if(!xobj_objs.empty())
@@ -273,7 +273,7 @@ void Page::expand_contents(vector<int> objs, shared_ptr<tree_node<int>> tree)
   {
     // Read the contents from the dictionary entry
     auto nodes =
-    m_doc->get_object(kid->get())->get_dictionary().get_references("/Contents");
+    m_doc->get_object(kid->get())->get_dictionary().GetReferences("/Contents");
 
     // If it has kids, use recursion to get them
     if (!nodes.empty()) expand_contents(nodes, kid);
@@ -285,7 +285,7 @@ void Page::expand_contents(vector<int> objs, shared_ptr<tree_node<int>> tree)
 
 vector<string> Page::get_font_names()
 {
-  return this->m_fonts.get_all_keys();
+  return this->m_fonts.GetAllKeys();
 }
 
 /*--------------------------------------------------------------------------*/

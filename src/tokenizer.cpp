@@ -1,6 +1,6 @@
 //---------------------------------------------------------------------------//
 //                                                                           //
-//  PDFR tokenizer implementation file                                       //
+//  PDFR Tokenizer implementation file                                       //
 //                                                                           //
 //  Copyright (C) 2018 by Allan Cameron                                      //
 //                                                                           //
@@ -30,9 +30,9 @@
 using namespace std;
 using namespace Token;
 
-std::string tokenizer::inloop = "none";
+std::string Tokenizer::inloop = "none";
 
-std::array<tokenizer::chartype, 256> tokenizer::char_lookup = {
+std::array<Tokenizer::chartype, 256> Tokenizer::char_lookup = {
   OTH, OTH, OTH, OTH, OTH, OTH, OTH, OTH,
   OTH, OTH, SPC, OTH, OTH, SPC, OTH, OTH,
   OTH, OTH, OTH, OTH, OTH, OTH, OTH, OTH,
@@ -68,10 +68,10 @@ std::array<tokenizer::chartype, 256> tokenizer::char_lookup = {
 };
 
 /*---------------------------------------------------------------------------*/
-// constructor of tokenizer - initializes members and starts main
+// constructor of Tokenizer - initializes members and starts main
 // lexer function
 
-tokenizer::tokenizer(shared_ptr<string> input, parser* prser) :
+Tokenizer::Tokenizer(shared_ptr<string> input, parser* prser) :
  s(input), i(s->begin()), state(NEWSYMBOL), gs(prser)
 {
   tokenize();
@@ -83,7 +83,7 @@ tokenizer::tokenizer(shared_ptr<string> input, parser* prser) :
 // to the instruction set, and clearing the buffer is very common in the
 // lexer. This function acts as a shorthand to prevent boilerplate
 
-void tokenizer::pushbuf(const TState type, const TState statename)
+void Tokenizer::pushbuf(const TState type, const TState statename)
 {
   if(buf == "Do" && statename == IDENTIFIER)
   {
@@ -94,7 +94,7 @@ void tokenizer::pushbuf(const TState type, const TState statename)
       shared_ptr<string> xo = gs->getXobject(inloop);
 
       // Don't try to parse binary objects like images etc
-      if(is_ascii(*xo)) tokenizer(xo, gs);
+      if(is_ascii(*xo)) Tokenizer(xo, gs);
     }
   }
 
@@ -108,7 +108,7 @@ void tokenizer::pushbuf(const TState type, const TState statename)
 // the state. Each subroutine handles specific characters in a different but
 // well-specified way
 
-void tokenizer::tokenize()
+void Tokenizer::tokenize()
 {
   while (i != s->end()) // ensure the iterator doesn't exceed string length
   {
@@ -133,7 +133,7 @@ void tokenizer::tokenize()
 /*---------------------------------------------------------------------------*/
 // Lexer is reading a resource (a /PdfName)
 
-void tokenizer::resourceState()
+void Tokenizer::resourceState()
 {
   switch (char_lookup[*i])
   {
@@ -158,7 +158,7 @@ void tokenizer::resourceState()
 /*---------------------------------------------------------------------------*/
 // Lexer is receptive for next token
 
-void tokenizer::newsymbolState()
+void Tokenizer::newsymbolState()
 {
   // get symbol_type of current char
   switch (char_lookup[*i])
@@ -181,7 +181,7 @@ void tokenizer::newsymbolState()
 /*---------------------------------------------------------------------------*/
 // Lexer is reading an identifier (instruction or keyword)
 
-void tokenizer::identifierState()
+void Tokenizer::identifierState()
 {
   // get symbol_type of current char
   switch (char_lookup[*i])
@@ -205,7 +205,7 @@ void tokenizer::identifierState()
 /*---------------------------------------------------------------------------*/
 // lexer is reading a number
 
-void tokenizer::numberState()
+void Tokenizer::numberState()
 {
   // get symbol_type of current char
   switch (char_lookup[*i])
@@ -228,7 +228,7 @@ void tokenizer::numberState()
 /*---------------------------------------------------------------------------*/
 // lexer is reading a (bracketed) string
 
-void tokenizer::stringState()
+void Tokenizer::stringState()
 {
   // get symbol_type of current char
   switch (char_lookup[*i])
@@ -242,7 +242,7 @@ void tokenizer::stringState()
 /*---------------------------------------------------------------------------*/
 // lexer is in an array
 
-void tokenizer::arrayState()
+void Tokenizer::arrayState()
 {
   i--;
   state = NEWSYMBOL;
@@ -251,7 +251,7 @@ void tokenizer::arrayState()
 /*---------------------------------------------------------------------------*/
 // lexer is reading a hexstring of format <11FA>
 
-void tokenizer::hexstringState()
+void Tokenizer::hexstringState()
 {
   // get symbol_type of current char
   switch (char_lookup[*i])
@@ -268,7 +268,7 @@ void tokenizer::hexstringState()
 // lexer is reading a dictionary and will keep writing until it comes across
 // a pair of closing angle brackets
 
-void tokenizer::dictState()
+void Tokenizer::dictState()
 {
   // get symbol_type of current char
   switch (char_lookup[*i])
@@ -282,7 +282,7 @@ void tokenizer::dictState()
 /*---------------------------------------------------------------------------*/
 // lexer has come across a backslash which indicates an escape character
 
-void tokenizer::escapeState()
+void Tokenizer::escapeState()
 {
   ++i;
 
@@ -314,7 +314,7 @@ void tokenizer::escapeState()
 // The lexer has reached an inline image, which indicates it should ignore the
 // string until it reaches the keyword "EI" at the end of the image
 
-void tokenizer::waitState()
+void Tokenizer::waitState()
 {
   do
   {

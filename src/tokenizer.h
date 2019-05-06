@@ -64,11 +64,11 @@
 // getter for the result. The private members allow for passing of state
 // between member functions during the instruction set creation.
 
-class tokenizer
+class Tokenizer
 {
 public:
   // constructor
-  tokenizer(std::shared_ptr<std::string>, parser*);
+  Tokenizer(std::shared_ptr<std::string>, parser*);
 
 private:
   // private data members

@@ -35,36 +35,36 @@ using namespace std;
 // The main object creator class. It needs a pointer to the xref and a number
 // representing the object's number as set out in the xref table.
 
-Object::Object(shared_ptr<const xref> t_xref, int t_object_number) :
+Object::Object(shared_ptr<const XRef> t_xref, int t_object_number) :
   m_xref(t_xref),
   m_object_number(t_object_number),
   m_stream_location({0, 0})
 {
   // Find start and end of object
-  size_t startbyte = m_xref->get_object_start_byte(m_object_number);
-  size_t stopbyte  = m_xref->get_object_end_byte(m_object_number);
+  size_t startbyte = m_xref->GetObjectStartByte(m_object_number);
+  size_t stopbyte  = m_xref->GetObjectEndByte(m_object_number);
 
   // We check to see if the object has a header dictionary by finding '<<'
-  if(m_xref->file()->substr(startbyte, 20).find("<<") == string::npos)
+  if(m_xref->File()->substr(startbyte, 20).find("<<") == string::npos)
   {
     // No dictionary found - make blank dictionary for header
     m_header = Dictionary();
 
     // find start and end of contents
-    m_stream_location = {m_xref->file()->find(" obj", startbyte) + 4,
+    m_stream_location = {m_xref->File()->find(" obj", startbyte) + 4,
                          stopbyte - 1};
   }
 
   else // Else the object has a header dictionary
   {
     // Construct the dictionary
-    m_header = Dictionary(m_xref->file(), startbyte);
+    m_header = Dictionary(m_xref->File(), startbyte);
 
     // Find the stream (if any)
-    m_stream_location = m_xref->get_stream_location(startbyte);
+    m_stream_location = m_xref->GetStreamLocation(startbyte);
 
     // The object may contain an object stream that needs unpacked
-    if(m_header.get_string("/Type") == "/ObjStm")
+    if(m_header.GetString("/Type") == "/ObjStm")
     {
       // Get the object stream
       read_stream_from_stream_locations();
@@ -147,7 +147,7 @@ Object::Object(shared_ptr<Object> t_holder, int t_object_number):
     if(m_stream.size() < 15 && m_stream.find(" R", 0) < 15)
     {
       size_t new_number = parse_references(m_stream)[0];
-      size_t holder = m_xref->get_holding_number_of(new_number);
+      size_t holder = m_xref->GetHoldingNumberOf(new_number);
       if(holder == 0) *this = Object(m_xref, new_number);
       else *this = Object(make_shared<Object>(m_xref, holder), new_number);
       this->m_object_number = t_object_number;
@@ -182,10 +182,10 @@ string Object::get_stream()
 void Object::apply_filters()
 {
   // Decrypt if necessary
-  if(m_xref->is_encrypted()) m_xref->decrypt(m_stream, m_object_number, 0);
+  if(m_xref->IsEncrypted()) m_xref->Decrypt(m_stream, m_object_number, 0);
 
   // Read filters
-  string filters = m_header.get_string("/Filter");
+  string filters = m_header.GetString("/Filter");
 
   // Apply filters
   if(filters.find("/FlateDecode") != string::npos) FlateDecode(m_stream);
@@ -211,7 +211,7 @@ void Object::read_stream_from_stream_locations()
   int stream_start  = m_stream_location[0];
 
   // Read the string from the current positions
-  m_stream          = m_xref->file()->substr(stream_start, stream_length);
+  m_stream          = m_xref->File()->substr(stream_start, stream_length);
 
   // Apply necessary decryption and deflation
   apply_filters();

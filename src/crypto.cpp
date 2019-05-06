@@ -33,7 +33,7 @@ using namespace std;
 // The default user password cipher is required to construct the file key and is
 // declared as a static member of the crypto class; it is defined here
 
-ByteVector Crypto::sm_default_user_password =
+ByteVector Crypto::default_user_password_ =
 {
   0x28, 0xBF, 0x4E, 0x5E, 0x4E, 0x75, 0x8A, 0x41,
   0x64, 0x00, 0x4E, 0x56, 0xFF, 0xFA, 0x01, 0x08,
@@ -333,7 +333,7 @@ void Crypto::decrypt_stream(string& t_stream,
   ByteVector stream_as_bytes(t_stream.begin(), t_stream.end());
 
   // Start building the object key with the file key
-  ByteVector object_key = m_filekey;
+  ByteVector object_key = filekey_;
 
   // Append the bytes of the object number
   concat(object_key, chop_long(t_object_number));
@@ -370,7 +370,7 @@ void Crypto::decrypt_stream(string& t_stream,
 ByteVector Crypto::get_password(const string& t_key)
 {
    // Get raw bytes of owner password hash
-  string password(m_encryption_dictionary.get_string(t_key));
+  string password(encryption_dictionary_.GetString(t_key));
   string temp;
   temp.reserve(32);
 
@@ -404,34 +404,34 @@ ByteVector Crypto::get_password(const string& t_key)
 void Crypto::get_file_key()
 {
   // Get the generic user password
-  m_filekey = sm_default_user_password;
+  filekey_ = default_user_password_;
 
   // Stick the owner password on
-  concat(m_filekey, get_password("/O"));
+  concat(filekey_, get_password("/O"));
 
   // Stick permissions flags on
-  concat(m_filekey, read_permissions(m_encryption_dictionary.get_string("/P")));
+  concat(filekey_, read_permissions(encryption_dictionary_.GetString("/P")));
 
   // Get first 16 bytes of file ID and stick them on too
-  ByteVector idbytes = convert_hex_to_bytes(m_trailer.get_string("/ID"));
+  ByteVector idbytes = convert_hex_to_bytes(trailer_.GetString("/ID"));
   idbytes.resize(16);
-  concat(m_filekey, idbytes);
+  concat(filekey_, idbytes);
 
   // now md5 hash the result
-  m_filekey = md5(m_filekey);
+  filekey_ = md5(filekey_);
 
   // Set the default filekey size
   size_t cryptlen = 5;
 
   // if the filekey length is not 5, it will be specified as a number of bits
   // so divide by 8 to get the number of bytes.
-  if (m_encryption_dictionary.contains_ints("/Length"))
+  if (encryption_dictionary_.ContainsInts("/Length"))
   {
-    cryptlen = m_encryption_dictionary.get_ints("/Length")[0] / 8;
+    cryptlen = encryption_dictionary_.GetInts("/Length")[0] / 8;
   }
 
   // Resize the key as needed.
-  m_filekey.resize(cryptlen);
+  filekey_.resize(cryptlen);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -442,10 +442,10 @@ void Crypto::get_file_key()
 void Crypto::check_key_r2()
 {
   // Get the pdf's hashed user password and the default user password
-  ByteVector ubytes = get_password("/U"), checkans = sm_default_user_password;
+  ByteVector ubytes = get_password("/U"), checkans = default_user_password_;
 
   // rc4 the default user password using the supplied filekey
-  rc4(checkans, m_filekey);
+  rc4(checkans, filekey_);
 
   // This should be the same as the pdf's hashed user password
   if (checkans.size() == 32 && checkans == ubytes) return;
@@ -462,25 +462,25 @@ void Crypto::check_key_r2()
 void Crypto::check_key_r3()
 {
   // We start by md5 hashing the filekey 50 times
-  size_t key_length = m_filekey.size();
+  size_t key_length = filekey_.size();
   for (int i = 0; i < 50; ++i)
   {
-    m_filekey = md5(m_filekey);
-    m_filekey.resize(key_length);
+    filekey_ = md5(filekey_);
+    filekey_.resize(key_length);
   }
 
   // Next get the default user password
-  ByteVector user_password = sm_default_user_password;
+  ByteVector user_password = default_user_password_;
 
   // We now append the bytes from the ID entry of the trailer dictionary
-  concat(user_password, convert_hex_to_bytes(m_trailer.get_string("/ID")));
+  concat(user_password, convert_hex_to_bytes(trailer_.GetString("/ID")));
 
   // We only want the first 16 bytes from the ID so truncate to 48 bytes (32+16)
   user_password.resize(48);
 
   // As per ISO 32000 we now md5 the result and rc4 using the filekey
   user_password = md5(user_password);
-  rc4(user_password, m_filekey);
+  rc4(user_password, filekey_);
 
   // From ISO 32000: Take the result of the rc4 and do the following 19 times:
   for (uint8_t iteration = 1; iteration < 20; ++iteration)
@@ -488,7 +488,7 @@ void Crypto::check_key_r3()
     // Create a new key by doing an XOR of each byte of the filekey with
     // the iteration number (1 to 19) of the loop.
     ByteVector temp_key;
-    for (auto byte : m_filekey) temp_key.push_back(byte ^ iteration);
+    for (auto byte : filekey_) temp_key.push_back(byte ^ iteration);
 
     // Create an rc4 hash of the ongoing hash which is fed to next iteration
     rc4(user_password, temp_key);
@@ -514,20 +514,20 @@ void Crypto::check_key_r3()
 // decode any encoded strings in the file
 
 Crypto::Crypto(Dictionary t_encrypt_dict, Dictionary t_trailer) :
-  m_encryption_dictionary(t_encrypt_dict),
-  m_trailer(t_trailer),
-  m_revision(2)
+  encryption_dictionary_(t_encrypt_dict),
+  trailer_(t_trailer),
+  revision_(2)
 {
   // Unless specified, the revision number used for encryption is 2
-  if (m_encryption_dictionary.contains_ints("/R"))
+  if (encryption_dictionary_.ContainsInts("/R"))
   {
-    m_revision = m_encryption_dictionary.get_ints("/R")[0];
+    revision_ = encryption_dictionary_.GetInts("/R")[0];
   }
 
   get_file_key();
 
   // if revision 2, check it and we're done. Otherwise use revision 3
-  if (m_revision == 2) check_key_r2();
+  if (revision_ == 2) check_key_r2();
   else check_key_r3();
 
 }

@@ -129,10 +129,10 @@ void Encoding::read_differences(const string& differences_string)
 void Encoding::map_unicode()
 {
   // If no /ToUnicode entry, nothing to be done
-  if (!m_font_dictionary.contains_references("/ToUnicode")) return;
+  if (!m_font_dictionary.ContainsReferences("/ToUnicode")) return;
 
   // Otherwise, get the reference and get its stream
-  int unicode_reference = m_font_dictionary.get_reference("/ToUnicode");
+  int unicode_reference = m_font_dictionary.GetReference("/ToUnicode");
 
   // Get the text stream of the unicode conversion entry
   string unicode_text(m_document->get_object(unicode_reference)->get_stream());
@@ -223,19 +223,19 @@ void Encoding::read_encoding()
   Dictionary encoding_dictionary = m_font_dictionary;
 
   // Read encoding entry
-  string encoding_name = encoding_dictionary.get_string("/Encoding");
+  string encoding_name = encoding_dictionary.GetString("/Encoding");
 
   // If an encoding dictionary exists, get it and read the baseencoding entry
-  if(m_font_dictionary.contains_references("/Encoding"))
+  if(m_font_dictionary.ContainsReferences("/Encoding"))
   {
     auto encoding_object =
-      m_document->get_object(m_font_dictionary.get_reference("/Encoding"));
+      m_document->get_object(m_font_dictionary.GetReference("/Encoding"));
 
     encoding_dictionary = encoding_object->get_dictionary();
 
-    if(encoding_dictionary.has_key("/BaseEncoding"))
+    if(encoding_dictionary.HasKey("/BaseEncoding"))
     {
-      encoding_name = encoding_dictionary.get_string("/BaseEncoding");
+      encoding_name = encoding_dictionary.GetString("/BaseEncoding");
     }
   }
 
@@ -255,9 +255,9 @@ void Encoding::read_encoding()
   else for(RawChar i = 0; i < 256; ++i) m_encoding_map[i] = (Unicode) i;
 
   // Call Differences() if a /Differences entry is found to modify encoding
-  if(encoding_dictionary.has_key("/Differences"))
+  if(encoding_dictionary.HasKey("/Differences"))
   {
-    m_base_encoding = encoding_dictionary.get_string("/Differences");
+    m_base_encoding = encoding_dictionary.GetString("/Differences");
     read_differences(m_base_encoding);
   }
 }
