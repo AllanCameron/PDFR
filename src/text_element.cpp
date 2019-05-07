@@ -29,115 +29,107 @@
 
 using namespace std;
 
-
 //---------------------------------------------------------------------------//
 
-TextElement::TextElement
-(float l, float r, float t, float b, shared_ptr<Font> f, std::vector<Unicode> g):
-Box(l, r, t, b), m_font(f), glyph(g), m_join(nullptr) {};
-
-
-//---------------------------------------------------------------------------//
-
-void TextElement::merge_letters(TextElement& matcher)
+void TextElement::MergeLetters(TextElement& t_matcher)
 {
    // paste the left glyph to the right glyph
-  this->concat_glyph(matcher.glyph);
+  this->ConcatGlyph(t_matcher.glyph_);
 
   // make the right glyph now contain both glyphs
-  matcher.glyph = this->glyph;
+  t_matcher.glyph_ = this->glyph_;
 
   // make the right glyph now start where the left glyph started
-  matcher.set_left(this->get_left());
+  t_matcher.SetLeft(this->GetLeft());
 
   // Ensure bottom is the lowest value of the two glyphs
-  if(this->get_bottom() < matcher.get_bottom())
-    matcher.set_bottom(this->get_bottom());
+  if(this->GetBottom() < t_matcher.GetBottom())
+    t_matcher.SetBottom(this->GetBottom());
 
   // The checked glyph is now consumed - move to the next
-  this->consume();
+  this->Consume();
 }
 
 //---------------------------------------------------------------------------//
 
-bool TextElement::is_elligible_to_join(const TextElement& other) const
+bool TextElement::IsElligibleToJoin(const TextElement& t_other) const
 {
-  return  !other.is_consumed()                     &&
-           other.is_beyond(*this)                  &&
-           other.is_on_same_line_as(*this)         &&
-          !other.is_way_beyond(*this)              &&
-          !this->cannot_join_left_of(other)         ;
+  return  !t_other.IsConsumed()                      &&
+           t_other.IsBeyond(*this)                   &&
+           t_other.IsOnSameLineAs(*this)             &&
+          !t_other.IsWayBeyond(*this)                &&
+          !this->CannotJoinLeftOf(t_other)            ;
 }
 
 //---------------------------------------------------------------------------//
 
-void TextElement::join_words(TextElement& other)
+void TextElement::JoinWords(TextElement& t_other)
 {
     // This element is elligible for joining - start by adding a space to it
-    this->glyph.push_back(0x0020);
+    this->glyph_.push_back(0x0020);
 
     // If the gap is wide enough, add two spaces
-    if(other.get_left() - this->get_right() > 1 * this->get_size())
+    if(t_other.GetLeft() - this->GetRight() > 1 * this->GetSize())
     {
-      this->glyph.push_back(0x0020);
+      this->glyph_.push_back(0x0020);
     }
 
     // Stick contents together
-    concat(this->glyph, other.get_glyph());
+    Concat(this->glyph_, t_other.GetGlyph());
 
     // The rightmost glyph's right edge properties are also copied over
-    this->set_right(other.get_right());
-    if(other.is_right_edge()) this->make_right_edge();
+    this->SetRight(t_other.GetRight());
+    if(t_other.IsRightEdge()) this->MakeRightEdge();
 
     // The word will take up the size of its largest glyph
-    this->set_top(max(this->get_size(), other.get_size()) + this->get_bottom());
+    this->SetTop(max(this->GetSize(), t_other.GetSize()) + this->GetBottom());
 
     // The element on the right is now consumed
-    other.consume();
+    t_other.Consume();
 }
 
 //---------------------------------------------------------------------------//
 
-void TextElement::concat_glyph(const std::vector<Unicode>& other)
+void TextElement::ConcatGlyph(const std::vector<Unicode>& t_other)
 {
-  concat(glyph, other);
+  Concat(glyph_, t_other);
 }
 
 //---------------------------------------------------------------------------//
 // Converts TextBox to TextTable
-TextTable::TextTable(const TextBox& text_box):
-Box((Box) text_box)
+TextTable::TextTable(const TextBox& t_text_box):
+Box((Box) t_text_box)
 {
-  for(auto ptr = text_box.cbegin(); ptr != text_box.cend(); ++ptr)
+  for(auto ptr = t_text_box.cbegin(); ptr != t_text_box.cend(); ++ptr)
   {
     auto& element = *ptr;
-    if(!element->is_consumed())
+    if(!element->IsConsumed())
     {
-      this->text.push_back(element->utf());
-      this->left.push_back(element->get_left());
-      this->bottom.push_back(element->get_bottom());
-      this->right.push_back(element->get_right());
-      this->fonts.push_back(element->get_font());
-      this->top.push_back(element->get_top());
-      this->size.push_back(element->get_top() - element->get_bottom());
+      this->text_.push_back(element->Utf());
+      this->lefts_.push_back(element->GetLeft());
+      this->bottoms_.push_back(element->GetBottom());
+      this->rights_.push_back(element->GetRight());
+      this->fonts_.push_back(element->GetFontName());
+      this->tops_.push_back(element->GetTop());
+      this->sizes_.push_back(element->Height());
     }
   }
 }
 
 //---------------------------------------------------------------------------//
 
-void TextBox::remove_duplicates()
+void TextBox::RemoveDuplicates()
 {
-  for (auto this_row = m_data.begin(); this_row != m_data.end(); ++this_row)
+  for (auto this_row = data_.begin(); this_row != data_.end(); ++this_row)
   {
-    if ((*this_row)->is_consumed()) continue;
-    for (auto other_row = this_row; other_row != m_data.end(); ++other_row)
+    if ((*this_row)->IsConsumed()) continue;
+    for (auto other_row = this_row; other_row != data_.end(); ++other_row)
     {
       if(other_row == this_row) continue;
 
       if (**other_row == **this_row)
       {
-        (*other_row)->consume();
+        (*other_row)->Consume();
       }
     }
   }
@@ -146,24 +138,24 @@ void TextBox::remove_duplicates()
 //---------------------------------------------------------------------------//
 // Join another text table to this one
 
-void TextTable::join(TextTable& other)
+void TextTable::Join(TextTable& t_other)
 {
-  this->merge(other);
-  concat(this->text, other.text);
-  concat(this->left, other.left);
-  concat(this->bottom, other.bottom);
-  concat(this->right, other.right);
-  concat(this->fonts, other.fonts);
-  concat(this->top, other.top);
+  this->Merge(t_other);
+  Concat(this->text_,    t_other.text_);
+  Concat(this->lefts_,   t_other.lefts_);
+  Concat(this->bottoms_, t_other.bottoms_);
+  Concat(this->rights_,  t_other.rights_);
+  Concat(this->fonts_,   t_other.fonts_);
+  Concat(this->tops_,    t_other.tops_);
 }
 
 /*--------------------------------------------------------------------------*/
 // converts (16-bit) Unicode code points to multibyte utf-8 encoding.
 
-string TextElement::utf()
+string TextElement::Utf()
 {
   std::string result_string {}; // empty string for results
-  for(auto& point : this->glyph) // for each uint16_t in the input vector...
+  for(auto& point : this->glyph_) // for each uint16_t in the input vector...
   {
     // values less than 128 are just single-byte ASCII
     if(point < 0x0080)

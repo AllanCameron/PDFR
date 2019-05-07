@@ -57,11 +57,11 @@ void line_grouper::find_breaks(TextBox& text_box)
 {
   for(size_t i = 1; i < text_box.size(); ++i)
   {
-    if(text_box[i]->get_left() - text_box[i - 1]->get_left() > 0.1
+    if(text_box[i]->GetLeft() - text_box[i - 1]->GetLeft() > 0.1
          &&
-       text_box[i]->get_bottom() < text_box[i - 1]->get_bottom())
+       text_box[i]->GetBottom() < text_box[i - 1]->GetBottom())
     {
-      splitbox(text_box, text_box[i - 1]->get_bottom());
+      splitbox(text_box, text_box[i - 1]->GetBottom());
       break;
     }
 
@@ -76,18 +76,18 @@ void line_grouper::line_endings(TextBox& text_box)
   for(size_t i = 0; i < text_box.size() - 1; ++i)
   {
     auto& element = text_box[i];
-    switch(element->get_glyph().back())
+    switch(element->GetGlyph().back())
     {
       case 0x0020:                             break;
       case 0x00A0:                             break;
-      case 0x002d: element->pop_last_glyph(); break;
-      case 0x2010: element->pop_last_glyph(); break;
-      case 0x2011: element->pop_last_glyph(); break;
-      case 0x2012: element->pop_last_glyph(); break;
-      case 0x2013: element->pop_last_glyph(); break;
-      case 0x2014: element->pop_last_glyph(); break;
-      case 0x2015: element->pop_last_glyph(); break;
-      default:     element->add_space();
+      case 0x002d: element->PopLastGlyph(); break;
+      case 0x2010: element->PopLastGlyph(); break;
+      case 0x2011: element->PopLastGlyph(); break;
+      case 0x2012: element->PopLastGlyph(); break;
+      case 0x2013: element->PopLastGlyph(); break;
+      case 0x2014: element->PopLastGlyph(); break;
+      case 0x2015: element->PopLastGlyph(); break;
+      default:     element->AddSpace();
     }
   }
 }
@@ -99,7 +99,7 @@ void line_grouper::paste_lines(TextBox& text_box)
 {
   for(size_t i = 1; i < text_box.size(); ++i)
   {
-    text_box[0]->concat_glyph(text_box[i]->get_glyph());
+    text_box[0]->ConcatGlyph(text_box[i]->GetGlyph());
   }
   text_box.resize(1);
 }
@@ -116,7 +116,7 @@ void line_grouper::splitbox(TextBox& old_one, float top_edge)
 
   for(size_t i = 0; i < old_one.size(); ++i)
   {
-    if(old_one[i]->get_bottom() < top_edge)
+    if(old_one[i]->GetBottom() < top_edge)
     {
       if(breakpoint != 0) breakpoint = i;
       new_one.push_back(old_one[i]);
@@ -124,8 +124,8 @@ void line_grouper::splitbox(TextBox& old_one, float top_edge)
   }
   if(breakpoint > 0) old_one.resize(breakpoint - 1);
 
-  old_one.set_bottom(old_one.back()->get_bottom());
-  new_one.set_top(old_one.front()->get_top());
+  old_one.SetBottom(old_one.back()->GetBottom());
+  new_one.SetTop(old_one.front()->GetTop());
   m_textboxes.push_back(new_one);
 }
 

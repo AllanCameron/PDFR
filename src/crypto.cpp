@@ -259,7 +259,7 @@ ByteVector Crypto::md5(ByteVector t_message) const
   ByteVector output; // create empty output vector for output
 
   // Split the resultant 4 x FourBytes into a single 16-byte vector
-  for (auto fourbyte : mixvars) concat(output, chop_long(fourbyte));
+  for (auto fourbyte : mixvars) Concat(output, chop_long(fourbyte));
 
   return output;
 }
@@ -336,7 +336,7 @@ void Crypto::decrypt_stream(string& t_stream,
   ByteVector object_key = filekey_;
 
   // Append the bytes of the object number
-  concat(object_key, chop_long(t_object_number));
+  Concat(object_key, chop_long(t_object_number));
 
   // We only want the three lowest order bytes; pop the last
   object_key.pop_back();
@@ -407,15 +407,15 @@ void Crypto::get_file_key()
   filekey_ = default_user_password_;
 
   // Stick the owner password on
-  concat(filekey_, get_password("/O"));
+  Concat(filekey_, get_password("/O"));
 
   // Stick permissions flags on
-  concat(filekey_, read_permissions(encryption_dictionary_.GetString("/P")));
+  Concat(filekey_, read_permissions(encryption_dictionary_.GetString("/P")));
 
   // Get first 16 bytes of file ID and stick them on too
-  ByteVector idbytes = convert_hex_to_bytes(trailer_.GetString("/ID"));
+  ByteVector idbytes = ConvertHexToBytes(trailer_.GetString("/ID"));
   idbytes.resize(16);
-  concat(filekey_, idbytes);
+  Concat(filekey_, idbytes);
 
   // now md5 hash the result
   filekey_ = md5(filekey_);
@@ -473,7 +473,7 @@ void Crypto::check_key_r3()
   ByteVector user_password = default_user_password_;
 
   // We now append the bytes from the ID entry of the trailer dictionary
-  concat(user_password, convert_hex_to_bytes(trailer_.GetString("/ID")));
+  Concat(user_password, ConvertHexToBytes(trailer_.GetString("/ID")));
 
   // We only want the first 16 bytes from the ID so truncate to 48 bytes (32+16)
   user_password.resize(48);
@@ -529,5 +529,5 @@ Crypto::Crypto(Dictionary t_encrypt_dict, Dictionary t_trailer) :
   // if revision 2, check it and we're done. Otherwise use revision 3
   if (revision_ == 2) check_key_r2();
   else check_key_r3();
-
 }
+

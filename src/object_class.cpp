@@ -41,27 +41,26 @@ Object::Object(shared_ptr<const XRef> t_xref, int t_object_number) :
   stream_location_({0, 0})
 {
   // Find start and end of object
-  size_t startbyte = xref_->GetObjectStartByte(object_number_);
-  size_t stopbyte  = xref_->GetObjectEndByte(object_number_);
+  size_t start = xref_->GetObjectStartByte(object_number_);
+  size_t stop  = xref_->GetObjectEndByte(object_number_);
 
   // We check to see if the object has a header dictionary by finding '<<'
-  if(xref_->File()->substr(startbyte, 20).find("<<") == string::npos)
+  if(xref_->File()->substr(start, 20).find("<<") == string::npos)
   {
     // No dictionary found - make blank dictionary for header
     header_ = Dictionary();
 
     // find start and end of contents
-    stream_location_ = {xref_->File()->find(" obj", startbyte) + 4,
-                         stopbyte - 1};
+    stream_location_ = {xref_->File()->find(" obj", start) + 4, stop - 1};
   }
 
   else // Else the object has a header dictionary
   {
     // Construct the dictionary
-    header_ = Dictionary(xref_->File(), startbyte);
+    header_ = Dictionary(xref_->File(), start);
 
     // Find the stream (if any)
-    stream_location_ = xref_->GetStreamLocation(startbyte);
+    stream_location_ = xref_->GetStreamLocation(start);
 
     // The object may contain an object stream that needs unpacked
     if(header_.GetString("/Type") == "/ObjStm")
@@ -93,7 +92,7 @@ void Object::IndexObjectStream()
   string index_string(stream_.begin(), stream_.begin() + startbyte - 1);
 
   // extract these numbers to a vector
-  vector<int> index = parse_ints(index_string);
+  vector<int> index = ParseInts(index_string);
 
   // If this is empty, something has gone wrong.
   if(index.empty()) throw runtime_error("Couldn't parse object stream");
@@ -146,7 +145,7 @@ Object::Object(shared_ptr<Object> t_holder, int t_object_number):
     // be handled by recursively calling the main creator function
     if(stream_.size() < 15 && stream_.find(" R", 0) < 15)
     {
-      size_t new_number = parse_references(stream_)[0];
+      size_t new_number = ParseReferences(stream_)[0];
       size_t holder = xref_->GetHoldingNumberOf(new_number);
       if(holder == 0) *this = Object(xref_, new_number);
       else *this = Object(make_shared<Object>(xref_, holder), new_number);
@@ -171,7 +170,6 @@ string Object::GetStream()
 {
   // If the stream has not already been processed, do it now
   if(stream_.empty()) ReadStreamFromStreamLocations();
-
   return stream_;
 }
 

@@ -69,22 +69,19 @@ typedef uint16_t Unicode;
 // the map to the console
 
 template< typename K, typename V > // K, V stand for key, value
-std::vector<K> getKeys(const std::unordered_map<K, V>& Map)
+std::vector<K> GetKeys(const std::unordered_map<K, V>& t_map)
 {
   // vector to store results
   std::vector<K> result;
 
   // Ensure it is big enough
-  result.reserve(Map.size());
+  result.reserve(t_map.size());
 
   // Declare map iterator according to its type
-  typename std::unordered_map<K, V>::const_iterator i;
+  typename std::unordered_map<K, V>::const_iterator it;
 
   // The following loop iterates through the map, gets the key and stores it
-  for(i = Map.begin(); i != Map.end(); ++i)
-  {
-    result.push_back(i->first);
-  }
+  for(it = t_map.begin(); it != t_map.end(); ++it) result.push_back(it->first);
 
   return result;
 }
@@ -95,9 +92,9 @@ std::vector<K> getKeys(const std::unordered_map<K, V>& Map)
 // This modifies A
 
 template <typename T>
-void concat(std::vector<T>& A, const std::vector<T>& B)
+void Concat(std::vector<T>& t_start, const std::vector<T>& t_append)
 {
-  A.insert(A.end(), B.begin(), B.end());
+  t_start.insert(t_start.end(), t_append.begin(), t_append.end());
 }
 
 //---------------------------------------------------------------------------//
@@ -105,15 +102,17 @@ void concat(std::vector<T>& A, const std::vector<T>& B)
 // vector from lowest to highest
 
 template <typename T>
-std::vector<int> order(const std::vector<T>& data)
+std::vector<int> Order(const std::vector<T>& t_data)
 {
-  std::vector<int> index(data.size(), 0); // a new int vector to store results
+  std::vector<int> index(t_data.size(), 0); // a new int vector to store results
   std::iota(std::begin(index), std::end(index), 0); // fill with ascending ints
+
   // Use a lambda function to sort 'index' based on the order of 'data'
-  sort(index.begin(), index.end(), [&](const T& a, const T& b)
+  sort(index.begin(), index.end(), [&](const int& low, const int& high)
   {
-    return (data[a] < data[b]);
+    return (t_data[low] < t_data[high]);
   });
+
   return index;
 }
 
@@ -121,15 +120,24 @@ std::vector<int> order(const std::vector<T>& data)
 // Sort one vector by another's order. Modifies supplied vector
 
 template <typename Ta, typename Tb>
-void sortby(std::vector<Ta>& vec, const std::vector<Tb>& data)
+void SortBy(std::vector<Ta>& t_sortee, const std::vector<Tb>& t_sorter)
 {
-  if(vec.size() == 0) return; // Nothing to do!
-  if(vec.size() != data.size()) // throw error if vector lengths don't match
-    throw std::runtime_error("sortby requires equal-lengthed vectors");
-  std::vector<Ta> res; // vector to store results
-  // Use order(data) as defined above to sort vec
-  for(auto i : order(data)) res.emplace_back(vec[i]);
-  std::swap(res, vec); // replace vec by the stored results
+  // Nothing to do!
+  if(t_sortee.empty()) return;
+
+  // Throw error if lengths don't match
+  if(t_sortee.size() != t_sorter.size())
+  {
+    throw std::runtime_error("SortBy requires equal-lengthed vectors");
+  }
+
+  // Vector to store results
+  std::vector<Ta> result;
+
+  // Use Order(t_sorter) as defined above to sort sortee
+  for(auto i : Order(t_sorter)) result.emplace_back(t_sortee[i]);
+
+  std::swap(result, t_sortee);
 }
 
 //---------------------------------------------------------------------------//
@@ -138,7 +146,7 @@ void sortby(std::vector<Ta>& vec, const std::vector<Tb>& data)
 // Each node contains a pointer to its parent (unless it is the root node
 // in which case this variable is nullptr). It also contains a vector of
 // pointers to child nodes. If the vector of child nodes is empty, then this
-// is a leaf node. For simplicity, this is recorded using the boolean isLeaf.
+// is a leaf node. For simplicity, this is recorded using the boolean is_leaf_.
 // Finally, each node contains an arbitrary object of type T.
 //
 // The reason for using a tree structure is that we can use recursion to
@@ -147,60 +155,57 @@ void sortby(std::vector<Ta>& vec, const std::vector<Tb>& data)
 // the leaf nodes using recursion
 
 template <class T>
-class tree_node
+class TreeNode
 {
-public:
-  // std::shared_ptr<tree_node<T>> looks messy, so we'll abbreviate it to Node
-  using Node = std::shared_ptr<tree_node<T>>;
+ public:
+  // std::shared_ptr<TreeNode<T>> looks messy, so we'll abbreviate it to Node
+  using Node = std::shared_ptr<TreeNode<T>>;
 
   // The standard constructor takes an object and a parent node
-  tree_node<T>(T o, Node par):parent(par), isLeaf(true), obj(o) {};
+  TreeNode<T>(T t_data, Node t_parent):
+    parent_(t_parent), is_leaf_(true), data_(t_data) {};
 
   // However, to start a new tree, create a node without passing a parent node
-  tree_node<T>(T o) : parent(Node(nullptr)),  isLeaf(true), obj(o){};
+  TreeNode<T>(T t_data) :
+    parent_(Node(nullptr)),  is_leaf_(true), data_(t_data) {};
 
   // The blank constructor might be needed in copy construction
-  tree_node<T>(){};
+  TreeNode<T>() {};
 
   //-------------------------------------------------------------------------//
   // This function adds child nodes to a given tree node
 
-  void add_kids(std::vector<T> obs)
+  void AddKids(std::vector<T> t_data)
   {
     // If this node is going to have children, it will no longer be a leaf
-    isLeaf = false;
+    is_leaf_ = false;
 
-    // For each object, make a new tree_node with it using 'this' as parent
-    for(auto i : obs)
+    // For each object, make a new TreeNode with it using 'this' as parent
+    for(auto datum : t_data)
     {
-      kids.push_back(std::make_shared<tree_node<T>>(i, Node(this)));
+      kids_.push_back(std::make_shared<TreeNode<T>>(datum, Node(this)));
     }
   };
 
   //-------------------------------------------------------------------------//
   // Simple getter for the object contained in the node
 
-  T get() const {return obj;}
+  T Get() const { return data_; }
 
   //-------------------------------------------------------------------------//
   // Follows parent pointers sequentially to get to the root node and returns
   // a pointer to it.
 
-  Node top_node()
+  Node TopNode()
   {
-    if(!parent) // If parent node is nullptr then !parent will resolve to true.
-    {
-      return Node(this);
-    }
+    // If parent node is nullptr then !parent_ will be true.
+    if(!parent_) return Node(this);
 
     // Get the parent node of the current node
-    Node next_node_up = parent;
+    Node next_node_up = parent_;
 
     // While next_node_up has a valid parent, make its parent next_node_up
-    while (next_node_up->parent)
-    {
-      next_node_up = next_node_up->parent;
-    }
+    while (next_node_up->parent_) next_node_up = next_node_up->parent_;
 
     // Since current next_node_up has no parent (nullptr), it must be the root
     return next_node_up;
@@ -209,89 +214,90 @@ public:
   //-------------------------------------------------------------------------//
   // simple getter for child nodes
 
-  std::vector<Node> getkids() const {return kids;};
+  std::vector<Node> GetKids() const { return kids_; }
 
   //-------------------------------------------------------------------------//
   // Returns a vector of all objects contained in ancestor nodes
 
-  std::vector<T> getAncestors() const
+  std::vector<T> GetAncestors() const
   {
     // Start the vector with the object contained in this node
-    std::vector<T> res {obj};
+    std::vector<T> result {data_};
 
     // Otherwise, we get the parent node (or nullptr if this is the root)
-    Node next_parent = parent;
+    Node next_parent = parent_;
 
     // Now for the parent node, we append its object to our result, and repeat
     // the process until we hit a nullptr, at which point we're done
     while (next_parent)
     {
-      res.push_back(next_parent->objnum);
-      next_parent = next_parent->parent;
+      result.push_back(next_parent->objnum);
+      next_parent = next_parent->parent_;
     }
 
-    return res;
+    return result;
   }
 
   //-------------------------------------------------------------------------//
   // Similar to getting the objects from all ancestors, we might want to get
   // objects from all descendant nodes. We can do this with recursion.
 
-  std::vector<T> getDescendants() const
+  std::vector<T> GetDescendants() const
   {
     // Vector to store results
-    std::vector<T> res;
+    std::vector<T> result;
 
     // For each child node, put its object in our vector
-    for(auto& i : kids)
+    for(auto& kid : kids_)
     {
-      res.push_back(i->obj);
+      result.push_back(kid->data_);
+
       // If the child node has its own child nodes, we just want to call the
       // function recursively and append each new result to our vector
-      if(!i->kids.empty())
+      if(!kid->kids_.empty())
       {
-        std::vector<T> tmp = i->getDescendants();
-        res.reserve(tmp.size() + res.size());
-        res.insert(res.end(), tmp.begin(), tmp.end());
+        std::vector<T> temporary = kid->GetDescendants();
+        result.reserve(temporary.size() + result.size());
+        result.insert(result.end(), temporary.begin(), temporary.end());
       }
     }
-    return(res);
+    return(result);
   }
 
   //-------------------------------------------------------------------------//
   // An important use of the tree structure is to get all the objects contained
   // in its leaf nodes. Again, we use recursion to do this
 
-  std::vector<T> getLeafs() const
+  std::vector<T> GetLeafs() const
   {
     // Vector to store results
-    std::vector<T> res;
+    std::vector<T> result;
 
     // For each child node, if it is a leaf, append to our vector
-    for(auto& i : kids)
+    for(auto& kid : kids_)
     {
-      if(i->isLeaf)
+      if(kid->is_leaf_)
       {
-        res.push_back(i->obj);
+        result.push_back(kid->data_);
       }
       // If its not a leaf, call this function recursively until we get leaves.
       // Append the result of the recursively called function to our vector.
       else
       {
-        std::vector<T> tmp = i->getLeafs();
-        res.reserve(tmp.size() + res.size());
-        res.insert(res.end(), tmp.begin(), tmp.end());
+        std::vector<T> temporary = kid->GetLeafs();
+        result.reserve(temporary.size() + result.size());
+        result.insert(result.end(), temporary.begin(), temporary.end());
       }
     }
-    return res;
+    return result;
   }
   //-------------------------------------------------------------------------//
 
 private:
-  Node parent;            // Shared pointer to parent tree_node<T>
-  bool isLeaf;            // This will be false if the node has children
-  std::vector<Node> kids; // Contains vector of shared pointers to child nodes
-  T obj;                  // The object contained in this tree node itself
+  Node parent_;             // Shared pointer to parent TreeNode<T>
+  bool is_leaf_;            // This will be false if the node has children
+  std::vector<Node> kids_;  // Contains vector of shared pointers to child nodes
+  T data_;                  // The object contained in this tree node itself
 };
 
 
@@ -307,16 +313,16 @@ private:
 // This can be used e.g. to find the byte position that always sits between
 // "startxref" and "%%EOF"
 
-std::string carve_out(const std::string&,
-                      const std::string&,
-                      const std::string&);
+std::string CarveOut(const std::string&,
+                     const std::string&,
+                     const std::string&);
 
 //---------------------------------------------------------------------------//
 // finds all closest pairs of strings a, b and returns the substring between.
 // This is used to carve out variable substrings between fixed substrings -
 // a surprisingly common task in parsing text.
 
-std::vector<std::string> multicarve(const std::string&,
+std::vector<std::string> MultiCarve(const std::string&,
                                     const std::string&,
                                     const std::string&);
 
@@ -324,19 +330,19 @@ std::vector<std::string> multicarve(const std::string&,
 // Decent approximation of whether a string contains binary data or not
 // Uses <algorithm> from std
 
-bool is_ascii(const std::string&);
+bool IsAscii(const std::string&);
 
 //---------------------------------------------------------------------------//
 //Takes a string of bytes represented in ASCII and converts to actual bytes
 // eg "48656c6c6f20576f726c6421" -> "Hello World!"
 
-std::vector<unsigned char> convert_hex_to_bytes(const std::string&);
+std::vector<unsigned char> ConvertHexToBytes(const std::string&);
 
 //---------------------------------------------------------------------------//
 //Converts an int to the relevant 2-byte ASCII hex (4 characters long)
 // eg 161 -> "00A1"
 
-std::string convert_int_to_hex(int);
+std::string ConvertIntToHex(int);
 
 //---------------------------------------------------------------------------//
 // Classify characters for use in lexers. This allows the use of switch
@@ -345,20 +351,20 @@ std::string convert_int_to_hex(int);
 // For cases where the lexer needs to find a specific symbol, this function
 // returns the original character if it is not a digit, a letter or whitespace
 
-char get_symbol_type(const char);
+char GetSymbolType(const char);
 
 //---------------------------------------------------------------------------//
 // Returns the data represented by an Ascii encoded hex string as a vector
 // of two-byte numbers
 
-std::vector<RawChar> convert_hex_to_rawchar(std::string&);
+std::vector<RawChar> ConvertHexToRawChar(std::string&);
 
 //---------------------------------------------------------------------------//
 // Converts normal string to a vector of 2-byte width numbers (RawChar)
 // This requires sequential conversion from char to uint8_t to uint16_t
 // (RawChar is just a synonym for uint16_t)
 
-std::vector<RawChar> convert_string_to_rawchar(const std::string&);
+std::vector<RawChar> ConvertStringToRawChar(const std::string&);
 
 //---------------------------------------------------------------------------//
 // This is a simple lexer to find any object references in the given string,
@@ -366,14 +372,14 @@ std::vector<RawChar> convert_string_to_rawchar(const std::string&);
 // even though the code is more unwieldy. It is essentially a finite state
 // machine that reads character by character and stores any matches found
 
-std::vector<int> parse_references(const std::string&);
+std::vector<int> ParseReferences(const std::string&);
 
 //---------------------------------------------------------------------------//
 // Another lexer. This one finds any integers in a string.
 // If there are decimal points, it ignores the fractional part.
 // It will not accurately represent hex, octal or scientific notation (eg 10e5)
 
-std::vector<int> parse_ints(const std::string&);
+std::vector<int> ParseInts(const std::string&);
 
 //---------------------------------------------------------------------------//
 // This lexer retrieves floats from a string. It searches through the entire
@@ -381,11 +387,11 @@ std::vector<int> parse_ints(const std::string&);
 // result can be interpreted as a decimally represented number. It will also
 // consume and convert integers but not hex, octal or scientific notation
 
-std::vector<float> parse_floats(const std::string&);
+std::vector<float> ParseFloats(const std::string&);
 
 //---------------------------------------------------------------------------//
 // Loads a file's contents into a single std::string using <fstream>
 
-std::string get_file(const std::string&);
+std::string GetFile(const std::string&);
 
 #endif

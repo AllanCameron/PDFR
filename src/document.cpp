@@ -37,11 +37,11 @@ using namespace std;
 
 /*---------------------------------------------------------------------------*/
 // Constructor for Document class. This takes a file location as an argument
-// then uses the get_file() function from utilities.h to read in the filestring
+// then uses the GetFile() function from utilities.h to read in the filestring
 // from which buildDoc() then creates the object
 
 Document::Document(const string& filename) :
-  file_path_(filename), file_string_(get_file(file_path_))
+  file_path_(filename), file_string_(GetFile(file_path_))
 {
   build_document(); // Call constructor helper to build Document
 }
@@ -127,13 +127,13 @@ void Document::read_page_directory()
     throw runtime_error("No Kids entry in /Pages");
 
   // Create the page directory tree. Start with the pages object as root node
-  auto root = make_shared<tree_node<int>>(page_object_number);
+  auto root = make_shared<TreeNode<int>>(page_object_number);
 
   // Populate the tree
   expand_kids(page_directory_.GetReferences("/Kids"), root);
 
   // Get the leafs of the tree
-  page_object_numbers_ = root->getLeafs();
+  page_object_numbers_ = root->GetLeafs();
 }
 
 /*---------------------------------------------------------------------------*/
@@ -157,22 +157,22 @@ void Document::read_page_directory()
 // lead to a major speedup. Getting an object at present takes about 36us.
 
 void Document::expand_kids(const vector<int>& object_numbers,
-                          shared_ptr<tree_node<int>> tree)
+                          shared_ptr<TreeNode<int>> tree)
 {
   // This function is only called from a single point that is already range
   // checked, so does not need error checked.
 
   // Create new children tree nodes with this one as parent
-  tree->add_kids(object_numbers);
+  tree->AddKids(object_numbers);
 
   // Get a vector of pointers to the new nodes
-  auto kid_nodes = tree->getkids();
+  auto kid_nodes = tree->GetKids();
 
   // For each new node get a vector of ints for its kid nodes
   for(auto& kid : kid_nodes)
   {
     auto refs =
-      get_object(kid->get())->GetDictionary().GetReferences("/Kids");
+      get_object(kid->Get())->GetDictionary().GetReferences("/Kids");
 
     // If it has children, use recursion to get them
     if (!refs.empty()) expand_kids(refs, kid);

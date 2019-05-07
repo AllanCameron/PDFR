@@ -26,7 +26,7 @@
 //---------------------------------------------------------------------------//
 
 #include "utilities.h"
-#include <fstream>   // for get_file - uses ifstream
+#include <fstream>   // for GetFile() - uses ifstream
 
 using namespace std;
 
@@ -93,58 +93,66 @@ static array<uint8_t, 256> s_symbol_type =
 // This can be used e.g. to find the byte position that always sits between
 // "startxref" and "%%EOF"
 
-string carve_out(const string& t_string,
-                 const string& t_left,
-                 const string& t_right)
+string CarveOut(const string& t_string,
+                const string& t_left,
+                const string& t_right)
 {
-  // Find the starting point of first 'pre'
+  // Find the starting point of the left "bookend"
   int start =  t_string.find(t_left);
 
-  // If pre not found in s, start at s[0], otherwise start at end of first pre
+  // If left delimiter absent, start at t_string[0], otherwise start at the end
+  // of first occurrence of left delimiter
   if (start) start += t_left.size();
-
   else start = 0;
 
-  // Trim the start of string
+  // Trim off the beginning of string
   string trimmed(t_string.substr(start, t_string.size() - start));
 
-  // Now find the starting point of 'post'
+  // Now find the starting point of the first occurrence of right delimiter
+  // in the remaining string
   int stop = trimmed.find(t_right);
 
-  // If post found, discard the end of the string starting at start of post
+  // If it was found, discard the end of the string starting from there
   if (stop) return trimmed.substr(0, stop);
 
-  // if post not found, finish at the end of the string
+  // if right delimiter not found in remaining string, return the whole fragment
   return trimmed;
 }
 
 /*---------------------------------------------------------------------------*/
-// finds all closest pairs of strings a, b and returns the substring between.
+// Finds all closest pairs of delimiters and returns the substring between.
 // This is used to carve out variable substrings between fixed substrings -
-// a surprisingly common task in parsing text.
+// a surprisingly common task in parsing text. e.g.
+//
+// string target("I'm not a pheasant plucker, I'm a pheasant plucker's son");
+// string left = "I'm", right = "plucker";
+// vector<string> result = MultiCarve(target, left, right);
+// result == vector<string> {" not a pheasant ", " a pheasant "}; // true
+//
 
-vector<string> multicarve(const string& t_string,
+vector<string> MultiCarve(const string& t_string,
                           const string& t_left,
                           const string& t_right)
 {
-  // vector to store results
   vector<string> result;
 
-  // if any of the strings are length 0 then return an empty vector
+  // If any of the strings are length 0 then return an empty vector
   if (t_string.empty() || t_left.empty() || t_right.empty()) return result;
 
-  // makes a copy to allow const correctness
+  // Makes a copy to allow const correctness
   string trimmed(t_string);
 
-  // This loop progressively finds matches in s and removes from the start
-  // of the string all characters up to the end of matched b.
-  // It does this until there are no paired matches left in the string
+  // This loop finds the first occurrence of the left delimiter, then stores
+  // a copy of the portion of t_string between the end of the left delimiter
+  // and the start of the right delimiter. It then trims the beginning of the
+  // string, leaving the portion after the right delimiter. It repeats until
+  // the whole t_string is consumed
   while (true)
   {
     int start = trimmed.find(t_left);
     if (start == -1) break;
 
-    // chop start off string up to end of first match of a
+    // Chops beginning off t_string up to end of first match of left delimiter
     int end_of_match     = start + t_left.length();
     int remaining_length = trimmed.length() - end_of_match;
     trimmed              = trimmed.substr(end_of_match, remaining_length);
@@ -155,7 +163,7 @@ vector<string> multicarve(const string& t_string,
     // Target found - push to result
     result.push_back(trimmed.substr(0, stop));
 
-    // Now discard the target plus the following instance of b
+    // Now discard the target plus the following instance of right delimiter
     end_of_match     = stop + t_right.length();
     remaining_length = trimmed.length() - end_of_match;
     trimmed          = trimmed.substr(end_of_match, remaining_length);
@@ -168,7 +176,7 @@ vector<string> multicarve(const string& t_string,
 // Decent approximation of whether a string contains binary data or not
 // Uses <algorithm> from std
 
-bool is_ascii(const string& t_string)
+bool IsAscii(const string& t_string)
 {
   if (t_string.empty()) return false;
 
@@ -180,9 +188,10 @@ bool is_ascii(const string& t_string)
 }
 
 /*---------------------------------------------------------------------------*/
-// Converts an Ascii-encoded string of bytes to a vector of bytes
+// Converts an Ascii-encoded string of bytes to a vector of bytes, e.g.
+// ConvertHexToBytes("01ABEF2A") == vector<uint8_t> { 0x01, 0xAB, 0xEF, 0x2A }
 
-vector<uint8_t> convert_hex_to_bytes(const string& t_hexstring)
+vector<uint8_t> ConvertHexToBytes(const string& t_hexstring)
 {
    vector<uint8_t> byte_vector{};
 
@@ -213,27 +222,27 @@ vector<uint8_t> convert_hex_to_bytes(const string& t_hexstring)
 
 /*---------------------------------------------------------------------------*/
 //Converts an int to the relevant 2-byte ASCII hex (4 characters long)
-// eg 161 -> "00A1"
+// eg ConvertIntToHex(161) == "00A1"
 
-string convert_int_to_hex(int t_int)
+string ConvertIntToHex(int t_int)
 {
-  if (t_int < 0 || t_int > 0xffff) return "FFFF"; // returns max if out of range
+  if (t_int < 0 || t_int > 0xffff) return "FFFF"; // Returns max if out of range
   string hex {"0123456789ABCDEF"};
-  hex += hex[(t_int & 0xf000) >> 12]; // gets index of hex from first 4 bits
-  hex += hex[(t_int & 0x0f00) >>  8]; // gets index of hex from second 4 bits
-  hex += hex[(t_int & 0x00f0) >>  4]; // gets index of hex from third 4 bits
-  hex += hex[(t_int & 0x000f) >>  0]; // gets index of hex from last 4 bits
+  hex += hex[(t_int & 0xf000) >> 12]; // Gets index of hex from first 4 bits
+  hex += hex[(t_int & 0x0f00) >>  8]; // Gets index of hex from second 4 bits
+  hex += hex[(t_int & 0x00f0) >>  4]; // Gets index of hex from third 4 bits
+  hex += hex[(t_int & 0x000f) >>  0]; // Gets index of hex from last 4 bits
   return string {hex, 16, 4};
 }
 
 /*---------------------------------------------------------------------------*/
-// Classify characters for use in lexers. This allows the use of switch
+// Classifies characters for use in lexers. This allows the use of switch
 // statements that depend on whether a letter is a character, digit or
 // whitespace but is indifferent to which specific instance of each it finds.
 // For cases where the lexer needs to find a specific symbol, this function
 // returns the original character if it is not a digit, a letter or whitespace
 
-char get_symbol_type(const char t_char)
+char GetSymbolType(const char t_char)
 {
   // if none of the above, return the char itself;
   return s_symbol_type[(uint8_t) t_char];
@@ -241,9 +250,10 @@ char get_symbol_type(const char t_char)
 
 /*--------------------------------------------------------------------------*/
 // Returns the data represented by an Ascii encoded hex string as a vector
-// of two-byte numbers
+// of two-byte numbers eg
+// ConvertHexToRawChar("ABCD0123") == vector<RawChar> {0xABCD, 0x0123}
 
-vector<RawChar> convert_hex_to_rawchar(string& t_string)
+vector<RawChar> ConvertHexToRawChar(string& t_string)
 {
   while (t_string.size() % 4) t_string = '0' + t_string;
   vector<RawChar> raw_vector; // vector to store results
@@ -263,9 +273,9 @@ vector<RawChar> convert_hex_to_rawchar(string& t_string)
 // This requires sequential conversion from char to uint8_t to uint16_t
 // (RawChar is just a synonym for uint16_t)
 
-vector<RawChar> convert_string_to_rawchar(const string& t_string)
+vector<RawChar> ConvertStringToRawChar(const string& t_string)
 {
-  vector<RawChar> result; // vector to hold results
+  vector<RawChar> result;
   if (t_string.empty()) return result;
   result.reserve(t_string.size());
   for (auto string_char : t_string) result.emplace_back(0x00ff & string_char);
@@ -278,7 +288,7 @@ vector<RawChar> convert_string_to_rawchar(const string& t_string)
 // even though the code is more unwieldy. It is essentially a finite state
 // machine that reads character by character and stores any matches found
 
-vector<int> parse_references(const string& t_string)
+vector<int> ParseReferences(const string& t_string)
 {
   // Defines the possible states of the finite state machine (fsm)
   enum ReferenceState
@@ -297,7 +307,7 @@ vector<int> parse_references(const string& t_string)
   // The main loop cycles through each char in the string to write the result
   for (const auto& chr : t_string)
   {
-    char m = get_symbol_type(chr);
+    char m = GetSymbolType(chr);
     switch(state)
     {
       // To begin with, ignore all input until a digit is reached
@@ -360,7 +370,7 @@ vector<int> parse_references(const string& t_string)
 // If there are decimal points, it ignores the fractional part.
 // It will not accurately represent hex, octal or scientific notation (eg 10e5)
 
-vector<int> parse_ints(const string& t_string)
+vector<int> ParseInts(const string& t_string)
 {
   // Define the possible states of the lexer
     enum IntState
@@ -378,7 +388,7 @@ vector<int> parse_ints(const string& t_string)
   // The main loop cycles through each char in the string to write the result
   for (auto chr : t_string)
   {
-    char m = get_symbol_type(chr);
+    char m = GetSymbolType(chr);
     switch(state)
     {
       case WAITING: if (m == 'D')
@@ -413,7 +423,7 @@ vector<int> parse_ints(const string& t_string)
 // result can be interpreted as a decimally represented number. It will also
 // include ints but not hex, octal or scientific notation (eg 10e5)
 
-vector<float> parse_floats(const string& t_string)
+vector<float> ParseFloats(const string& t_string)
 {
   vector<float> result; // vector to store and return results
   string buffer; // a buffer to hold characters until stored or discarded
@@ -427,7 +437,7 @@ vector<float> parse_floats(const string& t_string)
   FloatState state = WAITING; // current state of fsm
   for (const auto& chr : t_string)
   {
-    char m = get_symbol_type(chr);
+    char m = GetSymbolType(chr);
     switch(state)
     {
     case WAITING: if (m == 'D'){ buffer += chr; state = PRE;}
@@ -460,7 +470,7 @@ vector<float> parse_floats(const string& t_string)
 /*--------------------------------------------------------------------------*/
 // Loads a file's contents into a single std::string using <fstream>
 
-string get_file(const string& t_file)
+string GetFile(const string& t_file)
 {
   // A new string in which to store file contents.
   string file_string;

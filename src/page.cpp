@@ -192,11 +192,11 @@ void Page::read_fonts()
 void Page::read_contents()
 {
      // get all leaf nodes of the contents tree using expandContents()
-    auto root = make_shared<tree_node<int>>(0);
+    auto root = make_shared<TreeNode<int>>(0);
 
     // use expand_contents() to get page header object numbers
     expand_contents(m_header.GetReferences("/Contents"), root);
-    auto contents = root->getLeafs();
+    auto contents = root->GetLeafs();
 
     // Get the contents from each object stream and paste them at the bottom
     // of the pagestring with a line break after each one
@@ -260,20 +260,20 @@ void Page::read_XObjects()
 // but it is possible to have nested content trees. In any case we only want
 // the leaves of the content tree, which are found by this algorithm
 
-void Page::expand_contents(vector<int> objs, shared_ptr<tree_node<int>> tree)
+void Page::expand_contents(vector<int> objs, shared_ptr<TreeNode<int>> tree)
 {
   // Create new children tree nodes with this one as parent
-  tree->add_kids(objs);
+  tree->AddKids(objs);
 
   // Get a vector of pointers to the new nodes
-  auto kidnodes = tree->getkids();
+  auto kidnodes = tree->GetKids();
 
   // Now for each get a vector of ints for its kid nodes
   for(auto& kid : kidnodes)
   {
     // Read the contents from the dictionary entry
     auto nodes =
-    m_doc->get_object(kid->get())->GetDictionary().GetReferences("/Contents");
+    m_doc->get_object(kid->Get())->GetDictionary().GetReferences("/Contents");
 
     // If it has kids, use recursion to get them
     if (!nodes.empty()) expand_contents(nodes, kid);

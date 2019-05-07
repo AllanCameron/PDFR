@@ -50,9 +50,9 @@ using namespace std;
  *
  * The state is described by an enum, and the character of interest is tested
  * for its type - either letter, digit, whitespace or miscellaneous using the
- * get_symbol_type function defined in utilities.cpp. Any miscellaneous chars
+ * GetSymbolType function defined in utilities.cpp. Any miscellaneous chars
  * that need to be handled by a specific state can be done so because
- * get_symbol_type returns the original char if it is not a letter, digit or
+ * GetSymbolType returns the original char if it is not a letter, digit or
  * whitespace.
  *
  * The rest of the functions are essentially just getters, which request or
@@ -141,7 +141,7 @@ void DictionaryBuilder::TokenizeDictionary()
     char_ = (*string_ptr_)[char_num_];
 
      // determine char type at start of each loop
-    char input_char = get_symbol_type(char_);
+    char input_char = GetSymbolType(char_);
     switch (state_)
     {
       case PREENTRY:    if (input_char == '<') state_ = MAYBE;  break;
@@ -372,7 +372,7 @@ void DictionaryBuilder::HandleClose(char t_input_char)
                 if(string_ptr_->substr(char_num_, 6) == "stream")
                 {
                   int ex = 7;
-                  while (get_symbol_type((*string_ptr_)[char_num_ + ex]) == ' ')
+                  while (GetSymbolType((*string_ptr_)[char_num_ + ex]) == ' ')
                     ex++; // read the whitespace characters after word "stream"
                   // Now store the location of the start of the stream
                   map_["stream"] = to_string(char_num_ + ex);
@@ -387,8 +387,8 @@ void DictionaryBuilder::HandleClose(char t_input_char)
 // Creator function. Takes a string pointer so big strings can be passed
 // cheaply. This version starts at the beginning of the given string
 
-DictionaryBuilder::DictionaryBuilder(shared_ptr<const string> str) :
-  string_ptr_(str),
+DictionaryBuilder::DictionaryBuilder(shared_ptr<const string> t_string_ptr) :
+  string_ptr_(t_string_ptr),
   char_num_(0),
   bracket_(0),
   key_pending_(false),
@@ -406,9 +406,10 @@ DictionaryBuilder::DictionaryBuilder(shared_ptr<const string> str) :
 // This allows dictionaries to be read starting from the object locations
 // given in the cross-reference (xref) table
 
-DictionaryBuilder::DictionaryBuilder(shared_ptr<const string> str, size_t pos) :
-  string_ptr_(str),
-  char_num_(pos),
+DictionaryBuilder::DictionaryBuilder(shared_ptr<const string> t_string_ptr,
+                                     size_t t_offset) :
+  string_ptr_(t_string_ptr),
+  char_num_(t_offset),
   bracket_(0),
   key_pending_(false),
   state_(PREENTRY)
@@ -443,16 +444,16 @@ DictionaryBuilder::DictionaryBuilder()
 
 /*---------------------------------------------------------------------------*/
 
-Dictionary::Dictionary(shared_ptr<const string> str)
+Dictionary::Dictionary(shared_ptr<const string> t_string_ptr)
 {
-  map_ = move(DictionaryBuilder(str).Get());
+  map_ = move(DictionaryBuilder(t_string_ptr).Get());
 }
 
 /*---------------------------------------------------------------------------*/
 
-Dictionary::Dictionary(shared_ptr<const string> s, size_t pos)
+Dictionary::Dictionary(shared_ptr<const string> t_string_ptr, size_t t_offset)
 {
-  map_ = move(DictionaryBuilder(s, pos).Get());
+  map_ = move(DictionaryBuilder(t_string_ptr, t_offset).Get());
 }
 
 /*---------------------------------------------------------------------------*/
@@ -480,21 +481,21 @@ string Dictionary::GetString(const string& t_key) const
   // A simple map index lookup with square brackets adds the key to
   // map_, which we don't want. Using find(key) leaves it unaltered
   auto finder = map_.find(t_key);
-  if (finder != map_.end())
-    return finder->second;
+  if (finder != map_.end()) return finder->second;
+
   // We want an empty string rather than an error if the key isn't found.
   // This allows functions that try to return references, ints, floats etc
   // to return an empty vector so a boolean test of their presence is
   // possible without calling the lexer twice.
-  else return "";
+  return string();
 }
 
 /*---------------------------------------------------------------------------*/
 // Sometimes we just need a boolean check for the presence of a key
 
-bool Dictionary::HasKey(const string& Key) const
+bool Dictionary::HasKey(const string& t_key) const
 {
-  return map_.find(Key) != map_.end();
+  return map_.find(t_key) != map_.end();
 }
 
 /*---------------------------------------------------------------------------*/
@@ -502,65 +503,65 @@ bool Dictionary::HasKey(const string& Key) const
 // This should return true if the key is present AND its value contains
 // at least one object reference, and should be false in all other cases
 
-bool Dictionary::ContainsReferences(const string& Key) const
+bool Dictionary::ContainsReferences(const string& t_key) const
 {
-  return !this->GetReferences(Key).empty();
+  return !this->GetReferences(t_key).empty();
 }
 
 /*---------------------------------------------------------------------------*/
 // Check whether the key's values contains any integers. If a key is present
 // AND its value contains ints, return true. Otherwise false.
 
-bool Dictionary::ContainsInts(const string& Key) const
+bool Dictionary::ContainsInts(const string& t_key) const
 {
-  return !this->GetInts(Key).empty();
+  return !this->GetInts(t_key).empty();
 }
 
 /*---------------------------------------------------------------------------*/
 // Returns a vector of the object numbers from references found in the
 // given key's value. Uses the getObjRefs() global function from utilities.h
 
-vector<int> Dictionary::GetReferences(const string& Key) const
+vector<int> Dictionary::GetReferences(const string& t_key) const
 {
-  return parse_references(this->GetString(Key));
+  return ParseReferences(this->GetString(t_key));
 }
 
 /*---------------------------------------------------------------------------*/
 // Returns a vector of the object numbers from references found in the
 // given key's value. Uses the getObjRefs() global function from utilities.h
 
-int Dictionary::GetReference(const string& Key) const
+int Dictionary::GetReference(const string& t_key) const
 {
-  vector<int> all_references = parse_references(this->GetString(Key));
+  vector<int> all_references = ParseReferences(this->GetString(t_key));
   if (all_references.empty()) throw runtime_error("No reference found");
   return all_references[0];
 }
 /*---------------------------------------------------------------------------*/
-// Returns any integers present in the value string as read by the parse_ints()
+// Returns any integers present in the value string as read by the ParseInts()
 // global function defined in utilities.cpp
 
-vector<int> Dictionary::GetInts(const string& Key) const
+vector<int> Dictionary::GetInts(const string& t_key) const
 {
-  return parse_ints(this->GetString(Key));
+  return ParseInts(this->GetString(t_key));
 }
 
 /*---------------------------------------------------------------------------*/
-// Returns any floats present in the value string as read by the parse_floats()
+// Returns any floats present in the value string as read by the ParseFloats()
 // global function defined in utilities.cpp
 
-vector<float> Dictionary::GetFloats(const string& Key) const
+vector<float> Dictionary::GetFloats(const string& t_key) const
 {
-  return parse_floats(this->GetString(Key));
+  return ParseFloats(this->GetString(t_key));
 }
 
 /*---------------------------------------------------------------------------*/
 // This creates a new dictionary object on request if the value string contains
 // a subdictionary.
 
-Dictionary Dictionary::GetDictionary(const string& Key) const
+Dictionary Dictionary::GetDictionary(const string& t_key) const
 {
   // Get the value string
-  string dict = this->GetString(Key);
+  string dict = this->GetString(t_key);
 
   // Test that it is a dictionary
   if (dict.find("<<") != string::npos)
@@ -577,9 +578,9 @@ Dictionary Dictionary::GetDictionary(const string& Key) const
 // Checks whether a subdictionary is present in the value string by looking
 // for double angle brackets
 
-bool Dictionary::ContainsDictionary(const string& Key) const
+bool Dictionary::ContainsDictionary(const string& t_key) const
 {
-  string dict = this->GetString(Key);
+  string dict = this->GetString(t_key);
   return dict.find("<<") != string::npos;
 }
 
@@ -589,14 +590,14 @@ bool Dictionary::ContainsDictionary(const string& Key) const
 
 vector<string> Dictionary::GetAllKeys() const
 {
-  return getKeys(this->map_);
+  return GetKeys(this->map_);
 }
 
 /*---------------------------------------------------------------------------*/
 // Returns the entire map. This is useful for passing dictionaries out of
 // the program, for example in debugging
 
-const std::unordered_map<string, string>& Dictionary::R_out() const
+std::unordered_map<string, string> Dictionary::GetMap() const
 {
   return this->map_;
 }
