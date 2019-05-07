@@ -181,8 +181,8 @@ Rcpp::List get_object_from_string(const string& file_name, int object)
   // Fill an Rcpp::List with the requested object's elements and return
   return Rcpp::List::create(
     Rcpp::Named("header") =
-      document_ptr->get_object(object)->get_dictionary().R_out(),
-    Rcpp::Named("stream") = document_ptr->get_object(object)->get_stream());
+      document_ptr->get_object(object)->GetDictionary().R_out(),
+    Rcpp::Named("stream") = document_ptr->get_object(object)->GetStream());
 }
 
 //---------------------------------------------------------------------------//
@@ -201,8 +201,8 @@ Rcpp::List get_object_from_raw(const vector<uint8_t>& raw_file, int object)
   // Fill an Rcpp::List with the requested object and return
   return Rcpp::List::create(
     Rcpp::Named("header") =
-      document_ptr->get_object(object)->get_dictionary().R_out(),
-    Rcpp::Named("stream") = document_ptr->get_object(object)->get_stream());
+      document_ptr->get_object(object)->GetDictionary().R_out(),
+    Rcpp::Named("stream") = document_ptr->get_object(object)->GetStream());
 }
 
 //---------------------------------------------------------------------------//

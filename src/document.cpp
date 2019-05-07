@@ -106,7 +106,7 @@ void Document::read_catalog()
   int root_number = xref_->GetTrailer().GetReference("/Root");
 
   // With errors handled, we can now just get the pointed-to object's dictionary
-  catalog_ = get_object(root_number)->get_dictionary();
+  catalog_ = get_object(root_number)->GetDictionary();
 }
 
 /*---------------------------------------------------------------------------*/
@@ -120,7 +120,7 @@ void Document::read_page_directory()
   int page_object_number = catalog_.GetReference("/Pages");
 
   // Now fetch that object and store it
-  page_directory_ = get_object(page_object_number)->get_dictionary();
+  page_directory_ = get_object(page_object_number)->GetDictionary();
 
   // Ensure /Pages has /kids entry
   if (!page_directory_.ContainsReferences("/Kids"))
@@ -172,7 +172,7 @@ void Document::expand_kids(const vector<int>& object_numbers,
   for(auto& kid : kid_nodes)
   {
     auto refs =
-      get_object(kid->get())->get_dictionary().GetReferences("/Kids");
+      get_object(kid->get())->GetDictionary().GetReferences("/Kids");
 
     // If it has children, use recursion to get them
     if (!refs.empty()) expand_kids(refs, kid);
@@ -191,7 +191,7 @@ Dictionary Document::get_page_header(int page_number)
   }
 
   // All good - return the requested header
-  return objects_[page_object_numbers_[page_number]]->get_dictionary();
+  return objects_[page_object_numbers_[page_number]]->GetDictionary();
 }
 
 

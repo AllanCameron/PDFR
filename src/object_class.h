@@ -63,33 +63,25 @@
 
 class Object
 {
-public:
-  // constructors
-  Object(std::shared_ptr<const XRef>, int);  // get direct object
-  Object(std::shared_ptr<Object>, int);
-  Object(){}; // default constructor (needed for document class to
-                    // initialize its vector of objects)
+ public:
+  Object(std::shared_ptr<const XRef>, int);  // Get direct object
+  Object(std::shared_ptr<Object>, int);      // Get stream object
+  Object(){};                                // Default constructor
+  std::string GetStream();                   // Returns stream as string
+  Dictionary  GetDictionary();               // Returns Object's Dictionary
 
-  // public member functions
-  bool has_stream();               // returns has_stream boolean
-  std::string get_stream();        // returns stream as string
-  Dictionary get_dictionary();    // returns header as dictionary object
-
-private:
-  // private data members
-  std::shared_ptr<const XRef> m_xref; // Pointer to xref allows data to be found
-  int m_object_number;            // The object knows its own number
-  Dictionary m_header;              // The object's dictionary
-  std::string m_stream;             // The object's stream or contents
-  std::array<size_t, 2> m_stream_location; // start/stop for stream position
-
-  // index for object stream holders
-  std::unordered_map<int, std::pair<int, int>> m_object_stream_index;
+ private:
+  std::unordered_map<int, std::pair<int, int>> object_stream_index_;
+  std::shared_ptr<const XRef> xref_;         // Pointer to xref
+  int object_number_;                        // The object knows its own number
+  Dictionary header_;                        // The object's dictionary
+  std::string stream_;                       // The object's stream or contents
+  std::array<size_t, 2> stream_location_;    // Start/stop of stream position
 
   // private methods
-  void index_object_stream();       // gets index of objects held by a stream
-  void read_stream_from_stream_locations();
-  void apply_filters();
+  void IndexObjectStream();
+  void ApplyFilters();
+  void ReadStreamFromStreamLocations();
 };
 
 //---------------------------------------------------------------------------//

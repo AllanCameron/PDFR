@@ -100,7 +100,7 @@ void glyphwidths::parseWidths()
       m_document->get_object(m_font_dictionary.GetReference("/Widths"));
 
     // Get the referenced object's stream
-    string ostring(width_object->get_stream());
+    string ostring(width_object->GetStream());
 
     // Get the numbers from the width array in the stream
     widtharray = parse_floats(ostring);
@@ -133,14 +133,14 @@ void glyphwidths::parseDescendants()
     m_document->get_object(m_font_dictionary.GetReference("/DescendantFonts"));
 
   // Extract its dictionary and its stream
-  Dictionary descdict = desc->get_dictionary();
-  string descstream(desc->get_stream());
+  Dictionary descdict = desc->GetDictionary();
+  string descstream(desc->GetStream());
 
   // Handle descendantfonts being just a reference to another object
   if(!parse_references(descstream).empty())
   {
     descdict =
-      m_document->get_object(parse_references(descstream)[0])->get_dictionary();
+      m_document->get_object(parse_references(descstream)[0])->GetDictionary();
   }
 
   // We now look for the /W key and if it is found parse its contents
@@ -153,7 +153,7 @@ void glyphwidths::parseDescendants()
     if (descdict.ContainsReferences("/W"))
     {
       widthstring =
-        m_document->get_object(descdict.GetReference("/W"))->get_stream();
+        m_document->get_object(descdict.GetReference("/W"))->GetStream();
     }
 
     // otherwise we assume /W contains the widths needed

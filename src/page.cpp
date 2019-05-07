@@ -84,7 +84,7 @@ void Page::read_boxes()
       if(box_header.ContainsReferences("/Parent"))
       {
         int parent = box_header.GetReference("/Parent");
-        box_header = m_doc->get_object(parent)->get_dictionary();
+        box_header = m_doc->get_object(parent)->GetDictionary();
       }
 
       // The loop will exit if it doesn't find a parent node
@@ -133,7 +133,7 @@ void Page::read_resources()
     if(m_header.ContainsReferences("/Resources"))
     {
       m_resources =
-      m_doc->get_object(m_header.GetReference("/Resources"))->get_dictionary();
+      m_doc->get_object(m_header.GetReference("/Resources"))->GetDictionary();
     }
   }
   else // Resources contains a subdictionary
@@ -156,7 +156,7 @@ void Page::read_fonts()
     if (m_resources.ContainsReferences("/Font"))
     {
       m_fonts =
-        m_doc->get_object(m_resources.GetReference("/Font"))->get_dictionary();
+        m_doc->get_object(m_resources.GetReference("/Font"))->GetDictionary();
     }
   }
   // Otherwise, it is a dictionary, so we get the result
@@ -176,7 +176,7 @@ void Page::read_fonts()
       {
         sm_fontmap[font_label.first] =
           make_shared<Font>(m_doc,
-                            m_doc->get_object(reference)->get_dictionary(),
+                            m_doc->get_object(reference)->GetDictionary(),
                             font_label.first);
       }
     }
@@ -202,7 +202,7 @@ void Page::read_contents()
     // of the pagestring with a line break after each one
     for (auto m : contents)
     {
-      m_content_string.append(m_doc->get_object(m)->get_stream());
+      m_content_string.append(m_doc->get_object(m)->GetStream());
       m_content_string.append(std::string("\n"));
     }
 }
@@ -236,7 +236,7 @@ void Page::read_XObjects()
   else if (m_resources.ContainsReferences("/XObject"))
   {
     xobject_dict =
-    m_doc->get_object(m_resources.GetReference("/XObject"))->get_dictionary();
+    m_doc->get_object(m_resources.GetReference("/XObject"))->GetDictionary();
 
   }
 
@@ -248,7 +248,7 @@ void Page::read_XObjects()
     // map xobject strings to the xobject names
     if(!xobj_objs.empty())
     {
-      m_XObjects[i.first] = m_doc->get_object(xobj_objs[0])->get_stream();
+      m_XObjects[i.first] = m_doc->get_object(xobj_objs[0])->GetStream();
     }
   }
 }
@@ -273,7 +273,7 @@ void Page::expand_contents(vector<int> objs, shared_ptr<tree_node<int>> tree)
   {
     // Read the contents from the dictionary entry
     auto nodes =
-    m_doc->get_object(kid->get())->get_dictionary().GetReferences("/Contents");
+    m_doc->get_object(kid->get())->GetDictionary().GetReferences("/Contents");
 
     // If it has kids, use recursion to get them
     if (!nodes.empty()) expand_contents(nodes, kid);

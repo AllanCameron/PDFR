@@ -135,7 +135,7 @@ void Encoding::map_unicode()
   int unicode_reference = m_font_dictionary.GetReference("/ToUnicode");
 
   // Get the text stream of the unicode conversion entry
-  string unicode_text(m_document->get_object(unicode_reference)->get_stream());
+  string unicode_text(m_document->get_object(unicode_reference)->GetStream());
 
   // multicarve gets all strings between the bookending strings. These are
   // stored in a vector and are substrates for the processing methods below
@@ -231,7 +231,7 @@ void Encoding::read_encoding()
     auto encoding_object =
       m_document->get_object(m_font_dictionary.GetReference("/Encoding"));
 
-    encoding_dictionary = encoding_object->get_dictionary();
+    encoding_dictionary = encoding_object->GetDictionary();
 
     if(encoding_dictionary.HasKey("/BaseEncoding"))
     {
