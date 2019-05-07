@@ -105,7 +105,7 @@ private:
 
   // Gets the leaf nodes of a content tree
   void expand_contents(std::vector<int> obs,
-                      std::shared_ptr<tree_node<int>> tree);
+                      std::shared_ptr<TreeNode<int>> tree);
 };
 
 //---------------------------------------------------------------------------//

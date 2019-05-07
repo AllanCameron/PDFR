@@ -78,9 +78,9 @@ private:
   {
     bool operator() (const TextPointer& row1, const TextPointer& row2) const
     {
-      if (row1->get_bottom()  > row2->get_bottom() ) return true;
-      if (row1->get_bottom() == row2->get_bottom() &&
-          row1->get_left()    < row2->get_left()) return true;
+      if (row1->GetBottom()  > row2->GetBottom() ) return true;
+      if (row1->GetBottom() == row2->GetBottom() &&
+          row1->GetLeft()    < row2->GetLeft()) return true;
       return false;
     }
   };

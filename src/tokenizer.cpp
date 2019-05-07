@@ -94,7 +94,7 @@ void Tokenizer::pushbuf(const TState type, const TState statename)
       shared_ptr<string> xo = gs->getXobject(inloop);
 
       // Don't try to parse binary objects like images etc
-      if(is_ascii(*xo)) Tokenizer(xo, gs);
+      if(IsAscii(*xo)) Tokenizer(xo, gs);
     }
   }
 
@@ -301,7 +301,7 @@ void Tokenizer::escapeState()
 
     // Convert octal string to int
     int newint = stoi(buf, nullptr, 8);
-    buf = convert_int_to_hex(newint);
+    buf = ConvertIntToHex(newint);
     pushbuf(HEXSTRING, STRING);
     i--;  // Decrement to await next char
   }

@@ -49,7 +49,7 @@ using namespace std;
 // using this unordered map to get the implied direction based on the
 // surrounding whitespace.
 
-unordered_map<uint8_t, pair<Direction, Direction>> Vertex::arrows =
+unordered_map<uint8_t, pair<Direction, Direction>> Vertex::arrows_ =
 {
   {0x00, {None, None}},   {0x01, {North, West}}, {0x02, {West, South}},
   {0x03, {West, West}},   {0x04, {South, East}}, {0x05, {None, None}},

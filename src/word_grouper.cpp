@@ -40,7 +40,7 @@ constexpr int EDGECOUNT = 4;
 // and finds its column edges, then joins elligible words together as long as
 // they do not belong to different columns.
 
-word_grouper::word_grouper(TextBox&& g): m_textbox(move(g))
+word_grouper::word_grouper(TextBox&& t_text_box): m_textbox(move(t_text_box))
 {
   findEdges();
   assignEdges();
@@ -74,26 +74,26 @@ TextTable word_grouper::out()
 // return are data members of the class, we need to pass the map we wish to
 // create by reference.
 
-void word_grouper::tabulate(const vector<float>& supplied_vector,
-                            unordered_map<int, size_t>& table   )
+void word_grouper::tabulate(const vector<float>& t_supplied_vector,
+                            unordered_map<int, size_t>& t_table   )
 {
   // Take each member of the supplied vector
-  for (const auto& element : supplied_vector)
+  for (const auto& element : t_supplied_vector)
   {
     // Multiply it by 10 and use it as a key in the map with value 1
-    auto inserter = table.insert(pair<int, size_t>((int) 10 * element, 1));
+    auto inserter = t_table.insert(pair<int, size_t>((int) 10 * element, 1));
 
     // If the key already exists in the map, increment the value by 1
     if (!inserter.second) inserter.first->second++;
   }
 
   // Now take each key in the resulting map
-  for (auto key_value_pair = table.begin(); key_value_pair != table.end(); )
+  for (auto key_value_pair = t_table.begin(); key_value_pair != t_table.end(); )
   {
     // if value is below the number needed to declare a column, delete it
     if (key_value_pair->second < EDGECOUNT)
     {
-      table.erase(key_value_pair++);
+      t_table.erase(key_value_pair++);
     }
     else ++key_value_pair;
   }
@@ -109,8 +109,8 @@ void word_grouper::findEdges()
   vector<float> left, right;
   for(auto& element : m_textbox)
   {
-    left.push_back(element->get_left());
-    right.push_back(element->get_right());
+    left.push_back(element->GetLeft());
+    right.push_back(element->GetRight());
   }
 
   // Create a vector of midpoints of text elements
@@ -135,26 +135,26 @@ void word_grouper::assignEdges()
 {
   for(auto& element : m_textbox)
   {
-    int left_int = element->get_left() * 10;
-    int right_int = element->get_right() * 10;
-    int mid_int = (element->get_right() + element->get_left()) * 5;
+    int left_int = element->GetLeft() * 10;
+    int right_int = element->GetRight() * 10;
+    int mid_int = (element->GetRight() + element->GetLeft()) * 5;
 
     // Non-unique left edge - assume column edge
     if(m_leftEdges.find(left_int) != m_leftEdges.end())
     {
-      element->make_left_edge();
+      element->MakeLeftEdge();
     }
 
     // Non-unique right edge - assume column edge
     if(m_rightEdges.find(right_int) != m_rightEdges.end())
     {
-      element->make_right_edge();
+      element->MakeRightEdge();
     }
 
     // Non-unique centre value - assume centred column
     if(m_mids.find(mid_int) != m_mids.end())
     {
-      element->make_centred();
+      element->MakeCentred();
     }
   }
 }
@@ -174,7 +174,7 @@ void word_grouper::findRightMatch()
   for(auto element = m_textbox.begin(); element != m_textbox.end(); ++element)
   {
     // Check the row is elligible for matching
-    if( (*element)->is_consumed()) continue;
+    if( (*element)->IsConsumed()) continue;
 
     // If elligible, check every other word for the best match
     for(auto other = element; other != m_textbox.end(); ++other)
@@ -183,9 +183,9 @@ void word_grouper::findRightMatch()
       if(element == other) continue;
 
       // These TextElement functions are quite complex in themselves
-      if((*element)->is_elligible_to_join(**other))
+      if((*element)->IsElligibleToJoin(**other))
       {
-        (*element)->join_words(**other);
+        (*element)->JoinWords(**other);
         --element;  // Keep matching same element until no otehr matches found
         break;
       }

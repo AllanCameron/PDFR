@@ -92,48 +92,56 @@
 
 class Encoding
 {
-public:
-  // constructor
+ public:
+  // Constructor
   Encoding(const Dictionary&, std::shared_ptr<Document>);
 
   // public member functions
-  Unicode interpret(const RawChar&);  // Maps given code point to Unicode
-  std::shared_ptr<std::unordered_map<RawChar, Unicode>> encoding_keys();
 
-private:
+  // Maps given raw code point to Unicode
+  Unicode Interpret(const RawChar&);
+
+  // Gets all available Raw chars that may be translated to Unicode in the map
+  std::shared_ptr<std::unordered_map<RawChar, Unicode>> GetEncodingKeys();
+
+ private:
+  // States used by parser to read "differences" entry in encoding dictionary
+  enum DifferencesState { NEWSYMB, NUM, NAME, STOP };
+
+  typedef std::unordered_map<RawChar, Unicode> UnicodeMap;
   // data lookup tables - defined as static, which means only a single
   // instance of each is created rather than a copy for each object.
   // Note these maps are defined in adobetounicode.h and chartounicode.h
-  static std::unordered_map<std::string, Unicode> adobe_to_unicode;
-  static std::unordered_map<RawChar, Unicode> macroman_to_unicode;
-  static std::unordered_map<RawChar, Unicode> winansi_to_unicode;
-  static std::unordered_map<RawChar, Unicode> pdfdoc_to_unicode;
+  static std::unordered_map<std::string, Unicode> adobe_to_unicode_;
+  static UnicodeMap macroman_to_unicode_;
+  static UnicodeMap winansi_to_unicode_;
+  static UnicodeMap pdfdoc_to_unicode_;
 
-  // the main variable data container for the class
-  std::unordered_map<RawChar, Unicode> m_encoding_map;
-
-  // private data members used as variables in creating encoding map
-  Dictionary m_font_dictionary;       // the main font dictionary
-  std::shared_ptr<Document> m_document;  // pointer to the containing document
-  std::string m_base_encoding; // value of /BaseEncoding entry
-  enum differences_state { NEWSYMB, NUM, NAME, STOP };
+  UnicodeMap encoding_map_;             // The main data member lookup
+  Dictionary font_dictionary_;          // the main font dictionary
+  std::shared_ptr<Document> document_;  // pointer to the containing document
+  std::string base_encoding_;           // value of /BaseEncoding entry
 
   // private member functions
 
   // uses lexer to parse /Differences entry
-  void read_differences(const std::string&);
+  void ReadDifferences(const std::string&);
 
   // finds encoding dictionary, gets /basencoding and /Differences entries
-  void read_encoding();
+  void ReadEncoding();
 
   // parses CMap encoding ranges
-  void process_unicode_range(std::vector<std::string>&);
+  void ProcessUnicodeRange(std::vector<std::string>&);
 
   // parses CMap direct char-char conversion table
-  void process_unicode_chars(std::vector<std::string>&);
+  void ProcessUnicodeChars(std::vector<std::string>&);
 
   // finds CMap if any and co-ordinates parsers to create mapping
-  void map_unicode();
+  void MapUnicode();
+
+  // Helper function for parser
+  void Write(std::vector<std::pair<DifferencesState, std::string>>&,
+             DifferencesState&, std::string&);
 };
 
 //---------------------------------------------------------------------------//

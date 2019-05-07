@@ -103,7 +103,7 @@ void glyphwidths::parseWidths()
     string ostring(width_object->GetStream());
 
     // Get the numbers from the width array in the stream
-    widtharray = parse_floats(ostring);
+    widtharray = ParseFloats(ostring);
   }
   // If /Widths is not a reference get the widths directly
   else  widtharray = m_font_dictionary.GetFloats("/Widths");
@@ -137,10 +137,10 @@ void glyphwidths::parseDescendants()
   string descstream(desc->GetStream());
 
   // Handle descendantfonts being just a reference to another object
-  if(!parse_references(descstream).empty())
+  if(!ParseReferences(descstream).empty())
   {
     descdict =
-      m_document->get_object(parse_references(descstream)[0])->GetDictionary();
+      m_document->get_object(ParseReferences(descstream)[0])->GetDictionary();
   }
 
   // We now look for the /W key and if it is found parse its contents
@@ -229,7 +229,7 @@ int glyphwidths::getwidth(const RawChar& raw)
 
 vector<RawChar> glyphwidths::widthKeys()
 {
-  return getKeys(this->m_width_map);
+  return GetKeys(this->m_width_map);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -252,7 +252,7 @@ void glyphwidths::parsewidtharray(const string& s)
   // main loop - straight iteration through all the characters in s
   for(const auto& i : s)
   {
-    char a = get_symbol_type(i);
+    char a = GetSymbolType(i);
 
     // If opening of array not first character, simply wait for '['
     if(state == NEWSYMB)

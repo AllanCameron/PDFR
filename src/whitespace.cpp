@@ -67,7 +67,7 @@ void Whitespace::getMaxLineSize()
   std::vector<float> fontsizes;
   for(auto& i : m_page_text)
   {
-    fontsizes.push_back(i->get_size());
+    fontsizes.push_back(i->GetSize());
   }
   sort(fontsizes.begin(), fontsizes.end());
   max_line_space = fontsizes[fontsizes.size()/2] * MAX_LINE_FACTOR;
@@ -83,24 +83,24 @@ void Whitespace::pageDimensions()
 {
   for(auto& i : m_page_text)
   {
-    if(i->get_right() > m_page_text.get_right())
+    if(i->GetRight() > m_page_text.GetRight())
     {
-      m_page_text.set_right(m_page_text.get_right() + 10.0);
+      m_page_text.SetRight(m_page_text.GetRight() + 10.0);
     }
 
-    if(i->get_left() < m_page_text.get_left())
+    if(i->GetLeft() < m_page_text.GetLeft())
     {
-      m_page_text.set_left(m_page_text.get_left() - 10.0);
+      m_page_text.SetLeft(m_page_text.GetLeft() - 10.0);
     }
 
-    if((i->get_bottom() + i->get_size()) > m_page_text.get_top())
+    if((i->GetBottom() + i->GetSize()) > m_page_text.GetTop())
     {
-      m_page_text.set_top(m_page_text.get_top() + 10.0);
+      m_page_text.SetTop(m_page_text.GetTop() + 10.0);
     }
 
-    if(i->get_bottom() < m_page_text.get_bottom())
+    if(i->GetBottom() < m_page_text.GetBottom())
     {
-      m_page_text.set_bottom(m_page_text.get_bottom() - 10.0);
+      m_page_text.SetBottom(m_page_text.GetBottom() - 10.0);
     }
   }
 }
@@ -114,16 +114,16 @@ void Whitespace::pageDimensions()
 void Whitespace::cleanAndSortBoxes()
 {
   // Define a lambda to identify boxes flagged for deletion
-  auto del = [&](Box x){return x.is_consumed();};
+  auto del = [&](Box lambda_box){return lambda_box.IsConsumed();};
 
   // Define a lambda to sort boxes left to right
-  auto l = [](const Box& a, const Box& b) -> bool {
-    return a.get_left() < b.get_left();
+  auto l = [](const Box& lambda_box_lhs, const Box& lambda_box_rhs) -> bool {
+    return lambda_box_lhs.GetLeft() < lambda_box_rhs.GetLeft();
     };
 
   // Define a lambda to sort boxes top to bottom
-  auto t = [](const Box& a, const Box& b) -> bool {
-    return b.get_top() < a.get_top();
+  auto t = [](const Box& lambda_box_lhs, const Box& lambda_box_rhs) -> bool {
+    return lambda_box_rhs.GetTop() < lambda_box_lhs.GetTop();
     };
 
   // Move boxes for deletion to back of vector, starting at returned iterator
@@ -155,27 +155,27 @@ void Whitespace::cleanAndSortBoxes()
 void Whitespace::makeStrips()
 {
   // Find strip widths
-  float pixwidth = m_page_text.width() / DIVISIONS;
+  float pixwidth = m_page_text.Width() / DIVISIONS;
 
   // The first strip starts at the left edge and stops one stripwidth to right
-  float L_Edge = m_page_text.get_left();
+  float L_Edge = m_page_text.GetLeft();
   float R_Edge = L_Edge + pixwidth;
 
   // For each of these page divisions
   for (size_t i = 0; i < DIVISIONS; ++i)
   {
     // Create top/bottom bounds for boxes at top/bottom of page.
-    vector<float> tops = {m_page_text.get_top()};
-    vector<float> bottoms = {m_page_text.get_bottom()};
+    vector<float> tops = {m_page_text.GetTop()};
+    vector<float> bottoms = {m_page_text.GetBottom()};
 
     // Now for each text element on the page
     for(const auto& j : m_page_text)
     {
       // If it obstructs our strip, store its upper and lower bounds
-      if(j->get_left() < R_Edge && j->get_right() > L_Edge)
+      if(j->GetLeft() < R_Edge && j->GetRight() > L_Edge)
       {
-        bottoms.push_back(j->get_top());
-        tops.push_back(j->get_bottom());
+        bottoms.push_back(j->GetTop());
+        tops.push_back(j->GetBottom());
       }
     }
 
@@ -211,12 +211,12 @@ void Whitespace::mergeStrips()
     {
       // Since boxes are ordered, if right_box is beyond left_box, break inner
       // loop and move to next left_box
-      if(right_box->is_beyond(*left_box)) break;
+      if(right_box->IsBeyond(*left_box)) break;
 
       // If tested box is adjacent to test box, merge left edges and delete
-      if(right_box->is_adjacent(*left_box))
+      if(right_box->IsAdjacent(*left_box))
       {
-        right_box->merge(*left_box);
+        right_box->Merge(*left_box);
         break; // There can be only one match - skip to next left_box
       }
     }
@@ -233,11 +233,11 @@ void Whitespace::removeSmall()
   for(auto& box : m_boxes)
   {
     // Remove only undeleted boxes who are not at the page border and are short
-    if(!box.is_consumed()            &&
-       !box.shares_edge(m_page_text) &&
-       box.height() < max_line_space  )
+    if(!box.IsConsumed()            &&
+       !box.SharesEdge(m_page_text) &&
+       box.Height() < max_line_space  )
     {
-      box.consume();
+      box.Consume();
     }
   }
   cleanAndSortBoxes();
@@ -264,15 +264,15 @@ void Whitespace::makeVertices()
     for(int corner_number = 0; corner_number < 4; ++corner_number)
     {
       // Create a vertex shared pointer object at this corner
-      auto this_corner = owner_box.get_vertex(corner_number);
+      auto this_corner = owner_box.GetVertex(corner_number);
 
       // Now compare the other boxes to find neighbours and flag as needed
       for(auto& other_box : m_boxes)
       {
-        other_box.record_impingement_on(*this_corner);
+        other_box.RecordImpingementOn(*this_corner);
 
         // Since m_boxes are sorted, skip to next corner if no effect possible.
-        if(other_box.is_beyond(owner_box)) continue;
+        if(other_box.IsBeyond(owner_box)) continue;
       }
       // Now we can push our vertex to the list
       m_vertices.push_back(this_corner);
@@ -296,7 +296,7 @@ void Whitespace::tidyVertices()
   // For each vertex, if 1 or 3 corners have whitespace, push to result
   for(auto& corner : m_vertices)
   {
-    if((corner->flags % 3) != 0)
+    if((corner->flags_ % 3) != 0)
     {
       tmp_vertices.push_back(corner);
     }
@@ -326,24 +326,24 @@ void Whitespace::tracePolygons()
     // Now for every other vertex
     for(auto& j : m_vertices)
     {
-      if(i->is_closer_than(*j, edge))
+      if(i->IsCloserThan(*j, edge))
       {
         // i provisionally points to j
-        i->points_to = &j - &(m_vertices[0]);
+        i->points_to_ = &j - &(m_vertices[0]);
 
         // Now we update "edge" to make it the closest yet
         if(i->Out() == North || i->Out() == South)
         {
-          edge = j->y;
+          edge = j->y_;
         }
         else
         {
-          edge = j->x;
+          edge = j->x_;
         }
       }
     }
     // If the closest yet is not on the page, mark vertex for deletion
-    if(edge - outer_edge < 0.1 && outer_edge - edge < 0.1) i->flags |= 0x80;
+    if(edge - outer_edge < 0.1 && outer_edge - edge < 0.1) i->flags_ |= 0x80;
   }
 }
 
@@ -372,16 +372,16 @@ void Whitespace::makePolygonMap()
   for(size_t i = 0 ; i < m_vertices.size(); ++i)
   {
     // If this vertex is taken, move along.
-    if(m_vertices[i]->group) continue;
+    if(m_vertices[i]->group_) continue;
 
     // we now know we're at the first unlabelled vertex
     size_t j = i;
 
     // While we're not back at the first vertex of our set
-    while (m_vertices[j]->group == 0)
+    while (m_vertices[j]->group_ == 0)
     {
       // Label the vertex with polygon number
-      m_vertices[j]->group = polygonNumber;
+      m_vertices[j]->group_ = polygonNumber;
 
       // If this is a new polygon number, start a new vector
       if(polygonMap.find(polygonNumber) == polygonMap.end())
@@ -392,7 +392,7 @@ void Whitespace::makePolygonMap()
       else polygonMap[polygonNumber].push_back(m_vertices[j]);
 
       // Our loop now jumps to next clockwise vertex
-      j = m_vertices[j]->points_to;
+      j = m_vertices[j]->points_to_;
     }
 
     // we've come back to start of polygon - start a new one
@@ -429,11 +429,11 @@ void Whitespace::polygonMax()
     // Shrink and invert the edges of our bounding box
     for(auto& corner : shape.second)
     {
-      bounding_box.expand_box_to_include_vertex(*corner);
+      bounding_box.ExpandBoxToIncludeVertex(*corner);
     }
 
     // if the box is not the page itself, append this polygon to our result
-    if(!bounding_box.is_approximately_same_as(m_page_text))
+    if(!bounding_box.IsApproximatelySameAs(m_page_text))
     {
       m_boxes.emplace_back(move(bounding_box));
     }
@@ -452,13 +452,13 @@ void Whitespace::removeEngulfed()
   // For each box check whether it engulfs another box
   for(auto outer = m_boxes.begin(); outer != m_boxes.end(); ++outer)
   {
-    if(outer->is_consumed()) continue;
+    if(outer->IsConsumed()) continue;
 
     for(auto inner = outer; inner != m_boxes.end(); ++inner)
     {
-      if(inner->is_beyond(*outer)) break;
-      if(inner->is_consumed())     continue;
-      if(outer->engulfs(*inner))   inner->consume();
+      if(inner->IsBeyond(*outer)) break;
+      if(inner->IsConsumed())     continue;
+      if(outer->Engulfs(*inner))   inner->Consume();
     }
   }
 
@@ -479,12 +479,12 @@ vector<TextBox> Whitespace::output()
     for(auto text_it = m_page_text.begin() + start_at;
              text_it != m_page_text.end(); ++text_it)
     {
-      if (box.engulfs(**text_it) && !(*text_it)->is_consumed())
+      if (box.Engulfs(**text_it) && !(*text_it)->IsConsumed())
       {
         text_vec.push_back(*text_it);
         start_at = distance(m_page_text.begin(), text_it);
       }
-      if((*text_it)->is_beyond(box)) break;
+      if((*text_it)->IsBeyond(box)) break;
     }
     res.emplace_back(TextBox(move(text_vec), move(box)));
   }

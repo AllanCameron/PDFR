@@ -79,7 +79,7 @@ class font;
 
 class Document
 {
-  using Node = std::shared_ptr<tree_node<int>>;
+  using Node = std::shared_ptr<TreeNode<int>>;
 
 public:
   // constructors

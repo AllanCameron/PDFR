@@ -148,7 +148,7 @@ Rcpp::DataFrame get_xref_from_string(const string& filename)
 {
   // This one-liner gets the file string, builds the xref and turns it into an
   // R data frame
-  return xrefcreator(make_shared<string>(get_file(filename)));
+  return xrefcreator(make_shared<string>(GetFile(filename)));
 }
 
 //---------------------------------------------------------------------------//
@@ -181,7 +181,7 @@ Rcpp::List get_object_from_string(const string& file_name, int object)
   // Fill an Rcpp::List with the requested object's elements and return
   return Rcpp::List::create(
     Rcpp::Named("header") =
-      document_ptr->get_object(object)->GetDictionary().R_out(),
+      document_ptr->get_object(object)->GetDictionary().GetMap(),
     Rcpp::Named("stream") = document_ptr->get_object(object)->GetStream());
 }
 
@@ -201,7 +201,7 @@ Rcpp::List get_object_from_raw(const vector<uint8_t>& raw_file, int object)
   // Fill an Rcpp::List with the requested object and return
   return Rcpp::List::create(
     Rcpp::Named("header") =
-      document_ptr->get_object(object)->GetDictionary().R_out(),
+      document_ptr->get_object(object)->GetDictionary().GetMap(),
     Rcpp::Named("stream") = document_ptr->get_object(object)->GetStream());
 }
 
@@ -210,34 +210,34 @@ Rcpp::List get_object_from_raw(const vector<uint8_t>& raw_file, int object)
 // from the parser. It packages the dataframe with a vector of page
 // dimensions to allow plotting etc
 
-Rcpp::List get_single_text_elements(shared_ptr<Page> page_ptr)
+Rcpp::List get_single_text_elements(shared_ptr<Page> t_page_ptr)
 {
   // Create new parser
-  parser parser_object = parser(page_ptr);
+  parser parser_object = parser(t_page_ptr);
 
   // Read page contents to parser
-  Tokenizer(page_ptr->get_page_contents(), &parser_object);
+  Tokenizer(t_page_ptr->get_page_contents(), &parser_object);
 
   // Obtain output from parser and transpose into a text table
   auto text_box = parser_object.output();
   TextTable table(text_box);
 
   // Ensure the static fontmap is cleared after use
-  page_ptr->clear_font_map();
+  t_page_ptr->clear_font_map();
 
   // Now create the data frame
   Rcpp::DataFrame db =  Rcpp::DataFrame::create(
-                        Rcpp::Named("text") = table.text,
-                        Rcpp::Named("left") = table.left,
-                        Rcpp::Named("bottom") = table.bottom,
-                        Rcpp::Named("right") = table.right,
-                        Rcpp::Named("font") = table.fonts,
-                        Rcpp::Named("size") = table.size,
+                        Rcpp::Named("text")   = table.GetText(),
+                        Rcpp::Named("left")   = table.GetLefts(),
+                        Rcpp::Named("bottom") = table.GetBottoms(),
+                        Rcpp::Named("right")  = table.GetRights(),
+                        Rcpp::Named("font")   = table.GetFontNames(),
+                        Rcpp::Named("size")   = table.GetSizes(),
                         Rcpp::Named("stringsAsFactors") = false);
 
   // Return it as a list along with the page dimensions
   return Rcpp::List::create(
-                        Rcpp::Named("Box") = page_ptr->get_minbox().vector(),
+                        Rcpp::Named("Box") = t_page_ptr->get_minbox().vector(),
                         Rcpp::Named("Elements") = move(db));
 }
 
@@ -271,14 +271,14 @@ Rcpp::List get_text_boxes(shared_ptr<Page> page_ptr)
   {
     for(auto& element : box)
     {
-      if(!element->is_consumed())
+      if(!element->IsConsumed())
       {
-        left.push_back(element->get_left());
-        right.push_back(element->get_right());
-        size.push_back(element->get_size());
-        bottom.push_back(element->get_bottom());
-        glyph.push_back(element->utf());
-        font.push_back(element->get_font());
+        left.push_back(element->GetLeft());
+        right.push_back(element->GetRight());
+        size.push_back(element->GetSize());
+        bottom.push_back(element->GetBottom());
+        glyph.push_back(element->Utf());
+        font.push_back(element->GetFontName());
         polygon.push_back(polygonNumber);
       }
     }
@@ -361,12 +361,12 @@ Rcpp::DataFrame pdfdoc_common(shared_ptr<Document> document_ptr)
     TextTable table = grouped_words.out();;
 
     // Join current page's output to final data frame columns
-    concat(left,   table.left);
-    concat(right,  table.right);
-    concat(bottom, table.bottom);
-    concat(font,   table.fonts);
-    concat(size,   table.size);
-    concat(glyph,  table.text);
+    Concat(left,   table.GetLefts());
+    Concat(right,  table.GetRights());
+    Concat(bottom, table.GetBottoms());
+    Concat(font,   table.GetFontNames());
+    Concat(size,   table.GetSizes());
+    Concat(glyph,  table.GetText());
 
     // Add a page number entry for each text element
     while (page_number_of_element.size() < glyph.size())
@@ -485,10 +485,10 @@ Rcpp::DataFrame pdf_boxes(shared_ptr<Page> page_ptr)
   // Fill our holding vectors from the output of the page parsing algorithm
   for(auto bounding_box : Poly)
   {
-    xmin.push_back(bounding_box.get_left());
-    ymin.push_back(bounding_box.get_bottom());
-    xmax.push_back(bounding_box.get_right());
-    ymax.push_back(bounding_box.get_top());
+    xmin.push_back(bounding_box.GetLeft());
+    ymin.push_back(bounding_box.GetBottom());
+    xmax.push_back(bounding_box.GetRight());
+    ymax.push_back(bounding_box.GetTop());
     groups.push_back(group++);
   }
 

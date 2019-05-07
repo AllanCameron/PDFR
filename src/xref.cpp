@@ -97,8 +97,8 @@ void XRef::LocateXRefs()
   // Get last 50 chars of the file
   string&& last_50_chars = file_string_->substr(file_string_->size()-50, 50);
 
-  // Use carve_out() from utilities.h to find the first XRef offset
-  string&& xref_string =  carve_out(last_50_chars, "startxref", "%%EOF");
+  // Use CarveOut() from utilities.h to find the first XRef offset
+  string&& xref_string =  CarveOut(last_50_chars, "startxref", "%%EOF");
 
   // Convert the number string to an int
   xref_locations_.emplace_back(stoi(xref_string));
@@ -139,7 +139,7 @@ void XRef::ReadXRefStrings()
     string&& fullxref = file_string_->substr(start, len);
 
     // Carve out the actual string
-    string xref_string = carve_out(move(fullxref), "xref", "trailer");
+    string xref_string = CarveOut(move(fullxref), "xref", "trailer");
 
     // If it contains a dictionary, process as a stream, otherwise as a string
     if(xref_string.substr(0, 15).find("<<", 0) != string::npos)
@@ -190,7 +190,7 @@ void XRef::ReadXRefFromStream(int xref_location)
 
 void XRef::ReadXRefFromString(string& xref_string)
 {
-  auto all_ints = parse_ints(xref_string);
+  auto all_ints = ParseInts(xref_string);
 
   // A valid XRef has >= 4 ints in it and must have an even number of ints
   auto xref_size = all_ints.size();
@@ -260,7 +260,7 @@ size_t XRef::GetHoldingNumberOf(int object_number) const
 
 vector<int> XRef::GetAllObjectNumbers() const
 {
-  return getKeys(this->xref_table_);
+  return GetKeys(this->xref_table_);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -273,7 +273,7 @@ int XRef::GetStreamLength(const Dictionary& dict) const
     size_t firstpos = GetObjectStartByte(lengthob);
     size_t len = file_string_->find("endobj", firstpos) - firstpos;
     string objstr = file_string_->substr(firstpos, len);
-    return parse_ints(move(objstr)).back(); // from which we get a number
+    return ParseInts(move(objstr)).back(); // from which we get a number
   }
 
   // Thankfully though most lengths are just direct ints
