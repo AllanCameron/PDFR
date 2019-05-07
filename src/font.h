@@ -96,7 +96,7 @@ private:
   // private methods
   void getFontName();   // Finds the postscript font name
 
-  // Main creator function; makes glyphmap from encoding and glyphwidth classes
+  // Main constructor; makes glyphmap from encoding and glyphwidth classes
   void makeGlyphTable();
 };
 

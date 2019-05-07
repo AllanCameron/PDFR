@@ -169,7 +169,7 @@ void glyphwidths::parseDescendants()
 }
 
 /*---------------------------------------------------------------------------*/
-// The creator function includes a string passed from the "BaseFont" entry
+// The constructor includes a string passed from the "BaseFont" entry
 // of the encoding dictionary.
 
 void glyphwidths::getCoreFont()

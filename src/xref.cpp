@@ -81,7 +81,7 @@ XRef::XRef(shared_ptr<const string> s) :
 }
 
 /*---------------------------------------------------------------------------*/
-// The first job of the creator function (after its initializers) is to find
+// The first job of the constructor (after its initializers) is to find
 // out where the xrefs are. It does this by reading the penultimate line
 // of the file, which contains the byte offset of the first XRef.
 //

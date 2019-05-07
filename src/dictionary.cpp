@@ -384,7 +384,7 @@ void DictionaryBuilder::HandleClose(char t_input_char)
 }
 
 /*---------------------------------------------------------------------------*/
-// Creator function. Takes a string pointer so big strings can be passed
+// Constructor. Takes a string pointer so big strings can be passed
 // cheaply. This version starts at the beginning of the given string
 
 DictionaryBuilder::DictionaryBuilder(shared_ptr<const string> t_string_ptr) :
@@ -434,7 +434,7 @@ unordered_map<string, string>&& DictionaryBuilder::Get()
 }
 
 /*---------------------------------------------------------------------------*/
-// Creator function for empty dictionary
+// Constructor for empty dictionary
 
 DictionaryBuilder::DictionaryBuilder()
 {

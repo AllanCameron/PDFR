@@ -142,7 +142,7 @@ Object::Object(shared_ptr<Object> t_holder, int t_object_number):
 
     // Annoyingly, some "objects" in an object stream are just pointers
     // to other objects. This is pointless but does happen and needs to
-    // be handled by recursively calling the main creator function
+    // be handled by recursively calling the constructor
     if(stream_.size() < 15 && stream_.find(" R", 0) < 15)
     {
       size_t new_number = ParseReferences(stream_)[0];
