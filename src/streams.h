@@ -48,7 +48,8 @@
  * At present, only the flatedecode decompression algorithm is implemented. That
  * is simply because it is the most common algorithm used in pdfs. Ultimately,
  * we will need to turn "streams" into its own class, which implements stream
- * decompression for a variety of algorithms on request.
+ * decompression for a variety of algorithms on request. I have yet to find a
+ * pdf file that uses anything else for page description to allow testing
  *
  * This header is required by the xref class, as it needs to be able to deflate
  * xrefstreams.
@@ -56,8 +57,9 @@
 #include "dictionary.h"
 
 //---------------------------------------------------------------------------//
+// Inflates the given string
 
-void FlateDecode(std::string& s);
+void FlateDecode(std::string& deflated_string);
 
 //---------------------------------------------------------------------------//
 

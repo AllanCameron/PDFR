@@ -40,33 +40,52 @@ using namespace std;
 // The flatedecode algorithm. This uses the API of the miniz library to recreate
 // the original version of a compressed stream.
 
-void FlateDecode(string& s)
+void FlateDecode(string& t_message)
 {
-  z_stream stream ; // create a new z_stream object
-  int factor = 20;  // initialize the anticipated maximum decompression factor
-  size_t len = s.length();  // get input string length
-  while (true) //  loop will continue until explicitly exited
+  // Creates a new z_stream object
+  z_stream* stream = new z_stream;
+
+  // Initialize the anticipated maximum decompression factor
+  int factor = 20;
+  size_t message_length = t_message.length();
+
+  // This loop will repeat until it is explicitly exited.
+  while (true)
   {
-    char * out = new char[len * factor];  // create array big enough for result
-    stream.zalloc = 0;    //----//
-    stream.zfree = 0;           // Initialize stream members
-    stream.opaque = 0;    //----//
-    stream.avail_in = len; // tell z_stream how big the compressed string is
-    stream.next_in = (Bytef*) s.c_str(); // read s into stream
-    stream.avail_out = len * factor; // tell z_stream how big 'out' is
-    stream.next_out = (Bytef*) out; // create pointer to array for output
-    inflateInit(&stream); // initialize the inflation algorithm
-    inflate(&stream, 4); // inflation algorithm
-    inflateEnd(&stream); // end the inflation algorithm
-    if(stream.total_out >= len * factor) // if the result doesn't fit...
+    // Set the maximum size for the array in this loop
+    size_t array_size  = message_length * factor;
+    char* output_array = new char[array_size];
+
+    // Initialize stream members
+    stream->zalloc    = 0;
+    stream->zfree     = 0;
+    stream->opaque    = 0;
+    stream->avail_in  = message_length;
+    stream->next_in   = (Bytef*) t_message.c_str();
+    stream->avail_out = array_size;
+    stream->next_out  = (Bytef*) output_array;
+
+    // Inflate the stream
+    inflateInit(stream);
+    inflate(stream, 4);
+    inflateEnd(stream);
+
+    // If the result doesn't fit, try again with the array being twice as big
+    if(stream->total_out >= array_size)
     {
-      delete[] out;     //
-      factor *= 2;      //  ... try again with the array being twice as big
-      continue;         //
+      delete[] output_array;
+      factor *= 2;
+      continue;
     }
-    string res(out, stream.total_out);
-    swap(res, s);
-    delete[] out; // make sure the created array is destroyed to avoid leak
+
+    // The result must have fit into the array if we got this far, so we will
+    // write the result to a new string and swap it with t_string
+    string result(output_array, stream->total_out);
+    swap(result, t_message);
+
+    // Before we go, make sure the created array is destroyed to avoid leak
+    delete[] output_array;
+    delete stream;
     break;
   }
 }
