@@ -361,12 +361,12 @@ Rcpp::DataFrame pdfdoc_common(shared_ptr<Document> document_ptr)
     TextTable table = grouped_words.out();;
 
     // Join current page's output to final data frame columns
-    Concat(left,   table.GetLefts());
-    Concat(right,  table.GetRights());
-    Concat(bottom, table.GetBottoms());
-    Concat(font,   table.GetFontNames());
-    Concat(size,   table.GetSizes());
-    Concat(glyph,  table.GetText());
+    Concatenate(left,   table.GetLefts());
+    Concatenate(right,  table.GetRights());
+    Concatenate(bottom, table.GetBottoms());
+    Concatenate(font,   table.GetFontNames());
+    Concatenate(size,   table.GetSizes());
+    Concatenate(glyph,  table.GetText());
 
     // Add a page number entry for each text element
     while (page_number_of_element.size() < glyph.size())

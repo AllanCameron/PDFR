@@ -305,7 +305,7 @@ array<size_t, 2> XRef::GetStreamLocation(int object_start) const
 
 void XRef::Decrypt(string& s, int obj, int gen) const
 {
-  encryption_->decrypt_stream(s, obj, gen);
+  encryption_->DecryptStream(s, obj, gen);
 }
 
 /*---------------------------------------------------------------------------*/

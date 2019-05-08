@@ -1,6 +1,6 @@
 //---------------------------------------------------------------------------//
 //                                                                           //
-//  PDFR text_element header file                                            //
+//  PDFR TextElement header file                                             //
 //                                                                           //
 //  Copyright (C) 2018 by Allan Cameron                                      //
 //                                                                           //
@@ -144,7 +144,7 @@ public:
   void MergeLetters(TextElement&);
   bool IsElligibleToJoin(const TextElement&) const;
   void JoinWords(TextElement&);
-  void ConcatGlyph(const std::vector<Unicode>&);
+  void ConcatenateUnicode(const std::vector<Unicode>&);
   std::string Utf();
 
 

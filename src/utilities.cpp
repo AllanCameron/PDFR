@@ -89,15 +89,16 @@ static array<uint8_t, 256> s_symbol_type =
 };
 
 /*---------------------------------------------------------------------------*/
-// Return the first substring of s that lies between two 'bookend' strings.
-// This can be used e.g. to find the byte position that always sits between
-// "startxref" and "%%EOF"
+// Returns the first substring of t_string that lies between two delimiters.
+// e.g.
+//
+// CarveOut("Hello there world!", "Hello", "world") == " there ";
 
 string CarveOut(const string& t_string,
                 const string& t_left,
                 const string& t_right)
 {
-  // Find the starting point of the left "bookend"
+  // Find the starting point of the left delimiter
   int start =  t_string.find(t_left);
 
   // If left delimiter absent, start at t_string[0], otherwise start at the end
@@ -105,18 +106,14 @@ string CarveOut(const string& t_string,
   if (start) start += t_left.size();
   else start = 0;
 
-  // Trim off the beginning of string
-  string trimmed(t_string.substr(start, t_string.size() - start));
-
   // Now find the starting point of the first occurrence of right delimiter
   // in the remaining string
-  int stop = trimmed.find(t_right);
+  int stop = t_string.find(t_right, start);
 
-  // If it was found, discard the end of the string starting from there
-  if (stop) return trimmed.substr(0, stop);
+  // If not found, stop at the end of the string
+  if (!stop) stop = t_string.length() - 1;
 
-  // if right delimiter not found in remaining string, return the whole fragment
-  return trimmed;
+  return t_string.substr(start, stop - start);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -127,7 +124,7 @@ string CarveOut(const string& t_string,
 // string target("I'm not a pheasant plucker, I'm a pheasant plucker's son");
 // string left = "I'm", right = "plucker";
 // vector<string> result = MultiCarve(target, left, right);
-// result == vector<string> {" not a pheasant ", " a pheasant "}; // true
+// result == vector<string> {" not a pheasant ", " a pheasant "};
 //
 
 vector<string> MultiCarve(const string& t_string,
@@ -174,7 +171,9 @@ vector<string> MultiCarve(const string& t_string,
 
 /*---------------------------------------------------------------------------*/
 // Decent approximation of whether a string contains binary data or not
-// Uses <algorithm> from std
+// Uses <algorithm> from std. e.g.
+//
+// IsAscii("I am an Ascii string.") == true;
 
 bool IsAscii(const string& t_string)
 {
@@ -189,7 +188,8 @@ bool IsAscii(const string& t_string)
 
 /*---------------------------------------------------------------------------*/
 // Converts an Ascii-encoded string of bytes to a vector of bytes, e.g.
-// ConvertHexToBytes("01ABEF2A") == vector<uint8_t> { 0x01, 0xAB, 0xEF, 0x2A }
+//
+// ConvertHexToBytes("01ABEF2A") == vector<uint8_t> { 0x01, 0xAB, 0xEF, 0x2A };
 
 vector<uint8_t> ConvertHexToBytes(const string& t_hexstring)
 {
@@ -221,8 +221,10 @@ vector<uint8_t> ConvertHexToBytes(const string& t_hexstring)
 }
 
 /*---------------------------------------------------------------------------*/
-//Converts an int to the relevant 2-byte ASCII hex (4 characters long)
-// eg ConvertIntToHex(161) == "00A1"
+// Converts an int to the relevant 2-byte ASCII hex string (4 characters long)
+// e.g.
+//
+// ConvertIntToHex(161) == string("00A1");
 
 string ConvertIntToHex(int t_int)
 {
@@ -240,7 +242,13 @@ string ConvertIntToHex(int t_int)
 // statements that depend on whether a letter is a character, digit or
 // whitespace but is indifferent to which specific instance of each it finds.
 // For cases where the lexer needs to find a specific symbol, this function
-// returns the original character if it is not a digit, a letter or whitespace
+// returns the original character if it is not a digit, a letter or whitespace.
+// e.g.
+//
+// GetSymbolType( 'a') == 'L'; // letter
+// GetSymbolType( '9') == 'D'; // digit
+// GetSymbolType('\t') == ' '; // space
+// GetSymbolType( '#') == '#'; // not a letter, digit or space. Returns itself
 
 char GetSymbolType(const char t_char)
 {
@@ -250,8 +258,9 @@ char GetSymbolType(const char t_char)
 
 /*--------------------------------------------------------------------------*/
 // Returns the data represented by an Ascii encoded hex string as a vector
-// of two-byte numbers eg
-// ConvertHexToRawChar("ABCD0123") == vector<RawChar> {0xABCD, 0x0123}
+// of two-byte numbers e.g.
+//
+// ConvertHexToRawChar("ABCD0123") == vector<RawChar> {0xABCD, 0x0123};
 
 vector<RawChar> ConvertHexToRawChar(string& t_string)
 {
@@ -272,6 +281,10 @@ vector<RawChar> ConvertHexToRawChar(string& t_string)
 // Converts normal string to a vector of 2-byte width numbers (RawChar)
 // This requires sequential conversion from char to uint8_t to uint16_t
 // (RawChar is just a synonym for uint16_t)
+// e.g.
+//
+// ConvertStringToRawChar("Hello") ==
+// vector<RawChar> { 0x0048, 0x0065, 0x006c, 0x006c, 0x006f};
 
 vector<RawChar> ConvertStringToRawChar(const string& t_string)
 {
@@ -287,6 +300,9 @@ vector<RawChar> ConvertStringToRawChar(const string& t_string)
 // in the form "xx x R". It is far quicker than finding matches with Regex,
 // even though the code is more unwieldy. It is essentially a finite state
 // machine that reads character by character and stores any matches found
+// e.g.
+//
+// ParseReferences("<</Refs 1 0 R 2 0 R 31 5 R>>") == vector<int> {1, 2, 31};
 
 vector<int> ParseReferences(const string& t_string)
 {
@@ -369,6 +385,9 @@ vector<int> ParseReferences(const string& t_string)
 // Another lexer. This one finds any integers in a string.
 // If there are decimal points, it ignores the fractional part.
 // It will not accurately represent hex, octal or scientific notation (eg 10e5)
+// e.g.
+//
+// ParseInts("<</Refs 1 0 R 2 0 R 31 5 R>>") == vector<int> {1, 0, 2, 0, 31, 5};
 
 vector<int> ParseInts(const string& t_string)
 {
@@ -422,6 +441,9 @@ vector<int> ParseInts(const string& t_string)
 // given string character by character and returns all instances where the
 // result can be interpreted as a decimally represented number. It will also
 // include ints but not hex, octal or scientific notation (eg 10e5)
+// e.g.
+//
+// ParseFloats("pi is 3.14, e is 2.72") == vector<float> {3.14, 2.72};
 
 vector<float> ParseFloats(const string& t_string)
 {
@@ -469,6 +491,9 @@ vector<float> ParseFloats(const string& t_string)
 
 /*--------------------------------------------------------------------------*/
 // Loads a file's contents into a single std::string using <fstream>
+// e.g.
+//
+// string file_contents = GetFile("C://documents/my_binary_file.bin");
 
 string GetFile(const string& t_file)
 {

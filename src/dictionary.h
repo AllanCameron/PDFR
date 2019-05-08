@@ -69,9 +69,7 @@
 
 class Dictionary
 {
-  std::unordered_map<std::string, std::string> map_;
-
-  public:
+ public:
   // Constructors
   Dictionary(std::shared_ptr<const std::string>);
 
@@ -118,6 +116,9 @@ class Dictionary
   typedef std::unordered_map<std::string, std::string>::const_iterator DictIt;
   inline DictIt begin() const { return map_.cbegin(); }
   inline DictIt end()   const { return map_.cend();   }
+
+ private:
+  std::unordered_map<std::string, std::string> map_;
 };
 
 //---------------------------------------------------------------------------//

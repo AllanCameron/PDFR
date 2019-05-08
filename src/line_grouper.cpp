@@ -99,7 +99,7 @@ void line_grouper::paste_lines(TextBox& text_box)
 {
   for(size_t i = 1; i < text_box.size(); ++i)
   {
-    text_box[0]->ConcatGlyph(text_box[i]->GetGlyph());
+    text_box[0]->ConcatenateUnicode(text_box[i]->GetGlyph());
   }
   text_box.resize(1);
 }

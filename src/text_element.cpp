@@ -1,6 +1,6 @@
 //---------------------------------------------------------------------------//
 //                                                                           //
-//  PDFR text_element implementation file                                         //
+//  PDFR TextElement implementation file                                     //
 //                                                                           //
 //  Copyright (C) 2018 by Allan Cameron                                      //
 //                                                                           //
@@ -34,7 +34,7 @@ using namespace std;
 void TextElement::MergeLetters(TextElement& t_matcher)
 {
    // paste the left glyph to the right glyph
-  this->ConcatGlyph(t_matcher.glyph_);
+  this->ConcatenateUnicode(t_matcher.glyph_);
 
   // make the right glyph now contain both glyphs
   t_matcher.glyph_ = this->glyph_;
@@ -75,7 +75,7 @@ void TextElement::JoinWords(TextElement& t_other)
     }
 
     // Stick contents together
-    Concat(this->glyph_, t_other.GetGlyph());
+    Concatenate(this->glyph_, t_other.GetGlyph());
 
     // The rightmost glyph's right edge properties are also copied over
     this->SetRight(t_other.GetRight());
@@ -90,9 +90,9 @@ void TextElement::JoinWords(TextElement& t_other)
 
 //---------------------------------------------------------------------------//
 
-void TextElement::ConcatGlyph(const std::vector<Unicode>& t_other)
+void TextElement::ConcatenateUnicode(const std::vector<Unicode>& t_other)
 {
-  Concat(glyph_, t_other);
+  Concatenate(glyph_, t_other);
 }
 
 //---------------------------------------------------------------------------//
@@ -141,12 +141,12 @@ void TextBox::RemoveDuplicates()
 void TextTable::Join(TextTable& t_other)
 {
   this->Merge(t_other);
-  Concat(this->text_,    t_other.text_);
-  Concat(this->lefts_,   t_other.lefts_);
-  Concat(this->bottoms_, t_other.bottoms_);
-  Concat(this->rights_,  t_other.rights_);
-  Concat(this->fonts_,   t_other.fonts_);
-  Concat(this->tops_,    t_other.tops_);
+  Concatenate(this->text_,    t_other.text_);
+  Concatenate(this->lefts_,   t_other.lefts_);
+  Concatenate(this->bottoms_, t_other.bottoms_);
+  Concatenate(this->rights_,  t_other.rights_);
+  Concatenate(this->fonts_,   t_other.fonts_);
+  Concatenate(this->tops_,    t_other.tops_);
 }
 
 /*--------------------------------------------------------------------------*/

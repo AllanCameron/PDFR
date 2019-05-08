@@ -82,22 +82,12 @@ class DictionaryBuilder
   std::unordered_map<std::string, std::string>&& Get();
 
  private:
-  enum DictionaryState   {PREENTRY,
-                 QUERYCLOSE,
-                 VALUE,
-                 MAYBE,
-                 START,
-                 KEY,
-                 PREVALUE,
-                 DSTRING,
-                 ARRAYVAL,
-                 QUERYDICT,
-                 SUBDICT,
-                 CLOSE,
-                 THE_END};
+  enum DictionaryState  {PREENTRY, QUERYCLOSE, VALUE,    MAYBE,
+                         START,    KEY,        PREVALUE, DSTRING,
+                         ARRAYVAL, QUERYDICT,  SUBDICT,  CLOSE,   THE_END};
 
   // Private data members
-  std::shared_ptr<const std::string> string_ptr_; // pointer to the string
+  std::shared_ptr<const std::string> string_ptr_;
   char char_;           // The actual character being read
   size_t char_num_; // the string's iterator which is passed between functions
   int bracket_;      // integer to store the nesting level of angle brackets
@@ -140,8 +130,10 @@ void DictionaryBuilder::TokenizeDictionary()
   {
     char_ = (*string_ptr_)[char_num_];
 
-     // determine char type at start of each loop
+     // Determines char type at start of each loop
     char input_char = GetSymbolType(char_);
+
+    // Now chooses the correct state handling function based on current state
     switch (state_)
     {
       case PREENTRY:    if (input_char == '<') state_ = MAYBE;  break;
@@ -427,6 +419,8 @@ DictionaryBuilder::DictionaryBuilder(shared_ptr<const string> t_string_ptr,
 }
 
 /*---------------------------------------------------------------------------*/
+// Once the DictionaryBuilder has finished writing its map, we want to move it
+// without copying into the Dictionary as its main data member
 
 unordered_map<string, string>&& DictionaryBuilder::Get()
 {
@@ -443,6 +437,8 @@ DictionaryBuilder::DictionaryBuilder()
 }
 
 /*---------------------------------------------------------------------------*/
+// The Dictionary constructor takes a string pointer and uses it to make its
+// data member using a temporary DictionaryBuilder
 
 Dictionary::Dictionary(shared_ptr<const string> t_string_ptr)
 {
@@ -450,6 +446,8 @@ Dictionary::Dictionary(shared_ptr<const string> t_string_ptr)
 }
 
 /*---------------------------------------------------------------------------*/
+// This alternative Dictionary constructor uses the same method as the normal
+// constructor, but starts at a given offset in the supplied string.
 
 Dictionary::Dictionary(shared_ptr<const string> t_string_ptr, size_t t_offset)
 {
@@ -457,6 +455,7 @@ Dictionary::Dictionary(shared_ptr<const string> t_string_ptr, size_t t_offset)
 }
 
 /*---------------------------------------------------------------------------*/
+// Empty dictionary constructor
 
 Dictionary::Dictionary()
 {
@@ -509,8 +508,8 @@ bool Dictionary::ContainsReferences(const string& t_key) const
 }
 
 /*---------------------------------------------------------------------------*/
-// Check whether the key's values contains any integers. If a key is present
-// AND its value contains ints, return true. Otherwise false.
+// Checks whether the key's values contains any integers. If a key is present
+// AND its value contains ints, this returns true. Otherwise false.
 
 bool Dictionary::ContainsInts(const string& t_key) const
 {
@@ -519,7 +518,7 @@ bool Dictionary::ContainsInts(const string& t_key) const
 
 /*---------------------------------------------------------------------------*/
 // Returns a vector of the object numbers from references found in the
-// given key's value. Uses the getObjRefs() global function from utilities.h
+// given key's value. Uses a global function from utilities.h
 
 vector<int> Dictionary::GetReferences(const string& t_key) const
 {
@@ -527,8 +526,8 @@ vector<int> Dictionary::GetReferences(const string& t_key) const
 }
 
 /*---------------------------------------------------------------------------*/
-// Returns a vector of the object numbers from references found in the
-// given key's value. Uses the getObjRefs() global function from utilities.h
+// Returns a single object numbers from reference(s) found in the
+// given key's value. Uses a global function from utilities.h
 
 int Dictionary::GetReference(const string& t_key) const
 {
@@ -561,13 +560,13 @@ vector<float> Dictionary::GetFloats(const string& t_key) const
 Dictionary Dictionary::GetDictionary(const string& t_key) const
 {
   // Get the value string
-  string dict = this->GetString(t_key);
+  string dictionary = this->GetString(t_key);
 
   // Test that it is a dictionary
-  if (dict.find("<<") != string::npos)
+  if (dictionary.find("<<") != string::npos)
   {
     // If so, create a new dictionary
-    return Dictionary(make_shared<string> (dict));
+    return Dictionary(make_shared<string> (dictionary));
   }
 
   // Otherwise return an empty dictionary
@@ -580,13 +579,13 @@ Dictionary Dictionary::GetDictionary(const string& t_key) const
 
 bool Dictionary::ContainsDictionary(const string& t_key) const
 {
-  string dict = this->GetString(t_key);
-  return dict.find("<<") != string::npos;
+  string dictionary = this->GetString(t_key);
+  return dictionary.find("<<") != string::npos;
 }
 
 /*---------------------------------------------------------------------------*/
-// Returns all the keys present in the dictionary using the getKeys() template
-// defined in utilities.cpp
+// Returns all the keys present in the dictionary using the GetKeys() template
+// defined in utilities.h
 
 vector<string> Dictionary::GetAllKeys() const
 {

@@ -92,7 +92,7 @@ std::vector<K> GetKeys(const std::unordered_map<K, V>& t_map)
 // This modifies A
 
 template <typename T>
-void Concat(std::vector<T>& t_start, const std::vector<T>& t_append)
+void Concatenate(std::vector<T>& t_start, const std::vector<T>& t_append)
 {
   t_start.insert(t_start.end(), t_append.begin(), t_append.end());
 }
@@ -163,11 +163,11 @@ class TreeNode
 
   // The standard constructor takes an object and a parent node
   TreeNode<T>(T t_data, Node t_parent):
-    parent_(t_parent), is_leaf_(true), data_(t_data) {};
+    parent_(t_parent), data_(t_data) {};
 
   // However, to start a new tree, create a node without passing a parent node
   TreeNode<T>(T t_data) :
-    parent_(Node(nullptr)),  is_leaf_(true), data_(t_data) {};
+    parent_(Node(nullptr)), data_(t_data) {};
 
   // The blank constructor might be needed in copy construction
   TreeNode<T>() {};
@@ -177,9 +177,6 @@ class TreeNode
 
   void AddKids(std::vector<T> t_data)
   {
-    // If this node is going to have children, it will no longer be a leaf
-    is_leaf_ = false;
-
     // For each object, make a new TreeNode with it using 'this' as parent
     for(auto datum : t_data)
     {
@@ -190,7 +187,7 @@ class TreeNode
   //-------------------------------------------------------------------------//
   // Simple getter for the object contained in the node
 
-  T Get() const { return data_; }
+  inline T Get() const { return data_; }
 
   //-------------------------------------------------------------------------//
   // Follows parent pointers sequentially to get to the root node and returns
@@ -214,7 +211,12 @@ class TreeNode
   //-------------------------------------------------------------------------//
   // simple getter for child nodes
 
-  std::vector<Node> GetKids() const { return kids_; }
+  inline std::vector<Node> GetKids() const { return kids_; }
+
+  //-------------------------------------------------------------------------//
+  // Simple checker for child nodes
+
+  inline bool HasKids() const { return !kids_.empty();}
 
   //-------------------------------------------------------------------------//
   // Returns a vector of all objects contained in ancestor nodes
@@ -254,7 +256,7 @@ class TreeNode
 
       // If the child node has its own child nodes, we just want to call the
       // function recursively and append each new result to our vector
-      if(!kid->kids_.empty())
+      if(kid->HasKids())
       {
         std::vector<T> temporary = kid->GetDescendants();
         result.reserve(temporary.size() + result.size());
@@ -276,7 +278,7 @@ class TreeNode
     // For each child node, if it is a leaf, append to our vector
     for(auto& kid : kids_)
     {
-      if(kid->is_leaf_)
+      if(!kid->HasKids())
       {
         result.push_back(kid->data_);
       }
@@ -295,7 +297,6 @@ class TreeNode
 
 private:
   Node parent_;             // Shared pointer to parent TreeNode<T>
-  bool is_leaf_;            // This will be false if the node has children
   std::vector<Node> kids_;  // Contains vector of shared pointers to child nodes
   T data_;                  // The object contained in this tree node itself
 };
@@ -313,36 +314,36 @@ private:
 // This can be used e.g. to find the byte position that always sits between
 // "startxref" and "%%EOF"
 
-std::string CarveOut(const std::string&,
-                     const std::string&,
-                     const std::string&);
+std::string CarveOut(const std::string& string_to_be_carved,
+                     const std::string& left_delimiter,
+                     const std::string& right_delimiter);
 
 //---------------------------------------------------------------------------//
 // finds all closest pairs of strings a, b and returns the substring between.
 // This is used to carve out variable substrings between fixed substrings -
 // a surprisingly common task in parsing text.
 
-std::vector<std::string> MultiCarve(const std::string&,
-                                    const std::string&,
-                                    const std::string&);
+std::vector<std::string> MultiCarve(const std::string& string_to_be_carved,
+                                    const std::string& left_delimiter,
+                                    const std::string& right_delimiter);
 
 //---------------------------------------------------------------------------//
 // Decent approximation of whether a string contains binary data or not
 // Uses <algorithm> from std
 
-bool IsAscii(const std::string&);
+bool IsAscii(const std::string& string_to_be_tested);
 
 //---------------------------------------------------------------------------//
 //Takes a string of bytes represented in ASCII and converts to actual bytes
 // eg "48656c6c6f20576f726c6421" -> "Hello World!"
 
-std::vector<unsigned char> ConvertHexToBytes(const std::string&);
+std::vector<uint8_t> ConvertHexToBytes(const std::string& hex_encoded_string);
 
 //---------------------------------------------------------------------------//
 //Converts an int to the relevant 2-byte ASCII hex (4 characters long)
 // eg 161 -> "00A1"
 
-std::string ConvertIntToHex(int);
+std::string ConvertIntToHex(int int_to_be_converted);
 
 //---------------------------------------------------------------------------//
 // Classify characters for use in lexers. This allows the use of switch
@@ -351,20 +352,20 @@ std::string ConvertIntToHex(int);
 // For cases where the lexer needs to find a specific symbol, this function
 // returns the original character if it is not a digit, a letter or whitespace
 
-char GetSymbolType(const char);
+char GetSymbolType(const char input_char);
 
 //---------------------------------------------------------------------------//
 // Returns the data represented by an Ascii encoded hex string as a vector
 // of two-byte numbers
 
-std::vector<RawChar> ConvertHexToRawChar(std::string&);
+std::vector<RawChar> ConvertHexToRawChar(std::string& hex_encoded_string);
 
 //---------------------------------------------------------------------------//
 // Converts normal string to a vector of 2-byte width numbers (RawChar)
 // This requires sequential conversion from char to uint8_t to uint16_t
 // (RawChar is just a synonym for uint16_t)
 
-std::vector<RawChar> ConvertStringToRawChar(const std::string&);
+std::vector<RawChar> ConvertStringToRawChar(const std::string& input_string);
 
 //---------------------------------------------------------------------------//
 // This is a simple lexer to find any object references in the given string,
@@ -372,14 +373,14 @@ std::vector<RawChar> ConvertStringToRawChar(const std::string&);
 // even though the code is more unwieldy. It is essentially a finite state
 // machine that reads character by character and stores any matches found
 
-std::vector<int> ParseReferences(const std::string&);
+std::vector<int> ParseReferences(const std::string& string_to_be_parsed);
 
 //---------------------------------------------------------------------------//
 // Another lexer. This one finds any integers in a string.
 // If there are decimal points, it ignores the fractional part.
 // It will not accurately represent hex, octal or scientific notation (eg 10e5)
 
-std::vector<int> ParseInts(const std::string&);
+std::vector<int> ParseInts(const std::string& string_to_be_parsed);
 
 //---------------------------------------------------------------------------//
 // This lexer retrieves floats from a string. It searches through the entire
@@ -387,11 +388,11 @@ std::vector<int> ParseInts(const std::string&);
 // result can be interpreted as a decimally represented number. It will also
 // consume and convert integers but not hex, octal or scientific notation
 
-std::vector<float> ParseFloats(const std::string&);
+std::vector<float> ParseFloats(const std::string& string_to_be_parsed);
 
 //---------------------------------------------------------------------------//
 // Loads a file's contents into a single std::string using <fstream>
 
-std::string GetFile(const std::string&);
+std::string GetFile(const std::string& path_to_file);
 
 #endif
