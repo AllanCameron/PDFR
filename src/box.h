@@ -110,8 +110,10 @@ struct Vertex
 class Box
 {
  private:
-  // Data members
-  float left_, right_, top_, bottom_;
+  float   left_,
+          right_,
+          top_,
+          bottom_;
   uint8_t flags_;
 
  public:
@@ -134,7 +136,7 @@ class Box
 
   // We can use the direction enum to access the edges of the box instead of
   // using getters if we need to calculate the edge we're interested in getting.
-  inline float edge(int t_side) const
+  inline float Edge(int t_side) const
   {
     switch(t_side)
     {

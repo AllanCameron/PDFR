@@ -259,7 +259,7 @@ Rcpp::List get_text_boxes(shared_ptr<Page> page_ptr)
   Whitespace WS(grouped_words.output());
 
   // Join lines of text within single text boxes
-  line_grouper linegrouper(WS.output());
+  line_grouper linegrouper(WS.Output());
 
   std::vector<float> left, right, size, bottom;
   std::vector<std::string> glyph, font;
@@ -475,7 +475,7 @@ Rcpp::DataFrame pdf_boxes(shared_ptr<Page> page_ptr)
   Whitespace polygons(move(grouped_words.output()));
 
   // This step outputs the data we need to create our data frame
-  auto Poly = polygons.ws_box_out();
+  auto Poly = polygons.WSBoxOut();
 
   // Declare holding variables used as columns in the returned dataframe
   vector<float> xmin, ymin, xmax, ymax;

@@ -52,6 +52,7 @@
 #include<iostream>
 #include "debugtools.h"
 
+//---------------------------------------------------------------------------//
 /* The characters in pdf strings are most portably interpreted as uint16_t.
  * They need to be translated to Unicode for rendition to the intended
  * characters. Since Unicode is best handled as uint16_t too, it is easy

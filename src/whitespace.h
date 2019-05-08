@@ -82,32 +82,32 @@ public:
   Whitespace(TextBox);
 
   //  Output the text element groups directly
-  std::vector<TextBox> output();
+  std::vector<TextBox> Output();
 
   // Output the final text box co-ordinates
-  std::vector<Box> ws_box_out() const;
+  std::vector<Box> WSBoxOut() const;
 
 private:
   //The main output is a collection of pairs of text boxes with their elements
-  TextBox m_page_text; // a copy of word grouper's output
-  std::unordered_map<size_t, std::vector<std::shared_ptr<Vertex>>> polygonMap;
-  float max_line_space;                // The average font size on the page
-  std::vector<Box> m_boxes;            // used in construction AND output
-  std::vector<std::shared_ptr<Vertex>> m_vertices; // Used to make polygons
-  static const size_t DIVISIONS = 400; // number of strips used for whitespace
+  TextBox page_text_; // A copy of word grouper's output
+  std::unordered_map<size_t, std::vector<std::shared_ptr<Vertex>>> polygonmap_;
+  float max_line_space_;    // The average font size on the page
+  std::vector<Box> boxes_;  // Used in construction AND output
+  std::vector<std::shared_ptr<Vertex>> vertices_; // Used to make polygons
+  static const size_t DIVISIONS_ = 400; // number of strips used for whitespace
 
-  void getMaxLineSize();
-  void pageDimensions();    // Gets page margins
-  void cleanAndSortBoxes(); // Helper to remove Boxes flagged for deletion
-  void makeStrips();        // Cover the whitespace with tall thin strips
-  void mergeStrips();       // merge adjacent strips into boxes
-  void removeSmall();       // remove insufficiently tall boxes
-  void makeVertices();      // use Boxes to find vertices of polygons
-  void tidyVertices();      // identify and remove the unneeded vertices
-  void tracePolygons();     // trace around polygons by following vertices
-  void makePolygonMap();    // map polygons to size_t keys
-  void polygonMax();        // find bounding boxes of polygons
-  void removeEngulfed();    // remove boxes within other boxes
+  void GetMaxLineSize();
+  void PageDimensions();    // Gets page margins
+  void CleanAndSortBoxes(); // Helper to remove Boxes flagged for deletion
+  void MakeStrips();        // Cover the whitespace with tall thin strips
+  void MergeStrips();       // merge adjacent strips into boxes
+  void RemoveSmall();       // remove insufficiently tall boxes
+  void MakeVertices();      // use Boxes to find vertices of polygons
+  void TidyVertices();      // identify and remove the unneeded vertices
+  void TracePolygons();     // trace around polygons by following vertices
+  void MakePolygonMap();    // map polygons to size_t keys
+  void PolygonMax();        // find bounding boxes of polygons
+  void RemoveEngulfed();    // remove boxes within other boxes
 };
 
 
