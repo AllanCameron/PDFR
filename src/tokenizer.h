@@ -58,38 +58,36 @@
 
 #include "parser.h"
 
-
 //---------------------------------------------------------------------------//
-// The tokenizer class. It has a simple interface of one constructor and one
+// The Tokenizer class. It has a simple interface of one constructor and one
 // getter for the result. The private members allow for passing of state
 // between member functions during the instruction set creation.
 
 class Tokenizer
 {
 public:
-  // constructor
-  Tokenizer(std::shared_ptr<std::string>, parser*);
+  // Constructor. Takes a string pointer to the page description program
+  // and a fresh Parser object
+  Tokenizer(std::shared_ptr<std::string> input_string, Parser* parser_object);
 
 private:
-  // private data members
-  std::shared_ptr<std::string> contents_;// the input string itself
-  std::string::const_iterator it_;// The iterator that moves through the string
-  std::string buffer_;  // a string buffer to hold chars until pushed to result
-  Token::TState state_; // The current state of the finite state machine
-  parser* interpreter_;   // The graphic state to which instructions are sent
-  static std::string in_loop_; // keep track of whether we are in an xobject
-                             // - this prevents an infinite loop
+  // Enumerates the types of characters that can alter state differently
   enum CharType
   {
-    LAB, LET, DIG, USC, LSB, FSL, AST, LCB,
-    SUB, BSL, SPC, RAB, PER, ADD, QOT, RCB, RSB, SQO, OTH
+    LAB, LET, DIG, USC, LSB, FSL, AST, LCB, SUB,
+    BSL, SPC, RAB, PER, ADD, QOT, RCB, RSB, SQO, OTH
   };
 
-  static std::array<CharType, 256> char_lookup_;
-  // private methods
+  std::shared_ptr<std::string> contents_; // Pointer to input string
+  std::string::const_iterator it_;        // Iterates through contents_
+  std::string buffer_;                    // Tokenizer's string buffer
+  Token::TokenState state_;               // Current Tokenizer state
+  Parser* interpreter_;                   // The Parser instructions are sent to
+  static std::string in_loop_;            // Prevents an infinite loop
+  static std::array<CharType, 256> char_lookup_; // Lookup table for char type
 
-  void Tokenize();                  // chooses state subroutine based on state
-  void PushBuffer(const Token::TState, const Token::TState);
+  // private methods
+  void Tokenize();                    // chooses subroutine based on state
   void NewSymbolState();    //--------//---------------------------------------
   void ResourceState();               //
   void IdentifierState();             //
@@ -100,6 +98,9 @@ private:
   void HexStringState();              //
   void DictionaryState();             //
   void WaitState();         //--------//---------------------------------------
+
+  // Frequently used helper function to update buffer and state
+  void PushBuffer(const Token::TokenState type, const Token::TokenState state);
 };
 
 //---------------------------------------------------------------------------//

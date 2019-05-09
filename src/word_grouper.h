@@ -1,6 +1,6 @@
 //---------------------------------------------------------------------------//
 //                                                                           //
-//  PDFR word_grouper header file                                            //
+//  PDFR WordGrouper header file                                            //
 //                                                                           //
 //  Copyright (C) 2018 by Allan Cameron                                      //
 //                                                                           //
@@ -65,38 +65,40 @@
 // points of each word, and uses these to infer which word pairs are elligible
 // for sticking together.
 
-class word_grouper
+class WordGrouper
 {
 public:
   // Constructor
-  word_grouper(TextBox&&);
+  WordGrouper(TextBox&&);
 
   // Output individual text elements for next phase of layout analysis
-  TextBox& output();
+  TextBox& Output();
 
   // Output text elements with sizes, fonts, positions to API
-  TextTable out();
+  TextTable Out();
 
 private:
   // Make a table of values in a vector of floats rounded to one decimal place
-  void tabulate(const std::vector<float>&, std::unordered_map<int, size_t>&);
+  void Tabulate(const std::vector<float>&, std::unordered_map<int, size_t>&);
 
   // Use tabulate function to find likely left, right or mid-aligned columns
-  void findEdges();
+  void FindEdges();
 
   // Tell the text elements whether they form an edge or not
-  void assignEdges();
+  void AssignEdges();
 
   // Join elligible adjacent glyphs together and merge their properties
-  void findRightMatch();
+  void FindRightMatch();
 
 // private data members
 
   // The tables of edges
-  std::unordered_map<int, size_t> m_leftEdges, m_rightEdges, m_mids;
+  std::unordered_map<int, size_t> left_edges_,
+                                  right_edges_,
+                                  mids_;
 
   // The main data member
-  TextBox m_textbox;
+  TextBox textbox_;
 };
 
 //---------------------------------------------------------------------------//

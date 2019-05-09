@@ -1,6 +1,6 @@
 //---------------------------------------------------------------------------//
 //                                                                           //
-//  PDFR word_grouper implementation file                                    //
+//  PDFR WordGrouper implementation file                                    //
 //                                                                           //
 //  Copyright (C) 2018 by Allan Cameron                                      //
 //                                                                           //
@@ -36,34 +36,34 @@ using namespace std;
 constexpr int EDGECOUNT = 4;
 
 //---------------------------------------------------------------------------//
-// Constructor for word_grouper class. This takes the output from letter_grouper
+// Constructor for WordGrouper class. This takes the output from LetterGrouper
 // and finds its column edges, then joins elligible words together as long as
 // they do not belong to different columns.
 
-word_grouper::word_grouper(TextBox&& t_text_box): m_textbox(move(t_text_box))
+WordGrouper::WordGrouper(TextBox&& t_text_box): textbox_(move(t_text_box))
 {
-  findEdges();
-  assignEdges();
-  findRightMatch();
+  FindEdges();
+  AssignEdges();
+  FindRightMatch();
 };
 
 //---------------------------------------------------------------------------//
 // This returns a single text box of the page for further processing if needed
 
-TextBox& word_grouper::output()
+TextBox& WordGrouper::Output()
 {
-  return m_textbox;
+  return textbox_;
 }
 
 //---------------------------------------------------------------------------//
 // This returns a "gridoutput" object, which is a struct of several vectors of
 // the same length, essentially a transposed version of allRows. This allows
-// the results of word_grouper to be passed out to an API if no further
+// the results of WordGrouper to be passed out to an API if no further
 // processing is required.
 
-TextTable word_grouper::out()
+TextTable WordGrouper::Out()
 {
-  return TextTable(m_textbox);
+  return TextTable(textbox_);
 }
 
 //---------------------------------------------------------------------------//
@@ -74,7 +74,7 @@ TextTable word_grouper::out()
 // return are data members of the class, we need to pass the map we wish to
 // create by reference.
 
-void word_grouper::tabulate(const vector<float>& t_supplied_vector,
+void WordGrouper::Tabulate(const vector<float>& t_supplied_vector,
                             unordered_map<int, size_t>& t_table   )
 {
   // Take each member of the supplied vector
@@ -100,14 +100,14 @@ void word_grouper::tabulate(const vector<float>& t_supplied_vector,
 }
 
 //---------------------------------------------------------------------------//
-// This uses the tabulate function to find left, right and centre-aligned text
+// This uses the Tabulate function to find left, right and centre-aligned text
 // elements on the page.
 
-void word_grouper::findEdges()
+void WordGrouper::FindEdges()
 {
   // Create vectors of left and right edges of text elements
   vector<float> left, right;
-  for(auto& element : m_textbox)
+  for(auto& element : textbox_)
   {
     left.push_back(element->GetLeft());
     right.push_back(element->GetRight());
@@ -120,10 +120,10 @@ void word_grouper::findEdges()
     midvec.emplace_back((right[i] + left[i]) / 2);
   }
 
-  // Use tabulate to find left and right edges as well as midpoints
-  tabulate(left, m_leftEdges);
-  tabulate(right, m_rightEdges);
-  tabulate(midvec, m_mids);
+  // Use Tabulate to find left and right edges as well as midpoints
+  Tabulate(left,   left_edges_);
+  Tabulate(right,  right_edges_);
+  Tabulate(midvec, mids_);
 }
 
 //---------------------------------------------------------------------------//
@@ -131,28 +131,28 @@ void word_grouper::findEdges()
 // aligned element so it "knows" which side(s), if any, are eligible to join
 // other elements
 
-void word_grouper::assignEdges()
+void WordGrouper::AssignEdges()
 {
-  for(auto& element : m_textbox)
+  for(auto& element : textbox_)
   {
     int left_int = element->GetLeft() * 10;
     int right_int = element->GetRight() * 10;
     int mid_int = (element->GetRight() + element->GetLeft()) * 5;
 
     // Non-unique left edge - assume column edge
-    if(m_leftEdges.find(left_int) != m_leftEdges.end())
+    if(left_edges_.find(left_int) != left_edges_.end())
     {
       element->MakeLeftEdge();
     }
 
     // Non-unique right edge - assume column edge
-    if(m_rightEdges.find(right_int) != m_rightEdges.end())
+    if(right_edges_.find(right_int) != right_edges_.end())
     {
       element->MakeRightEdge();
     }
 
     // Non-unique centre value - assume centred column
-    if(m_mids.find(mid_int) != m_mids.end())
+    if(mids_.find(mid_int) != mids_.end())
     {
       element->MakeCentred();
     }
@@ -166,18 +166,18 @@ void word_grouper::assignEdges()
 // is, find the most appropriate match to its right that is elligible and stick
 // the two together.
 
-void word_grouper::findRightMatch()
+void WordGrouper::FindRightMatch()
 {
   // Handle empty data
-  if(m_textbox.empty()) throw runtime_error("empty data");
+  if(textbox_.empty()) throw runtime_error("empty data");
 
-  for(auto element = m_textbox.begin(); element != m_textbox.end(); ++element)
+  for(auto element = textbox_.begin(); element != textbox_.end(); ++element)
   {
     // Check the row is elligible for matching
     if( (*element)->IsConsumed()) continue;
 
     // If elligible, check every other word for the best match
-    for(auto other = element; other != m_textbox.end(); ++other)
+    for(auto other = element; other != textbox_.end(); ++other)
     {
       // Don't match against itself
       if(element == other) continue;

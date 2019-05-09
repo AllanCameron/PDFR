@@ -1,6 +1,6 @@
 //---------------------------------------------------------------------------//
 //                                                                           //
-//  PDFR letter_grouper header file                                          //
+//  PDFR LetterGrouper header file                                          //
 //                                                                           //
 //  Copyright (C) 2018 by Allan Cameron                                      //
 //                                                                           //
@@ -31,7 +31,7 @@
 
 #define PDFR_LGROUPER
 
-/* The letter_grouper class co-ordinates the grouping together of words. In
+/* The LetterGrouper class co-ordinates the grouping together of words. In
  * terms of program structure, this comes directly after the parser step that
  * reads the page description program. The goal of this class is to clump
  * adjoining glyphs to form strings. Mostly, these will form words, but if
@@ -46,7 +46,7 @@
 #include "tokenizer.h"
 
 //---------------------------------------------------------------------------//
-// The letter_grouper class contains a constructor, an output map of results,
+// The LetterGrouper class contains a constructor, an output map of results,
 // and a method for passing out the minimum text bounding box found in page
 // construction. Its private methods are used only in construction of the
 // output. The main private member is a map of vectors of TextElements, each
@@ -54,29 +54,29 @@
 // Each glyph is addressable by two numbers - the grid number and the position
 // of the glyph in the cell's vector.
 
-class letter_grouper
+class LetterGrouper
 {
-public:
+ public:
   // constructor.
-  letter_grouper(TextBox);
+  LetterGrouper(TextBox);
 
   // public methods
-  // Passes text elements to word_grouper for further construction if needed
-  TextBox output();
-  TextTable out(); // output table to interface if ungrouped words needed
+  // Passes text elements to WordGrouper for further construction if needed
+  TextBox Output();
+  TextTable Out(); // output table to interface if ungrouped words needed
 
-private:
+ private:
   // private data members
-  TextBox m_text_box; // a copy of the parser output used to create grid
+  TextBox text_box_; // a copy of the parser output used to create grid
 
   // Main data member - a 16 x 16 grid of cells, each with a TextPointer vector
-  std::unordered_map<uint8_t, std::vector<TextPointer>> m_grid;
+  std::unordered_map<uint8_t, std::vector<TextPointer>> grid_;
 
   // private methods
-  void makegrid();                    // assigns each glyph to a 16 x 16 grid
-  void compareCells();                // co-ordinates matching between cells
-  void matchRight(TextPointer, uint8_t); // compare all glyphs in cell
-  void merge();                       // join matching glyphs together
+  void MakeGrid();                    // assigns each glyph to a 16 x 16 grid
+  void CompareCells();                // co-ordinates matching between cells
+  void MatchRight(TextPointer, uint8_t); // compare all glyphs in cell
+  void Merge();                       // join matching glyphs together
 };
 
 //---------------------------------------------------------------------------//

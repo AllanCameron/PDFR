@@ -1,6 +1,6 @@
 //---------------------------------------------------------------------------//
 //                                                                           //
-//  PDFR letter_grouper implementation file                                  //
+//  PDFR LetterGrouper implementation file                                  //
 //                                                                           //
 //  Copyright (C) 2018 by Allan Cameron                                      //
 //                                                                           //
@@ -33,22 +33,22 @@ using namespace std;
 //---------------------------------------------------------------------------//
 // Output words without first joining them into lines
 
-TextTable letter_grouper::out()
+TextTable LetterGrouper::Out()
 {
-  return TextTable(m_text_box);
+  return TextTable(text_box_);
 }
 
 //---------------------------------------------------------------------------//
-// The letter_grouper constructor calls three subroutines. These split the
+// The LetterGrouper constructor calls three subroutines. These split the
 // page into an easily addressable 16 x 16 grid, find glyphs in close proximity
 // to each other, and glue them together, respectively.
 
-letter_grouper::letter_grouper(TextBox text_box) : m_text_box(move(text_box))
+LetterGrouper::LetterGrouper(TextBox t_text_box) : text_box_(move(t_text_box))
 {
-  m_text_box.RemoveDuplicates();
-  makegrid();     // Split the glyphs into 256 cells to reduce search space
-  compareCells(); // Find adjacent glyphs
-  merge();        // Glue adjacent glyphs together
+  text_box_.RemoveDuplicates();
+  MakeGrid();     // Split the glyphs into 256 cells to reduce search space
+  CompareCells(); // Find adjacent glyphs
+  Merge();        // Glue adjacent glyphs together
 }
 
 //---------------------------------------------------------------------------//
@@ -65,34 +65,34 @@ letter_grouper::letter_grouper(TextBox text_box) : m_text_box(move(text_box))
 // smaller. The grid position is easily stored as a single byte, with the first
 // 4 bits representing the x position and the second representing the y.
 
-void letter_grouper::makegrid()
+void LetterGrouper::MakeGrid()
 {
   // Grid column width in user space
-  float dx = (m_text_box.Width()) / 16;
+  float dx = (text_box_.Width()) / 16;
 
   // Grid row height in user space
-  float dy = (m_text_box.Height()) / 16;
+  float dy = (text_box_.Height()) / 16;
 
   // For each glyph
-  for(auto& element : m_text_box)
+  for(auto& element : text_box_)
   {
     // Calculate the row and column number the glyph's bottom left corner is in
     // There will be exactly 16 rows and columns, each numbered 0-15 (4 bits)
-    uint8_t column = (element->GetLeft() - m_text_box.GetLeft()) / dx;
-    uint8_t row = 15 - (element->GetBottom() - m_text_box.GetBottom()) / dy;
+    uint8_t column = (element->GetLeft() - text_box_.GetLeft()) / dx;
+    uint8_t row = 15 - (element->GetBottom() - text_box_.GetBottom()) / dy;
 
     // Convert the two 4-bit row and column numbers to a single byte
     uint8_t index = (row << 4) | column;
 
     // Append a pointer to the glyph's TextElement to the vector in that cell
-    m_grid[index].push_back(element);
+    grid_[index].push_back(element);
   }
 }
 
 //---------------------------------------------------------------------------//
 // Allows the main data object to be output after calculations done
 
-TextBox letter_grouper::output()
+TextBox LetterGrouper::Output()
 {
   // This lambda is used to find text_ptrs that aren't flagged for deletion
   auto extant = [&](const TextPointer& elem) -> bool
@@ -104,7 +104,7 @@ TextBox letter_grouper::output()
 
   // Now copy all the text_ptrs from the grid to a vector
   vector<TextPointer> v;
-  for(auto& cell : m_grid)
+  for(auto& cell : grid_)
   {
     copy_if(cell.second.begin(), cell.second.end(), back_inserter(v), extant);
   }
@@ -112,9 +112,9 @@ TextBox letter_grouper::output()
   // Sort left to right
   sort(v.begin(), v.end(), left_sort);
 
-  m_text_box.SwapData(v);
+  text_box_.SwapData(v);
 
-  return m_text_box;
+  return text_box_;
 
 }
 
@@ -127,7 +127,7 @@ TextBox letter_grouper::output()
 // North and South. If there is no match found in these it will also look in
 // the cells at the NorthEast, East and SouthEast.
 
-void letter_grouper::compareCells()
+void LetterGrouper::CompareCells()
 {
   // For each of 16 columns of cells on page
   for(uint8_t column = 0; column < 16; ++column)
@@ -139,7 +139,7 @@ void letter_grouper::compareCells()
       uint8_t key = column | (row << 4);
 
       // Get a reference to the cell's contents
-      vector<TextPointer>& maingroup = m_grid[key];
+      vector<TextPointer>& maingroup = grid_[key];
 
       // Empty cell - nothing to be done
       if(maingroup.empty()) continue;
@@ -155,7 +155,7 @@ void letter_grouper::compareCells()
           if(row == 15 && (index % 3 == 1)) continue;
 
           uint8_t cell = (column + (index / 3)) | ((row + index % 3 - 1) << 4);
-          matchRight(element, cell);
+          MatchRight(element, cell);
         }
       }
     }
@@ -167,10 +167,10 @@ void letter_grouper::compareCells()
 // by its cell and the order it appears in the vector of glyphs contained in
 // that cell.
 
-void letter_grouper::matchRight(TextPointer element, uint8_t key)
+void LetterGrouper::MatchRight(TextPointer element, uint8_t key)
 {
-  // The key is the address of the cell in the m_grid.
-  auto& cell = m_grid[key];
+  // The key is the address of the cell in the grid.
+  auto& cell = grid_[key];
 
   // some cells are empty - nothing to do
   if(cell.empty()) return;
@@ -205,7 +205,7 @@ void letter_grouper::matchRight(TextPointer element, uint8_t key)
 // the latter's size and position parameters and declaring the leftward glyph
 // "consumed"
 
-void letter_grouper::merge()
+void LetterGrouper::Merge()
 {
   // For each column in the x-axis
   for(uint8_t column = 0; column < 16; ++column)
@@ -214,7 +214,7 @@ void letter_grouper::merge()
     for(uint8_t row = 0; row < 16; ++row)
     {
       // Get the cell's contents
-      vector<TextPointer>& cell = m_grid[column | (row << 4)];
+      vector<TextPointer>& cell = grid_[column | (row << 4)];
 
       // If the cell is empty there's nothing to do
       if(cell.empty()) continue;

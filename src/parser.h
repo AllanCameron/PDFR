@@ -1,6 +1,6 @@
 //---------------------------------------------------------------------------//
 //                                                                           //
-//  PDFR parser header file                                                  //
+//  PDFR Parser header file                                                  //
 //                                                                           //
 //  Copyright (C) 2018 by Allan Cameron                                      //
 //                                                                           //
@@ -31,7 +31,7 @@
 
 #define PDFR_GS
 
-/* The job of the parser class is to parse the pdf page description
+/* The job of the Parser class is to parse the pdf page description
  * language into a table of glyphs, positions, sizes and fontnames - one row
  * for each character on the page. The instructions from the page description
  * language have already been "compiled" by the lexer into an instruction set,
@@ -43,7 +43,7 @@
  * the stack until an operator is reached. When the operator is reached, it
  * performs an action on the operands then clears the stack.
  *
- * In order that parser can interpret the operands, it needs to know
+ * In order that Parser can interpret the operands, it needs to know
  * about the fonts on the page, the content string, and any xobjects that
  * are called to be inserted on the page. It therefore needs to use the page's
  * public interface to get these data, and in fact is created by giving the
@@ -58,7 +58,7 @@
  * a number of private data members which maintain state between loops of the
  * instruction reader, and some which record the entire history of the state.
  *
- * The final output of parser is a collection of vectors, all of the same
+ * The final output of Parser is a collection of vectors, all of the same
  * length, comprising the Unicode symbol, width, font size, font name and x/y
  * position of every character on the page. This is output as a specific struct
  * to reduce the passing around of several parameters.
@@ -71,75 +71,152 @@
 // The states of the lexer are defined by this enum. It is defined in its own
 // namespace rather than within the class because its states are also used
 // as type labels in the instruction set it produces. These therefore need
-// to be made available to the instruction reader in the parser class
+// to be made available to the instruction reader in the Parser class
 
 namespace Token
 {
-  enum TState
+  enum TokenState
   {
     NEWSYMBOL,  IDENTIFIER, NUMBER, RESOURCE, STRING,
     HEXSTRING,  ARRAY,      DICT,   WAIT,     OPERATOR
   };
 };
 
+//---------------------------------------------------------------------------//
+
+class Matrix
+{
+public:
+  // The default constructor returns a 3 x 3 identity matrix
+  Matrix(): data_(std::array<float, 9> {1.0, 0, 0, 0, 1.0, 0, 0, 0, 1.0}) {}
+
+  Matrix(std::array<float, 9> t_array): data_(t_array){}
+
+  // The other way of creating a 3 x 3 matrix is from a 6-element string vector,
+  // as this is how Matrices are described in pdf.
+  // For example, the entry "11 12 13 14 15 16 Tm" represents the following
+  // 3x3 matrix:
+  //
+  //                      |   11    12    0  |
+  //                      |                  |
+  //                      |   13    14    0  |
+  //                      |                  |
+  //                      |   15    16    1  |
+  //
+  Matrix(const std::vector<std::string>& t_string)
+  {
+    data_ = {stof(t_string[0]), stof(t_string[1]), 0,
+             stof(t_string[2]), stof(t_string[3]), 0,
+             stof(t_string[4]), stof(t_string[5]), 1};
+  }
+
+  // Assignment constructor
+  Matrix& operator=(const Matrix& t_other)
+  {
+    this->data_ = t_other.data_;
+    return *this;
+  }
+
+  Matrix operator*(const Matrix& t_other)
+  {
+    std::array<float, 9> new_data {};
+
+    // Clever use of indices to allow fill by loop
+    for(size_t i = 0; i < 9; ++i)
+    {
+      new_data[i] = (data_[i % 3 + 0] * t_other.data_[3 * (i / 3) + 0] +
+                     data_[i % 3 + 3] * t_other.data_[3 * (i / 3) + 1] +
+                     data_[i % 3 + 6] * t_other.data_[3 * (i / 3) + 2] );
+    }
+
+    return Matrix(new_data);
+  }
+
+  void operator*=(const Matrix& t_other)
+  {
+    std::array<float, 9> new_data {};
+
+    // Clever use of indices to allow fill by loop
+    for(size_t i = 0; i < 9; ++i)
+    {
+      new_data[i] = (data_[i % 3 + 0] * t_other.data_[3 * (i / 3) + 0] +
+                     data_[i % 3 + 3] * t_other.data_[3 * (i / 3) + 1] +
+                     data_[i % 3 + 6] * t_other.data_[3 * (i / 3) + 2] );
+    }
+
+    std::swap(this->data_, new_data);
+  }
+
+  float& operator[](size_t index)
+  {
+    return data_[index];
+  }
+
+ private:
+  std::array<float, 9> data_;
+};
 
 //---------------------------------------------------------------------------//
 
-class parser
+class Parser
 {
 public:
   // Basic constructor
-  parser(std::shared_ptr<Page>);
+  Parser(std::shared_ptr<Page>);
 
   // Copy constructor
-  parser(const parser& prs): m_db(prs.m_db){}
+  Parser(const Parser& prs): text_box_(prs.text_box_){}
 
   // Move constructor
-  parser(parser&& prs) noexcept : m_db(std::move(prs.m_db)){}
+  Parser(Parser&& prs) noexcept : text_box_(std::move(prs.text_box_)){}
 
   // Assignment constructor
-  parser& operator=(const parser& pr){m_db = std::move(pr.m_db); return *this;}
+  Parser& operator=(const Parser& pr)
+  {
+    text_box_ = std::move(pr.text_box_);
+    return *this;
+  }
 
   // Public function called by tokenizer to update graphics state
-  void reader(std::string&, Token::TState);
+  void Reader(std::string&, Token::TokenState);
 
   // Access results
-  TextBox& output();
+  TextBox& Output();
 
   // To recursively pass xobjects, we need to be able to see the operand
-  std::string getOperand();
+  std::string GetOperand();
 
   // This allows us to process an xObject
-  std::shared_ptr<std::string> getXobject(const std::string& inloop) const {
-    return m_p->GetXObject(inloop);
+  std::shared_ptr<std::string> GetXObject(const std::string& inloop) const {
+    return page_->GetXObject(inloop);
   };
 
 private:
-  //private data members - used to maintain state between calls to parser
-  std::shared_ptr<Page>             m_p;              // pointer to this page
-  std::shared_ptr<Font>             m_wfont;          // pointer to working font
-  float                             m_currfontsize;   // Current font size
-  std::vector<float>                m_fontsizestack;  // stack of font size
-  std::array<float, 9>              m_Tmstate,        // Text matrix state
-                                    m_Tdstate;        // Temp modification to Tm
-  std::vector<std::array<float, 9>> m_gs;             // stack of graphics state
-  std::string                       m_currentfont;    // Name of current font
-  std::vector<std::string>          m_fontstack,      // stack of font history
-                                    m_Operands;       // The actual data read
-  std::vector<Token::TState>        m_OperandTypes;   // The type of data read
-  int                               m_PRstate;        // current kerning state
-  float                             m_Tl,             // Leading (line spacing)
-                                    m_Tw,             // Word spacing
-                                    m_Th,             // Horizontal scaling
-                                    m_Tc;             // Character spacing
-  TextBox                           m_db;             // The main output struct
+  //private data members - used to maintain state between calls to Parser
+  std::shared_ptr<Page>             page_;              // pointer to this page
+  std::shared_ptr<Font>             working_font_;  // pointer to working font
+  float                             current_font_size_;   // Current font size
+  std::vector<float>                font_size_stack_;  // stack of font size
+  Matrix                            tm_state_,        // Text matrix state
+                                    td_state_;      // Temp modification to Tm
+  std::vector<Matrix>               graphics_state_;// stack of graphics state
+  std::string                       current_font_;    // Name of current font
+  std::vector<std::string>          font_stack_,      // stack of font history
+                                    operands_;       // The actual data read
+  std::vector<Token::TokenState>    operand_types_;   // The type of data read
+  int                               kerning_;        // current kerning state
+  float                             tl_,             // Leading (line spacing)
+                                    tw_,             // Word spacing
+                                    th_,             // Horizontal scaling
+                                    tc_;             // Character spacing
+  TextBox                           text_box_;             // The main output struct
 
   // This typedef allows us to create a map of function pointers
-  typedef void (parser::*fptr)();
+  typedef void (Parser::*fptr)();
 
   // Static private members
-  static std::unordered_map<std::string, fptr> sm_fmap;
-  static const std::array<float, 9> sm_initstate;
+  static std::unordered_map<std::string, fptr> function_map_;
+  static const std::array<float, 9> identity_;
 
   // Private methods
 
@@ -170,18 +247,9 @@ private:
   // a bit of a "hairball". It uses the font information and current graphics
   // state to identify the intended glyph, size and position from a character
   // in a pdf string object
-  void processRawChar(std::vector<RawChar>&, float&,
-                      std::array<float, 9>&, float&);
-
-  // Multiplies to 3x3 matrices represented as length-9 vector floats
-  void matmul(const std::array<float, 9>& , std::array<float, 9>&);
-
-  // Converts pdfs' 6-token string representation of matrices to a 3x3 matrix
-  std::array<float, 9> stringvectomat(const std::vector<std::string>&);
+  void ProcessRawChar(std::vector<RawChar>&, float&, Matrix&, float&);
 };
 
 
-
-//---------------------------------------------------------------------------//
 
 #endif

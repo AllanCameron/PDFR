@@ -54,7 +54,7 @@
 // The TextElement is a struct which contains information about each text
 // element on a page including the actual unicode glyph(s), the position, the
 // font and size of the character(s). It also contains a pair that acts as an
-// address for the adjacent glyph which will be found during letter_grouper's
+// address for the adjacent glyph which will be found during LetterGrouper's
 // construction, and Boolean flags to indicate whether it is "consumed" when
 // the glyphs are stuck together into words, as well as flags to indicate
 // whether the element is at the left, right or centre of a column

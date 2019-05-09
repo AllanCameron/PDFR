@@ -98,7 +98,7 @@ target.
                                        |
                                        |
                                        v
-                                "letter_grouper"
+                               "letter_grouper.h"
                               {letter_grouper.cpp} <--- <cstdlib>
                                        |
                                        |

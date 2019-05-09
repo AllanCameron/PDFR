@@ -207,19 +207,19 @@ Rcpp::List get_object_from_raw(const vector<uint8_t>& raw_file, int object)
 
 //---------------------------------------------------------------------------//
 // This is the final common pathway for getting a dataframe of atomic glyphs
-// from the parser. It packages the dataframe with a vector of page
+// from the Parser. It packages the dataframe with a vector of page
 // dimensions to allow plotting etc
 
 Rcpp::List get_single_text_elements(shared_ptr<Page> t_page_ptr)
 {
-  // Create new parser
-  parser parser_object = parser(t_page_ptr);
+  // Create new Parser
+  Parser parser_object = Parser(t_page_ptr);
 
-  // Read page contents to parser
+  // Read page contents to Parser
   Tokenizer(t_page_ptr->GetPageContents(), &parser_object);
 
-  // Obtain output from parser and transpose into a text table
-  auto text_box = parser_object.output();
+  // Obtain output from Parser and transpose into a text table
+  auto text_box = parser_object.Output();
   TextTable table(text_box);
 
   // Ensure the static fontmap is cleared after use
@@ -245,18 +245,18 @@ Rcpp::List get_single_text_elements(shared_ptr<Page> t_page_ptr)
 
 Rcpp::List get_text_boxes(shared_ptr<Page> page_ptr)
 {
-  // Create new parser
-  parser parser_object(page_ptr);
+  // Create new Parser
+  Parser parser_object(page_ptr);
 
-  // Read page contents to parser
+  // Read page contents to Parser
   Tokenizer(page_ptr->GetPageContents(), &parser_object);
 
   // Group letters and words
-  letter_grouper grouped_letters(parser_object.output());
-  word_grouper grouped_words(grouped_letters.output());
+  LetterGrouper grouped_letters(parser_object.Output());
+  WordGrouper grouped_words(grouped_letters.Output());
 
   // Arrange text into text boxes separated by whitespace
-  Whitespace WS(grouped_words.output());
+  Whitespace WS(grouped_words.Output());
 
   // Join lines of text within single text boxes
   line_grouper linegrouper(WS.Output());
@@ -345,20 +345,20 @@ Rcpp::DataFrame pdfdoc_common(shared_ptr<Document> document_ptr)
     // Create a new page pbject
     auto page_ptr = make_shared<Page>(document_ptr, page_number);
 
-    // Create a new parser object
-    parser parser_object(page_ptr);
+    // Create a new Parser object
+    Parser parser_object(page_ptr);
 
-    // Read page contents to parser object
+    // Read page contents to Parser object
     Tokenizer(page_ptr->GetPageContents(), &parser_object);
 
     // Join individual letters into words
-    letter_grouper grouped_letters(move(parser_object.output()));
+    LetterGrouper grouped_letters(move(parser_object.Output()));
 
     // Join individual words into lines or word clusters
-    word_grouper grouped_words(grouped_letters.output());
+    WordGrouper grouped_words(grouped_letters.Output());
 
     // Get a text table from the output
-    TextTable table = grouped_words.out();;
+    TextTable table = grouped_words.Out();;
 
     // Join current page's output to final data frame columns
     Concatenate(left,   table.GetLefts());
@@ -459,20 +459,20 @@ string get_page_string_from_raw(const vector<uint8_t>& raw_file,
 
 Rcpp::DataFrame pdf_boxes(shared_ptr<Page> page_ptr)
 {
-  // Create an empty parser object
-  parser parser_object(page_ptr);
+  // Create an empty Parser object
+  Parser parser_object(page_ptr);
 
-  // Read the page contents into the parser
+  // Read the page contents into the Parser
   Tokenizer(page_ptr->GetPageContents(), &parser_object);
 
   // Group individual letters into words
-  letter_grouper grouped_letters(move(parser_object.output()));
+  LetterGrouper grouped_letters(move(parser_object.Output()));
 
   // Group words into lines or word clusters
-  word_grouper grouped_words(move(grouped_letters.output()));
+  WordGrouper grouped_words(move(grouped_letters.Output()));
 
   // Separate page into text boxes and white space
-  Whitespace polygons(move(grouped_words.output()));
+  Whitespace polygons(move(grouped_words.Output()));
 
   // This step outputs the data we need to create our data frame
   auto Poly = polygons.WSBoxOut();
