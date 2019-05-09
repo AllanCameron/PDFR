@@ -298,7 +298,7 @@ void Whitespace::TidyVertices()
   // For each vertex, if 1 or 3 corners have whitespace, push to result
   for(auto& corner : vertices_)
   {
-    if((corner->flags_ % 3) != 0) temporary_vertices.push_back(corner);
+    if((corner->GetFlags() % 3) != 0) temporary_vertices.push_back(corner);
   }
 
   // Swap rather than copy vector into vertices_ member
@@ -329,16 +329,16 @@ void Whitespace::TracePolygons()
       if(vertex->IsCloserThan(*other_vertex, edge))
       {
         // Vertex provisionally points to other_vertex
-        vertex->points_to_ = &other_vertex - &(vertices_[0]);
+        vertex->PointAt(&other_vertex - &(vertices_[0]));
 
         // Now we update "edge" to make it the closest yet
         if(vertex->Out() == North || vertex->Out() == South)
         {
-          edge = other_vertex->y_;
+          edge = other_vertex->GetY();
         }
         else
         {
-          edge = other_vertex->x_;
+          edge = other_vertex->GetX();
         }
       }
     }
@@ -346,7 +346,7 @@ void Whitespace::TracePolygons()
     // If the closest yet is not on the page, mark vertex for deletion
     if(edge - outer_edge < 0.1 && outer_edge - edge < 0.1)
     {
-      vertex->flags_ |= 0x80;
+      vertex->SetFlags(0x80);
     }
   }
 }
@@ -376,16 +376,16 @@ void Whitespace::MakePolygonMap()
   for(size_t i = 0; i < vertices_.size(); ++i)
   {
     // If this vertex is taken, move along.
-    if(vertices_[i]->group_) continue;
+    if(vertices_[i]->GetGroup()) continue;
 
     // we now know we're at the first unlabelled vertex
     size_t j = i;
 
     // While we're not back at the first vertex of our set
-    while (vertices_[j]->group_ == 0)
+    while (vertices_[j]->GetGroup() == 0)
     {
       // Label the vertex with polygon number
-      vertices_[j]->group_ = polygon_number;
+      vertices_[j]->SetGroup(polygon_number);
 
       // If this is a new polygon number, start a new vector
       if(polygonmap_.find(polygon_number) == polygonmap_.end())
@@ -396,7 +396,7 @@ void Whitespace::MakePolygonMap()
       else polygonmap_[polygon_number].push_back(vertices_[j]);
 
       // Our loop now jumps to next clockwise vertex
-      j = vertices_[j]->points_to_;
+      j = vertices_[j]->PointsTo();
     }
 
     // we've come back to start of polygon - start a new one

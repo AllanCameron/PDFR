@@ -58,3 +58,35 @@ unordered_map<uint8_t, pair<Direction, Direction>> Vertex::arrows_ =
   {0x0C, {East, East}},   {0x0D, {North, East}}, {0x0E, {East, South}},
   {0x0F, {None, None}}
 };
+
+//---------------------------------------------------------------------------//
+// Create a vertex from a given corner of the box
+// (0 = top-left, 1 = top-right, 2 = bottom-left, 3 = bottom-right)
+// Note, the given vertex is automatically flagged as being impinged at the
+// correct compass direction
+
+shared_ptr<Vertex> Box::GetVertex(int t_corner)
+{
+  switch(t_corner)
+  {
+    case 0 : return std::make_shared<Vertex>(left_,  top_,    0x02);
+    case 1 : return std::make_shared<Vertex>(right_, top_,    0x01);
+    case 2 : return std::make_shared<Vertex>(left_,  bottom_, 0x04);
+    case 3 : return std::make_shared<Vertex>(right_, bottom_, 0x08);
+    default: return std::make_shared<Vertex>(0, 0, 0);
+  }
+  return std::make_shared<Vertex>  (0, 0, 0);
+}
+
+//---------------------------------------------------------------------------//
+// Marks a box's impingement on a given vertex. This records whether moving
+// an arbitrarily small distance in a given direction from the vertex will
+// place one inside the current box.
+
+void Box::RecordImpingementOn(Vertex& t_vertex)
+{
+  if(IsNorthWestOf(t_vertex)) t_vertex.SetFlags(0x08);
+  if(IsNorthEastOf(t_vertex)) t_vertex.SetFlags(0x04);
+  if(IsSouthEastOf(t_vertex)) t_vertex.SetFlags(0x02);
+  if(IsSouthWestOf(t_vertex)) t_vertex.SetFlags(0x01);
+}

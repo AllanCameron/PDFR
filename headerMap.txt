@@ -74,6 +74,7 @@ target.
                                        |
                                        v
                                     "box.h"
+                                   {box.cpp}
                                        |
                                        |
                                        v

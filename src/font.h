@@ -62,7 +62,8 @@
 // The GlyphMap is the main data member of the Font class. Although it is
 // constructed from standard library components, it needs a shorthand name
 
-typedef std::unordered_map<RawChar, std::pair<Unicode, int>> GlyphMap;
+typedef std::pair<Unicode, int> GlyphData;
+typedef std::unordered_map<RawChar, GlyphData> GlyphMap;
 
 //---------------------------------------------------------------------------//
 // Each Font object is created and stored as an object in a pdf page, as this
@@ -71,33 +72,34 @@ typedef std::unordered_map<RawChar, std::pair<Unicode, int>> GlyphMap;
 
 class Font
 {
-public:
-  // constructors
-  Font(std::shared_ptr<Document>, Dictionary, const std::string&);
+ public:
+  // Constructor
+  Font(std::shared_ptr<Document> doc, Dictionary font, const std::string& id);
+
+  // Default Constructor
   Font(){};
 
   // public methods
-  std::string fontname();               // get the actual postscript Font name
-  std::vector<RawChar> getGlyphKeys();  // vector of all mapped RawChars
+  std::string GetFontName();            // Gets the actual PostScript Font name
+  std::vector<RawChar> GetGlyphKeys();  // Returns vector of all mapped RawChars
 
-  // The most important public method is mapRawChar, which takes a vector of
+  // The most important public method is MapRawChar, which takes a vector of
   // uint16_t representing raw character codes, and returns a vector of pairs
   // containing the Unicode interpretation and its associated width
-  std::vector<std::pair<Unicode, int>> mapRawChar(const std::vector<RawChar>&);
+  std::vector<GlyphData> MapRawChar(const std::vector<RawChar>& raw_chars);
 
 private:
   // private data members
-  std::shared_ptr<Document> m_d;  // Pointer to the containing document
-  Dictionary m_fontref;           // The font dictionary
-  std::string m_FontID,           // The name the font as given in the PDF
-              m_FontName;         // The actual name of the font
-  GlyphMap m_glyphmap;  // Main data member, mapping RawChar to {Unicode, width}
+  std::shared_ptr<Document> document_;  // - Pointer to the containing document
+  Dictionary  font_dictionary_;         // - The main font dictionary
+  std::string font_id_,                 // - The name the font as used in PDF
+              font_name_;               // - The actual name of the font
+  GlyphMap glyph_map_;                  // - Main data member, mapping RawChar
+                                        //   to a {Unicode, width} pair.
 
   // private methods
-  void getFontName();   // Finds the postscript font name
-
-  // Main constructor; makes glyphmap from encoding and glyphwidth classes
-  void makeGlyphTable();
+  void ReadFontName();                  // Finds the postscript font name
+  void MakeGlyphTable();                // Co-ordinates font construction
 };
 
 //---------------------------------------------------------------------------//

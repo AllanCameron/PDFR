@@ -111,7 +111,7 @@ public:
 
   // This allows us to process an xObject
   std::shared_ptr<std::string> getXobject(const std::string& inloop) const {
-    return m_p->get_XObject(inloop);
+    return m_p->GetXObject(inloop);
   };
 
 private:

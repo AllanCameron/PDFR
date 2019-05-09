@@ -30,9 +30,9 @@
 using namespace std;
 using namespace Token;
 
-std::string Tokenizer::inloop = "none";
+std::string Tokenizer::in_loop_ = "none";
 
-std::array<Tokenizer::chartype, 256> Tokenizer::char_lookup = {
+std::array<Tokenizer::CharType, 256> Tokenizer::char_lookup_ = {
   OTH, OTH, OTH, OTH, OTH, OTH, OTH, OTH,
   OTH, OTH, SPC, OTH, OTH, SPC, OTH, OTH,
   OTH, OTH, OTH, OTH, OTH, OTH, OTH, OTH,
@@ -71,10 +71,13 @@ std::array<Tokenizer::chartype, 256> Tokenizer::char_lookup = {
 // constructor of Tokenizer - initializes members and starts main
 // lexer function
 
-Tokenizer::Tokenizer(shared_ptr<string> input, parser* prser) :
- s(input), i(s->begin()), state(NEWSYMBOL), gs(prser)
+Tokenizer::Tokenizer(shared_ptr<string> t_input, parser* t_interpreter) :
+  contents_(t_input),
+  it_(contents_->begin()),
+  state_(NEWSYMBOL),
+  interpreter_(t_interpreter)
 {
-  tokenize();
+  Tokenize();
 }
 
 
@@ -83,24 +86,24 @@ Tokenizer::Tokenizer(shared_ptr<string> input, parser* prser) :
 // to the instruction set, and clearing the buffer is very common in the
 // lexer. This function acts as a shorthand to prevent boilerplate
 
-void Tokenizer::pushbuf(const TState type, const TState statename)
+void Tokenizer::PushBuffer(const TState t_type, const TState t_state_name)
 {
-  if(buf == "Do" && statename == IDENTIFIER)
+  if(buffer_ == "Do" && t_state_name == IDENTIFIER)
   {
-    string loopname = gs->getOperand();
-    if(loopname != inloop)
+    string loop_name = interpreter_->getOperand();
+    if(loop_name != in_loop_)
     {
-      inloop = loopname;
-      shared_ptr<string> xo = gs->getXobject(inloop);
+      in_loop_ = loop_name;
+      shared_ptr<string> xobject = interpreter_->getXobject(in_loop_);
 
       // Don't try to parse binary objects like images etc
-      if(IsAscii(*xo)) Tokenizer(xo, gs);
+      if(IsAscii(*xobject)) Tokenizer(xobject, interpreter_);
     }
   }
 
-  state = statename; // switch state
-  gs->reader(buf, type); // make pair and push to result
-  buf.clear(); // clear buffer
+  state_ = t_state_name; // switch state
+  interpreter_->reader(buffer_, t_type); // make pair and push to result
+  buffer_.clear(); // clear buffer
 }
 
 /*---------------------------------------------------------------------------*/
@@ -108,49 +111,50 @@ void Tokenizer::pushbuf(const TState type, const TState statename)
 // the state. Each subroutine handles specific characters in a different but
 // well-specified way
 
-void Tokenizer::tokenize()
+void Tokenizer::Tokenize()
 {
-  while (i != s->end()) // ensure the iterator doesn't exceed string length
+  // Ensures the iterator doesn't exceed string length
+  while (it_ != contents_->end())
   {
-    switch (state)
+    switch (state_)
     {
       // Each state has its own handler subroutine - self explanatory
-      case NEWSYMBOL:   newsymbolState();         break;
-      case RESOURCE:    resourceState();          break;
-      case IDENTIFIER:  identifierState();        break;
-      case NUMBER:      numberState();            break;
-      case ARRAY:       arrayState();             break;
-      case STRING:      stringState();            break;
-      case HEXSTRING:   hexstringState();         break;
-      case DICT:        dictState();              break;
-      case WAIT:        waitState();              break;
+      case NEWSYMBOL:   NewSymbolState();         break;
+      case RESOURCE:    ResourceState();          break;
+      case IDENTIFIER:  IdentifierState();        break;
+      case NUMBER:      NumberState();            break;
+      case ARRAY:       ArrayState();             break;
+      case STRING:      StringState();            break;
+      case HEXSTRING:   HexStringState();         break;
+      case DICT:        DictionaryState();        break;
+      case WAIT:        WaitState();              break;
       case OPERATOR:                              break;
     }
-    ++i; // move to next character in the string
+    ++it_; // move to next character in the string
   }
 }
 
 /*---------------------------------------------------------------------------*/
 // Lexer is reading a resource (a /PdfName)
 
-void Tokenizer::resourceState()
+void Tokenizer::ResourceState()
 {
-  switch (char_lookup[*i])
+  switch (char_lookup_[*it_])
   {
-    case LAB:   pushbuf(RESOURCE, HEXSTRING);               break;
-    case LET:   buf.append(i, i + 1);                       break;
-    case DIG:   buf.append(i, i + 1);                       break;
-    case USC:   buf.append("_");                            break;
-    case LSB:   pushbuf(RESOURCE, ARRAY);                   break;
-    case FSL:   pushbuf(RESOURCE, RESOURCE);                break;
-    case AST:   buf.append("*");                            break;
-    case LCB:   pushbuf(RESOURCE, STRING);                  break;
-    case SUB:   buf.append("-");                            break;
+    case LAB:   PushBuffer(RESOURCE, HEXSTRING);              break;
+    case LET:   buffer_.append(it_, it_ + 1);                 break;
+    case DIG:   buffer_.append(it_, it_ + 1);                 break;
+    case USC:   buffer_.append("_");                          break;
+    case LSB:   PushBuffer(RESOURCE, ARRAY);                  break;
+    case FSL:   PushBuffer(RESOURCE, RESOURCE);               break;
+    case AST:   buffer_.append("*");                          break;
+    case LCB:   PushBuffer(RESOURCE, STRING);                 break;
+    case SUB:   buffer_.append("-");                          break;
     case BSL:   throw runtime_error("illegal character");
-    case SPC:   pushbuf(RESOURCE, NEWSYMBOL);               break;
+    case SPC:   PushBuffer(RESOURCE, NEWSYMBOL);              break;
     case RAB:   throw runtime_error("illegal character");
     case PER:   throw runtime_error("illegal character");
-    case ADD:   buf.append("+");                            break;
+    case ADD:   buffer_.append("+");                          break;
     default:    throw runtime_error("illegal character");
   }
 }
@@ -158,109 +162,110 @@ void Tokenizer::resourceState()
 /*---------------------------------------------------------------------------*/
 // Lexer is receptive for next token
 
-void Tokenizer::newsymbolState()
+void Tokenizer::NewSymbolState()
 {
   // get symbol_type of current char
-  switch (char_lookup[*i])
+  switch (char_lookup_[*it_])
   {
-    case LAB:                             state = HEXSTRING;   break;
-    case LET:   buf.append(i, i + 1);     state = IDENTIFIER;  break;
-    case DIG:   buf.append(i, i + 1);     state = NUMBER;      break;
-    case USC:   buf.append(i, i + 1);     state = IDENTIFIER;  break;
-    case LSB:                             state = ARRAY;       break;
-    case FSL:   buf.append(i, i + 1);     state = RESOURCE;    break;
-    case AST:   buf.append(i, i + 1);     state = IDENTIFIER;  break;
-    case LCB:                             state = STRING;      break;
-    case SUB:   buf.append(i, i + 1);     state = NUMBER;      break;
-    case PER:   buf.append("0.");         state = NUMBER;      break;
-    case SQO:   buf.append(i, i + 1);     state = IDENTIFIER;  break;
-    default : buf.clear();                state = NEWSYMBOL;   break;
+    case LAB:                                 state_ = HEXSTRING;   break;
+    case LET:   buffer_.append(it_, it_ + 1); state_ = IDENTIFIER;  break;
+    case DIG:   buffer_.append(it_, it_ + 1); state_ = NUMBER;      break;
+    case USC:   buffer_.append(it_, it_ + 1); state_ = IDENTIFIER;  break;
+    case LSB:                                 state_ = ARRAY;       break;
+    case FSL:   buffer_.append(it_, it_ + 1); state_ = RESOURCE;    break;
+    case AST:   buffer_.append(it_, it_ + 1); state_ = IDENTIFIER;  break;
+    case LCB:                                 state_ = STRING;      break;
+    case SUB:   buffer_.append(it_, it_ + 1); state_ = NUMBER;      break;
+    case PER:   buffer_.append("0.");         state_ = NUMBER;      break;
+    case SQO:   buffer_.append(it_, it_ + 1); state_ = IDENTIFIER;  break;
+    default : buffer_.clear();                state_ = NEWSYMBOL;   break;
   }
 }
 
 /*---------------------------------------------------------------------------*/
 // Lexer is reading an identifier (instruction or keyword)
 
-void Tokenizer::identifierState()
+void Tokenizer::IdentifierState()
 {
   // get symbol_type of current char
-  switch (char_lookup[*i])
+  switch (char_lookup_[*it_])
   {
-    case LAB:   pushbuf(IDENTIFIER, HEXSTRING); break;
-    case LET:   buf.append(i, i + 1);           break;
-    case DIG:   buf.append(i, i + 1);           break;
-    case SPC:   if (buf == "BI") state = WAIT;  else // BI == inline image
-                pushbuf(IDENTIFIER, NEWSYMBOL); break;
-    case FSL:   pushbuf(IDENTIFIER, RESOURCE);
-                buf = "/";                      break;
-    case LSB:   pushbuf(IDENTIFIER, ARRAY);     break;
-    case LCB:   pushbuf(IDENTIFIER, STRING);    break;
-    case SUB:   buf.append(i, i + 1);           break;
-    case USC:   buf.append(i, i + 1);           break;
-    case AST:   buf.append(i, i + 1);           break;
-    default:                                    break;
+    case LAB:   PushBuffer(IDENTIFIER, HEXSTRING);      break;
+    case LET:   buffer_.append(it_, it_ + 1);           break;
+    case DIG:   buffer_.append(it_, it_ + 1);           break;
+    case SPC:   if (buffer_ == "BI") state_ = WAIT;     // BI == inline image
+                else PushBuffer(IDENTIFIER, NEWSYMBOL); break;
+    case FSL:   PushBuffer(IDENTIFIER, RESOURCE);
+                buffer_ = "/";                          break;
+    case LSB:   PushBuffer(IDENTIFIER, ARRAY);          break;
+    case LCB:   PushBuffer(IDENTIFIER, STRING);         break;
+    case SUB:   buffer_.append(it_, it_ + 1);           break;
+    case USC:   buffer_.append(it_, it_ + 1);           break;
+    case AST:   buffer_.append(it_, it_ + 1);           break;
+    default:                                            break;
   }
 }
 
 /*---------------------------------------------------------------------------*/
 // lexer is reading a number
 
-void Tokenizer::numberState()
+void Tokenizer::NumberState()
 {
   // get symbol_type of current char
-  switch (char_lookup[*i])
+  switch (char_lookup_[*it_])
   {
-    case LAB:   pushbuf(NUMBER, HEXSTRING);           break;
-    case DIG:   buf.append(i, i + 1);                 break;
-    case SPC:   pushbuf(NUMBER, NEWSYMBOL);           break;
-    case PER:   buf.append(i, i + 1);                 break;
-    case LCB:   pushbuf(NUMBER, STRING);              break;
-    case LET:   buf.append(i, i + 1);                 break;
-    case USC:   buf.append(i, i + 1);                 break;
-    case SUB:   pushbuf(NUMBER, NUMBER); buf.clear(); break;
-    case AST:   pushbuf(NUMBER, NUMBER); buf.clear(); break;
-    case FSL:   pushbuf(NUMBER, NUMBER); buf.clear(); break;
-    case LSB:   pushbuf(NUMBER, ARRAY);               break;
-    default:    pushbuf(NUMBER, NEWSYMBOL);
+    case LAB:   PushBuffer(NUMBER, HEXSTRING);                break;
+    case DIG:   buffer_.append(it_, it_ + 1);                 break;
+    case SPC:   PushBuffer(NUMBER, NEWSYMBOL);                break;
+    case PER:   buffer_.append(it_, it_ + 1);                 break;
+    case LCB:   PushBuffer(NUMBER, STRING);                   break;
+    case LET:   buffer_.append(it_, it_ + 1);                 break;
+    case USC:   buffer_.append(it_, it_ + 1);                 break;
+    case SUB:   PushBuffer(NUMBER, NUMBER); buffer_.clear();  break;
+    case AST:   PushBuffer(NUMBER, NUMBER); buffer_.clear();  break;
+    case FSL:   PushBuffer(NUMBER, NUMBER); buffer_.clear();  break;
+    case LSB:   PushBuffer(NUMBER, ARRAY);                    break;
+    default:    PushBuffer(NUMBER, NEWSYMBOL);
   }
 }
 
 /*---------------------------------------------------------------------------*/
 // lexer is reading a (bracketed) string
 
-void Tokenizer::stringState()
+void Tokenizer::StringState()
 {
   // get symbol_type of current char
-  switch (char_lookup[*i])
+  switch (char_lookup_[*it_])
   {
-    case RCB:   pushbuf(STRING, NEWSYMBOL);       break;
-    case BSL:   escapeState();                    break;
-    default:    buf.append(i, i + 1);             break;
+    case RCB:   PushBuffer(STRING, NEWSYMBOL);            break;
+    case BSL:   EscapeState();                            break;
+    default:    buffer_.append(it_, it_ + 1);             break;
   }
 }
 
 /*---------------------------------------------------------------------------*/
 // lexer is in an array
 
-void Tokenizer::arrayState()
+void Tokenizer::ArrayState()
 {
-  i--;
-  state = NEWSYMBOL;
+  it_--;
+  state_ = NEWSYMBOL;
 }
 
 /*---------------------------------------------------------------------------*/
 // lexer is reading a hexstring of format <11FA>
 
-void Tokenizer::hexstringState()
+void Tokenizer::HexStringState()
 {
   // get symbol_type of current char
-  switch (char_lookup[*i])
+  switch (char_lookup_[*it_])
   {
-    case RAB:   if (!buf.empty()) pushbuf(HEXSTRING, NEWSYMBOL);
-                state = NEWSYMBOL;                                break;
-    case LAB:   buf.clear(); state = DICT;                        break;
-    case BSL:  buf.append(i, i + 1); ++i; buf.append(i, i + 1);   break;
-    default:   buf.append(i, i + 1);                              break;
+    case RAB: if (!buffer_.empty()) PushBuffer(HEXSTRING, NEWSYMBOL);
+               state_ = NEWSYMBOL;                                    break;
+    case LAB:  buffer_.clear(); state_ = DICT;                        break;
+    case BSL:  buffer_.append(it_, it_ + 1); ++it_;
+               buffer_.append(it_, it_ + 1);                          break;
+    default:   buffer_.append(it_, it_ + 1);                          break;
   }
 }
 
@@ -268,61 +273,61 @@ void Tokenizer::hexstringState()
 // lexer is reading a dictionary and will keep writing until it comes across
 // a pair of closing angle brackets
 
-void Tokenizer::dictState()
+void Tokenizer::DictionaryState()
 {
   // get symbol_type of current char
-  switch (char_lookup[*i])
+  switch (char_lookup_[*it_])
   {
-    case BSL:  buf.append(i, i + 1); ++i; buf.append(i, i + 1);   break;
-    case RAB:  pushbuf(DICT, HEXSTRING);                          break;
-    default:   buf.append(i, i + 1);                              break;
+    case BSL:  buffer_.append(it_, it_ + 1); ++it_;
+               buffer_.append(it_, it_ + 1);                          break;
+    case RAB:  PushBuffer(DICT, HEXSTRING);                           break;
+    default:   buffer_.append(it_, it_ + 1);                          break;
   }
 }
 
 /*---------------------------------------------------------------------------*/
 // lexer has come across a backslash which indicates an escape character
 
-void Tokenizer::escapeState()
+void Tokenizer::EscapeState()
 {
-  ++i;
+  ++it_;
 
   // Read the next char - if it's a digit it's likely an octal
-  if (char_lookup[*i] == DIG)
+  if (char_lookup_[*it_] == DIG)
   {
     int octcount = 0;
-    pushbuf(STRING, STRING);
+    PushBuffer(STRING, STRING);
 
     // Add consecutive chars to octal (up to 3)
-    while (char_lookup[*i] == DIG && octcount < 3)
+    while (char_lookup_[*it_] == DIG && octcount < 3)
     {
-      buf.append(i, i + 1); ++i;
+      buffer_.append(it_, it_ + 1); ++it_;
       octcount++;
     }
 
     // Convert octal string to int
-    int newint = stoi(buf, nullptr, 8);
-    buf = ConvertIntToHex(newint);
-    pushbuf(HEXSTRING, STRING);
-    i--;  // Decrement to await next char
+    int newint = stoi(buffer_, nullptr, 8);
+    buffer_ = ConvertIntToHex(newint);
+    PushBuffer(HEXSTRING, STRING);
+    it_--;  // Decrement to await next char
   }
 
   // If not a digit, get escaped char
-  else buf.append(i, i + 1);
+  else buffer_.append(it_, it_ + 1);
 }
 
 /*---------------------------------------------------------------------------*/
 // The lexer has reached an inline image, which indicates it should ignore the
 // string until it reaches the keyword "EI" at the end of the image
 
-void Tokenizer::waitState()
+void Tokenizer::WaitState()
 {
   do
   {
-    i = s->begin() + s->find("EI", i - s->begin()) + 2;
+    auto ei_position = contents_->find("EI", it_ - contents_->begin()) + 2;
+    it_ = contents_->begin() + ei_position;
   }
-  while (char_lookup[*i] != SPC);
-  buf.clear();
-  state = NEWSYMBOL; // Only break out of wait state by finding EI (or EOF)
+  while (char_lookup_[*it_] != SPC);
+  buffer_.clear();
+  state_ = NEWSYMBOL; // Only break out of wait state by finding EI (or EOF)
 }
-
-

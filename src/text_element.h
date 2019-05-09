@@ -91,7 +91,7 @@ public:
   inline TextPointer GetJoin()             { return this->join_; }
   inline bool HasJoin() const { if(join_) return true; else return false;}
 
-  inline std::string GetFontName() const { return this->font_->fontname();}
+  inline std::string GetFontName() const { return this->font_->GetFontName();}
   inline std::vector<Unicode> GetGlyph() const { return this->glyph_;}
   inline void AddSpace() { glyph_.push_back(0x0020);         }
 
@@ -174,8 +174,9 @@ public:
   TextBox(std::vector<TextPointer> t_text, std::vector<float> t_vector):
   Box(t_vector), data_(t_text) {}
 
-  TextBox(std::vector<TextPointer> t_text, float a, float b, float c, float d):
-  Box(a, b, c, d), data_(t_text) {}
+  TextBox(std::vector<TextPointer> t_text, float t_left, float t_right,
+          float t_top, float t_bottom):
+  Box(t_left, t_right, t_top, t_bottom), data_(t_text) {}
 
   TextBox(Box t_box):  Box(t_box) {}
 
@@ -219,7 +220,7 @@ private:
 // converts the vector of text_elements (which is conceptually a vector of
 // data frame rows) into columns of the different data types.
 
-struct TextTable: public Box
+class TextTable: public Box
 {
  public:
   TextTable(const TextBox&);

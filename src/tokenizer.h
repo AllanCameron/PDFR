@@ -72,34 +72,34 @@ public:
 
 private:
   // private data members
-  std::shared_ptr<std::string> s;// the input string itself
-  std::string::const_iterator i;// The iterator that moves through the string
-  std::string buf;     // a string buffer to hold chars until pushed to result
-  Token::TState state; // The current state of the finite state machine
-  parser* gs;   // The graphic state to which instructions are sent
-  static std::string inloop; // keep track of whether we are in an xobject
+  std::shared_ptr<std::string> contents_;// the input string itself
+  std::string::const_iterator it_;// The iterator that moves through the string
+  std::string buffer_;  // a string buffer to hold chars until pushed to result
+  Token::TState state_; // The current state of the finite state machine
+  parser* interpreter_;   // The graphic state to which instructions are sent
+  static std::string in_loop_; // keep track of whether we are in an xobject
                              // - this prevents an infinite loop
-  enum chartype
+  enum CharType
   {
     LAB, LET, DIG, USC, LSB, FSL, AST, LCB,
     SUB, BSL, SPC, RAB, PER, ADD, QOT, RCB, RSB, SQO, OTH
   };
-  char j;
-  static std::array<chartype, 256> char_lookup;
+
+  static std::array<CharType, 256> char_lookup_;
   // private methods
 
-  void tokenize();                  // chooses state subroutine based on state
-  void pushbuf(const Token::TState, const Token::TState);
-  void newsymbolState();    //--------//---------------------------------------
-  void resourceState();               //
-  void identifierState();             //
-  void numberState();                 // These private member functions handle
-  void stringState();                 // the various states of the lexer,
-  void arrayState();                  // responding variously to each character
-  void escapeState();                 // they come across to build the result
-  void hexstringState();              //
-  void dictState();                   //
-  void waitState();         //--------//---------------------------------------
+  void Tokenize();                  // chooses state subroutine based on state
+  void PushBuffer(const Token::TState, const Token::TState);
+  void NewSymbolState();    //--------//---------------------------------------
+  void ResourceState();               //
+  void IdentifierState();             //
+  void NumberState();                 // These private member functions handle
+  void StringState();                 // the various states of the lexer,
+  void ArrayState();                  // responding variously to each character
+  void EscapeState();                 // they come across to build the result
+  void HexStringState();              //
+  void DictionaryState();             //
+  void WaitState();         //--------//---------------------------------------
 };
 
 //---------------------------------------------------------------------------//

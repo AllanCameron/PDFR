@@ -68,24 +68,29 @@ enum Direction {North = 3, South = 1, East = 2, West = 0, None = 4};
 // deletion flad - hence the relatively large number of member variables. Some
 // of these have been compressed into a flag byte to save space.
 
-struct Vertex
+class Vertex
 {
-  float x_, y_;
-  uint8_t flags_; // bits denote delete-void-void-void-NW-NE-SE-SW
-  size_t points_to_, group_;
-
-  inline Direction In() const {return arrows_.at(flags_ & 0x0f).first;}
-  inline Direction Out() const {return arrows_.at(flags_ & 0x0f).second;}
-
-  // We use this to map directions to vertices
-  static std::unordered_map<uint8_t, std::pair<Direction, Direction>> arrows_;
-
+ public:
   Vertex(float t_x, float t_y, uint8_t t_flags):
     x_(t_x), y_(t_y), flags_(t_flags), points_to_(0), group_(0) {}
 
   Vertex(const Vertex& t_other) = default;
   Vertex& operator=(const Vertex& t_other) = default;
   Vertex& operator=(Vertex&& t_other) {std::swap(t_other, *this); return *this;}
+
+  // Getters
+  inline Direction In()        const {return arrows_.at(flags_ & 0x0f).first;}
+  inline Direction Out()       const {return arrows_.at(flags_ & 0x0f).second;}
+  inline float     GetX()      const {return x_;}
+  inline float     GetY()      const {return y_;}
+  inline uint8_t   GetFlags()  const {return flags_;}
+  inline size_t    GetGroup()  const {return group_;}
+  inline size_t    PointsTo()  const {return points_to_;}
+
+  // Setters
+  inline void SetFlags(uint8_t t_new_flag) { flags_ |= t_new_flag;}
+  inline void SetGroup(size_t t_group) { group_ = t_group;}
+  inline void PointAt(size_t t_element) { points_to_ = t_element;}
 
   inline bool IsCloserThan(const Vertex& t_other, const float& edge)
   {
@@ -99,6 +104,13 @@ struct Vertex
     (Out() == West  && t_other.y_ == y_ && t_other.In() == West  &&
     t_other.x_ < x_ && t_other.x_ > edge) ;
   }
+
+private:
+  float x_, y_;
+  uint8_t flags_; // bits denote delete-void-void-void-NW-NE-SE-SW
+  size_t points_to_,
+         group_;
+  static std::unordered_map<uint8_t, std::pair<Direction, Direction>> arrows_;
 };
 
 //---------------------------------------------------------------------------//
@@ -109,13 +121,6 @@ struct Vertex
 
 class Box
 {
- private:
-  float   left_,
-          right_,
-          top_,
-          bottom_;
-  uint8_t flags_;
-
  public:
   // Constructor from four separate floats
   Box(float t_left, float t_right, float t_top, float t_bottom):
@@ -148,25 +153,23 @@ class Box
     }
   }
 
-  inline void SetFlag(uint8_t t_flag) { flags_ |= t_flag;}
-
-  inline bool HasFlag(uint8_t t_flag) const
+  // Getters
+  inline float GetLeft()   const   { return this->left_               ;}
+  inline float GetRight()  const   { return this->right_              ;}
+  inline float GetTop()    const   { return this->top_                ;}
+  inline float GetBottom() const   { return this->bottom_             ;}
+  inline float GetSize()   const   { return this->top_ - this->bottom_;}
+  inline bool  HasFlag(uint8_t t_flag) const
   {
     return (flags_ & t_flag) == t_flag;
   }
 
-  // Getters
-  inline float GetLeft()   const   { return this->left_;}
-  inline float GetRight()  const   { return this->right_;}
-  inline float GetTop()    const   { return this->top_;}
-  inline float GetBottom() const   { return this->bottom_;}
-  inline float GetSize()   const   { return this->top_ - this->bottom_;}
-
   // Setters
-  inline void  SetLeft   (float t_left)   { left_   = t_left  ;}
-  inline void  SetRight  (float t_right)  { right_  = t_right ;}
-  inline void  SetTop    (float t_top)    { top_    = t_top   ;}
-  inline void  SetBottom (float t_bottom) { bottom_ = t_bottom;}
+  inline void  SetLeft   (float   t_left)   { left_   = t_left  ;}
+  inline void  SetRight  (float   t_right)  { right_  = t_right ;}
+  inline void  SetTop    (float   t_top)    { top_    = t_top   ;}
+  inline void  SetBottom (float   t_bottom) { bottom_ = t_bottom;}
+  inline void  SetFlag   (uint8_t t_flag)   { flags_ |= t_flag  ;}
 
   // Make the box dimensions equal to the smallest box that covers this box
   // AND the other box
@@ -183,10 +186,10 @@ class Box
   // and the given vertex
   inline void ExpandBoxToIncludeVertex(const Vertex& t_corner)
   {
-      if(t_corner.x_ < left_)    left_   = t_corner.x_;
-      if(t_corner.x_ > right_)   right_  = t_corner.x_;
-      if(t_corner.y_ < bottom_)  bottom_ = t_corner.y_;
-      if(t_corner.y_ > top_)     top_    = t_corner.y_;
+      if(t_corner.GetX() < left_)    left_   = t_corner.GetX();
+      if(t_corner.GetX() > right_)   right_  = t_corner.GetX();
+      if(t_corner.GetY() < bottom_)  bottom_ = t_corner.GetY();
+      if(t_corner.GetY() > top_)     top_    = t_corner.GetY();
   }
 
   // Compare two boxes for exact equality
@@ -259,55 +262,38 @@ class Box
   // boxes the point lies.
   inline bool IsNorthWestOf(Vertex& t_vertex) const
   {
-    return right_ >= t_vertex.x_ && left_   <  t_vertex.x_ &&
-           top_   >  t_vertex.y_ && bottom_ <= t_vertex.y_;
+    return right_ >= t_vertex.GetX() && left_   <  t_vertex.GetX() &&
+           top_   >  t_vertex.GetY() && bottom_ <= t_vertex.GetY();
   }
 
   inline bool IsNorthEastOf(Vertex& t_vertex) const
   {
-    return right_ >  t_vertex.x_ && left_   <= t_vertex.x_ &&
-           top_   >  t_vertex.y_ && bottom_ <= t_vertex.y_;
+    return right_ >  t_vertex.GetX() && left_   <= t_vertex.GetX() &&
+           top_   >  t_vertex.GetY() && bottom_ <= t_vertex.GetY();
   }
 
   inline bool IsSouthEastOf(Vertex& t_vertex) const
   {
-    return right_ >  t_vertex.x_ && left_   <= t_vertex.x_ &&
-           top_   >= t_vertex.y_ && bottom_ <  t_vertex.y_;
+    return right_ >  t_vertex.GetX() && left_   <= t_vertex.GetX() &&
+           top_   >= t_vertex.GetY() && bottom_ <  t_vertex.GetY();
   }
 
   inline bool IsSouthWestOf(Vertex& t_vertex) const
   {
-    return right_ >= t_vertex.x_ && left_   <  t_vertex.x_ &&
-           top_   >= t_vertex.y_ && bottom_ <  t_vertex.y_;
+    return right_ >= t_vertex.GetX() && left_   <  t_vertex.GetX() &&
+           top_   >= t_vertex.GetY() && bottom_ <  t_vertex.GetY();
   }
 
   // Create a vertex from a given corner of the box
   // (0 = top-left, 1 = top-right, 2 = bottom-left, 3 = bottom-right)
   // Note, the given vertex is automatically flagged as being impinged at the
   // correct compass direction
-  std::shared_ptr<Vertex> GetVertex(int t_corner)
-  {
-    switch(t_corner)
-    {
-      case 0 : return std::make_shared<Vertex>(left_,  top_,    0x02);
-      case 1 : return std::make_shared<Vertex>(right_, top_,    0x01);
-      case 2 : return std::make_shared<Vertex>(left_,  bottom_, 0x04);
-      case 3 : return std::make_shared<Vertex>(right_, bottom_, 0x08);
-      default: return std::make_shared<Vertex>(0, 0, 0);
-    }
-    return std::make_shared<Vertex>  (0, 0, 0);
-  }
+  std::shared_ptr<Vertex> GetVertex(int corner);
 
   // Marks a box's impingement on a given vertex. This records whether moving
   // an arbitrarily small distance in a given direction from the vertex will
   // place one inside the current box.
-  void RecordImpingementOn(Vertex& t_vertex)
-  {
-    if(IsNorthWestOf(t_vertex)) t_vertex.flags_ |= 0x08;
-    if(IsNorthEastOf(t_vertex)) t_vertex.flags_ |= 0x04;
-    if(IsSouthEastOf(t_vertex)) t_vertex.flags_ |= 0x02;
-    if(IsSouthWestOf(t_vertex)) t_vertex.flags_ |= 0x01;
-  }
+  void RecordImpingementOn(Vertex& vertex);
 
   // Return box dimensions as a vector for output
   inline std::vector<float> vector() const
@@ -315,6 +301,12 @@ class Box
     return {left_, bottom_, right_, top_};
   }
 
+ private:
+  float   left_,
+          right_,
+          top_,
+          bottom_;
+  uint8_t flags_;
 };
 
 

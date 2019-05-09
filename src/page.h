@@ -63,49 +63,74 @@
 
 class Page
 {
-public:
-  // constructor
-  Page(std::shared_ptr<Document>, int);
-  Page(Page&& p) noexcept {*this = std::move(p);}
-  Page& operator=(const Page& p){ *this = p; return *this; }
-  Page& operator=(Page&& p) noexcept { *this = std::move(p); return *this;}
+ public:
+  // Constructor
+  Page(std::shared_ptr<Document> document_ptr, int page_number);
 
-  // public methods
-  std::vector<std::string> get_font_names();  // Returns PostScript font names
-  std::shared_ptr<std::string> get_page_contents();
-  std::shared_ptr<std::string> get_XObject(const std::string&);
-  std::shared_ptr<Font> get_font(const std::string&);  // Get pointer to Font
-  Box get_minbox();
-  void clear_font_map();
+  // Move constructor
+  Page(Page&& t_other_page) noexcept {*this = std::move(t_other_page);}
 
-private:
+  // lvalue assignment operator
+  Page& operator=(const Page& t_other_page)
+  {
+    *this = t_other_page;
+    return *this;
+  }
+
+  // rvalue assignment operator
+  Page& operator=(Page&& t_other_page) noexcept
+  {
+    *this = std::move(t_other_page);
+    return *this;
+  }
+
+  // Returns PostScript font names
+  std::vector<std::string> GetFontNames();
+
+  // Returns page description program
+  std::shared_ptr<std::string> GetPageContents();
+
+  // Returns a pointer to the contents of an XObject used by the page
+  std::shared_ptr<std::string> GetXObject(const std::string& x_object_name);
+
+  // Returns a pointer to the Font object from a given font name
+  std::shared_ptr<Font> GetFont(const std::string& font_name);
+
+  // Returns a Box object describing the page's bounding box.
+  inline Box GetMinbox() const { return minbox_;}
+
+  // Since the font map is a static object, it should be cleared at the end
+  // of processing any particular document. Important!
+  inline void ClearFontMap() { fontmap_.clear(); };
+
+ private:
   // private data members
-  std::shared_ptr<Document> m_doc;        // Pointer to containing document
-  int                 m_page_number;     // [Zero-indexed] page number
-  Dictionary          m_header,         // The page's header dictionary
-                      m_resources,      // Resource sub-dictionary
-                      m_fonts;          // Font sub-dictionary
-  Box  m_minbox;
-  std::string         m_content_string;  // The page PostScript program
-  double              m_rotate;         // Intended page rotation in degrees
+  std::shared_ptr<Document> document_;        // Pointer to containing document
+  int                       page_number_;     // [Zero-indexed] page number
+  Dictionary                header_,          // The page's header dictionary
+                            resources_,       // Resource sub-dictionary
+                            fonts_;           // Font sub-dictionary
+  Box                       minbox_;          // Page bounding Box
+  std::string               content_string_;  // The page PostScript program
+  double                    rotate_;          // Page rotation in degrees
 
   // A map of Xobject strings, which are fragments of page description programs
-  std::unordered_map<std::string, std::string> m_XObjects;
+  std::unordered_map<std::string, std::string> xobjects_;
 
   // The actual storage container for fonts, mapped to their pdf names
-  static std::unordered_map<std::string, std::shared_ptr<Font>> sm_fontmap;
+  static std::unordered_map<std::string, std::shared_ptr<Font>> fontmap_;
 
   // private methods
-  void read_XObjects(); // Write form XObjects to the xobject map
-  void read_boxes();        // Store bounding boxes and calculate the smallest
-  void read_header();       // Find the correct header dictionary in document
-  void read_resources();    // Obtain the resource dictionary
-  void read_fonts();        // Get font dictionary and build fontmap
-  void read_contents();     // find content objects to Write contentstring
+  void ReadXObjects(); // Write form XObjects to the xobject map
+  void ReadBoxes();        // Store bounding boxes and calculate the smallest
+  void ReadHeader();       // Find the correct header dictionary in document
+  void ReadResources();    // Obtain the resource dictionary
+  void ReadFonts();        // Get font dictionary and build fontmap
+  void ReadContents();     // find content objects to Write contentstring
 
   // Gets the leaf nodes of a content tree
-  void expand_contents(std::vector<int> obs,
-                      std::shared_ptr<TreeNode<int>> tree);
+  using Node = std::shared_ptr<TreeNode<int>>;
+  void ExpandContents(std::vector<int> object_numbers, Node node_to_append);
 };
 
 //---------------------------------------------------------------------------//

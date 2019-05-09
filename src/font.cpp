@@ -36,27 +36,32 @@ using namespace std;
 // getFontName() to get the postscript font title, and then makeGlyphTable()
 // to create the main data member
 
-Font::Font(shared_ptr<Document> doc, Dictionary Fontref, const string& fontid) :
-m_d(doc), m_fontref(Fontref), m_FontID(fontid)
+Font::Font(shared_ptr<Document> t_document_ptr,
+           Dictionary t_font_dictionary,
+           const string& t_font_id) :
+  document_(t_document_ptr),
+  font_dictionary_(t_font_dictionary),
+  font_id_(t_font_id)
 {
-  getFontName();
-  makeGlyphTable();
+  GetFontName();
+  MakeGlyphTable();
 }
 
 /*---------------------------------------------------------------------------*/
 // Obtains the font's PostScript name from the font dictionary
 
-void Font::getFontName()
+void Font::ReadFontName()
 {
-  string BaseFont(m_fontref.GetString("/BaseFont")); // reads BaseFont entry
+  // Reads /BaseFont entry
+  string base_font(font_dictionary_.GetString("/BaseFont"));
 
-  if(BaseFont.size() > 7 && BaseFont[7] == '+')
+  if(base_font.size() > 7 && base_font[7] == '+')
   {
-    m_FontName = BaseFont.substr(8, BaseFont.size() - 8);
+    font_name_ = base_font.substr(8, base_font.size() - 8);
   }
   else
   {
-    m_FontName = BaseFont.substr(1, BaseFont.size() - 1);
+    font_name_ = base_font.substr(1, base_font.size() - 1);
   }
 }
 
@@ -68,19 +73,21 @@ void Font::getFontName()
 // as the input vector, containing a pair of {Unicode glyph, width} at each
 // position
 
-vector<pair<Unicode, int>> Font::mapRawChar(const vector<RawChar>& raw)
+vector<pair<Unicode, int>> Font::MapRawChar(const vector<RawChar>& t_raw_vector)
 {
-  vector<pair<Unicode, int>> res;
-  res.reserve(raw.size());
-  for(const auto& i : raw)
+  vector<pair<Unicode, int>> result;
+  result.reserve(t_raw_vector.size());
+
+  for(const auto& raw_char : t_raw_vector)
   {
-    auto g = m_glyphmap.find(i);
-    if(g != m_glyphmap.end())
+    auto finder = glyph_map_.find(raw_char);
+    if(finder != glyph_map_.end())
     {
-      res.push_back(g->second);
+      result.push_back(finder->second);
     }
   }
-  return res;
+
+  return result;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -88,13 +95,13 @@ vector<pair<Unicode, int>> Font::mapRawChar(const vector<RawChar>& raw)
 // the encoding and glyphwidth classes. This private method co-ordinates the
 // building of the glyphmap using these two component classes
 
-void Font::makeGlyphTable()
+void Font::MakeGlyphTable()
 {
   // Create Encoding object
-  Encoding encodings(m_fontref, m_d);
+  Encoding encodings(font_dictionary_, document_);
 
   // Create glyphwidth object
-  GlyphWidths widths(m_fontref, m_d);
+  GlyphWidths widths(font_dictionary_, document_);
 
   // get all the mapped RawChars from the Encoding object
   auto encoding_map = encodings.GetEncodingKeys();
@@ -108,7 +115,7 @@ void Font::makeGlyphTable()
     for(auto& key_value_pair : *encoding_map)
     {
       auto& key = key_value_pair.first;
-      m_glyphmap[key] = make_pair(encodings.Interpret(key),
+      glyph_map_[key] = make_pair(encodings.Interpret(key),
                                   widths.GetWidth(key));
     }
   }
@@ -118,7 +125,7 @@ void Font::makeGlyphTable()
     for(auto& key_value_pair : *encoding_map)
     {
       auto& key = key_value_pair.first;
-      m_glyphmap[key] = make_pair(encodings.Interpret(key),
+      glyph_map_[key] = make_pair(encodings.Interpret(key),
                                   widths.GetWidth(encodings.Interpret(key)));
     }
   }
@@ -127,16 +134,16 @@ void Font::makeGlyphTable()
 /*---------------------------------------------------------------------------*/
 // Public getter for FontName
 
-std::string Font::fontname()
+std::string Font::GetFontName()
 {
-  return m_FontName;
+  return font_name_;
 }
 
 /*---------------------------------------------------------------------------*/
 // Public getter for the keys of the glyphmap, needed to output the map from
 // the program if required
 
-std::vector<RawChar> Font::getGlyphKeys()
+std::vector<RawChar> Font::GetGlyphKeys()
 {
-  return GetKeys(m_glyphmap);
+  return GetKeys(glyph_map_);
 }
