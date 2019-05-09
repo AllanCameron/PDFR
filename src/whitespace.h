@@ -77,7 +77,7 @@
 
 class Whitespace
 {
-public:
+ public:
   // constructor
   Whitespace(TextBox);
 
@@ -87,7 +87,7 @@ public:
   // Output the final text box co-ordinates
   std::vector<Box> WSBoxOut() const;
 
-private:
+ private:
   //The main output is a collection of pairs of text boxes with their elements
   TextBox page_text_; // A copy of word grouper's output
   std::unordered_map<size_t, std::vector<std::shared_ptr<Vertex>>> polygonmap_;
@@ -109,7 +109,6 @@ private:
   void PolygonMax();        // find bounding boxes of polygons
   void RemoveEngulfed();    // remove boxes within other boxes
 };
-
 
 //---------------------------------------------------------------------------//
 

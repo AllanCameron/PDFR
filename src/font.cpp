@@ -94,7 +94,7 @@ void Font::makeGlyphTable()
   Encoding encodings(m_fontref, m_d);
 
   // Create glyphwidth object
-  glyphwidths widths(m_fontref, m_d);
+  GlyphWidths widths(m_fontref, m_d);
 
   // get all the mapped RawChars from the Encoding object
   auto encoding_map = encodings.GetEncodingKeys();
@@ -103,13 +103,13 @@ void Font::makeGlyphTable()
   // character codes or to the final Unicode translations
 
   // If the widths refer to RawChar code points, map every RawChar to a width
-  if(widths.widthsAreForRaw())
+  if(widths.WidthsAreForRaw())
   {
     for(auto& key_value_pair : *encoding_map)
     {
       auto& key = key_value_pair.first;
       m_glyphmap[key] = make_pair(encodings.Interpret(key),
-                                  widths.getwidth(key));
+                                  widths.GetWidth(key));
     }
   }
   // Otherwise widths refer to Unicode glyphs, so map each to a width
@@ -119,7 +119,7 @@ void Font::makeGlyphTable()
     {
       auto& key = key_value_pair.first;
       m_glyphmap[key] = make_pair(encodings.Interpret(key),
-                                  widths.getwidth(encodings.Interpret(key)));
+                                  widths.GetWidth(encodings.Interpret(key)));
     }
   }
 }

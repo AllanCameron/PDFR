@@ -94,22 +94,23 @@ class Encoding
 {
  public:
   // Constructor
-  Encoding(const Dictionary&, std::shared_ptr<Document>);
-
-  // public member functions
+  Encoding(const Dictionary& font_dictionary,
+           std::shared_ptr<Document> ptr_to_document);
 
   // Maps given raw code point to Unicode
-  Unicode Interpret(const RawChar&);
+  Unicode Interpret(const RawChar& code_point_to_be_interpreted);
+
+  // This typedef shortens the name of the RawChar to Unicode lookup maps.
+  typedef std::unordered_map<RawChar, Unicode> UnicodeMap;
 
   // Gets all available Raw chars that may be translated to Unicode in the map
-  std::shared_ptr<std::unordered_map<RawChar, Unicode>> GetEncodingKeys();
+  std::shared_ptr<UnicodeMap> GetEncodingKeys();
 
  private:
   // States used by parser to read "differences" entry in encoding dictionary
   enum DifferencesState { NEWSYMB, NUM, NAME, STOP };
 
-  typedef std::unordered_map<RawChar, Unicode> UnicodeMap;
-  // data lookup tables - defined as static, which means only a single
+  // Data lookup tables - defined as static, which means only a single
   // instance of each is created rather than a copy for each object.
   // Note these maps are defined in adobetounicode.h and chartounicode.h
   static std::unordered_map<std::string, Unicode> adobe_to_unicode_;
@@ -125,23 +126,24 @@ class Encoding
   // private member functions
 
   // uses lexer to parse /Differences entry
-  void ReadDifferences(const std::string&);
+  void ReadDifferences(const std::string& differences_entry);
 
   // finds encoding dictionary, gets /basencoding and /Differences entries
   void ReadEncoding();
 
   // parses CMap encoding ranges
-  void ProcessUnicodeRange(std::vector<std::string>&);
+  void ProcessUnicodeRange(std::vector<std::string>& bf_range_from_cmap);
 
   // parses CMap direct char-char conversion table
-  void ProcessUnicodeChars(std::vector<std::string>&);
+  void ProcessUnicodeChars(std::vector<std::string>& bf_char_from_cmap);
 
   // finds CMap if any and co-ordinates parsers to create mapping
   void MapUnicode();
 
   // Helper function for parser
-  void Write(std::vector<std::pair<DifferencesState, std::string>>&,
-             DifferencesState&, std::string&);
+  void Write(std::vector<std::pair<DifferencesState, std::string>>& entries,
+             DifferencesState& state_to_push_to_entries,
+             std::string& string_to_push_to_entries);
 };
 
 //---------------------------------------------------------------------------//

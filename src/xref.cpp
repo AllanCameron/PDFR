@@ -71,8 +71,8 @@ class XRefStream
 // The XRef constructor. It takes the entire file contents as a string
 // then sequentially runs the steps in creation of an XRef master map
 
-XRef::XRef(shared_ptr<const string> s) :
-  file_string_(s), encrypted_(false)
+XRef::XRef(shared_ptr<const string> t_file_string_ptr) :
+  file_string_(t_file_string_ptr), encrypted_(false)
 {
   LocateXRefs();             // Find all xrefs
   ReadXRefStrings();         // Get the strings containing all xrefs
@@ -158,10 +158,10 @@ void XRef::ReadXRefStrings()
 // The output of this object is a "table" (vec<vec<int>>) which is parsed
 // and added to the main combined XRef table
 
-void XRef::ReadXRefFromStream(int xref_location)
+void XRef::ReadXRefFromStream(int t_location)
 {
   // Calls XRefStream constructor to make the data table from the stream
-  auto xref_table = XRefStream(make_shared<XRef>(*this), xref_location).table();
+  auto xref_table = XRefStream(make_shared<XRef>(*this), t_location).table();
 
   // Throws if XRefStream returns an empty table
   if(xref_table.empty()) throw runtime_error("XRef table empty");
@@ -188,9 +188,9 @@ void XRef::ReadXRefFromStream(int xref_location)
 // described, respectively. Thereafter the rows represent sequential objects
 // counted from the first.
 
-void XRef::ReadXRefFromString(string& xref_string)
+void XRef::ReadXRefFromString(string& t_xref_string)
 {
-  auto all_ints = ParseInts(xref_string);
+  auto all_ints = ParseInts(t_xref_string);
 
   // A valid XRef has >= 4 ints in it and must have an even number of ints
   auto xref_size = all_ints.size();
@@ -215,9 +215,9 @@ void XRef::ReadXRefFromString(string& xref_string)
 /*---------------------------------------------------------------------------*/
 // Returns the byte offset for a pdf object
 
-size_t XRef::GetObjectStartByte(int object_number) const
+size_t XRef::GetObjectStartByte(int t_object_number) const
 {
-  auto found = xref_table_.find(object_number);
+  auto found = xref_table_.find(t_object_number);
 
   if(found == xref_table_.end()) throw runtime_error("Object does not exist");
 
@@ -228,9 +228,9 @@ size_t XRef::GetObjectStartByte(int object_number) const
 // Returns the end byte of an object by finding the first example of the
 // word "endobj" after the start of the object
 
-size_t XRef::GetObjectEndByte(int object_number) const
+size_t XRef::GetObjectEndByte(int t_object_number) const
 {
-  auto row = xref_table_.find(object_number);
+  auto row = xref_table_.find(t_object_number);
 
   // throw an error if objnum isn't a valid object
   if(row == xref_table_.end()) throw runtime_error("Object doesn't exist");
@@ -246,9 +246,9 @@ size_t XRef::GetObjectEndByte(int object_number) const
 // If an object is part of an objectstream, this tells us which object forms
 // the objectstream.
 
-size_t XRef::GetHoldingNumberOf(int object_number) const
+size_t XRef::GetHoldingNumberOf(int t_object_number) const
 {
-  auto row = xref_table_.find(object_number);
+  auto row = xref_table_.find(t_object_number);
 
   if(row == xref_table_.end()) throw runtime_error("Object does not exist");
 
@@ -265,37 +265,36 @@ vector<int> XRef::GetAllObjectNumbers() const
 
 /*---------------------------------------------------------------------------*/
 
-int XRef::GetStreamLength(const Dictionary& dict) const
+int XRef::GetStreamLength(const Dictionary& t_dictionary) const
 {
-  if(dict.ContainsReferences("/Length"))
+  if(t_dictionary.ContainsReferences("/Length"))
   {
-    int lengthob = dict.GetReference("/Length"); // finds reference
-    size_t firstpos = GetObjectStartByte(lengthob);
-    size_t len = file_string_->find("endobj", firstpos) - firstpos;
-    string objstr = file_string_->substr(firstpos, len);
-    return ParseInts(move(objstr)).back(); // from which we get a number
+    int length_object_number = t_dictionary.GetReference("/Length");
+    size_t first_position = GetObjectStartByte(length_object_number);
+    size_t len = file_string_->find("endobj", first_position) - first_position;
+    string object_string = file_string_->substr(first_position, len);
+    return ParseInts(move(object_string)).back();
   }
 
   // Thankfully though most lengths are just direct ints
-  else return dict.GetInts("/Length")[0];
+  else return t_dictionary.GetInts("/Length")[0];
 }
 
 /*---------------------------------------------------------------------------*/
-// returns the offset of the start and stop locations relative to the file
-// start, of the stream belonging to the given object
+// Returns the offset of the start location relative to the file start, and the
+// length, of the stream belonging to the given object
 
-array<size_t, 2> XRef::GetStreamLocation(int object_start) const
+array<size_t, 2> XRef::GetStreamLocation(int t_object_start) const
 {
   // Get the object dictionary
-  Dictionary dict = Dictionary(file_string_, object_start);
+  Dictionary dictionary = Dictionary(file_string_, t_object_start);
 
   // If the stream exists, get its start / stop positions as a length-2 array
-  if(dict.HasKey("stream") && dict.HasKey("/Length"))
+  if(dictionary.HasKey("stream") && dictionary.HasKey("/Length"))
   {
-    size_t stream_length = (size_t) GetStreamLength(dict);
-    size_t stream_start  = (size_t) dict.GetInts("stream")[0];
-    size_t stream_end    = (size_t) stream_start + stream_length;
-    return array<size_t, 2>{stream_start, stream_end};
+    size_t stream_length = (size_t) GetStreamLength(dictionary);
+    size_t stream_start  = (size_t) dictionary.GetInts("stream")[0];
+    return array<size_t, 2>{stream_start, stream_length};
   }
   return array<size_t, 2> {0,0}; // if no length, return empty length-2 array
 }
@@ -303,9 +302,9 @@ array<size_t, 2> XRef::GetStreamLocation(int object_start) const
 /*---------------------------------------------------------------------------*/
 // Wrapper for Encryption object so that XRef is the only class that uses it
 
-void XRef::Decrypt(string& s, int obj, int gen) const
+void XRef::Decrypt(string& t_stream, int t_object, int t_generation) const
 {
-  encryption_->DecryptStream(s, obj, gen);
+  encryption_->DecryptStream(t_stream, t_object, t_generation);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -341,8 +340,8 @@ void XRef::CreateCrypto()
   // mark file as encrypted and read the encryption dictionary
   encrypted_ = true;
   size_t starts_at = GetObjectStartByte(encryption_number);
-  Dictionary&& dict = Dictionary(file_string_, starts_at);
-  encryption_ = make_shared<Crypto>(move(dict), trailer_dictionary_);
+  Dictionary&& dictionary = Dictionary(file_string_, starts_at);
+  encryption_ = make_shared<Crypto>(move(dictionary), trailer_dictionary_);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -367,11 +366,11 @@ shared_ptr<const string> XRef::File() const
 // PNG decompression algorithm. They are seperated out to prevent one large
 // hairball function being created that is difficult to debug.
 
-XRefStream::XRefStream(shared_ptr<XRef> XRef, int starts) :
-  xref_(XRef),
+XRefStream::XRefStream(shared_ptr<XRef> t_xref, int t_starts_at) :
+  xref_(t_xref),
   number_of_columns_(0),
   predictor_(0),
-  object_start_(starts),
+  object_start_(t_starts_at),
   dictionary_(Dictionary(xref_->File(), object_start_))
 {
   // If there is no /W entry, we don't know how to interpret the stream.
@@ -406,16 +405,17 @@ XRefStream::XRefStream(shared_ptr<XRef> XRef, int starts) :
 
 void XRefStream::ReadIndex()
 {
-  auto indexEntries = dictionary_.GetInts("/Index");// Gets the numbers in the entry
+  // Gets the numbers in the /Index entry
+  auto index_entries = dictionary_.GetInts("/Index");
 
-  if(!indexEntries.empty())
+  if(!index_entries.empty())
   {
-    for (size_t i = 0; i < indexEntries.size(); i += 2)
+    for (size_t i = 0; i < index_entries.size(); i += 2)
     {
       // Fill object numbers with consecutive ints starting at the even index
       // entries for a length specified by the odd index entries
-      object_numbers_.resize(indexEntries[i + 1]);
-      iota(object_numbers_.begin(), object_numbers_.end(), indexEntries[i]);
+      object_numbers_.resize(index_entries[i + 1]);
+      iota(object_numbers_.begin(), object_numbers_.end(), index_entries[i]);
     }
   }
 }
@@ -427,23 +427,23 @@ void XRefStream::ReadIndex()
 
 void XRefStream::ReadParameters()
 {
-  string decodestring = "<<>>";
+  string sub_dictionary_string = "<<>>";
 
   if(dictionary_.HasKey("/DecodeParms"))
   {
-    decodestring = dictionary_.GetString("/DecodeParms"); // string for subdict
+    sub_dictionary_string = dictionary_.GetString("/DecodeParms");
   }
 
-  Dictionary subdict(make_shared<string>(decodestring));
+  Dictionary sub_dictionary(make_shared<string>(sub_dictionary_string));
 
-  if(subdict.ContainsInts("/Columns"))
+  if(sub_dictionary.ContainsInts("/Columns"))
   {
-    number_of_columns_ = subdict.GetInts("/Columns")[0];
+    number_of_columns_ = sub_dictionary.GetInts("/Columns")[0];
   }
 
-  if(subdict.ContainsInts("/Predictor"))
+  if(sub_dictionary.ContainsInts("/Predictor"))
   {
-    predictor_ = subdict.GetInts("/Predictor")[0];
+    predictor_ = sub_dictionary.GetInts("/Predictor")[0];
   }
 }
 
@@ -453,23 +453,25 @@ void XRefStream::ReadParameters()
 
 void XRefStream::GetRawMatrix()
 {
-  auto sl = xref_->GetStreamLocation(object_start_);
-  string SS = xref_->File()->substr(sl[0], sl[1] - sl[0]);
+  // Obtain the raw stream data
+  auto stream_location = xref_->GetStreamLocation(object_start_);
+  string stream = xref_->File()->substr(stream_location[0], stream_location[1]);
 
   // Applies decompression to stream if needed
   if(dictionary_.GetString("/Filter").find("/FlateDecode", 0) != string::npos)
   {
-    FlateDecode(SS);
+    FlateDecode(stream);
   }
 
-  vector<uint8_t> conv(SS.begin(), SS.end());  // convert string to bytes..
-  vector<int> intstrm(conv.begin(), conv.end()); // and bytes to ints
+  // Convert stream to bytes then bytes to ints
+  vector<uint8_t> conv(stream.begin(), stream.end());
+  vector<int> int_stream(conv.begin(), conv.end());
 
-  // read the /W entry to get the width in bytes of each column in the table
+  // Read the /W entry to get the width in bytes of each column in the table
   // check the widths for any zero values and skip them if present
   array_widths_ = dictionary_.GetInts("/W");
-  auto i = remove(array_widths_.begin(), array_widths_.end(), 0);
-  array_widths_.erase(i, array_widths_.end());
+  auto new_end_marker = remove(array_widths_.begin(), array_widths_.end(), 0);
+  array_widths_.erase(new_end_marker, array_widths_.end());
 
   // if no record of column numbers, infer from number of /W entries >0
   if(number_of_columns_ == 0) number_of_columns_ = array_widths_.size();
@@ -480,19 +482,19 @@ void XRefStream::GetRawMatrix()
   if(number_of_columns_ == 0) throw runtime_error("divide by zero error");
 
   // Gets number of rows
-  int nrows = intstrm.size() / number_of_columns_;
+  int number_of_rows = int_stream.size() / number_of_columns_;
 
   // Ensures rectangular table
-  if ((size_t)(nrows * number_of_columns_) != intstrm.size())
+  if ((size_t)(number_of_rows * number_of_columns_) != int_stream.size())
   {
     throw runtime_error("Unmatched row and column numbers");
   }
 
-  // Now fill the raw matrix with stream data
-  for (int i = 0; i < nrows; ++i)
+  // Fills the raw matrix with stream data
+  for (int i = 0; i < number_of_rows; ++i)
   {
-    raw_matrix_.emplace_back(intstrm.begin() + number_of_columns_ * i,
-                             intstrm.begin() + number_of_columns_ * (i + 1));
+    raw_matrix_.emplace_back(int_stream.begin() + number_of_columns_ * i,
+                             int_stream.begin() + number_of_columns_ * (i + 1));
   }
 }
 
@@ -506,12 +508,16 @@ void XRefStream::DiffUp()
   if(predictor_ == 12)
   {
     // For each row
-    for (size_t i = 1; i < raw_matrix_.size(); ++i )
+    for (size_t row = 1; row < raw_matrix_.size(); ++row )
     {
-      // Take each entry & add the one above
-      for (size_t j = 0; j < raw_matrix_.at(i).size(); ++j)
+      // Create references for this row and the row above it
+      auto& this_row = raw_matrix_.at(row);
+      auto& row_above = raw_matrix_.at(row - 1);
+
+      // Take each entry & add the entry above
+      for (size_t column = 0; column < this_row.size(); ++column)
       {
-        raw_matrix_.at(i).at(j) += raw_matrix_.at(i - 1).at(j);
+        this_row.at(column) += row_above.at(column);
       }
     }
   }
@@ -525,14 +531,14 @@ void XRefStream::ModuloTranspose()
   for (size_t i = 0; i < raw_matrix_.at(0).size(); ++i)
   {
     // Create a new column vector
-    vector<int> tempcol;
+    vector<int> temp_column;
 
     // Then for each entry in the row make it modulo 256 and push to new column
-    for (auto& j : raw_matrix_) tempcol.push_back(j[i] & 0x00ff);
+    for (auto& j : raw_matrix_) temp_column.push_back(j[i] & 0x00ff);
 
     // the new column is pushed to the final array unless it is the first
     // column (which is skipped when the predictor is > 9)
-    if(predictor_ < 10 || i > 0) final_array_.push_back(tempcol);
+    if(predictor_ < 10 || i > 0) final_array_.push_back(temp_column);
   }
 }
 
@@ -543,14 +549,17 @@ void XRefStream::ModuloTranspose()
 void XRefStream::ExpandBytes()
 {
   // Calculate the byte shift for each column (with 1:1 correspondence);
-  int ncol = 0;
-  for (auto i : array_widths_)
+  int column_number = 0;
+  for (auto width : array_widths_)
   {
-    while (i)
+    while (width)
     {
-      int byte_shift = 8 * (i-- - 1);
-      for (auto &j : final_array_.at(ncol)) j <<= byte_shift;
-      ++ncol;
+      int byte_shift = 8 * (width-- - 1);
+      for (auto& element : final_array_.at(column_number))
+      {
+        element <<= byte_shift;
+      }
+      ++column_number;
     }
   }
 }
@@ -562,25 +571,27 @@ void XRefStream::ExpandBytes()
 void XRefStream::MergeColumns()
 {
   // For each of the final columns
-  for (int k = 0, cumsum = 0; k < (int) array_widths_.size(); ++k)
+  for (size_t column_number = 0, cumsum = 0;
+       column_number < array_widths_.size();
+       ++column_number)
   {
-    // take a zero-filled column the size of those in the unmerged array
-    vector<int> newCol(final_array_[0].size(), 0);
+    // Take a zero-filled column the size of those in the unmerged array
+    vector<int> new_column(final_array_[0].size(), 0);
 
-    // for each width value
-    for (int j = 0; j < array_widths_[k]; j++)
+    // For each width value
+    for (int width_it = 0; width_it < array_widths_[column_number]; ++width_it)
     {
       // Add the column to be merged to the new column
-      transform(newCol.begin(), newCol.end(),
-                     final_array_[cumsum + j].begin(),
-                     newCol.begin(), plus<int>());
+      transform(new_column.begin(), new_column.end(),
+                final_array_[cumsum + width_it].begin(),
+                new_column.begin(), plus<int>());
     }
 
     // This is a final column - push it to result
-    result_.emplace_back(move(newCol));
+    result_.emplace_back(move(new_column));
 
     // move to the next column in the final result
-    cumsum += array_widths_[k];
+    cumsum += array_widths_[column_number];
   }
 }
 

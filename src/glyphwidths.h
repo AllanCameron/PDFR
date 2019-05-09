@@ -1,6 +1,6 @@
 //---------------------------------------------------------------------------//
 //                                                                           //
-// PDFR glyphwidth header file                                               //
+// PDFR GlyphWidth header file                                               //
 //                                                                           //
 // Copyright (C) 2019 by Allan Cameron                                       //
 //                                                                           //
@@ -71,7 +71,7 @@
  * It also needs a group of static objects listing the widths of each of the
  * characters used in the 'built-in' fonts used in pdfs. In theory, later
  * versions of pdf require specification of all glyph widths, but for back-
- * compatability, the widths of the 14 core fonts still need to be defined.
+ * compatibility, the widths of the 14 core fonts still need to be defined.
  *
  * The widths are available as an open online resource from Adobe.
  *
@@ -86,7 +86,7 @@
 #include "document.h"
 
 //---------------------------------------------------------------------------//
-// The glyphwidths class contains private methods to find the description of
+// The GlyphWidths class contains private methods to find the description of
 // widths for each character in a font. It only makes sense to the font class,
 // from whence it is created and accessed.
 //
@@ -95,43 +95,48 @@
 // several fonts are created. This also prevents them polluting the global
 // namespace.
 
-class glyphwidths
+class GlyphWidths
 {
-public:
+ public:
   // Constructor
-  glyphwidths(Dictionary& dic, std::shared_ptr<Document> doc);
+  GlyphWidths(Dictionary& font_dictionary,
+              std::shared_ptr<Document> document_ptr);
 
   // public methods
-  int getwidth(const RawChar&);                // Main data lookup
-  std::vector<RawChar> widthKeys();            // Returns all map keys
-  bool widthsAreForRaw();                      // returns widthfromcharcodes
+  int GetWidth(const RawChar& code_point);     // Get width of character code
+  std::vector<RawChar> WidthKeys();            // Returns all map keys
 
-private:
+  inline bool WidthsAreForRaw() const { return width_is_pre_interpretation_; }
+
+ private:
+  // This enum is used in the width array lexer
+  enum WidthState {NEWSYMB, INARRAY, INSUBARRAY, END};
+
   // private data
-  std::unordered_map<RawChar, int> m_width_map;   // The main data member
-  Dictionary m_font_dictionary;                   // the font dictionary
-  std::shared_ptr<Document> m_document;           // pointer to document
-  std::string m_base_font;                        // the base font (if any)
-  bool widthFromCharCodes;                        // are widths for code points?
-
+  std::unordered_map<RawChar, int> width_map_;   // The main data member
+  Dictionary font_dictionary_;                   // The font dictionary
+  std::shared_ptr<Document> document_;           // Pointer to document
+  std::string base_font_;                        // The base font (if any)
+  bool width_is_pre_interpretation_;             // Are widths for code points
+                                                 // pre- or post- translation?
   // private methods
-  void parsewidtharray(const std::string&);       // lexer
-  void getCoreFont();                             // corefont getter
-  void parseDescendants();                        // read descendant dictionary
-  void parseWidths();                             // parse the width array
-  void getWidthTable();                           // co-ordinates creation
+  void ParseWidthArray(const std::string&);       // Width lexer
+  void GetCoreFont();                             // Core font getter
+  void ParseDescendants();                        // Reads descendant dictionary
+  void ParseWidths();                             // Parses the width array
+  void GetWidthTable();                           // Co-ordinates construction
 
 //-- The core fonts as defined in corefonts.cpp ------------------------//
                                                                         //
-  static std::unordered_map<Unicode, int> courier_widths;                //
-  static std::unordered_map<Unicode, int> helvetica_widths;              //
-  static std::unordered_map<Unicode, int> helvetica_bold_widths;          //
-  static std::unordered_map<Unicode, int> symbol_widths;                 //
-  static std::unordered_map<Unicode, int> times_bold_widths;              //
-  static std::unordered_map<Unicode, int> times_bold_italic_widths;        //
-  static std::unordered_map<Unicode, int> times_italic_widths;            //
-  static std::unordered_map<Unicode, int> times_roman_widths;             //
-  static std::unordered_map<Unicode, int> dingbats_widths;               //
+  static std::unordered_map<Unicode, int> courier_widths_;              //
+  static std::unordered_map<Unicode, int> helvetica_widths_;            //
+  static std::unordered_map<Unicode, int> helvetica_bold_widths_;       //
+  static std::unordered_map<Unicode, int> symbol_widths_;               //
+  static std::unordered_map<Unicode, int> times_bold_widths_;           //
+  static std::unordered_map<Unicode, int> times_bold_italic_widths_;    //
+  static std::unordered_map<Unicode, int> times_italic_widths_;         //
+  static std::unordered_map<Unicode, int> times_roman_widths_;          //
+  static std::unordered_map<Unicode, int> dingbats_widths_;             //
                                                                         //
 //----------------------------------------------------------------------//
 };

@@ -43,12 +43,14 @@ using namespace std;
 // the containing document. If the font is a core font, get the widths from
 // built in static corefont tables. Otherwise find and interpret widths.
 
-glyphwidths::glyphwidths(Dictionary& dic, shared_ptr<Document> doc):
-  m_font_dictionary(dic), m_document(doc)
+GlyphWidths::GlyphWidths
+  (Dictionary& t_font_dictionary, shared_ptr<Document> t_document_ptr) :
+    font_dictionary_(t_font_dictionary),
+    document_(t_document_ptr),
+    base_font_(font_dictionary_.GetString("/BaseFont"))
 {
-  m_base_font = m_font_dictionary.GetString("/BaseFont");
-  getCoreFont();
-  if(m_width_map.empty()) getWidthTable();
+  GetCoreFont();
+  if (width_map_.empty()) GetWidthTable();
 }
 
 /*---------------------------------------------------------------------------*/
@@ -57,14 +59,19 @@ glyphwidths::glyphwidths(Dictionary& dic, shared_ptr<Document> doc):
 // method calls the appropriate parser depending on the entries in the font
 // dictionary
 
-void glyphwidths::getWidthTable()
+void GlyphWidths::GetWidthTable()
 {
   // If widths entry specified, use this by calling parsewidths method
-  if (m_font_dictionary.HasKey("/Widths")) parseWidths();
+  if (font_dictionary_.HasKey("/Widths"))
+  {
+    ParseWidths();
+  }
 
   // otherwise look in descendants using parseDescendants method
-  else if(m_font_dictionary.ContainsReferences("/DescendantFonts"))
-    parseDescendants();
+  else if (font_dictionary_.ContainsReferences("/DescendantFonts"))
+  {
+    ParseDescendants();
+  }
 
   // otherwise we have no font widths specified and need to use default values
 }
@@ -75,48 +82,49 @@ void glyphwidths::getWidthTable()
 // to which the first width in the array applies. The rest of the array then
 // refers to sequential code points after this.
 
-void glyphwidths::parseWidths()
+void GlyphWidths::ParseWidths()
 {
   // Usually widths given as ints, but can be floats
-  vector<float> widtharray;
+  vector<float> width_array;
 
   // If the font dictionary contains no /Firstchar, we'll default to zero
-  RawChar firstchr = 0x0000;
+  RawChar first_character = 0x0000;
 
   // Otherwise we read the firstchar entry
-  if(m_font_dictionary.ContainsInts("/FirstChar"))
+  if (font_dictionary_.ContainsInts("/FirstChar"))
   {
-    firstchr = m_font_dictionary.GetInts("/FirstChar")[0];
+    first_character = font_dictionary_.GetInts("/FirstChar")[0];
   }
   // Annoyingly, widths sometimes contains a pointer to another object that
   // contains the width array, either in a stream or as a 'naked object'.
   // Note that contents of a naked object are stored as the object's 'stream'.
 
   // Handle /widths being a reference to another object
-  if (m_font_dictionary.ContainsReferences("/Widths"))
+  if (font_dictionary_.ContainsReferences("/Widths"))
   {
-    // Get the referenced object
-    auto width_object =
-      m_document->get_object(m_font_dictionary.GetReference("/Widths"));
+    auto width_object_number = font_dictionary_.GetReference("/Widths");
+    auto width_object_ptr = document_->GetObject(width_object_number);
 
     // Get the referenced object's stream
-    string ostring(width_object->GetStream());
+    string width_object_stream(width_object_ptr->GetStream());
 
     // Get the numbers from the width array in the stream
-    widtharray = ParseFloats(ostring);
+    width_array = ParseFloats(width_object_stream);
   }
   // If /Widths is not a reference get the widths directly
-  else  widtharray = m_font_dictionary.GetFloats("/Widths");
+  else  width_array = font_dictionary_.GetFloats("/Widths");
 
   // If a width array was found
-  if (!widtharray.empty())
+  if (!width_array.empty())
   {
     // The widths represent post-Unicode translation widths
-    this->widthFromCharCodes = true;
+    this->width_is_pre_interpretation_ = true;
 
     // Now we can fill the width map from the width array
-    for (size_t i = 0; i < widtharray.size(); ++i)
-      m_width_map[firstchr + i] = (int) widtharray[i];
+    for (size_t index = 0; index < width_array.size(); ++index)
+    {
+      width_map_[first_character + index] = (int) width_array[index];
+    }
   }
 }
 
@@ -126,45 +134,46 @@ void glyphwidths::parseWidths()
 // an array of widths for given ranges of code points and needs to be
 // interpreted by its own lexer, also included as a method in this class
 
-void glyphwidths::parseDescendants()
+void GlyphWidths::ParseDescendants()
 {
-  // get a pointer to the descendantfonts object
-  auto desc =
-    m_document->get_object(m_font_dictionary.GetReference("/DescendantFonts"));
+  // get a pointer to the /Descendantfonts object
+  auto descendant_number = font_dictionary_.GetReference("/DescendantFonts");
+  auto descendant_object = document_->GetObject(descendant_number);
 
   // Extract its dictionary and its stream
-  Dictionary descdict = desc->GetDictionary();
-  string descstream(desc->GetStream());
+  Dictionary descendant_dictionary = descendant_object->GetDictionary();
+  string descendant_stream(descendant_object->GetStream());
 
-  // Handle descendantfonts being just a reference to another object
-  if(!ParseReferences(descstream).empty())
+  // Handle /Descendantfonts being just a reference to another object
+  if (!ParseReferences(descendant_stream).empty())
   {
-    descdict =
-      m_document->get_object(ParseReferences(descstream)[0])->GetDictionary();
+    descendant_number = ParseReferences(descendant_stream)[0];
+    descendant_object = document_->GetObject(descendant_number);
+    descendant_dictionary = descendant_object->GetDictionary();
   }
 
   // We now look for the /W key and if it is found parse its contents
-  if (descdict.HasKey("/W"))
+  if (descendant_dictionary.HasKey("/W"))
   {
     // We will fill this string with width array when found
-    string widthstring;
+    string width_string;
 
     // sometimes the /W entry only contains a pointer to the containing object
-    if (descdict.ContainsReferences("/W"))
+    if (descendant_dictionary.ContainsReferences("/W"))
     {
-      widthstring =
-        m_document->get_object(descdict.GetReference("/W"))->GetStream();
+      auto width_object_number = descendant_dictionary.GetReference("/W");
+      width_string = document_->GetObject(width_object_number)->GetStream();
     }
 
     // otherwise we assume /W contains the widths needed
-    else widthstring = descdict.GetString("/W");
+    else width_string = descendant_dictionary.GetString("/W");
 
-    // in either case widthstring should now contain the /W array which we
+    // in either case width_string should now contain the /W array which we
     // now need to parse using our lexer method
-    parsewidtharray(widthstring);
+    ParseWidthArray(width_string);
 
     // The widths obtained apply to the RawChars, not to post-conversion Unicode
-    this->widthFromCharCodes = true;
+    this->width_is_pre_interpretation_ = true;
   }
 }
 
@@ -172,7 +181,7 @@ void glyphwidths::parseDescendants()
 // The constructor includes a string passed from the "BaseFont" entry
 // of the encoding dictionary.
 
-void glyphwidths::getCoreFont()
+void GlyphWidths::GetCoreFont()
 {
   // If the font is one of the 14 core fonts, the widths are already specified.
   // Note that these widths represent the widths of the actual Unicode glyphs
@@ -182,42 +191,32 @@ void glyphwidths::getCoreFont()
   // that will result from the given RawChar codes. This is therefore flagged
   // by the boolean widthsFromCharCodes.
 
-  if (m_base_font.find("/Courier") != string::npos)
-    m_width_map = courier_widths;
-  else if(m_base_font == "/Helvetica")
-    m_width_map = helvetica_widths;
-  else if(m_base_font == "/Helvetica-Oblique")
-    m_width_map = helvetica_widths;
-  else if(m_base_font == "/Helvetica-Bold")
-    m_width_map = helvetica_bold_widths;
-  else if(m_base_font == "/Helvetica-Boldoblique")
-    m_width_map = helvetica_bold_widths;
-  else if(m_base_font == "/Symbol")
-    m_width_map = symbol_widths;
-  else if(m_base_font == "/Times-Bold")
-    m_width_map = times_bold_widths;
-  else if(m_base_font == "/Times-BoldItalic")
-    m_width_map = times_bold_italic_widths;
-  else if(m_base_font == "/Times-Italic")
-    m_width_map = times_italic_widths;
-  else if(m_base_font == "/Times-Roman")
-    m_width_map = times_roman_widths;
-  else if(m_base_font == "/ZapfDingbats")
-    m_width_map = dingbats_widths;
+  if (base_font_.find("/Courier") != string::npos) width_map_ = courier_widths_;
+  else if (base_font_ == "/Symbol") width_map_ = symbol_widths_;
+  else if (base_font_ == "/Times-Bold") width_map_ = times_bold_widths_;
+  else if (base_font_ == "/Times-Italic") width_map_ = times_italic_widths_;
+  else if (base_font_ == "/Times-Roman") width_map_ = times_roman_widths_;
+  else if (base_font_ == "/ZapfDingbats") width_map_ = dingbats_widths_;
+  else if (base_font_ == "/Helvetica-Oblique" ||
+           base_font_ == "/Helvetica") width_map_ = helvetica_widths_;
+  else if (base_font_ == "/Helvetica-Boldoblique" ||
+           base_font_ == "/Helvetica-Bold") width_map_ = helvetica_bold_widths_;
+  else if (base_font_ == "/Times-BoldItalic")
+    width_map_ = times_bold_italic_widths_;
 
   // No unicode -> width mapping - using RawChar
-  else widthFromCharCodes = true;
+  else width_is_pre_interpretation_ = true;
 }
 
 /*---------------------------------------------------------------------------*/
 // Getter. Finds the width for a given character code. If it is not specified
 // returns the default width specified in the macro at the top of this file
 
-int glyphwidths::getwidth(const RawChar& raw)
+int GlyphWidths::GetWidth(const RawChar& raw)
 {
   // Look up the supplied rawChar
-  auto found = m_width_map.find(raw);
-  if(found != m_width_map.end()) return found->second;
+  auto found = width_map_.find(raw);
+  if (found != width_map_.end()) return found->second;
 
   // No width found - return the default width
   else return DEFAULT_WIDTH;
@@ -227,9 +226,9 @@ int glyphwidths::getwidth(const RawChar& raw)
 // Simple public getter function that returns the mapped character codes as
 // a vector without their associated widths
 
-vector<RawChar> glyphwidths::widthKeys()
+vector<RawChar> GlyphWidths::WidthKeys()
 {
-  return GetKeys(this->m_width_map);
+  return GetKeys(this->width_map_);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -240,111 +239,114 @@ vector<RawChar> glyphwidths::widthKeys()
 // code point. Hence the string "[3[100 200 150] 10[250 300]]" should be
 // interpreted as mapping {{3, 100}, {4, 200}, {5, 150}, {10, 250}, {11, 300}}
 
-void glyphwidths::parsewidtharray(const string& s)
+void GlyphWidths::ParseWidthArray(const string& t_width_string)
 {
-  if(s.empty()) return;           // empty string == nothing to do
-  enum Wstate {NEWSYMB, INARRAY, INSUBARRAY, END}; // possible states of lexer
-  string buf = "";                                 // empty buffer for lexer
-  Wstate state = NEWSYMB;                          // Initial state of lexer
-  vector<int> vecbuf, resultint;                   // temporary variables
-  vector<vector<int>> resultvec;  // container of results to write to width map
+  // If the width string is empty, there's nothing to be done
+  if (t_width_string.empty()) return;
 
-  // main loop - straight iteration through all the characters in s
-  for(const auto& i : s)
+  // These variables maintain state during the lexer process:
+  WidthState state = NEWSYMB; // Uses enum to keep track of state of lexer
+  string buffer {};           // Stores strings waiting to be turned into ints
+  vector<int> number_buffer,  // Stores ints until we know what they are for
+              first_chars;    // A vector of the starting code points for widths
+  vector<vector<int>> result; // Each first_char has an int vector of widths
+
+  // Main loop - Iterates through all the characters in t_width_string
+  for (const auto& current_char : t_width_string)
   {
-    char a = GetSymbolType(i);
-
     // If opening of array not first character, simply wait for '['
-    if(state == NEWSYMB)
+    if (state == NEWSYMB)
     {
-      if(a == '[') state = INARRAY;
+      if (current_char == '[') state = INARRAY;
       continue;
     }
-    // In the main array. Either read a code character or find a subarray
-    if(state == INARRAY)
+
+    // Handle the main array. Either read a character code or find a subarray
+    if (state == INARRAY)
     {
-      switch(a)
+      switch (GetSymbolType(current_char))
       {
-      case 'D' : buf += i; break; // read the number
-      case '[' : state = INSUBARRAY;  // Switch to subarray state
-                 if(!buf.empty())                     // if something in buffer
+      case 'D' : buffer += current_char; break;
+
+      case '[' : state = INSUBARRAY;
+                 if (!buffer.empty())
                  {
-                   vecbuf.push_back(stoi(buf));       // convert and store it
-                   if(vecbuf.size() == 1)
-                     resultint.push_back(vecbuf[0]); // char code if single
+                   number_buffer.push_back(stoi(buffer));
+                   if (number_buffer.size() == 1)
+                     first_chars.push_back(number_buffer[0]);
                    else
-                     resultvec.push_back(vecbuf); // width values if multiple
-                 }                                // numbers have been stored
-                 buf.clear();
-                 vecbuf.clear();                // in either case clear buffers
+                     result.push_back(number_buffer);
+                 }
+                 buffer.clear();
+                 number_buffer.clear();
                  break;
-      case ' ' : if(!buf.empty())               // store number in int buffer
-                   vecbuf.push_back(stoi(buf));
-                buf.clear(); break;             // clear the string buffer
-      case ']': state = END;                    // end of main array
-                if(!buf.empty())                // Use what's in the buffers
-                {                               // as specified above
-                  vecbuf.push_back(stoi(buf));
-                  if(vecbuf.size() == 1)
-                    resultint.push_back(vecbuf[0]);
-                  else resultvec.push_back(vecbuf);
+
+      case ' ' : if (!buffer.empty())
+                   number_buffer.push_back(stoi(buffer));
+                buffer.clear(); break;
+
+      case ']': state = END;
+                if (!buffer.empty())
+                {
+                  number_buffer.push_back(stoi(buffer));
+                  if (number_buffer.size() == 1)
+                    first_chars.push_back(number_buffer[0]);
+                  else result.push_back(number_buffer);
                 }
-                buf.clear();
-                vecbuf.clear();                   // clear the buffers
+                buffer.clear();
+                number_buffer.clear();
                 break;
-      default: throw (string("Error parsing string ") + s); // unspecified
+
+      default: throw (string("Error parsing string ") + t_width_string);
       }
       continue;
     }
-    // handle the insubarray state
-    if(state == INSUBARRAY)
+
+    // Handle the insubarray state: read numbers as a vector of widths
+    if (state == INSUBARRAY)
     {
-      switch(a)
+      switch (GetSymbolType(current_char))
       {
-      case ' ': if(!buf.empty()) vecbuf.push_back(stoi(buf)); // push to int buf
-                buf.clear();
+      case ' ': if (!buffer.empty()) number_buffer.push_back(stoi(buffer));
+                buffer.clear();
                 break;
+
       case ']': state = INARRAY;  // exited from subarray
-                if(!buf.empty()) vecbuf.push_back(stoi(buf)); // use buf content
-                resultvec.push_back(vecbuf);
-                vecbuf.clear();
-                buf.clear(); break;
-      case 'D': buf += i; break; // read actual width number
-      default: throw (string("Error parsing string ") + s);
+                if (!buffer.empty()) number_buffer.push_back(stoi(buffer));
+                result.push_back(number_buffer);
+                number_buffer.clear();
+                buffer.clear(); break;
+
+      case 'D': buffer += current_char; break; // read actual width number
+
+      default: throw (string("Error parsing string ") + t_width_string);
       }
+
       continue;
     }
-    if(state == END) break;
+
+    if (state == END) break;
   }
 
-  // We now parse the results of the lexing procedure.
+  // We now parse the results of the lexer.
   // First we make sure that the starting character codes are equal in length
   // to the number of width arrays, and that neither is empty
-  if((resultint.size() == resultvec.size()) && !resultint.empty() )
+  if ((first_chars.size() == result.size()) && !first_chars.empty() )
   {
-    // now loop through the vectors and marry char codes to widths
-    for(size_t i = 0; i < resultint.size(); ++i)
+    // Now loops through the vectors and marries char codes to widths
+    for (size_t i = 0; i < first_chars.size(); ++i)
     {
-      // Skip any character code that doesn't have an associated width array
-      if(!resultvec[i].empty())
+      // Skips any character code that doesn't have an associated width array
+      if (!result[i].empty())
       {
         // Now for each member of the width array...
-        for(size_t j = 0; j < resultvec[i].size(); j++)
+        for (size_t j = 0; j < result[i].size(); j++)
         {
-          // map sequential values of char codes to stated widths
-          m_width_map[(RawChar) resultint[i] + j] = (int) resultvec[i][j];
+          // ...map sequential values of char codes to stated widths
+          width_map_[(RawChar) first_chars[i] + j] = (int) result[i][j];
         }
       }
     }
   }
 }
 
-/*---------------------------------------------------------------------------*/
-// The font class needs to know whether to build the glyphmap based on RawChar
-// code points or Unicode code points. If the following returns true, the map
-// should be built using the raw character values
-
-bool glyphwidths::widthsAreForRaw()
-{
-  return widthFromCharCodes;
-}

@@ -50,13 +50,13 @@ Object::Object(shared_ptr<const XRef> t_xref, int t_object_number) :
     // No dictionary found - make blank dictionary for header
     header_ = Dictionary();
 
-    // find start and end of contents
-    stream_location_ = {xref_->File()->find(" obj", start) + 4, stop - 1};
+    // Finds start and length of contents
+    size_t content_start = xref_->File()->find(" obj", start) + 4;
+    stream_location_ = {content_start, stop - content_start};
   }
 
   else // Else the object has a header dictionary
   {
-    // Construct the dictionary
     header_ = Dictionary(xref_->File(), start);
 
     // Find the stream (if any)
@@ -75,7 +75,7 @@ Object::Object(shared_ptr<const XRef> t_xref, int t_object_number) :
 }
 
 //---------------------------------------------------------------------------//
-// object streams start with a group of integers representing the object
+// Object streams start with a group of integers representing the object
 // numbers and the byte offset of each object relative to the stream. This
 // method reads the objects and their positions in the stream, indexing them
 // for later retrieval.
@@ -195,12 +195,8 @@ void Object::ApplyFilters()
 
 void Object::ReadStreamFromStreamLocations()
 {
-  // Find the stream's start position and length
-  int stream_length = stream_location_[1] - stream_location_[0];
-  int stream_start  = stream_location_[0];
-
   // Read the string from the current positions
-  stream_ = xref_->File()->substr(stream_start, stream_length);
+  stream_ = xref_->File()->substr(stream_location_[0], stream_location_[1]);
 
   // Apply necessary decryption and deflation
   ApplyFilters();

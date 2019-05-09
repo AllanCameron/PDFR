@@ -35,9 +35,9 @@ using namespace std;
 // any /ToUnicode entry. The first three are co-ordinated by read_encoding()
 // and the last is co-ordinated by map_unicode()
 
-Encoding::Encoding(const Dictionary& font_dictionary, shared_ptr<Document> doc):
-  font_dictionary_(font_dictionary),
-  document_(doc)
+Encoding::Encoding(const Dictionary& t_font_dictionary,
+                   shared_ptr<Document> t_document_ptr):
+  font_dictionary_(t_font_dictionary), document_(t_document_ptr)
 {
   ReadEncoding();
   MapUnicode();
@@ -56,7 +56,7 @@ void Encoding::Write(vector<pair<DifferencesState, string>>& t_entries,
 // /Differences entry as a string and reads its ints as input code points. These
 // are mapped to the subsequent glyph name's Unicode value. If more than one
 // name follows an int, then sequential code points are mapped to each
-// successive name's Unicode value. This requires the static adobe_to_unicode
+// successive name's Unicode value. This requires the static adobe_to_unicode_
 // map.
 
 void Encoding::ReadDifferences(const string& t_differences_string)
@@ -144,7 +144,7 @@ void Encoding::MapUnicode()
   int unicode_reference = font_dictionary_.GetReference("/ToUnicode");
 
   // Get the text stream of the unicode conversion entry
-  string unicode_text(document_->get_object(unicode_reference)->GetStream());
+  string unicode_text(document_->GetObject(unicode_reference)->GetStream());
 
   // MultiCarve gets all strings between the bookending strings. These are
   // stored in a vector and are substrates for the processing methods below
@@ -228,26 +228,25 @@ void Encoding::ProcessUnicodeRange(vector<string>& t_bf_ranges)
 
 void Encoding::ReadEncoding()
 {
-  // start with font dictionary
+  // Starts with private font dictionary member
   Dictionary encoding_dictionary = font_dictionary_;
 
-  // Read encoding entry
+  // Reads the encoding entry
   string encoding_name = encoding_dictionary.GetString("/Encoding");
 
-  // If an encoding dictionary exists, get it and read the baseencoding entry
+  // If an encoding dictionary exists, gets it and read the baseencoding entry
   if(font_dictionary_.ContainsReferences("/Encoding"))
   {
-    auto encoding_object =
-      document_->get_object(font_dictionary_.GetReference("/Encoding"));
-
-    encoding_dictionary = encoding_object->GetDictionary();
-
+    auto encoding_object_number = font_dictionary_.GetReference("/Encoding");
+    auto encoding_object_ptr = document_->GetObject(encoding_object_number);
+    encoding_dictionary = encoding_object_ptr->GetDictionary();
     if(encoding_dictionary.HasKey("/BaseEncoding"))
     {
       encoding_name = encoding_dictionary.GetString("/BaseEncoding");
     }
   }
 
+  // Now we should have an encoding name to specify our encoding map
   if( encoding_name == "/WinAnsiEncoding")
   {
     encoding_map_ = winansi_to_unicode_;
@@ -261,8 +260,14 @@ void Encoding::ReadEncoding()
     encoding_map_ = pdfdoc_to_unicode_;
   }
 
-  else for(RawChar i = 0; i < 256; ++i) encoding_map_[i] = (Unicode) i;
-
+  // If no encoding name is specified, we take a direct RawChar : Unicode map
+  else
+  {
+    for(RawChar raw_char = 0x0000; raw_char < 0x0100; ++raw_char)
+    {
+      encoding_map_[raw_char] = (Unicode) raw_char;
+    }
+  }
   // Call Differences() if a /Differences entry is found to modify encoding
   if(encoding_dictionary.HasKey("/Differences"))
   {

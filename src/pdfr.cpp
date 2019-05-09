@@ -169,7 +169,7 @@ Rcpp::DataFrame get_xref_from_raw(const vector<uint8_t>& raw_file)
 // The file string version of get_object. It takes a file path as a parameter,
 // from which it loads the entire file into a string to create a Document.
 // The second parameter is the actual pdf object number, which is found by
-// the public get_object() method from Document class. It returns a list
+// the public GetObject() method from Document class. It returns a list
 // of two named values - the dictionary, as a named character vector, and the
 // decrypted / decompressed stream as a single string
 
@@ -181,15 +181,15 @@ Rcpp::List get_object_from_string(const string& file_name, int object)
   // Fill an Rcpp::List with the requested object's elements and return
   return Rcpp::List::create(
     Rcpp::Named("header") =
-      document_ptr->get_object(object)->GetDictionary().GetMap(),
-    Rcpp::Named("stream") = document_ptr->get_object(object)->GetStream());
+      document_ptr->GetObject(object)->GetDictionary().GetMap(),
+    Rcpp::Named("stream") = document_ptr->GetObject(object)->GetStream());
 }
 
 //---------------------------------------------------------------------------//
-// The raw data version of get_object. It takes a raw vector as a parameter,
+// The raw data version of get_object(). It takes a raw vector as a parameter,
 // which it recasts as a single large string to create a Document.
 // The second parameter is the actual pdf object number, which is found by
-// the public get_object() method from Document class. It returns a list
+// the public GetObject() method from Document class. It returns a list
 // of two named values - the dictionary, as a named character vector, and the
 // decrypted / decompressed stream as a single string
 
@@ -201,8 +201,8 @@ Rcpp::List get_object_from_raw(const vector<uint8_t>& raw_file, int object)
   // Fill an Rcpp::List with the requested object and return
   return Rcpp::List::create(
     Rcpp::Named("header") =
-      document_ptr->get_object(object)->GetDictionary().GetMap(),
-    Rcpp::Named("stream") = document_ptr->get_object(object)->GetStream());
+      document_ptr->GetObject(object)->GetDictionary().GetMap(),
+    Rcpp::Named("stream") = document_ptr->GetObject(object)->GetStream());
 }
 
 //---------------------------------------------------------------------------//
@@ -334,7 +334,7 @@ Rcpp::List get_pdf_page_from_raw(const vector<uint8_t>& raw_file,
 
 Rcpp::DataFrame pdfdoc_common(shared_ptr<Document> document_ptr)
 {
-  auto number_of_pages = document_ptr->get_page_object_numbers().size();
+  auto number_of_pages = document_ptr->GetPageObjectNumbers().size();
   vector<float> left, right, size, bottom;
   vector<string> glyph, font;
   vector<int> page_number_of_element;

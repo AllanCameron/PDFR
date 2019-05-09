@@ -64,19 +64,30 @@
 class Object
 {
  public:
-  Object(std::shared_ptr<const XRef>, int);  // Get direct object
-  Object(std::shared_ptr<Object>, int);      // Get stream object
-  Object(){};                                // Default constructor
-  std::string GetStream();                   // Returns stream as string
-  Dictionary  GetDictionary();               // Returns Object's Dictionary
+  // Get pdf object from a given object number
+  Object(std::shared_ptr<const XRef> xref_ptr, int object_number);
+
+  // Get stream object from inside the holding object, given object number
+  Object(std::shared_ptr<Object> holding_object_ptr, int object_number);
+
+  // Default constructor
+  Object(){};
+
+  // Returns an Object's stream as a string
+  std::string GetStream();
+
+  // Returns an Object's Dictionary
+  Dictionary  GetDictionary();
 
  private:
+  std::shared_ptr<const XRef> xref_;      // Pointer to creating xref
+  int object_number_;                     // The object knows its own number
+  Dictionary header_;                     // The object's dictionary
+  std::string stream_;                    // The object's stream or contents
+  std::array<size_t, 2> stream_location_; // Start position and length of stream
+
+  // A lookup of start / stop positions of the objects within an object stream
   std::unordered_map<int, std::pair<int, int>> object_stream_index_;
-  std::shared_ptr<const XRef> xref_;         // Pointer to xref
-  int object_number_;                        // The object knows its own number
-  Dictionary header_;                        // The object's dictionary
-  std::string stream_;                       // The object's stream or contents
-  std::array<size_t, 2> stream_location_;    // Start/stop of stream position
 
   // private methods
   void IndexObjectStream();

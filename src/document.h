@@ -75,47 +75,58 @@
 // The public interface of the Document class comprises constructors and two
 // member functions - one to return any object from the pdf and one to retrieve
 // a specific page header.
-class font;
-
 class Document
 {
-  using Node = std::shared_ptr<TreeNode<int>>;
+ public:
+  // Constructor to create Document from file path (given as std::string)
+  Document(const std::string& file_path);
 
-public:
-  // constructors
-  Document(const std::string&);           // creates doc from file path
-  Document(const std::vector<uint8_t>&);  // creates doc from raw data
-  Document();                             // default constructor
+  // Constructor to create Document from raw data (given as vector<uint8_t>)
+  Document(const std::vector<uint8_t>& raw_data);
 
-  // public member functions
-  std::shared_ptr<Object> get_object(int); // creates object and returns pointer
-  Dictionary get_page_header(int);  // returns header dictionary for page p
+  // Default constructor
+  Document() {};
 
-  inline std::vector<int> get_page_object_numbers()
+  // Gets a pointer to the Object specified by object_number. If the object has
+  // previously been accessed, it will retrieve a pointer from the Object cache.
+  // If it has not been accessed before, it will first create it. If the object
+  // is inside an object stream, it will automatically add the holding object to
+  // the cache as well.
+  std::shared_ptr<Object> GetObject(int object_number);
+
+  // Returns the main header dictionary for page specified by page_number
+  Dictionary GetPageHeader(size_t page_number);
+
+  // Accesses the private member containing object numbers of all page headers.
+  inline std::vector<int> GetPageObjectNumbers()
   {
     return page_object_numbers_;
   };
 
 private:
-  // private data members
-  std::string file_path_;            // Path used to create file (if used)
-  const std::string file_string_;    // Full contents of file
-  std::shared_ptr<const XRef> xref_; // Contains the xref object for navigation
-  Dictionary page_directory_;        // dict containing pointers to pages
-  Dictionary catalog_;               // The pdf catalog dictionary
-  std::vector<int> page_object_numbers_;
+  std::string file_path_;                 // Path used to create file (if used)
+  const std::string file_string_;         // Full contents of file
+  std::shared_ptr<const XRef> xref_;      // Pointer to creating XRef object
+  Dictionary page_directory_;             // dict containing pointers to pages
+  Dictionary catalog_;                    // The pdf catalog dictionary
+  std::vector<int> page_object_numbers_;  // The object numbers of page headers
 
-  // This map holds Object objects. Since some objects may be read
+  // This map holds Object pointers. Since some objects may be read
   // multiple times, it is best to store them when they are first created,
   // then return the stored object on request rather than creating a new
   // instance of the object every time it is requested.
-  std::unordered_map <int, std::shared_ptr<Object>> objects_;
+  std::unordered_map <int, std::shared_ptr<Object>> object_cache_;
 
   // private member functions used in construction only
-  void read_catalog();        // finds and stores the catalog dictionary
-  void read_page_directory(); // finds and stores the /Pages dictionary
-  void build_document();      // the constructors use this as a common pathway
-  void expand_kids(const std::vector<int>&, Node);
+  void ReadCatalog();        // Finds and stores the catalog dictionary
+  void ReadPageDirectory();  // Finds and stores the /Pages dictionary
+  void BuildDocument();      // The constructors use this as a common pathway
+
+  // We need to use an <int> instantiation of the TreeNode template class
+  // defined in utilities.h to parse the tree structure of the /Pages entry
+  // in the catalog dictionary. This function effectively builds the pages tree.
+  void ExpandKids(const std::vector<int>& object_numbers_to_add_to_tree,
+                  std::shared_ptr<TreeNode<int>> node_to_add_them_to);
 };
 
 //---------------------------------------------------------------------------//

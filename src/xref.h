@@ -95,7 +95,7 @@ struct XRefRow
 
 class XRef
 {
-public:
+ public:
   // constructors
   XRef(){};
   XRef(std::shared_ptr<const std::string>);
@@ -111,7 +111,7 @@ public:
   void Decrypt(std::string&, int, int) const; // Decrypt a stream
   std::shared_ptr<const std::string> File() const;// pointer to main file string
 
-private:
+ private:
   std::shared_ptr<const std::string> file_string_;
   std::unordered_map<int, XRefRow> xref_table_; // This is the main data member
   std::vector<int> xref_locations_;         // vector of offsets of XRef starts
@@ -119,9 +119,9 @@ private:
   bool encrypted_;                     // Flag to indicate if encryption used
   std::shared_ptr<Crypto> encryption_; // crypto object for decrypting files
 
-// private methods
+  // private methods
   XRef& operator=(const XRef&);
-  int GetStreamLength(const Dictionary& dict) const;
+  int GetStreamLength(const Dictionary&) const;
   void LocateXRefs();                    // Finds XRef locations
   void ReadXRefStrings();                // Gets strings from XRef locations
   void ReadXRefFromStream(int);          // Uses xrefstream class to get XRef
