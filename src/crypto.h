@@ -88,36 +88,36 @@ private:
   static std::vector<uint8_t> default_user_password_;
 
   // Chops FourBytes into 4 bytes
-  std::vector<uint8_t> ChopLong(FourBytes unsigned_32_bit_int) const;
+  std::vector<uint8_t> ChopLong_(FourBytes unsigned_32_bit_int) const;
 
   // Return permission flags for file
-  std::vector<uint8_t> ReadPermissions(std::string permissions_string);
+  std::vector<uint8_t> ReadPermissions_(std::string permissions_string);
 
   // Helper function for md5
-  void Md5Mix(int iteration_of_md5,
+  void Md5Mix_(int iteration_of_md5,
                std::deque<FourBytes>& mix_deque,
                std::vector<FourBytes>& message_fingerprint) const;
 
   // Gives md5 hash of a vector of raw bytes
-  std::vector<uint8_t> Md5(std::vector<uint8_t> message_as_string) const;
+  std::vector<uint8_t> Md5_(std::vector<uint8_t> message_as_string) const;
 
   // Gives md5 hash of a string (as bytes)
-  std::vector<uint8_t> Md5(std::string message_as_bytes) const;
+  std::vector<uint8_t> Md5_(std::string message_as_bytes) const;
 
   // Gives rc4 cipher of message:key pair, given key and message
-  void Rc4(std::vector<uint8_t>& message, std::vector<uint8_t> key) const;
+  void Rc4_(std::vector<uint8_t>& message, std::vector<uint8_t> key) const;
 
   // Gets /O and /U cipher
-  std::vector<uint8_t> GetPassword(const std::string& o_or_u);
+  std::vector<uint8_t> ReadPassword_(const std::string& o_or_u);
 
   // Constructs file key
-  void GetFileKey();
+  void ReadFileKey_();
 
   // Checks file key (revision 2)
-  void CheckKeyR2();
+  void CheckKeyR2_();
 
   // Checks file key (revision 3)
-  void CheckKeyR3();
+  void CheckKeyR3_();
 
 };
 

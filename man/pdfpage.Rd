@@ -12,6 +12,8 @@ pdfpage(pdf, page, atomic = FALSE, table_only = TRUE)
 \item{page}{the page number to be extracted}
 
 \item{atomic}{a boolean - should each letter treated individually?}
+
+\item{table_only}{a boolean - return data frame alone, as opposed to list}
 }
 \value{
 a list containing data frames

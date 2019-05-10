@@ -29,11 +29,11 @@ Crypto::Crypto(Dictionary t_encrypt_dict, Dictionary t_trailer) :
     revision_ = encryption_dictionary_.GetInts("/R")[0];
   }
 
-  GetFileKey();
+  ReadFileKey_();
 
   // if revision 2, check it and we're done. Otherwise use revision 3
-  if (revision_ == 2) CheckKeyR2();
-  else CheckKeyR3();
+  if (revision_ == 2) CheckKeyR2_();
+  else CheckKeyR3_();
 }
 
 //---------------------------------------------------------------------------//
@@ -50,7 +50,7 @@ vector<uint8_t> Crypto::default_user_password_ =
 
 //---------------------------------------------------------------------------//
 // The Md5 algorithm uses pseudorandom numbers to chop its message into bytes.
-// Having them in a vector stops us from having to call the Md5Mix function
+// Having them in a vector stops us from having to call the Md5Mix_ function
 // with each seperate number 64 times. These numbers come from the function
 // md5_table[i] = abs(sin(i + 1)) * 2^32, but it is quicker to pre-compute them
 
@@ -89,7 +89,7 @@ std::vector<std::vector<FourBytes>> mixarray =
 // This simple function "chops" a four-byte int to a vector of four bytes.
 // The bytes are returned lowest-order first as this is the typical use.
 
-vector<uint8_t> Crypto::ChopLong(FourBytes t_long_int) const
+vector<uint8_t> Crypto::ChopLong_(FourBytes t_long_int) const
 {
   // The mask specifies that only the last byte is read when used with &
   FourBytes mask = 0x000000ff;
@@ -111,7 +111,7 @@ vector<uint8_t> Crypto::ChopLong(FourBytes t_long_int) const
 // appropriately. For the purposes of text extraction however, this is not
 // required, and we just need the permissions flag to produce the file key.
 
-vector<uint8_t> Crypto::ReadPermissions(std::string t_string)
+vector<uint8_t> Crypto::ReadPermissions_(std::string t_string)
 {
   // No string == no permissions. Can't decode pdf, so throw an error
   if (t_string.empty()) throw runtime_error("No permission flags");
@@ -120,7 +120,7 @@ vector<uint8_t> Crypto::ReadPermissions(std::string t_string)
   int flags = stoi(t_string);
 
   // This reads off the bytes from lowest order to highest order
-  return ChopLong(flags);
+  return ChopLong_(flags);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -142,7 +142,7 @@ vector<uint8_t> Crypto::ReadPermissions(std::string t_string)
 // This function is called several times with different parameters as part
 // of the main Md5 algorithm. It can be considered a "shuffler" of bytes
 
-void Crypto::Md5Mix(int t_cycle,
+void Crypto::Md5Mix_(int t_cycle,
                      deque<FourBytes>& t_deque,
                      vector<FourBytes>& t_fingerprint) const
 {
@@ -190,7 +190,7 @@ void Crypto::Md5Mix(int t_cycle,
 // The main Md5 algorithm. This version of it was modified from various
 // open source online implementations.
 
-vector<uint8_t> Crypto::Md5(vector<uint8_t> t_message) const
+vector<uint8_t> Crypto::Md5_(vector<uint8_t> t_message) const
 {
   // The length of the message
   int message_length = t_message.size();
@@ -257,7 +257,7 @@ vector<uint8_t> Crypto::Md5(vector<uint8_t> t_message) const
     deque<FourBytes> initial_deque = mixvars;
 
     // Shuffle fingerprint 64 times
-    for (int i = 0; i < 64; i++) Md5Mix(i, mixvars, fingerprint);
+    for (int i = 0; i < 64; i++) Md5Mix_(i, mixvars, fingerprint);
 
     // Add initial random numbers
     for (int i = 0; i < 4;  i++) mixvars[i] += initial_deque[i];
@@ -266,7 +266,7 @@ vector<uint8_t> Crypto::Md5(vector<uint8_t> t_message) const
   vector<uint8_t> output; // create empty output vector for output
 
   // Split the resultant 4 x FourBytes into a single 16-byte vector
-  for (auto fourbyte : mixvars) Concatenate(output, ChopLong(fourbyte));
+  for (auto fourbyte : mixvars) Concatenate(output, ChopLong_(fourbyte));
 
   return output;
 }
@@ -276,9 +276,9 @@ vector<uint8_t> Crypto::Md5(vector<uint8_t> t_message) const
 // conversion. It simply converts a string to bytes than puts it
 // into the "bytes" version of the function
 
-vector<uint8_t> Crypto::Md5(std::string t_input) const
+vector<uint8_t> Crypto::Md5_(std::string t_input) const
 {
-  return Md5(vector<uint8_t>(t_input.begin(), t_input.end()));
+  return Md5_(vector<uint8_t>(t_input.begin(), t_input.end()));
 }
 
 //-------------------------------------------------------------------------//
@@ -289,7 +289,7 @@ vector<uint8_t> Crypto::Md5(std::string t_input) const
 // directly back into the original message using exactly the same key.
 // The algorithm is now in the public domain
 
-void Crypto::Rc4(vector<uint8_t>& t_message, vector<uint8_t> t_key) const
+void Crypto::Rc4_(vector<uint8_t>& t_message, vector<uint8_t> t_key) const
 {
   int key_length = t_key.size(), message_length = t_message.size();
   uint8_t a = 0, b = 0, x = 0, y = 0;
@@ -343,7 +343,7 @@ void Crypto::DecryptStream(string& t_stream,
   vector<uint8_t> object_key = filekey_;
 
   // Append the bytes of the object number
-  Concatenate(object_key, ChopLong(t_object_number));
+  Concatenate(object_key, ChopLong_(t_object_number));
 
   // We only want the three lowest order bytes; pop the last
   object_key.pop_back();
@@ -358,13 +358,13 @@ void Crypto::DecryptStream(string& t_stream,
   uint8_t object_key_size = object_key.size();
 
   // Now Md5 hash the object key
-  object_key = Md5(object_key);
+  object_key = Md5_(object_key);
 
    // Trim the result to match the object key's size
   object_key.resize(object_key_size);
 
   // Now we use this key to decrypt the stream using Rc4
-  Rc4(stream_as_bytes, object_key);
+  Rc4_(stream_as_bytes, object_key);
 
   // finally we convert the resultant bytes back to a string
   t_stream = string(stream_as_bytes.begin(), stream_as_bytes.end());
@@ -374,7 +374,7 @@ void Crypto::DecryptStream(string& t_stream,
 // Gets the bytes comprising the hashed owner password from the encryption
 // dictionary
 
-vector<uint8_t> Crypto::GetPassword(const string& t_key)
+vector<uint8_t> Crypto::ReadPassword_(const string& t_key)
 {
    // Get raw bytes of owner password hash
   string password(encryption_dictionary_.GetString(t_key));
@@ -408,16 +408,17 @@ vector<uint8_t> Crypto::GetPassword(const string& t_key)
 // The decryption key is needed to decrypt all streams except the xrefstream
 // Its creation is described in ISO 3200 and implented here
 
-void Crypto::GetFileKey()
+void Crypto::ReadFileKey_()
 {
   // Get the generic user password
   filekey_ = default_user_password_;
 
   // Stick the owner password on
-  Concatenate(filekey_, GetPassword("/O"));
+  Concatenate(filekey_, ReadPassword_("/O"));
 
   // Stick permissions flags on
-  Concatenate(filekey_, ReadPermissions(encryption_dictionary_.GetString("/P")));
+  auto permission_string = encryption_dictionary_.GetString("/P");
+  Concatenate(filekey_, ReadPermissions_(permission_string));
 
   // Get first 16 bytes of file ID and stick them on too
   vector<uint8_t> id_bytes = ConvertHexToBytes(trailer_.GetString("/ID"));
@@ -425,7 +426,7 @@ void Crypto::GetFileKey()
   Concatenate(filekey_, id_bytes);
 
   // now Md5 hash the result
-  filekey_ = Md5(filekey_);
+  filekey_ = Md5_(filekey_);
 
   // Set the default filekey size
   size_t filekey_length = 5;
@@ -446,14 +447,14 @@ void Crypto::GetFileKey()
 // cipher of the default user password matches the user password hash in
 // the encoding dictionary
 
-void Crypto::CheckKeyR2()
+void Crypto::CheckKeyR2_()
 {
   // Get the pdf's hashed user password and the default user password
-  vector<uint8_t> user_password_bytes = GetPassword("/U"),
+  vector<uint8_t> user_password_bytes = ReadPassword_("/U"),
                   test_answer = default_user_password_;
 
   // Rc4 the default user password using the supplied filekey
-  Rc4(test_answer, filekey_);
+  Rc4_(test_answer, filekey_);
 
   // This should be the same as the pdf's hashed user password
   if (test_answer.size() == 32 && test_answer == user_password_bytes) return;
@@ -467,13 +468,13 @@ void Crypto::CheckKeyR2()
 // I couldn't get it to work for ages until I realised that the user and owner
 // passwords sometimes contain backslash-escaped characters
 
-void Crypto::CheckKeyR3()
+void Crypto::CheckKeyR3_()
 {
   // We start by Md5 hashing the filekey 50 times
   size_t key_length = filekey_.size();
   for (int i = 0; i < 50; ++i)
   {
-    filekey_ = Md5(filekey_);
+    filekey_ = Md5_(filekey_);
     filekey_.resize(key_length);
   }
 
@@ -487,8 +488,8 @@ void Crypto::CheckKeyR3()
   user_password.resize(48);
 
   // As per ISO 32000 we now Md5 the result and Rc4 using the filekey
-  user_password = Md5(user_password);
-  Rc4(user_password, filekey_);
+  user_password = Md5_(user_password);
+  Rc4_(user_password, filekey_);
 
   // From ISO 32000: Take the result of the Rc4 and do the following 19 times:
   for (uint8_t iteration = 1; iteration < 20; ++iteration)
@@ -499,11 +500,11 @@ void Crypto::CheckKeyR3()
     for (auto byte : filekey_) temp_key.push_back(byte ^ iteration);
 
     // Create an Rc4 hash of the ongoing hash which is fed to next iteration
-    Rc4(user_password, temp_key);
+    Rc4_(user_password, temp_key);
   }
 
   // Now get the pdf's user password to test against our calculated password
-  vector<uint8_t> test_against = GetPassword("/U");
+  vector<uint8_t> test_against = ReadPassword_("/U");
 
   // Check the first 16 bytes of the two vectors to confirm the match
   for (int i = 0; i < 16; ++i)

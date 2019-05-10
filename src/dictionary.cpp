@@ -48,20 +48,15 @@ using namespace std;
  * easier to spot and debug. It's very unlikely to be to everyone's taste
  * though, so apologies if you find it hard to read.
  */
-
-/*---------------------------------------------------------------------------*/
-// A 'magic number' to specify the maximum length of string that the dictionary
-// lexer will look through to find a dictionary
-
-constexpr size_t MAX_DICT_LEN = 100000;
-
 //---------------------------------------------------------------------------//
 
 class DictionaryBuilder
 {
  public:
-  DictionaryBuilder(std::shared_ptr<const std::string>);
-  DictionaryBuilder(std::shared_ptr<const std::string>, size_t);
+  using StringPointer = std::shared_ptr<const std::string>;
+
+  DictionaryBuilder(StringPointer dictionary_string_ptr);
+  DictionaryBuilder(StringPointer dictionary_string_ptr, size_t start_position);
   DictionaryBuilder();
   std::unordered_map<std::string, std::string>&& Get();
 
@@ -70,31 +65,34 @@ class DictionaryBuilder
                          START,    KEY,        PREVALUE, DSTRING,
                          ARRAYVAL, QUERYDICT,  SUBDICT,  CLOSE,   THE_END};
 
-  // Private data members
-  std::shared_ptr<const std::string> string_ptr_;
-  char char_;           // The actual character being read
-  size_t char_num_; // the string's iterator which is passed between functions
-  int bracket_;      // integer to store the nesting level of angle brackets
-  bool key_pending_;  // flag that indicates a key name has been read
-  std::string buffer_;  // string to hold characters in memory until needed
-  std::string pending_key_; // name of key waiting for a value
+  // A 'magic number' to specify the maximum length that the dictionary
+  // lexer will look through to find a dictionary
+  static const size_t MAX_DICT_LEN = 100000;
+
+  StringPointer string_ptr_;  // A pointer to the string holding the dictionary
+  char char_;                 // The actual character being read
+  size_t char_num_;           // The parsed string's iterator
+  int bracket_;               // Stores the nesting level of angle brackets
+  bool key_pending_;          // flag that indicates a key name has been read
+  std::string buffer_;        // string to hold characters in memory until used
+  std::string pending_key_;   // name of key waiting for a value
   DictionaryState state_;     // current state of fsm
   std::unordered_map<std::string, std::string> map_; // data holder
 
   // Private functions
-  void TokenizeDictionary(); // co-ordinates the lexer
-  void SetKey(std::string, DictionaryState); //----//
-  void AssignValue(std::string, DictionaryState);  //
-  void HandleMaybe(char);                          //
-  void HandleStart(char);                          //
-  void HandleKey(char);                            //
-  void HandlePrevalue(char);                       //--> functions to
-  void HandleValue(char);                          //    handle lexer states
-  void HandleArrayValue(char);                     //
-  void HandleString(char);                         //
-  void HandleQueryDictionary(char);                //
-  void HandleSubdictionary(char);                  //
-  void HandleClose(char);                    //----//
+  void TokenizeDictionary_(); // co-ordinates the lexer
+  void SetKey_(std::string, DictionaryState); //----//
+  void AssignValue_(std::string, DictionaryState);  //
+  void HandleMaybe_(char);                          //
+  void HandleStart_(char);                          //
+  void HandleKey_(char);                            //
+  void HandlePrevalue_(char);                       //--> functions to
+  void HandleValue_(char);                          //    handle lexer states
+  void HandleArrayValue_(char);                     //
+  void HandleString_(char);                         //
+  void HandleQueryDictionary_(char);                //
+  void HandleSubdictionary_(char);                  //
+  void HandleClose_(char);                    //----//
 };
 
 /*---------------------------------------------------------------------------*/
@@ -102,7 +100,7 @@ class DictionaryBuilder
 // finds its type and then runs the subroutine that deals with the current
 // state of the machine.
 
-void DictionaryBuilder::TokenizeDictionary()
+void DictionaryBuilder::TokenizeDictionary_()
 {
   // The lexer would go through an entire string without halting if it didn't
   // come across a dictionary. To prevent this in the event of a massive file,
@@ -120,24 +118,22 @@ void DictionaryBuilder::TokenizeDictionary()
     // Now chooses the correct state handling function based on current state
     switch (state_)
     {
-      case PREENTRY:    if (input_char == '<') state_ = MAYBE;  break;
-      case MAYBE:       HandleMaybe(input_char);                break;
-      case START:       HandleStart(input_char);                break;
-      case KEY:         HandleKey(input_char);                  break;
-      case PREVALUE:    HandlePrevalue(input_char);             break;
-      case VALUE:       HandleValue(input_char);                break;
-      case ARRAYVAL:    HandleArrayValue(input_char);           break;
-      case DSTRING:     HandleString(input_char);               break;
-      case QUERYDICT:   HandleQueryDictionary(input_char);      break;
-      case SUBDICT:     HandleSubdictionary(input_char);        break;
+      case PREENTRY:    if (input_char == '<') state_ = MAYBE;   break;
+      case MAYBE:       HandleMaybe_(input_char);                break;
+      case START:       HandleStart_(input_char);                break;
+      case KEY:         HandleKey_(input_char);                  break;
+      case PREVALUE:    HandlePrevalue_(input_char);             break;
+      case VALUE:       HandleValue_(input_char);                break;
+      case ARRAYVAL:    HandleArrayValue_(input_char);           break;
+      case DSTRING:     HandleString_(input_char);               break;
+      case QUERYDICT:   HandleQueryDictionary_(input_char);      break;
+      case SUBDICT:     HandleSubdictionary_(input_char);        break;
       case QUERYCLOSE:  if (input_char == '>') state_ = CLOSE;
-                        else state_ = START;                    break;
-      case CLOSE:       HandleClose(input_char);                break;
+                        else state_ = START;                     break;
+      case CLOSE:       HandleClose_(input_char);                break;
       case THE_END:     return; // Stops the loop iff end state reached
     }
-
-    // Don't forget to increment...
-    ++char_num_;
+    ++char_num_;  // This is a while loop - don't forget to increment.
   }
 }
 
@@ -152,7 +148,7 @@ void DictionaryBuilder::TokenizeDictionary()
 // flag is flipped. Although this code is short, it is efficient and used a lot
 // so needs its own function.
 
-void DictionaryBuilder::SetKey(string t_buffer, DictionaryState t_state)
+void DictionaryBuilder::SetKey_(string t_buffer, DictionaryState t_state)
 {
   // If no key is awaiting value, store name as a key
   if(!key_pending_) pending_key_ = buffer_;
@@ -172,7 +168,7 @@ void DictionaryBuilder::SetKey(string t_buffer, DictionaryState t_state)
 // The pattern of assigning a value to a waiting key name crops up often
 // enough to warrant this function to reduce duplication and error
 
-void DictionaryBuilder::AssignValue(string t_buffer, DictionaryState t_state)
+void DictionaryBuilder::AssignValue_(string t_buffer, DictionaryState t_state)
 {
   map_[pending_key_] = buffer_; // Contents of buffer assigned to key name
   key_pending_ = false;         // No key pending - ready for a new key
@@ -188,7 +184,7 @@ void DictionaryBuilder::AssignValue(string t_buffer, DictionaryState t_state)
 // of the name value and switches to the appropriate state depending on the
 // next character
 
-void DictionaryBuilder::HandleKey(char t_input_char)
+void DictionaryBuilder::HandleKey_(char t_input_char)
 {
   switch (t_input_char)
   {
@@ -197,12 +193,12 @@ void DictionaryBuilder::HandleKey(char t_input_char)
     case '+': buffer_ += char_;                 break;
     case '-': buffer_ += char_;                 break;
     case '_': buffer_ += char_;                 break;
-    case '/': SetKey("/",       KEY);          break; // A new name has begun
-    case ' ': SetKey("",   PREVALUE);          break; // await next new value
-    case '(': SetKey("(",   DSTRING);          break; // must be a string
-    case '[': SetKey("[",  ARRAYVAL);          break; // must be an array
-    case '<': SetKey("",  QUERYDICT);          break; // probably a dictionary
-    case '>': SetKey("", QUERYCLOSE);          break; // likely end of dict.
+    case '/': SetKey_("/",       KEY);          break; // A new name has begun
+    case ' ': SetKey_("",   PREVALUE);          break; // await next new value
+    case '(': SetKey_("(",   DSTRING);          break; // must be a string
+    case '[': SetKey_("[",  ARRAYVAL);          break; // must be an array
+    case '<': SetKey_("",  QUERYDICT);          break; // probably a dictionary
+    case '>': SetKey_("", QUERYCLOSE);          break; // likely end of dict.
   }
 }
 
@@ -211,7 +207,7 @@ void DictionaryBuilder::HandleKey(char t_input_char)
 // just come across a '<' and knows it has encountered a dictionary if the
 // next char is also a '<'. Otherwise it returns to a waiting state.
 
-void DictionaryBuilder::HandleMaybe(char t_input_char)
+void DictionaryBuilder::HandleMaybe_(char t_input_char)
 {
   if (t_input_char == '<')
   {
@@ -229,7 +225,7 @@ void DictionaryBuilder::HandleMaybe(char t_input_char)
 // indicated by a '/'. If not, it will wait until it finds one or finds the
 // end of the dictionary
 
-void DictionaryBuilder::HandleStart(char t_input_char)
+void DictionaryBuilder::HandleStart_(char t_input_char)
 {
   switch (t_input_char)
   {
@@ -242,7 +238,7 @@ void DictionaryBuilder::HandleStart(char t_input_char)
 /*---------------------------------------------------------------------------*/
 // The lexer has just read a key name and now expects a value
 
-void DictionaryBuilder::HandlePrevalue(char t_input_char)
+void DictionaryBuilder::HandlePrevalue_(char t_input_char)
 {
   switch (t_input_char)
   {
@@ -259,15 +255,15 @@ void DictionaryBuilder::HandlePrevalue(char t_input_char)
 // The lexer is now reading a value. It will do so until a special character
 // is reached representing a new data type
 
-void DictionaryBuilder::HandleValue(char t_input_char)
+void DictionaryBuilder::HandleValue_(char t_input_char)
 {
   switch (t_input_char)
   {
-    case '/': AssignValue("/", KEY);       break; // end of value; new key
-    case '<': AssignValue("", QUERYDICT);  break; // may be new subdict
-    case '>': AssignValue("", QUERYCLOSE); break; // probable end of dict
-    case ' ': buffer_ += ' ';              break; // whitespace in value
-    default : buffer_ += char_;            break; // keep writing value
+    case '/': AssignValue_("/", KEY);       break; // end of value; new key
+    case '<': AssignValue_("", QUERYDICT);  break; // may be new subdict
+    case '>': AssignValue_("", QUERYCLOSE); break; // probable end of dict
+    case ' ': buffer_ += ' ';               break; // whitespace in value
+    default : buffer_ += char_;             break; // keep writing value
   }
 }
 
@@ -275,38 +271,38 @@ void DictionaryBuilder::HandleValue(char t_input_char)
 // The lexer is in an array. It will blindly copy the array until it gets
 // to the matching closing bracket
 
-void DictionaryBuilder::HandleArrayValue(char t_input_char)
+void DictionaryBuilder::HandleArrayValue_(char t_input_char)
 {
   buffer_ += char_;
-  if (t_input_char == ']') AssignValue("", START);
+  if (t_input_char == ']') AssignValue_("", START);
 }
 
 /*---------------------------------------------------------------------------*/
 // The lexer is now in a string; it blindly copies until finding a closing
 // bracket.
 
-void DictionaryBuilder::HandleString(char t_input_char)
+void DictionaryBuilder::HandleString_(char t_input_char)
 {
   buffer_ += char_;
-  if (t_input_char == ')') AssignValue("", START);
+  if (t_input_char == ')') AssignValue_("", START);
 }
 
 /*---------------------------------------------------------------------------*/
 // The lexer has come across an angle bracket and needs to decide whether it
 // is now in a subdictionary
 
-void DictionaryBuilder::HandleQueryDictionary(char t_input_char)
+void DictionaryBuilder::HandleQueryDictionary_(char t_input_char)
 {
-  if (t_input_char == '<') // now entering a subdictionary
+  if (t_input_char == '<')  // Now entering a subdictionary
   {
-    buffer_ = "<<"; // keep the angle brackets so a subdict is recognised later
+    buffer_ = "<<";         // Keep the angle brackets for subdictionary
     state_ = SUBDICT;
-    bracket_ = 2;     // Record the nesting level to prevent early halting at >>
-  }
+    bracket_ = 2;           // Record nesting level so exiting subdictionary
+  }                         // doesn't cause early halting of parser
   else
   {
     buffer_ = "";
-    state_ = START; // the single angle bracket wasn't recognised; start again
+    state_ = START;         // Not a dictionary; start again
   }
 }
 
@@ -316,7 +312,7 @@ void DictionaryBuilder::HandleQueryDictionary(char t_input_char)
 // It does not otherwise process the subdictionary - the whole string can
 // be used as the basis for a further dictionary object if required
 
-void DictionaryBuilder::HandleSubdictionary(char t_input_char)
+void DictionaryBuilder::HandleSubdictionary_(char t_input_char)
 {
   switch (t_input_char)
   {
@@ -326,7 +322,7 @@ void DictionaryBuilder::HandleSubdictionary(char t_input_char)
   }
 
   // If bracket count falls to 0 we are out of the subdictionary
-  if (bracket_ == 0) AssignValue("", START);
+  if (bracket_ == 0) AssignValue_("", START);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -334,7 +330,7 @@ void DictionaryBuilder::HandleSubdictionary(char t_input_char)
 // present and if so records its position in the string used to create the
 // dictionary object
 
-void DictionaryBuilder::HandleClose(char t_input_char)
+void DictionaryBuilder::HandleClose_(char t_input_char)
 {
   switch (t_input_char)
   {
@@ -344,14 +340,17 @@ void DictionaryBuilder::HandleClose(char t_input_char)
     // Is this a letter and is there enough space to contain the word "stream"?
     case 'L': if (char_num_ < string_ptr_->length() - 7)
               {
-                 // OK, so is it "stream"?
+                // OK, so is it "stream"?
                 if(string_ptr_->substr(char_num_, 6) == "stream")
                 {
-                  int ex = 7;
-                  while (GetSymbolType((*string_ptr_)[char_num_ + ex]) == ' ')
-                    ex++; // read the whitespace characters after word "stream"
+                  char_num_ += 6;
+
+                  // Read the whitespace characters after word "stream" using
+                  // an infix increment and empty while loop.
+                  while (GetSymbolType((*string_ptr_)[++char_num_]) == ' ') {;}
+
                   // Now store the location of the start of the stream
-                  map_["stream"] = to_string(char_num_ + ex);
+                  map_["stream"] = to_string(char_num_);
                 }
               }
               state_ = THE_END; // stream or not, we are done
@@ -363,18 +362,18 @@ void DictionaryBuilder::HandleClose(char t_input_char)
 // Constructor. Takes a string pointer so big strings can be passed
 // cheaply. This version starts at the beginning of the given string
 
-DictionaryBuilder::DictionaryBuilder(shared_ptr<const string> t_string_ptr) :
-  string_ptr_(t_string_ptr),
-  char_num_(0),
-  bracket_(0),
-  key_pending_(false),
-  state_(PREENTRY)
+DictionaryBuilder::DictionaryBuilder(shared_ptr<const string> t_string_ptr)
+  : string_ptr_(t_string_ptr),
+    char_num_(0),
+    bracket_(0),
+    key_pending_(false),
+    state_(PREENTRY)
 {
   // Empty string -> empty dictionary
   if (string_ptr_->empty()) *this = DictionaryBuilder();
 
   // Otherwise use the lexer to build the dictionary
-  TokenizeDictionary();
+  TokenizeDictionary_();
 }
 
 /*---------------------------------------------------------------------------*/
@@ -383,22 +382,22 @@ DictionaryBuilder::DictionaryBuilder(shared_ptr<const string> t_string_ptr) :
 // given in the cross-reference (xref) table
 
 DictionaryBuilder::DictionaryBuilder(shared_ptr<const string> t_string_ptr,
-                                     size_t t_offset) :
-  string_ptr_(t_string_ptr),
-  char_num_(t_offset),
-  bracket_(0),
-  key_pending_(false),
-  state_(PREENTRY)
+                                     size_t t_offset)
+  : string_ptr_(t_string_ptr),
+    char_num_(t_offset),
+    bracket_(0),
+    key_pending_(false),
+    state_(PREENTRY)
 {
-  // check string isn't empty or smaller than the starting position
-  // if it is, return an empty dictionary
+  // Checks string isn't empty or smaller than the starting position
+  // if it is, returns an empty dictionary
   if (string_ptr_->empty() || (char_num_ >= string_ptr_->length()))
   {
     *this = DictionaryBuilder();
   }
   else
   {
-    TokenizeDictionary();
+    TokenizeDictionary_();
   }
 }
 
@@ -436,15 +435,6 @@ Dictionary::Dictionary(shared_ptr<const string> t_string_ptr)
 Dictionary::Dictionary(shared_ptr<const string> t_string_ptr, size_t t_offset)
 {
   map_ = move(DictionaryBuilder(t_string_ptr, t_offset).Get());
-}
-
-/*---------------------------------------------------------------------------*/
-// Empty dictionary constructor
-
-Dictionary::Dictionary()
-{
-  unordered_map<string, string> Empty;
-  map_ = Empty;
 }
 
 /*---------------------------------------------------------------------------*/

@@ -2,27 +2,13 @@
 ##                                                                           ##
 ##  PDFR main R file                                                         ##
 ##                                                                           ##
-##  Copyright (C) 2018 by Allan Cameron                                      ##
+##  Copyright (C) 2018 - 2019 by Allan Cameron                               ##
 ##                                                                           ##
-##  Permission is hereby granted, free of charge, to any person obtaining    ##
-##  a copy of this software and associated documentation files               ##
-##  (the "Software"), to deal in the Software without restriction, including ##
-##  without limitation the rights to use, copy, modify, merge, publish,      ##
-##  distribute, sublicense, and/or sell copies of the Software, and to       ##
-##  permit persons to whom the Software is furnished to do so, subject to    ##
-##  the following conditions:                                                ##
+##  Licensed under the MIT license - see https://mit-license.org             ##
+##  or the LICENSE file in the project root directory                        ##
 ##                                                                           ##
-##  The above copyright notice and this permission notice shall be included  ##
-##  in all copies or substantial portions of the Software.                   ##
-##                                                                           ##
-##  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS  ##
-##  OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF               ##
-##  MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.   ##
-##  IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY     ##
-##  CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,     ##
-##  TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE        ##
-##  SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                   ##
-##                                                                           ##
+##---------------------------------------------------------------------------##
+
 ##---------------------------------------------------------------------------##
 #' Paths to test pdfs
 #'
@@ -101,6 +87,7 @@ internetFile <- function(x, filename = NULL)
 #' @param pdf a valid pdf file location
 #' @param page the page number to be extracted
 #' @param atomic a boolean - should each letter treated individually?
+#' @param table_only a boolean - return data frame alone, as opposed to list
 #'
 #' @return a list containing data frames
 #' @export
