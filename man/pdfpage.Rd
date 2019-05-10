@@ -4,7 +4,7 @@
 \alias{pdfpage}
 \title{pdfpage}
 \usage{
-pdfpage(pdf, page, atomic = FALSE)
+pdfpage(pdf, page, atomic = FALSE, table_only = TRUE)
 }
 \arguments{
 \item{pdf}{a valid pdf file location}

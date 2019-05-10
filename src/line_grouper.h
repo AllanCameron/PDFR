@@ -1,27 +1,11 @@
 //---------------------------------------------------------------------------//
 //                                                                           //
-//  PDFR line_grouper header file                                            //
+//  PDFR LineGrouper header file                                             //
 //                                                                           //
-//  Copyright (C) 2018 by Allan Cameron                                      //
+//  Copyright (C) 2018 - 2019 by Allan Cameron                               //
 //                                                                           //
-//  Permission is hereby granted, free of charge, to any person obtaining    //
-//  a copy of this software and associated documentation files               //
-//  (the "Software"), to deal in the Software without restriction, including //
-//  without limitation the rights to use, copy, modify, merge, publish,      //
-//  distribute, sublicense, and/or sell copies of the Software, and to       //
-//  permit persons to whom the Software is furnished to do so, subject to    //
-//  the following conditions:                                                //
-//                                                                           //
-//  The above copyright notice and this permission notice shall be included  //
-//  in all copies or substantial portions of the Software.                   //
-//                                                                           //
-//  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS  //
-//  OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF               //
-//  MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.   //
-//  IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY     //
-//  CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,     //
-//  TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE        //
-//  SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                   //
+//  Licensed under the MIT license - see https://mit-license.org             //
+//  or the LICENSE file in the project root directory                        //
 //                                                                           //
 //---------------------------------------------------------------------------//
 
@@ -34,7 +18,7 @@
 #include "whitespace.h"
 
 //---------------------------------------------------------------------------//
-/*  The line_grouper class takes the output of the whitespace class, which is
+/*  The LineGrouper class takes the output of the whitespace class, which is
  * a vector of pairs : each pair contains a box representing an area on the
  * page, and a vector of the text elements contained within that box. What we
  * want is to change this so that we have a 1:1 correspondence between boxes
@@ -57,24 +41,24 @@
  * joined to the one below but already ends in a space or ends in a hyphen,
  * it should be joined without a space.
  *
- * The line_grouper class modifies the std::vector<TextBox> class, so we only
+ * The LineGrouper class modifies the std::vector<TextBox> class, so we only
  * need to pass a pointer to this
  *
  */
 
-class line_grouper
+class LineGrouper
 {
 public:
-  line_grouper(std::vector<TextBox> t);
-  std::vector<TextBox>& output();
+  LineGrouper(std::vector<TextBox> text_box_from_word_grouper);
+  std::vector<TextBox>& Output();
 
 private:
-  void find_breaks(TextBox&);
-  void line_endings(TextBox&);
-  void paste_lines(TextBox&);
-  void splitbox(TextBox&, float);
+  void FindBreaks(TextBox&);
+  void LineEndings(TextBox&);
+  void PasteLines(TextBox&);
+  void SplitBox(TextBox& box_to_be_split, float divide_at_this_y_value);
 
-  struct reading_order
+  struct ReadingOrder
   {
     bool operator() (const TextPointer& row1, const TextPointer& row2) const
     {
@@ -86,7 +70,7 @@ private:
   };
 
   // private data members
-  std::vector<TextBox> m_textboxes;
+  std::vector<TextBox> text_boxes_;
 };
 
 

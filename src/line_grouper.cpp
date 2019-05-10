@@ -1,27 +1,11 @@
 //---------------------------------------------------------------------------//
 //                                                                           //
-//  PDFR line_grouper implementation file                                    //
+//  PDFR LineGrouper implementation file                                     //
 //                                                                           //
-//  Copyright (C) 2018 by Allan Cameron                                      //
+//  Copyright (C) 2018 - 2019 by Allan Cameron                               //
 //                                                                           //
-//  Permission is hereby granted, free of charge, to any person obtaining    //
-//  a copy of this software and associated documentation files               //
-//  (the "Software"), to deal in the Software without restriction, including //
-//  without limitation the rights to use, copy, modify, merge, publish,      //
-//  distribute, sublicense, and/or sell copies of the Software, and to       //
-//  permit persons to whom the Software is furnished to do so, subject to    //
-//  the following conditions:                                                //
-//                                                                           //
-//  The above copyright notice and this permission notice shall be included  //
-//  in all copies or substantial portions of the Software.                   //
-//                                                                           //
-//  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS  //
-//  OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF               //
-//  MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.   //
-//  IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY     //
-//  CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,     //
-//  TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE        //
-//  SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                   //
+//  Licensed under the MIT license - see https://mit-license.org             //
+//  or the LICENSE file in the project root directory                        //
 //                                                                           //
 //---------------------------------------------------------------------------//
 
@@ -34,34 +18,35 @@ using namespace std;
 //---------------------------------------------------------------------------//
 //
 
-line_grouper::line_grouper(vector<TextBox> t): m_textboxes(t)
+LineGrouper::LineGrouper(vector<TextBox> t_text_boxes)
+  : text_boxes_(t_text_boxes)
 {
   size_t i = 0;
-  if(m_textboxes.empty()) throw runtime_error("No textboxes on page");
+  if(text_boxes_.empty()) throw runtime_error("No textboxes on page");
 
-  while (i < m_textboxes.size())
+  while (i < text_boxes_.size())
   {
-    if (m_textboxes[i].size() < 2){++i; continue;}
-    sort(m_textboxes[i].begin(), m_textboxes[i].end(), reading_order());
-    find_breaks(m_textboxes[i]);
-    if (m_textboxes[i].size() < 2){++i; continue;}
-    line_endings(m_textboxes[i]);
-    paste_lines(m_textboxes[i++]);
+    if (text_boxes_[i].size() < 2){++i; continue;}
+    sort(text_boxes_[i].begin(), text_boxes_[i].end(), ReadingOrder());
+    FindBreaks(text_boxes_[i]);
+    if (text_boxes_[i].size() < 2){++i; continue;}
+    LineEndings(text_boxes_[i]);
+    PasteLines(text_boxes_[i++]);
   }
 };
 
 //---------------------------------------------------------------------------//
 //
 
-void line_grouper::find_breaks(TextBox& text_box)
+void LineGrouper::FindBreaks(TextBox& t_text_box)
 {
-  for(size_t i = 1; i < text_box.size(); ++i)
+  for(size_t i = 1; i < t_text_box.size(); ++i)
   {
-    if(text_box[i]->GetLeft() - text_box[i - 1]->GetLeft() > 0.1
+    if(t_text_box[i]->GetLeft() - t_text_box[i - 1]->GetLeft() > 0.1
          &&
-       text_box[i]->GetBottom() < text_box[i - 1]->GetBottom())
+       t_text_box[i]->GetBottom() < t_text_box[i - 1]->GetBottom())
     {
-      splitbox(text_box, text_box[i - 1]->GetBottom());
+      SplitBox(t_text_box, t_text_box[i - 1]->GetBottom());
       break;
     }
 
@@ -71,15 +56,15 @@ void line_grouper::find_breaks(TextBox& text_box)
 //---------------------------------------------------------------------------//
 //
 
-void line_grouper::line_endings(TextBox& text_box)
+void LineGrouper::LineEndings(TextBox& t_text_box)
 {
-  for(size_t i = 0; i < text_box.size() - 1; ++i)
+  for(size_t i = 0; i < t_text_box.size() - 1; ++i)
   {
-    auto& element = text_box[i];
+    auto& element = t_text_box[i];
     switch(element->GetGlyph().back())
     {
-      case 0x0020:                             break;
-      case 0x00A0:                             break;
+      case 0x0020:                          break;
+      case 0x00A0:                          break;
       case 0x002d: element->PopLastGlyph(); break;
       case 0x2010: element->PopLastGlyph(); break;
       case 0x2011: element->PopLastGlyph(); break;
@@ -95,45 +80,45 @@ void line_grouper::line_endings(TextBox& text_box)
 //---------------------------------------------------------------------------//
 //
 
-void line_grouper::paste_lines(TextBox& text_box)
+void LineGrouper::PasteLines(TextBox& t_text_box)
 {
-  for(size_t i = 1; i < text_box.size(); ++i)
+  for(size_t i = 1; i < t_text_box.size(); ++i)
   {
-    text_box[0]->ConcatenateUnicode(text_box[i]->GetGlyph());
+    t_text_box[0]->ConcatenateUnicode(t_text_box[i]->GetGlyph());
   }
-  text_box.resize(1);
+  t_text_box.resize(1);
 }
 
 //---------------------------------------------------------------------------//
 //
 
-void line_grouper::splitbox(TextBox& old_one, float top_edge)
+void LineGrouper::SplitBox(TextBox& t_old_one, float t_top_edge)
 {
-  if(old_one.empty()) return;
-  TextBox new_one = old_one;
+  if(t_old_one.empty()) return;
+  TextBox new_one = t_old_one;
   new_one.clear();
   size_t breakpoint = 0;
 
-  for(size_t i = 0; i < old_one.size(); ++i)
+  for(size_t i = 0; i < t_old_one.size(); ++i)
   {
-    if(old_one[i]->GetBottom() < top_edge)
+    if(t_old_one[i]->GetBottom() < t_top_edge)
     {
       if(breakpoint != 0) breakpoint = i;
-      new_one.push_back(old_one[i]);
+      new_one.push_back(t_old_one[i]);
     }
   }
-  if(breakpoint > 0) old_one.resize(breakpoint - 1);
+  if(breakpoint > 0) t_old_one.resize(breakpoint - 1);
 
-  old_one.SetBottom(old_one.back()->GetBottom());
-  new_one.SetTop(old_one.front()->GetTop());
-  m_textboxes.push_back(new_one);
+  t_old_one.SetBottom(t_old_one.back()->GetBottom());
+  new_one.SetTop(t_old_one.front()->GetTop());
+  text_boxes_.push_back(new_one);
 }
 
 
 //---------------------------------------------------------------------------//
 
-vector<TextBox>& line_grouper::output()
+vector<TextBox>& LineGrouper::Output()
 {
-  return m_textboxes;
+  return text_boxes_;
 }
 
