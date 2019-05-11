@@ -245,18 +245,15 @@ void Parser::Ap_()
 
 void Parser::TJ_()
 {
-  // We create a text space that is the product of Tm and cm matrices
+  // Creates text space that is the product of Tm, td and cm matrices
+  // and sets the starting x value and scale of our string
   Matrix text_space = graphics_state_.back() * tm_state_ * td_state_;
-
-  // now we can set the starting x value and scale of our string
-  float initial_x = text_space[6], scale = current_font_size_ * text_space[0];
+  float initial_x   = text_space[6],
+        scale       = current_font_size_ * text_space[0];
 
   // We now iterate through our operands and their associated types
   for (size_t index = 0; index < operand_types_.size(); index++)
   {
-    // If string is empty, ignore it and get the next operand.
-    if (operands_[index] == "") continue;
-
     // Adjust the text space according to kerning and scale
     text_space[6] = kerning_ * scale / 1000 + initial_x;
 
@@ -270,7 +267,7 @@ void Parser::TJ_()
     }
 
     // Now we can process the string given the current user space and font
-    ProcessRawChar_(scale, text_space, initial_x);
+    if(!operands_[index].empty()) ProcessRawChar_(scale, text_space, initial_x);
   }
 }
 
@@ -290,22 +287,17 @@ void Parser::ProcessRawChar_(float& t_scale, Matrix& t_text_space,
   {
     float glyph_width, left, right, bottom, width;
 
-    // If the first character is not a space, record its position as is
+    // If the first character is not a space, record its position as is and
+    // adjust for character spacing
     if(glyph_pair.first != 0x0020)
     {
       left = t_text_space[6];
       bottom = t_text_space[7];
+      glyph_width = glyph_pair.second + tc_ * 1000 / current_font_size_;
     }
-
-    // if this is a space, just adjust word & char spacing
-    if (glyph_pair.first == 0x0020)
+    else // if this is a space, just adjust word & char spacing
     {
       glyph_width = glyph_pair.second + 1000 * (tc_ + tw_) / current_font_size_;
-    }
-    // Else just char spacing
-    else
-    {
-      glyph_width = glyph_pair.second + tc_ * 1000 / current_font_size_;
     }
 
     // Adjust the pushright in text space by character width
@@ -319,7 +311,7 @@ void Parser::ProcessRawChar_(float& t_scale, Matrix& t_text_space,
       // record width of char taking Th (horizontal scaling) into account
       width = t_scale * (glyph_width / 1000) * (th_ / 100);
       right = left + width;
-      text_box_.push_back(make_shared<TextElement>
+      text_box_.emplace_back(make_shared<TextElement>
                             (left, right, bottom + t_scale,
                              bottom, working_font_,
                              vector<Unicode>{glyph_pair.first}));
@@ -342,10 +334,9 @@ void Parser::Reader(string& t_token, TokenState t_state)
   if (t_state == IDENTIFIER)
   {
     // Pass any stored operands on the stack
-    if (function_map_.find(t_token) != function_map_.end())
-    {
-      (this->*function_map_[t_token])();
-    }
+    auto finder = function_map_.find(t_token);
+    if (finder != function_map_.end()) (this->*function_map_[t_token])();
+
     // Clear the stack since an operator has been called
     operand_types_.clear();
     operands_.clear();

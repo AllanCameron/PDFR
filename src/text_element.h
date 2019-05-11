@@ -150,20 +150,24 @@ typedef std::shared_ptr<TextElement> TextPointer;
 
 class TextBox : public Box
 {
-public:
+ public:
   // Standard constructor - takes vector of TextElement pointers and the minbox
-  TextBox(std::vector<TextPointer> t_text, Box t_box):
-  Box(t_box), data_(t_text) {}
+  TextBox(std::vector<TextPointer> t_text, Box t_box)
+   : Box(t_box), data_(t_text) {}
 
-  TextBox(std::vector<TextPointer> t_text, std::vector<float> t_vector):
-  Box(t_vector), data_(t_text) {}
+  // Constructor from text and vector of floats representing a box
+  TextBox(std::vector<TextPointer> t_text, std::vector<float> t_vector)
+   : Box(t_vector), data_(t_text) {}
 
+  // Constructor from individual elements
   TextBox(std::vector<TextPointer> t_text, float t_left, float t_right,
-          float t_top, float t_bottom):
-  Box(t_left, t_right, t_top, t_bottom), data_(t_text) {}
+          float t_top,  float t_bottom)
+   : Box(t_left, t_right, t_top, t_bottom), data_(t_text) {}
 
+  // Assignment constructor
   TextBox(Box t_box):  Box(t_box) {}
 
+  // Default constructor
   TextBox() = default;
 
   // Copy contructor
@@ -188,13 +192,19 @@ public:
   inline void push_back(TextPointer t_text_ptr) { data_.push_back(t_text_ptr);}
   inline void clear() { data_.clear(); }
   inline void resize(int t_new_size) { data_.resize(t_new_size); }
-  void RemoveDuplicates();
   inline void SwapData(std::vector<TextPointer>& t_other)
   {
     std::swap(data_, t_other);
   }
 
-private:
+  inline void emplace_back(TextPointer t_text_ptr)
+  {
+    data_.emplace_back(t_text_ptr);
+  }
+
+  void RemoveDuplicates();
+
+ private:
   // The data member
   std::vector<TextPointer> data_;
 };
