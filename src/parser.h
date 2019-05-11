@@ -67,31 +67,49 @@ namespace Token
 };
 
 //---------------------------------------------------------------------------//
+// To define the position of text elements on a page, the pdf page description
+// program uses 3 * 3 matrices. These allow for arbitrary scaling, rotation,
+// translation and skewing of text. Since the last column of a transformation
+// matrix is always {0, 0,  1}, the matrices in pdf are defined by just six
+// numbers in the page description program.
+//
+// For example, the entry "11 12 13 14 15 16 Tm" represents the following
+// 3x3 transformation matrix:
+//
+//                      |   11    12    0  |
+//                      |                  |
+//                      |   13    14    0  |
+//                      |                  |
+//                      |   15    16    1  |
+//
+// The matrices all use floating point numbers and are all 3 x 3. Although we
+// could just model them with a length 9 array of floats, it makes things a bit
+// easier to just define a 3 x 3 float matrix here. That way, we can easily
+// add or multiply two matrices using '+' and '-' instead of calling named
+// functions. This is despite the fact that the underlying data member is
+// a std::array<float, 9> anyway.
 
 class Matrix
 {
-public:
+ public:
   // The default constructor returns a 3 x 3 identity matrix
   Matrix(): data_(std::array<float, 9> {1.0, 0, 0, 0, 1.0, 0, 0, 0, 1.0}) {}
 
+  // We can create a Matrix directly from a length-9 array of floats
   Matrix(std::array<float, 9> t_array): data_(t_array){}
 
-  // The other way of creating a 3 x 3 matrix is from a 6-element string vector,
-  // as this is how Matrices are described in pdf.
-  // For example, the entry "11 12 13 14 15 16 Tm" represents the following
-  // 3x3 matrix:
-  //
-  //                      |   11    12    0  |
-  //                      |                  |
-  //                      |   13    14    0  |
-  //                      |                  |
-  //                      |   15    16    1  |
-  //
-  Matrix(const std::vector<std::string>& t_string)
+  // This constructor takes a vector of 6 strings representing floats and
+  // turns them into a 3 x 3 matrix as specified by the pdf page descriptor
+  Matrix(const std::vector<std::string>& t_string_vector)
   {
-    data_ = {stof(t_string[0]), stof(t_string[1]), 0,
-             stof(t_string[2]), stof(t_string[3]), 0,
-             stof(t_string[4]), stof(t_string[5]), 1};
+    if (t_string_vector.size() < 6)
+    {
+      throw std::runtime_error("Can't create Matrix with fewer than 6 floats");
+    }
+
+    data_ = {stof(t_string_vector[0]), stof(t_string_vector[1]), 0,
+             stof(t_string_vector[2]), stof(t_string_vector[3]), 0,
+             stof(t_string_vector[4]), stof(t_string_vector[5]), 1};
   }
 
   // Assignment constructor
@@ -101,11 +119,12 @@ public:
     return *this;
   }
 
+  // Operator overload of '*': returns dot product of two matrices
   Matrix operator*(const Matrix& t_other)
   {
     std::array<float, 9> new_data {};
 
-    // Clever use of indices to allow fill by loop
+    // Use indices to fill by loop
     for(size_t i = 0; i < 9; ++i)
     {
       new_data[i] = (data_[i % 3 + 0] * t_other.data_[3 * (i / 3) + 0] +
@@ -116,122 +135,152 @@ public:
     return Matrix(new_data);
   }
 
+  // Transforms this matrix into the dot product of *this and t_other
   void operator*=(const Matrix& t_other)
   {
     std::array<float, 9> new_data {};
 
-    // Clever use of indices to allow fill by loop
+    // Use indices to fill by loop
     for(size_t i = 0; i < 9; ++i)
     {
       new_data[i] = (data_[i % 3 + 0] * t_other.data_[3 * (i / 3) + 0] +
                      data_[i % 3 + 3] * t_other.data_[3 * (i / 3) + 1] +
                      data_[i % 3 + 6] * t_other.data_[3 * (i / 3) + 2] );
     }
-
+    // Swap rather than copy the array used as the data member
     std::swap(this->data_, new_data);
   }
 
+  // Overloaded + operator returns the element-by-element addition of Matrices
+  Matrix operator+(const Matrix& t_other)
+  {
+    std::array<float, 9> new_data {};
+    for (size_t element = 0; element < 9; ++element)
+    {
+      new_data[element] = this->data_[element] + t_other.data_[element];
+    }
+    return Matrix(new_data);
+  }
+
+  // Transforms *this into *this + t_other using element-by-element addition
+  void operator+=(const Matrix& t_other)
+  {
+    for (size_t element = 0; element < 9; ++element)
+    {
+      this->data_[element] += t_other.data_[element];
+    }
+  }
+
+  // Gets a reference to an element of the data member
   float& operator[](size_t index)
   {
     return data_[index];
   }
 
  private:
-  std::array<float, 9> data_;
+  std::array<float, 9> data_;   // The actual data member
 };
 
 //---------------------------------------------------------------------------//
 
 class Parser
 {
-public:
+ public:
   // Basic constructor
   Parser(std::shared_ptr<Page>);
 
   // Copy constructor
-  Parser(const Parser& prs): text_box_(prs.text_box_){}
+  Parser(const Parser& t_other): text_box_(t_other.text_box_){}
 
   // Move constructor
-  Parser(Parser&& prs) noexcept : text_box_(std::move(prs.text_box_)){}
+  Parser(Parser&& t_other) noexcept : text_box_(std::move(t_other.text_box_)){}
 
   // Assignment constructor
-  Parser& operator=(const Parser& pr)
+  Parser& operator=(const Parser& t_other)
   {
-    text_box_ = std::move(pr.text_box_);
+    text_box_ = std::move(t_other.text_box_);
     return *this;
   }
 
   // Public function called by tokenizer to update graphics state
-  void Reader(std::string&, Token::TokenState);
+  void Reader(std::string& token, Token::TokenState token_type);
 
   // Access results
-  TextBox& Output();
+  inline TextBox& Output() { return this->text_box_; }
 
-  // To recursively pass xobjects, we need to be able to see the operand
-  std::string GetOperand();
+  // To allow recursive parsing of form xobjects, the tokenizer needs to access
+  // the name of the xobject. At the point when the "Do" identifier is read by
+  // the tokenizer, the name of the xobject is sitting on the top of the
+  // operands stack. This public method passes that name out of the Parser.
+  inline std::string GetOperand()
+  {
+    if(this->operands_.empty()) return std::string {};
+    else return this->operands_[0];
+  }
 
   // This allows us to process an xObject
-  std::shared_ptr<std::string> GetXObject(const std::string& inloop) const {
-    return page_->GetXObject(inloop);
+  std::shared_ptr<std::string> GetXObject(const std::string& t_inloop) const
+  {
+    return page_->GetXObject(t_inloop);
   };
 
-private:
-  //private data members - used to maintain state between calls to Parser
-  std::shared_ptr<Page>             page_;              // pointer to this page
-  std::shared_ptr<Font>             working_font_;  // pointer to working font
-  float                             current_font_size_;   // Current font size
-  std::vector<float>                font_size_stack_;  // stack of font size
-  Matrix                            tm_state_,        // Text matrix state
-                                    td_state_;      // Temp modification to Tm
-  std::vector<Matrix>               graphics_state_;// stack of graphics state
-  std::string                       current_font_;    // Name of current font
-  std::vector<std::string>          font_stack_,      // stack of font history
-                                    operands_;       // The actual data read
-  std::vector<Token::TokenState>    operand_types_;   // The type of data read
-  int                               kerning_;        // current kerning state
-  float                             tl_,             // Leading (line spacing)
-                                    tw_,             // Word spacing
-                                    th_,             // Horizontal scaling
-                                    tc_;             // Character spacing
-  TextBox                           text_box_;             // The main output struct
+ private:
+  // Private data members
+  std::shared_ptr<Page>           page_;              // Pointer to this page
+  TextBox                         text_box_;          // Main output structure
+
+  // Variables used to maintain state between calls
+  std::shared_ptr<Font>           working_font_;      // Pointer to working font
+  float                           current_font_size_; // Current font size
+  std::vector<float>              font_size_stack_;   // Stack of font size
+  Matrix                          tm_state_,          // Text matrix state
+                                  td_state_;          // Temp modification to Tm
+  std::vector<Matrix>             graphics_state_;    // Stack of graphics state
+  std::string                     current_font_;      // Name of current font
+  std::vector<std::string>        font_stack_,        // Stack of font history
+                                  operands_;          // The actual data read
+  std::vector<Token::TokenState>  operand_types_;     // The type of data read
+  int                             kerning_;           // Current kerning state
+  float                           tl_,                // Leading (line spacing)
+                                  tw_,                // Word spacing
+                                  th_,                // Horizontal scaling
+                                  tc_;                // Character spacing
+  std::vector<RawChar>            raw_;               // RawChars for writing
 
   // This typedef allows us to create a map of function pointers
-  typedef void (Parser::*fptr)();
+  typedef void (Parser::*FunctionPointer)();
 
-  // Static private members
-  static std::unordered_map<std::string, fptr> function_map_;
-  static const std::array<float, 9> identity_;
-
-  // Private methods
+  // A map that can look up which function to call based on the instruction sent
+  static std::unordered_map<std::string, FunctionPointer> function_map_;
 
   // The reader method takes the compiled instructions and writes operands
   // to a "stack", or calls an operator method depending on the label given
   // to each token in the instruction set. It loops through the entire
   // instruction set, after which the data just needs tidied and wrapped.
 
-  void Do();              //----------------------------------//
-  void Q();               //  OPERATOR METHODS
-  void q();               //
-  void TH();              //  These functions do the
-  void TW();              //  work of performing actions
-  void TC();              //  on the graphics state and
-  void TL();              //  writing the results. They
-  void T_();              //  are called by the reader()
-  void Tm();              //  method according to the
-  void cm();              //  operator it encounters, and
-  void Td();              //  act on any operands sitting
-  void TD();              //  on the stack. Each is named
-  void BT();              //  for the operator it enacts.
-  void ET();              //  These functions use private
-  void Tf();              //  data members to maintain state
-  void TJ();              //
-  void Ap();              //---------------------------------//
+  void Do_();              //----------------------------------//
+  void Q_();               //  OPERATOR METHODS
+  void q_();               //
+  void TH_();              //  These functions do the
+  void TW_();              //  work of performing actions
+  void TC_();              //  on the graphics state and
+  void TL_();              //  writing the results. They
+  void T__();              //  are called by the reader()
+  void Tm_();              //  method according to the
+  void cm_();              //  operator it encounters, and
+  void Td_();              //  act on any operands sitting
+  void TD_();              //  on the stack. Each is named
+  void BT_();              //  for the operator it enacts.
+  void ET_();              //  These functions use private
+  void Tf_();              //  data members to maintain state
+  void TJ_();              //
+  void Ap_();              //---------------------------------//
 
   // This is a helper function for the TJ method which otherwise would become
   // a bit of a "hairball". It uses the font information and current graphics
   // state to identify the intended glyph, size and position from a character
   // in a pdf string object
-  void ProcessRawChar(std::vector<RawChar>&, float&, Matrix&, float&);
+  void ProcessRawChar_(float&, Matrix&, float&);
 };
 
 

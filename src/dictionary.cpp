@@ -35,7 +35,7 @@ using namespace std;
  * The state is described by an enum, and the character of interest is tested
  * for its type - either letter, digit, whitespace or miscellaneous using the
  * GetSymbolType function defined in utilities.cpp. Any miscellaneous chars
- * that need to be handled by a specific state can be done so because
+ * that need to be handled by a specific state can be, because
  * GetSymbolType returns the original char if it is not a letter, digit or
  * whitespace.
  *
@@ -94,6 +94,49 @@ class DictionaryBuilder
   void HandleSubdictionary_(char);                  //
   void HandleClose_(char);                    //----//
 };
+
+/*---------------------------------------------------------------------------*/
+// Constructor. Takes a string pointer so big strings can be passed
+// cheaply. This version starts at the beginning of the given string
+
+DictionaryBuilder::DictionaryBuilder(shared_ptr<const string> t_string_ptr)
+  : string_ptr_(t_string_ptr),
+    char_num_(0),
+    bracket_(0),
+    key_pending_(false),
+    state_(PREENTRY)
+{
+  // Empty string -> empty dictionary
+  if (string_ptr_->empty()) *this = DictionaryBuilder();
+
+  // Otherwise use the lexer to build the dictionary
+  TokenizeDictionary_();
+}
+
+/*---------------------------------------------------------------------------*/
+// Constructor that takes a string reference AND a starting position.
+// This allows dictionaries to be read starting from the object locations
+// given in the cross-reference (xref) table
+
+DictionaryBuilder::DictionaryBuilder(shared_ptr<const string> t_string_ptr,
+                                     size_t t_offset)
+  : string_ptr_(t_string_ptr),
+    char_num_(t_offset),
+    bracket_(0),
+    key_pending_(false),
+    state_(PREENTRY)
+{
+  // Checks string isn't empty or smaller than the starting position
+  // if it is, returns an empty dictionary
+  if (string_ptr_->empty() || (char_num_ >= string_ptr_->length()))
+  {
+    *this = DictionaryBuilder();
+  }
+  else
+  {
+    TokenizeDictionary_();
+  }
+}
 
 /*---------------------------------------------------------------------------*/
 // This is the main loop which iterates through the string, reads the char,
@@ -359,49 +402,6 @@ void DictionaryBuilder::HandleClose_(char t_input_char)
 }
 
 /*---------------------------------------------------------------------------*/
-// Constructor. Takes a string pointer so big strings can be passed
-// cheaply. This version starts at the beginning of the given string
-
-DictionaryBuilder::DictionaryBuilder(shared_ptr<const string> t_string_ptr)
-  : string_ptr_(t_string_ptr),
-    char_num_(0),
-    bracket_(0),
-    key_pending_(false),
-    state_(PREENTRY)
-{
-  // Empty string -> empty dictionary
-  if (string_ptr_->empty()) *this = DictionaryBuilder();
-
-  // Otherwise use the lexer to build the dictionary
-  TokenizeDictionary_();
-}
-
-/*---------------------------------------------------------------------------*/
-// Constructor that takes a string reference AND a starting position.
-// This allows dictionaries to be read starting from the object locations
-// given in the cross-reference (xref) table
-
-DictionaryBuilder::DictionaryBuilder(shared_ptr<const string> t_string_ptr,
-                                     size_t t_offset)
-  : string_ptr_(t_string_ptr),
-    char_num_(t_offset),
-    bracket_(0),
-    key_pending_(false),
-    state_(PREENTRY)
-{
-  // Checks string isn't empty or smaller than the starting position
-  // if it is, returns an empty dictionary
-  if (string_ptr_->empty() || (char_num_ >= string_ptr_->length()))
-  {
-    *this = DictionaryBuilder();
-  }
-  else
-  {
-    TokenizeDictionary_();
-  }
-}
-
-/*---------------------------------------------------------------------------*/
 // Once the DictionaryBuilder has finished writing its map, we want to move it
 // without copying into the Dictionary as its main data member
 
@@ -491,7 +491,7 @@ bool Dictionary::ContainsInts(const string& t_key) const
 }
 
 /*---------------------------------------------------------------------------*/
-// Returns a vector of the object numbers from references found in the
+// Returns a vector of object numbers from any object references found in the
 // given key's value. Uses a global function from utilities.h
 
 vector<int> Dictionary::GetReferences(const string& t_key) const
@@ -500,7 +500,7 @@ vector<int> Dictionary::GetReferences(const string& t_key) const
 }
 
 /*---------------------------------------------------------------------------*/
-// Returns a single object numbers from reference(s) found in the
+// Returns a single object number from any reference found in the
 // given key's value. Uses a global function from utilities.h
 
 int Dictionary::GetReference(const string& t_key) const
@@ -533,17 +533,17 @@ vector<float> Dictionary::GetFloats(const string& t_key) const
 
 Dictionary Dictionary::GetDictionary(const string& t_key) const
 {
-  // Get the value string
-  string dictionary = this->GetString(t_key);
+  // Gets the value string
+  string possible_sub_dictionary = this->GetString(t_key);
 
-  // Test that it is a dictionary
-  if (dictionary.find("<<") != string::npos)
+  // Tests that it is a dictionary
+  if (possible_sub_dictionary.find("<<") != string::npos)
   {
-    // If so, create a new dictionary
-    return Dictionary(make_shared<string> (dictionary));
+    // If so, creates a new dictionary
+    return Dictionary(make_shared<string> (possible_sub_dictionary));
   }
 
-  // Otherwise return an empty dictionary
+  // Otherwise returns an empty dictionary
   return Dictionary();
 }
 

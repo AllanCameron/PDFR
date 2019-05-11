@@ -19,17 +19,18 @@ using namespace Token;
 //---------------------------------------------------------------------------//
 // This typedef declares fptr as a function pointer
 
-typedef void (Parser::*fptr)();
+typedef void (Parser::*FunctionPointer)();
 
 //---------------------------------------------------------------------------//
 // This statically-declared map allows functions to be called based on strings
 // passed to it from the tokenizer
 
-std::unordered_map<std::string, fptr> Parser::function_map_ =
+std::unordered_map<std::string, FunctionPointer> Parser::function_map_ =
 {
-  {"Q",   &Q}, {"q",   &q}, {"BT", &BT}, {"ET", &ET}, {"cm", &cm}, {"Tm", &Tm},
-  {"Tf", &Tf}, {"Td", &Td}, {"Th", &TH}, {"Tw", &TW}, {"Tc", &TC}, {"TL", &TL},
-  {"T*", &T_}, {"TD", &TD}, {"'",  &Ap}, {"TJ", &TJ}, {"Tj", &TJ}
+  {"Q",   &Q_}, {"q",   &q_}, {"BT", &BT_}, {"ET", &ET_}, {"cm", &cm_},
+  {"Tm", &Tm_}, {"Tf", &Tf_}, {"Td", &Td_}, {"Th", &TH_}, {"Tw", &TW_},
+  {"Tc", &TC_}, {"TL", &TL_}, {"T*", &T__}, {"TD", &TD_}, {"'",  &Ap_},
+  {"TJ", &TJ_}, {"Tj", &TJ_}
 };
 
 //---------------------------------------------------------------------------//
@@ -39,6 +40,7 @@ std::unordered_map<std::string, fptr> Parser::function_map_ =
 
 Parser::Parser(shared_ptr<Page> pag) :      // Long initializer list...
   page_(pag),                               // Pointer to page of interest
+  text_box_(Box(page_->GetMinbox())),       // Container for results
   current_font_size_(0),                    // Pointsize of current font
   font_size_stack_({current_font_size_}),   // History of pointsize
   tm_state_(Matrix()),                      // Transformation matrix
@@ -50,34 +52,13 @@ Parser::Parser(shared_ptr<Page> pag) :      // Long initializer list...
   tl_(1),                                   // Leading
   tw_(0),                                   // Word spacing
   th_(100),                                 // Horizontal scaling
-  tc_(0),                                   // Character spacing
-  text_box_(Box(page_->GetMinbox()))
+  tc_(0)                                    // Character spacing
 {}
-
-//---------------------------------------------------------------------------//
-// To allow recursive parsing of form xobjects, the tokenizer needs to access
-// the name of the xobject. At the point when the "Do" identifier is read by
-// the tokenizer, the name of the xobject is sitting on the top of the
-// operands stack. This public method passes that name on.
-
-std::string Parser::GetOperand()
-{
-  if(operands_.empty()) return string {};
-  else return operands_[0];
-}
-
-//---------------------------------------------------------------------------//
-// The public getter of the main data member
-
-TextBox& Parser::Output()
-{
-  return text_box_;
-}
 
 /*---------------------------------------------------------------------------*/
 // q operator - pushes a copy of the current graphics state to the stack
 
-void Parser::q()
+void Parser::q_()
 {
   graphics_state_.emplace_back(graphics_state_.back()); // push tm matrix
   font_stack_.emplace_back(current_font_);              // push font name
@@ -87,7 +68,7 @@ void Parser::q()
 /*---------------------------------------------------------------------------*/
 // Q operator - pop the graphics state stack
 
-void Parser::Q()
+void Parser::Q_()
 {
   // Empty graphics state is undefined but graphics_state_[0] is identity
   if (graphics_state_.size() > 1) graphics_state_.pop_back();
@@ -106,7 +87,7 @@ void Parser::Q()
 /*---------------------------------------------------------------------------*/
 // Td operator - applies tranlational changes only to text matrix (Tm)
 
-void Parser::Td()
+void Parser::Td_()
 {
   Matrix Tds = Matrix();                 //---------------------------------
   Tds[6] = stof(operands_[0]);           //  create 3 x 3 translation matrix
@@ -122,9 +103,9 @@ void Parser::Td()
 /*---------------------------------------------------------------------------*/
 // TD operator - same as Td except it also sets the 'leading' (Tl) operator
 
-void Parser::TD()
+void Parser::TD_()
 {
-  Td();
+  Td_();
 
   // Set text leading to new value
   tl_ = -stof(operands_[1]);
@@ -133,7 +114,7 @@ void Parser::TD()
 /*---------------------------------------------------------------------------*/
 // BT operator - signifies start of text
 
-void Parser::BT()
+void Parser::BT_()
 {
   // Reset text matrix to identity matrix
   tm_state_ = td_state_ = Matrix();
@@ -146,15 +127,15 @@ void Parser::BT()
 /*---------------------------------------------------------------------------*/
 // ET operator - signifies end of text
 
-void Parser::ET()
+void Parser::ET_()
 {
-  BT();
+  BT_();
 }
 
 /*---------------------------------------------------------------------------*/
 // Tf operator - specifies font and pointsize
 
-void Parser::Tf()
+void Parser::Tf_()
 {
   // Should be 2 operators: 1 is not defined
   if(operands_.size() > 1)
@@ -170,7 +151,7 @@ void Parser::Tf()
 /*---------------------------------------------------------------------------*/
 // TH - sets horizontal spacing
 
-void Parser::TH()
+void Parser::TH_()
 {
   // Reads operand as new horizontal spacing value
   th_ = stof(operands_.at(0));
@@ -179,7 +160,7 @@ void Parser::TH()
 /*---------------------------------------------------------------------------*/
 // Tc operator - sets character spacing
 
-void Parser::TC()
+void Parser::TC_()
 {
   // Reads operand as new character spacing value
   tc_ = stof(operands_.at(0));
@@ -188,7 +169,7 @@ void Parser::TC()
 /*---------------------------------------------------------------------------*/
 // TW operator - sets word spacing
 
-void Parser::TW()
+void Parser::TW_()
 {
   // Reads operand as new word spacing value
   tw_ = stof(operands_.at(0));
@@ -197,7 +178,7 @@ void Parser::TW()
 /*---------------------------------------------------------------------------*/
 // TL operator - sets leading (size of vertical jump to new line)
 
-void Parser::TL()
+void Parser::TL_()
 {
   // Reads operand as new text leading value
   tl_ = stof(operands_.at(0));
@@ -206,7 +187,7 @@ void Parser::TL()
 /*---------------------------------------------------------------------------*/
 // T* operator - moves to new line
 
-void Parser::T_()
+void Parser::T__()
 {
   // Decrease y value of text matrix by amount specified by text leading param
   td_state_[7] = td_state_[7] - tl_;
@@ -218,7 +199,7 @@ void Parser::T_()
 /*---------------------------------------------------------------------------*/
 // Tm operator - sets the text matrix (convolve text relative to graphics state)
 
-void Parser::Tm()
+void Parser::Tm_()
 {
   // Reads operands as a 3x3 matrix
   tm_state_ = Matrix(move(operands_));
@@ -233,7 +214,7 @@ void Parser::Tm()
 /*---------------------------------------------------------------------------*/
 // cm operator - applies transformation matrix to graphics state
 
-void Parser::cm()
+void Parser::cm_()
 {
   // Read the operands as a matrix, multiply by top of graphics state stack
   // and replace the top of the stack with the result
@@ -244,11 +225,11 @@ void Parser::cm()
 // The "'" operator is a minor variation of the TJ function. Ap is short for
 // apostrophe
 
-void Parser::Ap()
+void Parser::Ap_()
 {
   // The "'" operator is the same as Tj except it moves to the next line first
   td_state_[7] -= tl_;
-  TJ();
+  TJ_();
 }
 
 /*---------------------------------------------------------------------------*/
@@ -262,76 +243,34 @@ void Parser::Ap()
 // This function is heavily commented as a little mistake here can screw
 // everything up. YOU HAVE BEEN WARNED!
 
-void Parser::TJ()
+void Parser::TJ_()
 {
   // We create a text space that is the product of Tm and cm matrices
-  Matrix text_space = graphics_state_.back();
-  text_space *= tm_state_;
+  Matrix text_space = graphics_state_.back() * tm_state_ * td_state_;
 
-  // we now use the translation-only Td matrix to get our final text space
-  text_space *= td_state_;
+  // now we can set the starting x value and scale of our string
+  float initial_x = text_space[6], scale = current_font_size_ * text_space[0];
 
-  // now we can set the starting x value of our string
-  float initial_x = text_space[6];
-
-  // The overall size of text is the font size times the text_space scale
-  float scale = current_font_size_ * text_space[0];
-
-  // We now iterate through our operands, paying attention to their types to
-  // perform the correct operations
-  for (size_t z = 0; z < operand_types_.size(); z++)
+  // We now iterate through our operands and their associated types
+  for (size_t index = 0; index < operand_types_.size(); index++)
   {
-    // If the operand type is a number, it is a kerning adjustment
-    if (operand_types_[z] == NUMBER)
-    {
-      // PR (pushright) state is kerning * -1
-      kerning_ -= stof(operands_[z]);
-
-      // Translate user space per kerning_
-      text_space[6] = kerning_ * scale / 1000 + initial_x;
-
-      // skip to the next operand - important!
-      continue;
-    }
-    float scaled_kerning = kerning_ * scale / 1000; // Scale to user space
-    text_space[6] = scaled_kerning + initial_x;     // Translate user space
-
     // If string is empty, ignore it and get the next operand.
-    if (operands_[z] == "")
+    if (operands_[index] == "") continue;
+
+    // Adjust the text space according to kerning and scale
+    text_space[6] = kerning_ * scale / 1000 + initial_x;
+
+    // Depending on the operand type, we process the operand as appropriate
+    switch (operand_types_[index])
     {
-      continue;
-    }
-
-    // Container for rawchar vector (cast from strings)
-    vector<RawChar> raw;
-
-    // cast "<001F00AA>" style hexstring to vector of RawChar (uint16_t)
-    if (operand_types_[z] == HEXSTRING)
-    {
-      // scale kerning to user space
-      float scaled_kerning = kerning_ * scale / 1000;
-
-      // translate user space per kerning
-      text_space[6] = scaled_kerning + initial_x;
-
-      // Convert the hexstring to raw char
-      raw = ConvertHexToRawChar(operands_[z]);
-    }
-
-    // cast "(cat on mat)" style string to vector of RawChar (uint16_t)
-    if (operand_types_[z] == STRING)
-    {
-      // scale kerning to user space
-      float scaled_kerning = kerning_ * scale / 1000;
-
-      // translate user space per kerning
-      text_space[6] = scaled_kerning + initial_x;
-
-      raw = ConvertStringToRawChar(operands_[z]);
+      case NUMBER    : kerning_ -= stof(operands_[index]); continue;
+      case HEXSTRING : raw_ = ConvertHexToRawChar(operands_[index]); break;
+      case STRING    : raw_ = ConvertStringToRawChar(operands_[index]); break;
+      default        : continue;
     }
 
     // Now we can process the string given the current user space and font
-    ProcessRawChar(raw, scale, text_space, initial_x);
+    ProcessRawChar_(scale, text_space, initial_x);
   }
 }
 
@@ -340,11 +279,11 @@ void Parser::TJ()
 // generated, the userspace and initial userspace to calculate the
 // glyphs, sizes and positions intended by the string in the page program
 
-void Parser::ProcessRawChar(vector<RawChar>& t_raw, float& t_scale,
-                            Matrix& t_text_space, float& t_initial_x)
+void Parser::ProcessRawChar_(float& t_scale, Matrix& t_text_space,
+                             float& t_initial_x)
 {
   // Look up the RawChars in the font to get their Unicode values and widths
-  vector<pair<Unicode, int>>&& glyph_pairs = working_font_->MapRawChar(t_raw);
+  vector<pair<Unicode, int>>&& glyph_pairs = working_font_->MapRawChar(raw_);
 
   // Now, for each character...
   for (auto& glyph_pair : glyph_pairs)
@@ -386,6 +325,7 @@ void Parser::ProcessRawChar(vector<RawChar>& t_raw, float& t_scale,
                              vector<Unicode>{glyph_pair.first}));
     }
   }
+  raw_.clear();
 }
 
 /*---------------------------------------------------------------------------*/

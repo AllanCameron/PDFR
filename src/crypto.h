@@ -85,7 +85,9 @@ private:
   Dictionary trailer_;
   int        revision_;
   std::vector<uint8_t> filekey_;
-  static std::vector<uint8_t> default_user_password_;
+  static const std::vector<uint8_t> default_user_password_;
+  static const std::vector<FourBytes> md5_table;
+  static const std::vector<std::vector<FourBytes>> mixarray;
 
   // Chops FourBytes into 4 bytes
   std::vector<uint8_t> ChopLong_(FourBytes unsigned_32_bit_int) const;

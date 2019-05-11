@@ -18,10 +18,10 @@ using namespace std;
 // file key and to check it's right. The crypto object is then kept alive to
 // decode any encoded strings in the file
 
-Crypto::Crypto(Dictionary t_encrypt_dict, Dictionary t_trailer) :
-  encryption_dictionary_(t_encrypt_dict),
-  trailer_(t_trailer),
-  revision_(2)
+Crypto::Crypto(Dictionary t_encrypt_dict, Dictionary t_trailer)
+  : encryption_dictionary_(t_encrypt_dict),
+    trailer_(t_trailer),
+    revision_(2)
 {
   // Unless specified, the revision number used for encryption is 2
   if (encryption_dictionary_.ContainsInts("/R"))
@@ -40,7 +40,7 @@ Crypto::Crypto(Dictionary t_encrypt_dict, Dictionary t_trailer) :
 // The default user password cipher is required to construct the file key and is
 // declared as a static member of the crypto class; it is defined here
 
-vector<uint8_t> Crypto::default_user_password_ =
+const vector<uint8_t> Crypto::default_user_password_ =
 {
   0x28, 0xBF, 0x4E, 0x5E, 0x4E, 0x75, 0x8A, 0x41,
   0x64, 0x00, 0x4E, 0x56, 0xFF, 0xFA, 0x01, 0x08,
@@ -54,7 +54,7 @@ vector<uint8_t> Crypto::default_user_password_ =
 // with each seperate number 64 times. These numbers come from the function
 // md5_table[i] = abs(sin(i + 1)) * 2^32, but it is quicker to pre-compute them
 
-static vector<FourBytes> md5_table =
+const vector<FourBytes> Crypto::md5_table =
 {
   0xD76AA478, 0xE8C7B756, 0x242070DB, 0xC1BDCEEE,
   0xF57C0FAF, 0x4787C62A, 0xA8304613, 0xFD469501,
@@ -77,7 +77,7 @@ static vector<FourBytes> md5_table =
 //---------------------------------------------------------------------------//
 // More pseudorandom numbers for the Md5 hash
 
-std::vector<std::vector<FourBytes>> mixarray =
+const std::vector<std::vector<FourBytes>> Crypto::mixarray =
 {
   {7, 12, 17, 22},
   {5,  9, 14, 20},
