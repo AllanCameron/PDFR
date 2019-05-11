@@ -22,19 +22,19 @@ using namespace std;
 
 Font::Font(shared_ptr<Document> t_document_ptr,
            Dictionary t_font_dictionary,
-           const string& t_font_id) :
-  document_(t_document_ptr),
-  font_dictionary_(t_font_dictionary),
-  font_id_(t_font_id)
+           const string& t_font_id)
+  : document_(t_document_ptr),
+    font_dictionary_(t_font_dictionary),
+    font_id_(t_font_id)
 {
-  GetFontName();
-  MakeGlyphTable();
+  ReadFontName_();
+  MakeGlyphTable_();
 }
 
 /*---------------------------------------------------------------------------*/
 // Obtains the font's PostScript name from the font dictionary
 
-void Font::ReadFontName()
+void Font::ReadFontName_()
 {
   // Reads /BaseFont entry
   string base_font(font_dictionary_.GetString("/BaseFont"));
@@ -79,7 +79,7 @@ vector<pair<Unicode, int>> Font::MapRawChar(const vector<RawChar>& t_raw_vector)
 // the encoding and glyphwidth classes. This private method co-ordinates the
 // building of the glyphmap using these two component classes
 
-void Font::MakeGlyphTable()
+void Font::MakeGlyphTable_()
 {
   // Create Encoding object
   Encoding encodings(font_dictionary_, document_);

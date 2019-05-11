@@ -82,8 +82,8 @@ private:
                                         //   to a {Unicode, width} pair.
 
   // private methods
-  void ReadFontName();                  // Finds the postscript font name
-  void MakeGlyphTable();                // Co-ordinates font construction
+  void ReadFontName_();                  // Finds the postscript font name
+  void MakeGlyphTable_();                // Co-ordinates font construction
 };
 
 //---------------------------------------------------------------------------//

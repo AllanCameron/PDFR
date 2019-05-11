@@ -97,10 +97,10 @@ class Encoding
   // Data lookup tables - defined as static, which means only a single
   // instance of each is created rather than a copy for each object.
   // Note these maps are defined in adobetounicode.h and chartounicode.h
-  static std::unordered_map<std::string, Unicode> adobe_to_unicode_;
-  static UnicodeMap macroman_to_unicode_;
-  static UnicodeMap winansi_to_unicode_;
-  static UnicodeMap pdfdoc_to_unicode_;
+  static const std::unordered_map<std::string, Unicode> adobe_to_unicode_;
+  static const UnicodeMap macroman_to_unicode_;
+  static const UnicodeMap winansi_to_unicode_;
+  static const UnicodeMap pdfdoc_to_unicode_;
 
   UnicodeMap encoding_map_;             // The main data member lookup
   Dictionary font_dictionary_;          // the main font dictionary
@@ -110,22 +110,22 @@ class Encoding
   // private member functions
 
   // uses lexer to parse /Differences entry
-  void ReadDifferences(const std::string& differences_entry);
+  void ReadDifferences_(const std::string& differences_entry);
 
   // finds encoding dictionary, gets /basencoding and /Differences entries
-  void ReadEncoding();
+  void ReadEncoding_();
 
   // parses CMap encoding ranges
-  void ProcessUnicodeRange(std::vector<std::string>& bf_range_from_cmap);
+  void ProcessUnicodeRange_(std::vector<std::string>& bf_range_from_cmap);
 
   // parses CMap direct char-char conversion table
-  void ProcessUnicodeChars(std::vector<std::string>& bf_char_from_cmap);
+  void ProcessUnicodeChars_(std::vector<std::string>& bf_char_from_cmap);
 
   // finds CMap if any and co-ordinates parsers to create mapping
-  void MapUnicode();
+  void MapUnicode_();
 
   // Helper function for parser
-  void Write(std::vector<std::pair<DifferencesState, std::string>>& entries,
+  void Write_(std::vector<std::pair<DifferencesState, std::string>>& entries,
              DifferencesState& state_to_push_to_entries,
              std::string& string_to_push_to_entries);
 };

@@ -106,8 +106,7 @@ string CarveOut(const string& t_string,
 // a surprisingly common task in parsing text. e.g.
 //
 // string target("I'm not a pheasant plucker, I'm a pheasant plucker's son");
-// string left = "I'm", right = "plucker";
-// vector<string> result = MultiCarve(target, left, right);
+// auto result = MultiCarve(target, "I'm", "plucker");
 // result == vector<string> {" not a pheasant ", " a pheasant "};
 //
 

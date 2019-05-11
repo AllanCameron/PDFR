@@ -50,9 +50,9 @@ typedef std::shared_ptr<TextElement> TextPointer;
 
 public:
   TextElement(float t_left, float t_right, float t_top, float t_bottom,
-              std::shared_ptr<Font> t_font, std::vector<Unicode> t_glyphs):
-    Box(t_left, t_right, t_top, t_bottom),
-    font_(t_font), glyph_(t_glyphs), join_(nullptr) {};
+              std::shared_ptr<Font> t_font, std::vector<Unicode> t_glyphs)
+    : Box(t_left, t_right, t_top, t_bottom),
+      font_(t_font), glyph_(t_glyphs), join_(nullptr) {};
 
   // Inevitably, we need to define some "magic number" constants to define
   // how close together text elements have to be to clump together

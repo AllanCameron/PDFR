@@ -50,10 +50,10 @@ Object::Object(shared_ptr<const XRef> t_xref, int t_object_number) :
     if(header_.GetString("/Type") == "/ObjStm")
     {
       // Get the object stream
-      ReadStreamFromStreamLocations();
+      ReadStreamFromStreamLocations_();
 
       // Index the objects in the stream
-      IndexObjectStream();
+      IndexObjectStream_();
     }
   }
 }
@@ -64,7 +64,7 @@ Object::Object(shared_ptr<const XRef> t_xref, int t_object_number) :
 // method reads the objects and their positions in the stream, indexing them
 // for later retrieval.
 
-void Object::IndexObjectStream()
+void Object::IndexObjectStream_()
 {
   // Get the first character that is not a digit or space
   int startbyte = stream_.find_first_not_of("\n\r\t 0123456789");
@@ -103,7 +103,6 @@ Object::Object(shared_ptr<Object> t_holder, int t_object_number):
   stream_location_({0, 0})
 {
   auto finder = t_holder->object_stream_index_.find(object_number_);
-
   if(finder == t_holder->object_stream_index_.end())
   {
     throw runtime_error("Object not found in stream");
@@ -153,7 +152,7 @@ Dictionary Object::GetDictionary()
 string Object::GetStream()
 {
   // If the stream has not already been processed, do it now
-  if(stream_.empty()) ReadStreamFromStreamLocations();
+  if(stream_.empty()) ReadStreamFromStreamLocations_();
   return stream_;
 }
 
@@ -161,7 +160,7 @@ string Object::GetStream()
 // We will keep all stream processing in one place for easier debugging and
 // future development
 
-void Object::ApplyFilters()
+void Object::ApplyFilters_()
 {
   // Decrypt if necessary
   if(xref_->IsEncrypted()) xref_->Decrypt(stream_, object_number_, 0);
@@ -177,11 +176,11 @@ void Object::ApplyFilters()
 /*---------------------------------------------------------------------------*/
 // Turns stream locations into unencrypted, uncompressed stream
 
-void Object::ReadStreamFromStreamLocations()
+void Object::ReadStreamFromStreamLocations_()
 {
   // Read the string from the current positions
   stream_ = xref_->File()->substr(stream_location_[0], stream_location_[1]);
 
   // Apply necessary decryption and deflation
-  ApplyFilters();
+  ApplyFilters_();
 }

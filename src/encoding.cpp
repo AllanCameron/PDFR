@@ -20,16 +20,16 @@ using namespace std;
 // and the last is co-ordinated by map_unicode()
 
 Encoding::Encoding(const Dictionary& t_font_dictionary,
-                   shared_ptr<Document> t_document_ptr):
-  font_dictionary_(t_font_dictionary), document_(t_document_ptr)
+                   shared_ptr<Document> t_document_ptr)
+  : font_dictionary_(t_font_dictionary), document_(t_document_ptr)
 {
-  ReadEncoding();
-  MapUnicode();
+  ReadEncoding_();
+  MapUnicode_();
 }
 
 /*---------------------------------------------------------------------------*/
 
-void Encoding::Write(vector<pair<DifferencesState, string>>& t_entries,
+void Encoding::Write_(vector<pair<DifferencesState, string>>& t_entries,
                      DifferencesState& t_state, string& t_buffer)
 {
   t_entries.push_back(make_pair(t_state, t_buffer));
@@ -43,7 +43,7 @@ void Encoding::Write(vector<pair<DifferencesState, string>>& t_entries,
 // successive name's Unicode value. This requires the static adobe_to_unicode_
 // map.
 
-void Encoding::ReadDifferences(const string& t_differences_string)
+void Encoding::ReadDifferences_(const string& t_differences_string)
 {
   DifferencesState state = NEWSYMB; // define starting state
   string buffer {};        // initialise the buffer string
@@ -76,9 +76,9 @@ void Encoding::ReadDifferences(const string& t_differences_string)
       case NUM:       switch(n)   // write number to buffer, switch to name
                       {           // if char is '/'
                         case 'D': buffer += i ;                  break;
-                        case '/': Write(entries, state, buffer);
+                        case '/': Write_(entries, state, buffer);
                                   buffer = i; state = NAME;      break;
-                        default:  Write(entries, state, buffer);
+                        default:  Write_(entries, state, buffer);
                                   buffer = ""; state = NEWSYMB;  break;
                       }
                       break;
@@ -87,11 +87,11 @@ void Encoding::ReadDifferences(const string& t_differences_string)
                         case 'L': buffer += i;                   break;
                         case '.': buffer += i;                   break;
                         case 'D': buffer += i;                   break;
-                        case '/': Write(entries, state, buffer);
+                        case '/': Write_(entries, state, buffer);
                                   buffer = i ;                   break;
-                        case ' ': Write(entries, state, buffer);
+                        case ' ': Write_(entries, state, buffer);
                                   buffer = "" ; state = NEWSYMB; break;
-                        default:  Write(entries, state, buffer);
+                        default:  Write_(entries, state, buffer);
                                   state = STOP;                  break;
                       }
                       break;
@@ -111,7 +111,7 @@ void Encoding::ReadDifferences(const string& t_differences_string)
     // Otherwise it's a name - convert it to Unicode, write it to the
     // encoding map and post-increment the mapping rawchar in case the next
     // entry is also a name (it will be over-written if it is an int)
-    else encoding_map_[code_point++] = adobe_to_unicode_[entry.second];
+    else encoding_map_[code_point++] = adobe_to_unicode_.at(entry.second);
   }
 }
 
@@ -119,7 +119,7 @@ void Encoding::ReadDifferences(const string& t_differences_string)
 // co-ordinates the reading of the /ToUnicode entry, which points to an
 // object whose stream contains a CMap
 
-void Encoding::MapUnicode()
+void Encoding::MapUnicode_()
 {
   // If no /ToUnicode entry, nothing to be done
   if (!font_dictionary_.ContainsReferences("/ToUnicode")) return;
@@ -136,17 +136,17 @@ void Encoding::MapUnicode()
   auto bf_ranges = MultiCarve(unicode_text, "beginbfrange", "endbfrange");
 
   // if this is a character to character map, process it
-  if (!bf_chars.empty())  ProcessUnicodeChars(bf_chars);
+  if (!bf_chars.empty())  ProcessUnicodeChars_(bf_chars);
 
   // if this is a character range, process it
-  if (!bf_ranges.empty()) ProcessUnicodeRange(bf_ranges);
+  if (!bf_ranges.empty()) ProcessUnicodeRange_(bf_ranges);
 }
 
 /*---------------------------------------------------------------------------*/
 // This method parses the "bfchar" entries in the CMap and adds them to the
 // encoding map
 
-void Encoding::ProcessUnicodeChars(vector<string>& t_bf_chars)
+void Encoding::ProcessUnicodeChars_(vector<string>& t_bf_chars)
 {
   // There may be many entries, so we process each of the given strings
   for(auto& entry : t_bf_chars)
@@ -173,7 +173,7 @@ void Encoding::ProcessUnicodeChars(vector<string>& t_bf_chars)
 // translated in the range, and the Unicode point from which to start the
 // translation - hence { 1; 4; 10 } would generate {1,10; 2,11; 3,12; 4,13}
 
-void Encoding::ProcessUnicodeRange(vector<string>& t_bf_ranges)
+void Encoding::ProcessUnicodeRange_(vector<string>& t_bf_ranges)
 {
   // There may be many entries, so we process each of the given strings
   for(auto& ranges : t_bf_ranges)
@@ -210,7 +210,7 @@ void Encoding::ProcessUnicodeRange(vector<string>& t_bf_ranges)
 // Extract the encoding dictionary and read off entries for base encoding.
 // Calls the Differences lexer if there is a dictionary entry for /Differences
 
-void Encoding::ReadEncoding()
+void Encoding::ReadEncoding_()
 {
   // Starts with private font dictionary member
   Dictionary encoding_dictionary = font_dictionary_;
@@ -256,7 +256,7 @@ void Encoding::ReadEncoding()
   if(encoding_dictionary.HasKey("/Differences"))
   {
     base_encoding_ = encoding_dictionary.GetString("/Differences");
-    ReadDifferences(base_encoding_);
+    ReadDifferences_(base_encoding_);
   }
 }
 

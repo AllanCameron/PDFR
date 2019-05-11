@@ -55,13 +55,13 @@ std::array<Tokenizer::CharType, 256> Tokenizer::char_lookup_ = {
 // constructor of Tokenizer - initializes members and starts main
 // lexer function
 
-Tokenizer::Tokenizer(shared_ptr<string> t_input, Parser* t_interpreter) :
-  contents_(t_input),
-  it_(contents_->begin()),
-  state_(NEWSYMBOL),
-  interpreter_(t_interpreter)
+Tokenizer::Tokenizer(shared_ptr<string> t_input, Parser* t_interpreter)
+  : contents_(t_input),
+    it_(contents_->begin()),
+    state_(NEWSYMBOL),
+    interpreter_(t_interpreter)
 {
-  Tokenize();
+  Tokenize_();
 }
 
 
@@ -70,7 +70,7 @@ Tokenizer::Tokenizer(shared_ptr<string> t_input, Parser* t_interpreter) :
 // to the instruction set, and clearing the buffer is very common in the
 // lexer. This function acts as a shorthand to prevent boilerplate
 
-void Tokenizer::PushBuffer(const TokenState t_type, const TokenState t_state)
+void Tokenizer::PushBuffer_(const TokenState t_type, const TokenState t_state)
 {
   if(buffer_ == "Do" && t_state == IDENTIFIER)
   {
@@ -95,7 +95,7 @@ void Tokenizer::PushBuffer(const TokenState t_type, const TokenState t_state)
 // the state. Each subroutine handles specific characters in a different but
 // well-specified way
 
-void Tokenizer::Tokenize()
+void Tokenizer::Tokenize_()
 {
   // Ensures the iterator doesn't exceed string length
   while (it_ != contents_->end())
@@ -103,16 +103,16 @@ void Tokenizer::Tokenize()
     switch (state_)
     {
       // Each state has its own handler subroutine - self explanatory
-      case NEWSYMBOL:   NewSymbolState();         break;
-      case RESOURCE:    ResourceState();          break;
-      case IDENTIFIER:  IdentifierState();        break;
-      case NUMBER:      NumberState();            break;
-      case ARRAY:       ArrayState();             break;
-      case STRING:      StringState();            break;
-      case HEXSTRING:   HexStringState();         break;
-      case DICT:        DictionaryState();        break;
-      case WAIT:        WaitState();              break;
-      case OPERATOR:                              break;
+      case NEWSYMBOL:   NewSymbolState_();         break;
+      case RESOURCE:    ResourceState_();          break;
+      case IDENTIFIER:  IdentifierState_();        break;
+      case NUMBER:      NumberState_();            break;
+      case ARRAY:       ArrayState_();             break;
+      case STRING:      StringState_();            break;
+      case HEXSTRING:   HexStringState_();         break;
+      case DICT:        DictionaryState_();        break;
+      case WAIT:        WaitState_();              break;
+      case OPERATOR:                               break;
     }
     ++it_; // move to next character in the string
   }
@@ -121,24 +121,24 @@ void Tokenizer::Tokenize()
 /*---------------------------------------------------------------------------*/
 // Lexer is reading a resource (a /PdfName)
 
-void Tokenizer::ResourceState()
+void Tokenizer::ResourceState_()
 {
   switch (char_lookup_[*it_])
   {
-    case LAB:   PushBuffer(RESOURCE, HEXSTRING);              break;
-    case LET:   buffer_.append(it_, it_ + 1);                 break;
-    case DIG:   buffer_.append(it_, it_ + 1);                 break;
-    case USC:   buffer_.append("_");                          break;
-    case LSB:   PushBuffer(RESOURCE, ARRAY);                  break;
-    case FSL:   PushBuffer(RESOURCE, RESOURCE);               break;
-    case AST:   buffer_.append("*");                          break;
-    case LCB:   PushBuffer(RESOURCE, STRING);                 break;
-    case SUB:   buffer_.append("-");                          break;
+    case LAB:   PushBuffer_(RESOURCE, HEXSTRING);              break;
+    case LET:   buffer_.append(it_, it_ + 1);                  break;
+    case DIG:   buffer_.append(it_, it_ + 1);                  break;
+    case USC:   buffer_.append("_");                           break;
+    case LSB:   PushBuffer_(RESOURCE, ARRAY);                  break;
+    case FSL:   PushBuffer_(RESOURCE, RESOURCE);               break;
+    case AST:   buffer_.append("*");                           break;
+    case LCB:   PushBuffer_(RESOURCE, STRING);                 break;
+    case SUB:   buffer_.append("-");                           break;
     case BSL:   throw runtime_error("illegal character");
-    case SPC:   PushBuffer(RESOURCE, NEWSYMBOL);              break;
+    case SPC:   PushBuffer_(RESOURCE, NEWSYMBOL);              break;
     case RAB:   throw runtime_error("illegal character");
     case PER:   throw runtime_error("illegal character");
-    case ADD:   buffer_.append("+");                          break;
+    case ADD:   buffer_.append("+");                           break;
     default:    throw runtime_error("illegal character");
   }
 }
@@ -146,7 +146,7 @@ void Tokenizer::ResourceState()
 /*---------------------------------------------------------------------------*/
 // Lexer is receptive for next token
 
-void Tokenizer::NewSymbolState()
+void Tokenizer::NewSymbolState_()
 {
   // get symbol_type of current char
   switch (char_lookup_[*it_])
@@ -169,68 +169,68 @@ void Tokenizer::NewSymbolState()
 /*---------------------------------------------------------------------------*/
 // Lexer is reading an identifier (instruction or keyword)
 
-void Tokenizer::IdentifierState()
+void Tokenizer::IdentifierState_()
 {
   // get symbol_type of current char
   switch (char_lookup_[*it_])
   {
-    case LAB:   PushBuffer(IDENTIFIER, HEXSTRING);      break;
-    case LET:   buffer_.append(it_, it_ + 1);           break;
-    case DIG:   buffer_.append(it_, it_ + 1);           break;
-    case SPC:   if (buffer_ == "BI") state_ = WAIT;     // BI == inline image
-                else PushBuffer(IDENTIFIER, NEWSYMBOL); break;
-    case FSL:   PushBuffer(IDENTIFIER, RESOURCE);
-                buffer_ = "/";                          break;
-    case LSB:   PushBuffer(IDENTIFIER, ARRAY);          break;
-    case LCB:   PushBuffer(IDENTIFIER, STRING);         break;
-    case SUB:   buffer_.append(it_, it_ + 1);           break;
-    case USC:   buffer_.append(it_, it_ + 1);           break;
-    case AST:   buffer_.append(it_, it_ + 1);           break;
-    default:                                            break;
+    case LAB:   PushBuffer_(IDENTIFIER, HEXSTRING);      break;
+    case LET:   buffer_.append(it_, it_ + 1);            break;
+    case DIG:   buffer_.append(it_, it_ + 1);            break;
+    case SPC:   if (buffer_ == "BI") state_ = WAIT; //   BI == inline image
+                else PushBuffer_(IDENTIFIER, NEWSYMBOL); break;
+    case FSL:   PushBuffer_(IDENTIFIER, RESOURCE);
+                buffer_ = "/";                           break;
+    case LSB:   PushBuffer_(IDENTIFIER, ARRAY);          break;
+    case LCB:   PushBuffer_(IDENTIFIER, STRING);         break;
+    case SUB:   buffer_.append(it_, it_ + 1);            break;
+    case USC:   buffer_.append(it_, it_ + 1);            break;
+    case AST:   buffer_.append(it_, it_ + 1);            break;
+    default:                                             break;
   }
 }
 
 /*---------------------------------------------------------------------------*/
 // lexer is reading a number
 
-void Tokenizer::NumberState()
+void Tokenizer::NumberState_()
 {
   // get symbol_type of current char
   switch (char_lookup_[*it_])
   {
-    case LAB:   PushBuffer(NUMBER, HEXSTRING);                break;
-    case DIG:   buffer_.append(it_, it_ + 1);                 break;
-    case SPC:   PushBuffer(NUMBER, NEWSYMBOL);                break;
-    case PER:   buffer_.append(it_, it_ + 1);                 break;
-    case LCB:   PushBuffer(NUMBER, STRING);                   break;
-    case LET:   buffer_.append(it_, it_ + 1);                 break;
-    case USC:   buffer_.append(it_, it_ + 1);                 break;
-    case SUB:   PushBuffer(NUMBER, NUMBER); buffer_.clear();  break;
-    case AST:   PushBuffer(NUMBER, NUMBER); buffer_.clear();  break;
-    case FSL:   PushBuffer(NUMBER, NUMBER); buffer_.clear();  break;
-    case LSB:   PushBuffer(NUMBER, ARRAY);                    break;
-    default:    PushBuffer(NUMBER, NEWSYMBOL);
+    case LAB:   PushBuffer_(NUMBER, HEXSTRING);                break;
+    case DIG:   buffer_.append(it_, it_ + 1);                  break;
+    case SPC:   PushBuffer_(NUMBER, NEWSYMBOL);                break;
+    case PER:   buffer_.append(it_, it_ + 1);                  break;
+    case LCB:   PushBuffer_(NUMBER, STRING);                   break;
+    case LET:   buffer_.append(it_, it_ + 1);                  break;
+    case USC:   buffer_.append(it_, it_ + 1);                  break;
+    case SUB:   PushBuffer_(NUMBER, NUMBER); buffer_.clear();  break;
+    case AST:   PushBuffer_(NUMBER, NUMBER); buffer_.clear();  break;
+    case FSL:   PushBuffer_(NUMBER, NUMBER); buffer_.clear();  break;
+    case LSB:   PushBuffer_(NUMBER, ARRAY);                    break;
+    default:    PushBuffer_(NUMBER, NEWSYMBOL);
   }
 }
 
 /*---------------------------------------------------------------------------*/
 // lexer is reading a (bracketed) string
 
-void Tokenizer::StringState()
+void Tokenizer::StringState_()
 {
   // get symbol_type of current char
   switch (char_lookup_[*it_])
   {
-    case RCB:   PushBuffer(STRING, NEWSYMBOL);            break;
-    case BSL:   EscapeState();                            break;
-    default:    buffer_.append(it_, it_ + 1);             break;
+    case RCB:   PushBuffer_(STRING, NEWSYMBOL);            break;
+    case BSL:   EscapeState_();                            break;
+    default:    buffer_.append(it_, it_ + 1);              break;
   }
 }
 
 /*---------------------------------------------------------------------------*/
 // lexer is in an array
 
-void Tokenizer::ArrayState()
+void Tokenizer::ArrayState_()
 {
   it_--;
   state_ = NEWSYMBOL;
@@ -239,12 +239,12 @@ void Tokenizer::ArrayState()
 /*---------------------------------------------------------------------------*/
 // lexer is reading a hexstring of format <11FA>
 
-void Tokenizer::HexStringState()
+void Tokenizer::HexStringState_()
 {
   // get symbol_type of current char
   switch (char_lookup_[*it_])
   {
-    case RAB: if (!buffer_.empty()) PushBuffer(HEXSTRING, NEWSYMBOL);
+    case RAB: if (!buffer_.empty()) PushBuffer_(HEXSTRING, NEWSYMBOL);
                state_ = NEWSYMBOL;                                    break;
     case LAB:  buffer_.clear(); state_ = DICT;                        break;
     case BSL:  buffer_.append(it_, it_ + 1); ++it_;
@@ -257,22 +257,22 @@ void Tokenizer::HexStringState()
 // lexer is reading a dictionary and will keep writing until it comes across
 // a pair of closing angle brackets
 
-void Tokenizer::DictionaryState()
+void Tokenizer::DictionaryState_()
 {
   // get symbol_type of current char
   switch (char_lookup_[*it_])
   {
     case BSL:  buffer_.append(it_, it_ + 1); ++it_;
-               buffer_.append(it_, it_ + 1);                          break;
-    case RAB:  PushBuffer(DICT, HEXSTRING);                           break;
-    default:   buffer_.append(it_, it_ + 1);                          break;
+               buffer_.append(it_, it_ + 1);                           break;
+    case RAB:  PushBuffer_(DICT, HEXSTRING);                           break;
+    default:   buffer_.append(it_, it_ + 1);                           break;
   }
 }
 
 /*---------------------------------------------------------------------------*/
 // lexer has come across a backslash which indicates an escape character
 
-void Tokenizer::EscapeState()
+void Tokenizer::EscapeState_()
 {
   ++it_;
 
@@ -280,7 +280,7 @@ void Tokenizer::EscapeState()
   if (char_lookup_[*it_] == DIG)
   {
     int octcount = 0;
-    PushBuffer(STRING, STRING);
+    PushBuffer_(STRING, STRING);
 
     // Add consecutive chars to octal (up to 3)
     while (char_lookup_[*it_] == DIG && octcount < 3)
@@ -292,7 +292,7 @@ void Tokenizer::EscapeState()
     // Convert octal string to int
     int newint = stoi(buffer_, nullptr, 8);
     buffer_ = ConvertIntToHex(newint);
-    PushBuffer(HEXSTRING, STRING);
+    PushBuffer_(HEXSTRING, STRING);
     it_--;  // Decrement to await next char
   }
 
@@ -304,7 +304,7 @@ void Tokenizer::EscapeState()
 // The lexer has reached an inline image, which indicates it should ignore the
 // string until it reaches the keyword "EI" at the end of the image
 
-void Tokenizer::WaitState()
+void Tokenizer::WaitState_()
 {
   do
   {

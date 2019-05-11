@@ -71,20 +71,20 @@ private:
   static std::array<CharType, 256> char_lookup_; // Lookup table for char type
 
   // private methods
-  void Tokenize();                    // chooses subroutine based on state
-  void NewSymbolState();    //--------//---------------------------------------
-  void ResourceState();               //
-  void IdentifierState();             //
-  void NumberState();                 // These private member functions handle
-  void StringState();                 // the various states of the lexer,
-  void ArrayState();                  // responding variously to each character
-  void EscapeState();                 // they come across to build the result
-  void HexStringState();              //
-  void DictionaryState();             //
-  void WaitState();         //--------//---------------------------------------
+  void Tokenize_();                    // chooses subroutine based on state
+  void NewSymbolState_();    //--------//---------------------------------------
+  void ResourceState_();               //
+  void IdentifierState_();             //
+  void NumberState_();                 // These private member functions handle
+  void StringState_();                 // the various states of the lexer,
+  void ArrayState_();                  // responding variously to each character
+  void EscapeState_();                 // they come across to build the result
+  void HexStringState_();              //
+  void DictionaryState_();             //
+  void WaitState_();         //--------//---------------------------------------
 
   // Frequently used helper function to update buffer and state
-  void PushBuffer(const Token::TokenState type, const Token::TokenState state);
+  void PushBuffer_(const Token::TokenState type, const Token::TokenState state);
 };
 
 //---------------------------------------------------------------------------//

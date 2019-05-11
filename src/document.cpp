@@ -24,10 +24,10 @@ using namespace std;
 // then uses the GetFile() function from utilities.h to read in the filestring
 // from which buildDoc() then creates the object
 
-Document::Document(const string& t_file_path) :
-  file_path_(t_file_path), file_string_(GetFile(file_path_))
+Document::Document(const string& t_file_path)
+  : file_path_(t_file_path), file_string_(GetFile(file_path_))
 {
-  BuildDocument(); // Call constructor helper to build Document
+  BuildDocument_(); // Call constructor helper to build Document
 }
 
 /*---------------------------------------------------------------------------*/
@@ -35,10 +35,10 @@ Document::Document(const string& t_file_path) :
 // of bytes and converts it to the filestring before calling the helper function
 // to construct the Document object
 
-Document::Document(const vector<uint8_t>& t_byte_vector) :
-  file_string_(string(t_byte_vector.begin(), t_byte_vector.end()))
+Document::Document(const vector<uint8_t>& t_byte_vector)
+  : file_string_(string(t_byte_vector.begin(), t_byte_vector.end()))
 {
-  BuildDocument(); // Call constructor helper to build Document
+  BuildDocument_(); // Call constructor helper to build Document
 }
 
 /*---------------------------------------------------------------------------*/
@@ -46,11 +46,11 @@ Document::Document(const vector<uint8_t>& t_byte_vector) :
 // "final common pathway" of both non-default Document constructor functions
 // and is seperated out to make this clear and avoid duplication of code
 
-void Document::BuildDocument()
+void Document::BuildDocument_()
 {
   xref_ = make_shared<const XRef>(make_shared<string>(file_string_));
-  ReadCatalog();             // Gets the catalog dictionary
-  ReadPageDirectory();             // Gets the /Pages dictionary
+  ReadCatalog_();             // Gets the catalog dictionary
+  ReadPageDirectory_();             // Gets the /Pages dictionary
 }
 
 /*---------------------------------------------------------------------------*/
@@ -90,7 +90,7 @@ shared_ptr<Object> Document::GetObject(int t_object_number)
 // This finds the catalog object from the trailer dictionary which is read as
 // part of xref creation
 
-void Document::ReadCatalog()
+void Document::ReadCatalog_()
 {
   // The pointer to the catalog is given under /Root in the trailer dictionary
   int root_number = xref_->GetTrailer().GetReference("/Root");
@@ -104,7 +104,7 @@ void Document::ReadCatalog()
 // file. There should be a pointer to it in the catalog dictionary. If its not
 // there, the pdf structure is unspecified and we throw an error
 
-void Document::ReadPageDirectory()
+void Document::ReadPageDirectory_()
 {
   // Else get the object number of the /Pages dictionary
   int page_object_number = catalog_.GetReference("/Pages");
@@ -122,7 +122,7 @@ void Document::ReadPageDirectory()
   auto root = make_shared<TreeNode<int>>(page_object_number);
 
   // Populate the tree
-  ExpandKids(page_directory_.GetReferences("/Kids"), root);
+  ExpandKids_(page_directory_.GetReferences("/Kids"), root);
 
   // Get the leafs of the tree
   page_object_numbers_ = root->GetLeafs();
@@ -148,7 +148,7 @@ void Document::ReadPageDirectory()
 // promising, but it is likely to be complex, and it is not clear that it would
 // lead to a major speedup. Getting an object at present takes about 36us.
 
-void Document::ExpandKids(const vector<int>& t_object_numbers,
+void Document::ExpandKids_(const vector<int>& t_object_numbers,
                           shared_ptr<TreeNode<int>> t_parent_node)
 {
   // This function is only called from a single point that is already range
@@ -166,7 +166,7 @@ void Document::ExpandKids(const vector<int>& t_object_numbers,
     auto refs = GetObject(kid->Get())->GetDictionary().GetReferences("/Kids");
 
     // If it has children, use recursion to get them
-    if (!refs.empty()) ExpandKids(refs, kid);
+    if (!refs.empty()) ExpandKids_(refs, kid);
   }
 }
 

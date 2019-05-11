@@ -80,37 +80,39 @@ struct XRefRow
 class XRef
 {
  public:
-  // constructors
-  XRef(){};
+  // The main constructor takes a pointer to the whole file as a string
   XRef(std::shared_ptr<const std::string>);
 
+  // Empty XRef constructor
+  XRef(){};
+
   // public methods
-  bool IsEncrypted() const;           // Eeturns encryption state
-  Dictionary GetTrailer() const;
-  size_t GetObjectStartByte(int) const;   // Byyte offset of a given object
-  size_t GetObjectEndByte(int) const;  // Byte offset of end of given object
-  size_t GetHoldingNumberOf(int) const;
-  std::vector<int> GetAllObjectNumbers() const;
-  std::array<size_t, 2> GetStreamLocation(int) const;
-  void Decrypt(std::string&, int, int) const; // Decrypt a stream
-  std::shared_ptr<const std::string> File() const;// pointer to main file string
+  bool IsEncrypted() const;                         // Returns encryption state
+  Dictionary GetTrailer() const;                    // Gets trailer dictionary
+  size_t GetObjectStartByte(int) const;             // Gets object's byte offset
+  size_t GetObjectEndByte(int) const;               // Gets object end position
+  size_t GetHoldingNumberOf(int) const;             // Gets stream object number
+  std::vector<int> GetAllObjectNumbers() const;     // Gets all object numbers
+  std::vector<size_t> GetStreamLocation(int) const; // Gets start/stop of stream
+  void Decrypt(std::string&, int, int) const;       // Decrypts a stream
+  std::shared_ptr<const std::string> File() const;  // Gets file string pointer
 
  private:
-  std::shared_ptr<const std::string> file_string_;
-  std::unordered_map<int, XRefRow> xref_table_; // This is the main data member
-  std::vector<int> xref_locations_;         // vector of offsets of XRef starts
-  Dictionary trailer_dictionary_;           // Canonical trailer dictionary
-  bool encrypted_;                     // Flag to indicate if encryption used
-  std::shared_ptr<Crypto> encryption_; // crypto object for decrypting files
+  std::shared_ptr<const std::string> file_string_;  // Pointer to file string
+  std::unordered_map<int, XRefRow> xref_table_;     // Main data member
+  std::vector<int> xref_locations_;                 // vector of XRef offsets
+  Dictionary trailer_dictionary_;                   // Main trailer dictionary
+  bool encrypted_;                                  // Is encryption used?
+  std::shared_ptr<Crypto> encryption_;              // Used for encrypted files
 
   // private methods
   XRef& operator=(const XRef&);
-  int GetStreamLength(const Dictionary&) const;
-  void LocateXRefs();                    // Finds XRef locations
-  void ReadXRefStrings();                // Gets strings from XRef locations
-  void ReadXRefFromStream(int);          // Uses xrefstream class to get XRef
-  void ReadXRefFromString(std::string&); // parses XRef directly
-  void CreateCrypto();                   // Allows decryption of encrypted docs
+  int GetStreamLength_(const Dictionary&) const;
+  void LocateXRefs_();                    // Finds XRef locations
+  void ReadXRefStrings_();                // Gets strings from XRef locations
+  void ReadXRefFromStream_(int);          // Uses xrefstream class to get XRef
+  void ReadXRefFromString_(std::string&); // parses XRef directly
+  void CreateCrypto_();                   // Allows decryption of encrypted docs
 };
 
 //---------------------------------------------------------------------------//

@@ -59,6 +59,7 @@
 // The public interface of the Document class comprises constructors and two
 // member functions - one to return any object from the pdf and one to retrieve
 // a specific page header.
+
 class Document
 {
  public:
@@ -87,7 +88,7 @@ class Document
     return page_object_numbers_;
   };
 
-private:
+ private:
   std::string file_path_;                 // Path used to create file (if used)
   const std::string file_string_;         // Full contents of file
   std::shared_ptr<const XRef> xref_;      // Pointer to creating XRef object
@@ -102,14 +103,14 @@ private:
   std::unordered_map <int, std::shared_ptr<Object>> object_cache_;
 
   // private member functions used in construction only
-  void ReadCatalog();        // Finds and stores the catalog dictionary
-  void ReadPageDirectory();  // Finds and stores the /Pages dictionary
-  void BuildDocument();      // The constructors use this as a common pathway
+  void ReadCatalog_();        // Finds and stores the catalog dictionary
+  void ReadPageDirectory_();  // Finds and stores the /Pages dictionary
+  void BuildDocument_();      // The constructors use this as a common pathway
 
   // We need to use an <int> instantiation of the TreeNode template class
   // defined in utilities.h to parse the tree structure of the /Pages entry
   // in the catalog dictionary. This function effectively builds the pages tree.
-  void ExpandKids(const std::vector<int>& object_numbers_to_add_to_tree,
+  void ExpandKids_(const std::vector<int>& object_numbers_to_add_to_tree,
                   std::shared_ptr<TreeNode<int>> node_to_add_them_to);
 };
 

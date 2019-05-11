@@ -83,8 +83,7 @@ class GlyphWidths
 {
  public:
   // Constructor
-  GlyphWidths(Dictionary& font_dictionary,
-              std::shared_ptr<Document> document_ptr);
+  GlyphWidths(Dictionary& font_dictionary, std::shared_ptr<Document> doc_ptr);
 
   // public methods
   int GetWidth(const RawChar& code_point);     // Get width of character code
@@ -97,32 +96,32 @@ class GlyphWidths
   enum WidthState {NEWSYMB, INARRAY, INSUBARRAY, END};
 
   // private data
-  std::unordered_map<RawChar, int> width_map_;   // The main data member
-  Dictionary font_dictionary_;                   // The font dictionary
-  std::shared_ptr<Document> document_;           // Pointer to document
-  std::string base_font_;                        // The base font (if any)
-  bool width_is_pre_interpretation_;             // Are widths for code points
-                                                 // pre- or post- translation?
+  std::unordered_map<RawChar, int> width_map_;  // The main data member
+  Dictionary font_dictionary_;                  // The font dictionary
+  std::shared_ptr<Document> document_;          // Pointer to document
+  std::string base_font_;                       // The base font (if any)
+  bool width_is_pre_interpretation_;            // Are widths for code points
+                                                // pre- or post- translation?
   // private methods
-  void ParseWidthArray(const std::string&);       // Width lexer
-  void GetCoreFont();                             // Core font getter
-  void ParseDescendants();                        // Reads descendant dictionary
-  void ParseWidths();                             // Parses the width array
-  void GetWidthTable();                           // Co-ordinates construction
+  void ParseWidthArray_(const std::string&);    // Width lexer
+  void ReadCoreFont_();                         // Core font getter
+  void ParseDescendants_();                     // Gets descendant dictionary
+  void ParseWidths_();                          // Parses the width array
+  void ReadWidthTable_();                       // Co-ordinates construction
 
-//-- The core fonts as defined in corefonts.cpp ------------------------//
-                                                                        //
-  static std::unordered_map<Unicode, int> courier_widths_;              //
-  static std::unordered_map<Unicode, int> helvetica_widths_;            //
-  static std::unordered_map<Unicode, int> helvetica_bold_widths_;       //
-  static std::unordered_map<Unicode, int> symbol_widths_;               //
-  static std::unordered_map<Unicode, int> times_bold_widths_;           //
-  static std::unordered_map<Unicode, int> times_bold_italic_widths_;    //
-  static std::unordered_map<Unicode, int> times_italic_widths_;         //
-  static std::unordered_map<Unicode, int> times_roman_widths_;          //
-  static std::unordered_map<Unicode, int> dingbats_widths_;             //
-                                                                        //
-//----------------------------------------------------------------------//
+//-- The core fonts as defined in corefonts.cpp ------------------------------//
+                                                                              //
+  static const std::unordered_map<Unicode, int> courier_widths_;              //
+  static const std::unordered_map<Unicode, int> helvetica_widths_;            //
+  static const std::unordered_map<Unicode, int> helvetica_bold_widths_;       //
+  static const std::unordered_map<Unicode, int> symbol_widths_;               //
+  static const std::unordered_map<Unicode, int> times_bold_widths_;           //
+  static const std::unordered_map<Unicode, int> times_bold_italic_widths_;    //
+  static const std::unordered_map<Unicode, int> times_italic_widths_;         //
+  static const std::unordered_map<Unicode, int> times_roman_widths_;          //
+  static const std::unordered_map<Unicode, int> dingbats_widths_;             //
+                                                                              //
+//----------------------------------------------------------------------------//
 };
 
 //---------------------------------------------------------------------------//

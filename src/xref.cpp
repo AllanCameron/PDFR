@@ -26,42 +26,42 @@ using namespace std;
 
 class XRefStream
 {
-  friend class XRef;                // This class is only constructible via XRef
+  friend class XRef;  // This class is only constructible via XRef
 
-  shared_ptr<XRef>    xref_;        // Pointer to creating XRef
-  vector<vector<int>> raw_matrix_,  // Holds the raw data in (row x column) vecs
-                      final_array_, // Transposed, modulo 256 table
-                      result_;      // The main results table for export
-  vector<int> array_widths_,        // Bytes per column from /w entry
-              object_numbers_;      // vector of object numbers inside stream.
-  int         number_of_columns_,   // Number of Columns in table
-              predictor_,           // Specifies decoding algorithm
-              object_start_;        // Byte offset of the XRefStream's container
-  Dictionary  dictionary_;          // Dictionary of object containing stream
+  shared_ptr<XRef>    xref_;         // Pointer to creating XRef
+  vector<vector<int>> raw_matrix_,   // Holds the raw data in (row x col) vecs
+                      final_array_,  // Transposed, modulo 256 table
+                      result_;       // The main results table for export
+  vector<int> array_widths_,         // Bytes per column from /w entry
+              object_numbers_;       // vector of object numbers inside stream.
+  int         number_of_columns_,    // Number of Columns in table
+              predictor_,            // Specifies decoding algorithm
+              object_start_;         // Byte offset of XRefStream's container
+  Dictionary  dictionary_;           // Dictionary of object containing stream
 
-  XRefStream(shared_ptr<XRef>, int);// private constructor
-  void ReadIndex();                // Reads the index entry of main dict
-  void ReadParameters();           // Reads the PNG decoding parameters
-  void GetRawMatrix();            // Reads the stream into data table
-  void DiffUp();                   // Un-diffs the table
-  void ModuloTranspose();          // Transposes table and makes it modulo 256
-  void ExpandBytes();              // Multiply bytes by correct powers of 256
-  void MergeColumns();             // Adds adjacent columns as per parameters
-  void NumberRows();               // Merges object numbers with data table
-  vector<vector<int>> table();      // Getter for final result
+  XRefStream(shared_ptr<XRef>, int); // Private constructor
+  void ReadIndex_();                 // Reads the index entry of main dict
+  void ReadParameters_();            // Reads the PNG decoding parameters
+  void GetRawMatrix_();              // Reads the stream into data table
+  void DiffUp_();                    // Un-diffs the table
+  void ModuloTranspose_();           // Transposes table and makes it modulo 256
+  void ExpandBytes_();               // Multiply bytes by correct powers of 256
+  void MergeColumns_();              // Adds adjacent columns as per parameters
+  void NumberRows_();                // Merges object numbers with data table
+  vector<vector<int>> Table_();      // Getter for final result
 };
 
 /*---------------------------------------------------------------------------*/
 // The XRef constructor. It takes the entire file contents as a string
 // then sequentially runs the steps in creation of an XRef master map
 
-XRef::XRef(shared_ptr<const string> t_file_string_ptr) :
-  file_string_(t_file_string_ptr), encrypted_(false)
+XRef::XRef(shared_ptr<const string> t_file_string_ptr)
+  : file_string_(t_file_string_ptr), encrypted_(false)
 {
-  LocateXRefs();             // Find all xrefs
-  ReadXRefStrings();         // Get the strings containing all xrefs
-  CreateCrypto();            // Get file key, needed for decryption of streams
-  xref_locations_.clear();   // Clear the large string vector to save memory
+  LocateXRefs_();             // Find all xrefs
+  ReadXRefStrings_();         // Get the strings containing all xrefs
+  CreateCrypto_();            // Get file key, needed for decryption of streams
+  xref_locations_.clear();    // Clear the large string vector to save memory
 }
 
 /*---------------------------------------------------------------------------*/
@@ -76,7 +76,7 @@ XRef::XRef(shared_ptr<const string> t_file_string_ptr) :
 // location. All the locations are stored as a vector for passing to
 // other creators.
 
-void XRef::LocateXRefs()
+void XRef::LocateXRefs_()
 {
   // Get last 50 chars of the file
   string&& last_50_chars = file_string_->substr(file_string_->size()-50, 50);
@@ -108,32 +108,27 @@ void XRef::LocateXRefs()
 // Whatever form the xrefs take (plain or XRefStream), we first get their
 // raw contents as strings from the XRef locations
 
-void XRef::ReadXRefStrings()
+void XRef::ReadXRefStrings_()
 {
   // Get a string from each XRef location or throw exception
   for (auto& start : xref_locations_)
   {
     // Find the length of XRef in chars
-    int len = file_string_->find("startxref", start) - start;
+    int length = file_string_->find("startxref", start) - start;
 
     // Throw error if no XRef found
-    if (len <= 0) throw runtime_error("No object found at location");
+    if (length <= 0) throw runtime_error("No object found at location");
 
     // Extract the XRef string
-    string&& fullxref = file_string_->substr(start, len);
+    string&& fullxref = file_string_->substr(start, length);
 
     // Carve out the actual string
     string xref_string = CarveOut(move(fullxref), "xref", "trailer");
 
     // If it contains a dictionary, process as a stream, otherwise as a string
-    if(xref_string.substr(0, 15).find("<<", 0) != string::npos)
-    {
-      ReadXRefFromStream(start);
-    }
-    else
-    {
-      ReadXRefFromString(xref_string);
-    }
+    auto finder = xref_string.substr(0, 15).find("<<", 0);
+    if(finder != string::npos) ReadXRefFromStream_(start);
+    else ReadXRefFromString_(xref_string);
   }
 }
 
@@ -142,10 +137,10 @@ void XRef::ReadXRefStrings()
 // The output of this object is a "table" (vec<vec<int>>) which is parsed
 // and added to the main combined XRef table
 
-void XRef::ReadXRefFromStream(int t_location)
+void XRef::ReadXRefFromStream_(int t_location)
 {
   // Calls XRefStream constructor to make the data table from the stream
-  auto xref_table = XRefStream(make_shared<XRef>(*this), t_location).table();
+  auto xref_table = XRefStream(make_shared<XRef>(*this), t_location).Table_();
 
   // Throws if XRefStream returns an empty table
   if(xref_table.empty()) throw runtime_error("XRef table empty");
@@ -172,7 +167,7 @@ void XRef::ReadXRefFromStream(int t_location)
 // described, respectively. Thereafter the rows represent sequential objects
 // counted from the first.
 
-void XRef::ReadXRefFromString(string& t_xref_string)
+void XRef::ReadXRefFromString_(string& t_xref_string)
 {
   auto all_ints = ParseInts(t_xref_string);
 
@@ -249,7 +244,7 @@ vector<int> XRef::GetAllObjectNumbers() const
 
 /*---------------------------------------------------------------------------*/
 
-int XRef::GetStreamLength(const Dictionary& t_dictionary) const
+int XRef::GetStreamLength_(const Dictionary& t_dictionary) const
 {
   if(t_dictionary.ContainsReferences("/Length"))
   {
@@ -268,7 +263,7 @@ int XRef::GetStreamLength(const Dictionary& t_dictionary) const
 // Returns the offset of the start location relative to the file start, and the
 // length, of the stream belonging to the given object
 
-array<size_t, 2> XRef::GetStreamLocation(int t_object_start) const
+vector<size_t> XRef::GetStreamLocation(int t_object_start) const
 {
   // Get the object dictionary
   Dictionary dictionary = Dictionary(file_string_, t_object_start);
@@ -276,11 +271,11 @@ array<size_t, 2> XRef::GetStreamLocation(int t_object_start) const
   // If the stream exists, get its start / stop positions as a length-2 array
   if(dictionary.HasKey("stream") && dictionary.HasKey("/Length"))
   {
-    size_t stream_length = (size_t) GetStreamLength(dictionary);
+    size_t stream_length = (size_t) GetStreamLength_(dictionary);
     size_t stream_start  = (size_t) dictionary.GetInts("stream")[0];
-    return array<size_t, 2>{stream_start, stream_length};
+    return vector<size_t>  {stream_start, stream_length};
   }
-  return array<size_t, 2> {0,0}; // if no length, return empty length-2 array
+  return vector<size_t> {0,0}; // if no length, return empty length-2 array
 }
 
 /*---------------------------------------------------------------------------*/
@@ -311,7 +306,7 @@ Dictionary XRef::GetTrailer() const
 // This co-ordinates the creation of the encryption dictionary (if any), and
 // the building plus testing of the file decryption key (if any)
 
-void XRef::CreateCrypto()
+void XRef::CreateCrypto_()
 {
    // if there's no encryption dictionary, there's nothing else to do
   if(!trailer_dictionary_.HasKey("/Encrypt")) return;
@@ -331,7 +326,7 @@ void XRef::CreateCrypto()
 /*---------------------------------------------------------------------------*/
 // simple getter for the output of an XRefStream
 
-vector<vector<int>> XRefStream::table()
+vector<vector<int>> XRefStream::Table_()
 {
   return result_;
 }
@@ -350,25 +345,24 @@ shared_ptr<const string> XRef::File() const
 // PNG decompression algorithm. They are seperated out to prevent one large
 // hairball function being created that is difficult to debug.
 
-XRefStream::XRefStream(shared_ptr<XRef> t_xref, int t_starts_at) :
-  xref_(t_xref),
-  number_of_columns_(0),
-  predictor_(0),
-  object_start_(t_starts_at),
-  dictionary_(Dictionary(xref_->File(), object_start_))
+XRefStream::XRefStream(shared_ptr<XRef> t_xref, int t_starts_at)
+  : xref_(t_xref),
+    number_of_columns_(0),
+    predictor_(0),
+    object_start_(t_starts_at),
+    dictionary_(Dictionary(xref_->File(), object_start_))
 {
   // If there is no /W entry, we don't know how to interpret the stream.
-  if(!dictionary_.ContainsInts("/W"))
-    throw runtime_error("No /W entry for stream.");
+  if(!dictionary_.ContainsInts("/W")) throw runtime_error("No /W entry found.");
 
-  ReadIndex();       // Read Index so we know which objects are in stream
-  ReadParameters();  // Read the PNG decoding parameters
-  GetRawMatrix();   // Arrange the raw data in stream into correct table form
-  DiffUp();          // Undiff the raw data
-  ModuloTranspose(); // Transposes table which ensuring all numbers are <256
-  ExpandBytes();     // Multiply bytes to intended size based on their position
-  MergeColumns();    // Sum adjacent columns that represent large numbers
-  NumberRows();      // Marry rows to the object numbers from the /Index entry
+  ReadIndex_();       // Reads Index so we know which objects are in stream
+  ReadParameters_();  // Reads the PNG decoding parameters
+  GetRawMatrix_();    // Arranges the raw data in stream into correct table form
+  DiffUp_();          // Undiffs the raw data
+  ModuloTranspose_(); // Transposes table which ensuring all numbers are <256
+  ExpandBytes_();     // Multiplies bytes according to their position
+  MergeColumns_();    // Sums adjacent columns that represent large numbers
+  NumberRows_();      // Marries rows to object numbers from the /Index entry
 }
 
 /*---------------------------------------------------------------------------*/
@@ -387,7 +381,7 @@ XRefStream::XRefStream(shared_ptr<XRef> t_xref, int t_starts_at) :
 // The expanded sequence is stored as a private data member of type integer
 // vector: objectNumbers
 
-void XRefStream::ReadIndex()
+void XRefStream::ReadIndex_()
 {
   // Gets the numbers in the /Index entry
   auto index_entries = dictionary_.GetInts("/Index");
@@ -409,7 +403,7 @@ void XRefStream::ReadIndex()
 // stream dictionary: the number of columns in the table and the predictor
 // number, which gives the method used to decode the stream
 
-void XRefStream::ReadParameters()
+void XRefStream::ReadParameters_()
 {
   string sub_dictionary_string = "<<>>";
 
@@ -435,7 +429,7 @@ void XRefStream::ReadParameters()
 // Get the raw data from the stream and arrange it in a table as directed by
 // the /W ("widths") entry in the main dictionary
 
-void XRefStream::GetRawMatrix()
+void XRefStream::GetRawMatrix_()
 {
   // Obtain the raw stream data
   auto stream_location = xref_->GetStreamLocation(object_start_);
@@ -487,7 +481,7 @@ void XRefStream::GetRawMatrix()
 // and storing this instead of the actual number. This function reverses that
 // differencing by calculating the cumulative sums of the columns
 
-void XRefStream::DiffUp()
+void XRefStream::DiffUp_()
 {
   if(predictor_ == 12)
   {
@@ -510,7 +504,7 @@ void XRefStream::DiffUp()
 /*---------------------------------------------------------------------------*/
 // transposes the matrix and makes it modulo 256.
 
-void XRefStream::ModuloTranspose()
+void XRefStream::ModuloTranspose_()
 {
   for (size_t i = 0; i < raw_matrix_.at(0).size(); ++i)
   {
@@ -530,7 +524,7 @@ void XRefStream::ModuloTranspose()
 // Multiplies the entries in the matrix according to the width in bytes of the
 // numbers represented according to the /W entry
 
-void XRefStream::ExpandBytes()
+void XRefStream::ExpandBytes_()
 {
   // Calculate the byte shift for each column (with 1:1 correspondence);
   int column_number = 0;
@@ -552,7 +546,7 @@ void XRefStream::ExpandBytes()
 // Now the matrix has the correct values but the columns representing higher
 // bytes need to be added to those with lower bytes
 
-void XRefStream::MergeColumns()
+void XRefStream::MergeColumns_()
 {
   // For each of the final columns
   for (size_t column_number = 0, cumsum = 0;
@@ -583,7 +577,7 @@ void XRefStream::MergeColumns()
 // The last step in creation of the XRefStream table is matching the rows to
 // the object numbers from the /index entry table
 
-void XRefStream::NumberRows()
+void XRefStream::NumberRows_()
 {
   // If there are only two columns append a zero filled column of the same size
   if(result_.size() == 2)

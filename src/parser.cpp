@@ -60,9 +60,9 @@ Parser::Parser(shared_ptr<Page> pag) :      // Long initializer list...
 
 void Parser::q_()
 {
-  graphics_state_.emplace_back(graphics_state_.back()); // push tm matrix
-  font_stack_.emplace_back(current_font_);              // push font name
-  font_size_stack_.emplace_back(current_font_size_);    // push pointsize
+  graphics_state_.emplace_back(graphics_state_.back()); // Pushes tm matrix
+  font_stack_.emplace_back(current_font_);              // Pushes font name
+  font_size_stack_.emplace_back(current_font_size_);    // Pushes pointsize
 }
 
 /*---------------------------------------------------------------------------*/
@@ -300,7 +300,7 @@ void Parser::ProcessRawChar_(float& t_scale, Matrix& t_text_space,
       glyph_width = glyph_pair.second + 1000 * (tc_ + tw_) / current_font_size_;
     }
 
-    // Adjust the pushright in text space by character width
+    // Adjust the kerning in text space by character width
     kerning_ += glyph_width;
 
     // Move user space right by the (converted to user space) width of the char

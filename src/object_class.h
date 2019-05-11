@@ -68,15 +68,15 @@ class Object
   int object_number_;                     // The object knows its own number
   Dictionary header_;                     // The object's dictionary
   std::string stream_;                    // The object's stream or contents
-  std::array<size_t, 2> stream_location_; // Start position and length of stream
+  std::vector<size_t> stream_location_;   // Start position and length of stream
 
   // A lookup of start / stop positions of the objects within an object stream
   std::unordered_map<int, std::pair<int, int>> object_stream_index_;
 
   // private methods
-  void IndexObjectStream();
-  void ApplyFilters();
-  void ReadStreamFromStreamLocations();
+  void IndexObjectStream_();
+  void ApplyFilters_();
+  void ReadStreamFromStreamLocations_();
 };
 
 //---------------------------------------------------------------------------//
