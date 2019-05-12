@@ -18,7 +18,7 @@ e.g.
 //---------------------------------------------------------------------------//
 // Method to make things OK
 
-std::string MakeEverythingOK(std::string t_input)
+void MakeEverythingOK(std::string& t_input)
 {
   std::string ok_suffix = " is OK";
   t_input.append(ok_suffix);
@@ -27,7 +27,7 @@ std::string MakeEverythingOK(std::string t_input)
 //---------------------------------------------------------------------------//
 // Make the data member OK
 
-void MyClass::MakeAnOKMember_(std::string t_input)
+void MyClass::MakeAnOKMember_(const std::string& t_input)
 {
   ok_data_member_ = MakeEverythingOK(t_input);
 }
