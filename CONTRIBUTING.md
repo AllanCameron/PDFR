@@ -5,15 +5,16 @@ The author is very much an amateur, with little time to spend on this project an
 # Conventions
 
 ## Naming conventions
-All variable names are written in snake_case with no capitals.
-Aim for descriptive names over saving horizontal space.
-All variables passed as parameters to a function are prefixed with t_.
-All private data members are suffixed with a single underscore.
-All function / method names are written in CamelCase.
-Private methods are suffixed with a single underscore.
-Class names are written in CamelCase.
+- All variable names are written in snake_case with no capitals.
+- Aim for descriptive names over saving horizontal space.
+- All variables passed as parameters to a function are prefixed with t_.
+- All private data members are suffixed with a single underscore.
+- All function / method names are written in CamelCase.
+- Private methods are suffixed with a single underscore.
+- Class names are written in CamelCase.
+
 e.g.
-```
+```cpp
 // Method to make things OK
 
 void MyClass::MakeAnOKMember_(std::string t_input)
@@ -27,7 +28,7 @@ void MyClass::MakeAnOKMember_(std::string t_input)
 
 
 ## Formatting
-Indentation is in [Allman style](https://en.wikipedia.org/wiki/Indentation_style#Allman_style). Yes it wastes vertical space, but I just find it more readable
-Indentation is with two spaces
-No tabs allowed
-The maximum line width is 80 characters. No exceptions.
+- Indentation is in [Allman style](https://en.wikipedia.org/wiki/Indentation_style#Allman_style). Yes it wastes vertical space, but I just find it more readable.
+- Indentation is with two spaces.
+- No tabs allowed.
+- The maximum line width is 80 characters. No exceptions.
