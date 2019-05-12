@@ -15,15 +15,24 @@ The author is very much an amateur, with little time to spend on this project an
 
 e.g.
 ```cpp
+//---------------------------------------------------------------------------//
 // Method to make things OK
 
-void MyClass::MakeAnOKMember_(std::string t_input)
+std::string MakeEverythingOK(std::string t_input)
 {
   std::string ok_suffix = " is OK";
   t_input.append(ok_suffix);
-  ok_data_member_ = t_input;
-  return;
 }
+
+//---------------------------------------------------------------------------//
+// Make the data member OK
+
+void MyClass::MakeAnOKMember_(std::string t_input)
+{
+  ok_data_member_ = MakeEverythingOK(t_input);
+}
+
+//---------------------------------------------------------------------------//
 ```
 
 
@@ -32,3 +41,4 @@ void MyClass::MakeAnOKMember_(std::string t_input)
 - Indentation is with two spaces.
 - No tabs allowed.
 - The maximum line width is 80 characters. No exceptions.
+- All function definitions are seperated by an 80-character comment line as shown in the snippet above, with a brief description commented below, a line break, then the function, followed by a line break then the next comment line.
