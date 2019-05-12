@@ -18,10 +18,11 @@ e.g.
 //---------------------------------------------------------------------------//
 // Method to make things OK
 
-void MakeEverythingOK(std::string& t_input)
+std::string MakeEverythingOK(std::string t_input)
 {
   std::string ok_suffix = " is OK";
   t_input.append(ok_suffix);
+  return t_input;
 }
 
 //---------------------------------------------------------------------------//
