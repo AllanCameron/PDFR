@@ -29,29 +29,19 @@ Encoding::Encoding(const Dictionary& t_font_dictionary,
 
 /*---------------------------------------------------------------------------*/
 
-void Encoding::Write_(vector<pair<DifferencesState, string>>& t_entries,
-                     DifferencesState& t_state, string& t_buffer)
+void Encoding::Write_(DifferencesState& t_state, string& t_buffer)
 {
-  t_entries.push_back(make_pair(t_state, t_buffer));
+  entries_.push_back(make_pair(t_state, t_buffer));
 }
 
 /*---------------------------------------------------------------------------*/
-// Lexer / parser for /Differences entry of encoding dictionary. Takes the
-// /Differences entry as a string and reads its ints as input code points. These
-// are mapped to the subsequent glyph name's Unicode value. If more than one
-// name follows an int, then sequential code points are mapped to each
-// successive name's Unicode value. This requires the static adobe_to_unicode_
-// map.
+// Lexer for /Differences entry of encoding dictionary. Takes the
+// /Differences entry as a string and reads its ints as input code points.
 
 void Encoding::ReadDifferences_(const string& t_differences_string)
 {
   DifferencesState state = NEWSYMB; // define starting state
   string buffer {};        // initialise the buffer string
-
-  // The entries vector gives a pair of type : entry for each entity pushed
-  // onto the stack by the lexer. We therefore know whether we are dealing with
-  // a code point or a name when we parse the stack
-  vector<pair<DifferencesState, string>> entries;
 
   // The loop now cycles through each character in the differences string,
   // switching states and pushing results onto the stack according to the
@@ -76,9 +66,9 @@ void Encoding::ReadDifferences_(const string& t_differences_string)
       case NUM:       switch(n)   // write number to buffer, switch to name
                       {           // if char is '/'
                         case 'D': buffer += i ;                  break;
-                        case '/': Write_(entries, state, buffer);
+                        case '/': Write_(state, buffer);
                                   buffer = i; state = NAME;      break;
-                        default:  Write_(entries, state, buffer);
+                        default:  Write_(state, buffer);
                                   buffer = ""; state = NEWSYMB;  break;
                       }
                       break;
@@ -87,11 +77,11 @@ void Encoding::ReadDifferences_(const string& t_differences_string)
                         case 'L': buffer += i;                   break;
                         case '.': buffer += i;                   break;
                         case 'D': buffer += i;                   break;
-                        case '/': Write_(entries, state, buffer);
+                        case '/': Write_(state, buffer);
                                   buffer = i ;                   break;
-                        case ' ': Write_(entries, state, buffer);
+                        case ' ': Write_(state, buffer);
                                   buffer = "" ; state = NEWSYMB; break;
-                        default:  Write_(entries, state, buffer);
+                        default:  Write_(state, buffer);
                                   state = STOP;                  break;
                       }
                       break;
@@ -99,11 +89,22 @@ void Encoding::ReadDifferences_(const string& t_differences_string)
     }
     if(state == STOP) break;
   }
+  ReadDifferenceEntries_();
+}
+
+/*---------------------------------------------------------------------------*/
+// Parser for /Differences entry. Maps char points to glyph name's Unicode
+// value. If more than one name follows an int, then sequential code points are
+// mapped to each successive name's Unicode value. This requires the static
+// adobe_to_unicode_ map.
+
+void Encoding::ReadDifferenceEntries_()
+{
 
   RawChar code_point = 0; // The raw code point to be mapped to Unicode
 
-  // This loop writes the results vector to encoding map
-  for(auto& entry : entries)
+   // This loop writes the results vector to encoding map
+  for(auto& entry : entries_)
   {
     // If the vector entry is a number, convert to RawChar
     if(entry.first == NUM) code_point = (RawChar) stoi(entry.second);
@@ -111,7 +112,26 @@ void Encoding::ReadDifferences_(const string& t_differences_string)
     // Otherwise it's a name - convert it to Unicode, write it to the
     // encoding map and post-increment the mapping rawchar in case the next
     // entry is also a name (it will be over-written if it is an int)
-    else encoding_map_[code_point++] = adobe_to_unicode_.at(entry.second);
+    else
+    {
+      auto finder = adobe_to_unicode_.find(entry.second);
+      if(finder != adobe_to_unicode_.end())
+      {
+        encoding_map_[code_point++] = adobe_to_unicode_.at(entry.second);
+      }
+      else
+      {
+        if (entry.second.find("/uni") == 0)
+        {
+          auto unicode_hex = entry.second.substr(4, 4);
+          auto new_entry = ConvertHexToRawChar(unicode_hex);
+          if (!new_entry.empty()) encoding_map_[code_point++] = new_entry[0];
+          else encoding_map_[code_point] = code_point++;
+        }
+        else encoding_map_[code_point] = code_point++;
+
+      }
+    }
   }
 }
 
@@ -187,13 +207,11 @@ void Encoding::ProcessUnicodeRange_(vector<string>& t_bf_ranges)
     // Loop to calculate entries and fill encoding map
     for(size_t j = 2; j < all_entries.size(); j += 3)
     {
-      // first column == first code point
+      // first column == first code point; second column == last code point
       RawChar first = ConvertHexToRawChar(all_entries[j - 2]).at(0);
-
-      // second column == first code point
       RawChar last  = ConvertHexToRawChar(all_entries[j - 1]).at(0);
 
-      // We call the hex to rawchar function as it outputs uint16
+      // We call the ConvertHexToRawchar function as it outputs uint16
       // However, 'start' is Unicode and we make this explicit
       Unicode start = (Unicode) ConvertHexToRawChar(all_entries[j]).at(0);
 
@@ -267,10 +285,9 @@ void Encoding::ReadEncoding_()
 
 Unicode Encoding::Interpret(const RawChar& t_raw)
 {
+  // If no translation found, return the raw character code point
   auto found = encoding_map_.find(t_raw);
   if(found != encoding_map_.end()) return found->second;
-
-  // If no translation found, return the raw character code point
   else return t_raw;
 }
 

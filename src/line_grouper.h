@@ -18,11 +18,10 @@
 #include "whitespace.h"
 
 //---------------------------------------------------------------------------//
-/*  The LineGrouper class takes the output of the whitespace class, which is
- * a vector of pairs : each pair contains a box representing an area on the
- * page, and a vector of the text elements contained within that box. What we
- * want is to change this so that we have a 1:1 correspondence between boxes
- * and text elements, but for the text elements to be joined-up, logical
+/* The LineGrouper class takes the output of the whitespace class, which is
+ * a vector of TextBoxes - that is, a box containing a vector of text elements.
+ * What we want is to change this so that we have a 1:1 correspondence between
+ * boxes and text elements, but for the text elements to be joined-up, logical
  * components of the document such as paragraphs, headers, table entries and so
  * on.
  *
@@ -48,17 +47,26 @@
 
 class LineGrouper
 {
-public:
+ public:
+  // Constructor takes the output of WordGrouper - a vector of TextBoxes
   LineGrouper(std::vector<TextBox> text_box_from_word_grouper);
-  std::vector<TextBox>& Output();
 
-private:
-  void FindBreaks(TextBox&);
-  void LineEndings(TextBox&);
-  void PasteLines(TextBox&);
-  void SplitBox(TextBox& box_to_be_split, float divide_at_this_y_value);
+  // The output is also a vector of TextBoxes
+  inline std::vector<TextBox>& Output() { return text_boxes_; }
 
-  struct ReadingOrder
+ private:
+  void FindBreaks_(TextBox&);   // Identifies paragraph breaks
+  void LineEndings_(TextBox&);  // Adjusts line endings to facilitate pasting
+  void PasteLines_(TextBox&);   // Pastes TextElements in the TextBoxes together
+
+  // Divides a TextBox into two by a horizontal line given as a y value
+  void SplitBox_(TextBox& box_to_be_split, float divide_at_this_y_value);
+
+  // Defines the reading order for elements in a text box. If an element is
+  // higher than another, it comes before it. If it is at the same height but
+  // to the left of the other element, it comes before it. In all other cases,
+  // it comes afterwards.
+  struct ReadingOrder_
   {
     bool operator() (const TextPointer& row1, const TextPointer& row2) const
     {
@@ -69,7 +77,7 @@ private:
     }
   };
 
-  // private data members
+  // private data member
   std::vector<TextBox> text_boxes_;
 };
 

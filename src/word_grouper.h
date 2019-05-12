@@ -51,7 +51,7 @@
 
 class WordGrouper
 {
-public:
+ public:
   // Constructor
   WordGrouper(TextBox&&);
 
@@ -61,28 +61,24 @@ public:
   // Output text elements with sizes, fonts, positions to API
   TextTable Out();
 
-private:
+ private:
   // Make a table of values in a vector of floats rounded to one decimal place
-  void Tabulate(const std::vector<float>&, std::unordered_map<int, size_t>&);
+  void Tabulate_(const std::vector<float>&, std::unordered_map<int, size_t>&);
 
   // Use tabulate function to find likely left, right or mid-aligned columns
-  void FindEdges();
+  void FindEdges_();
 
   // Tell the text elements whether they form an edge or not
-  void AssignEdges();
+  void AssignEdges_();
 
   // Join elligible adjacent glyphs together and merge their properties
-  void FindRightMatch();
+  void FindRightMatch_();
 
 // private data members
-
-  // The tables of edges
-  std::unordered_map<int, size_t> left_edges_,
+  std::unordered_map<int, size_t> left_edges_,        // The tables of edges
                                   right_edges_,
                                   mids_;
-
-  // The main data member
-  TextBox textbox_;
+  TextBox                         textbox_;           // The main data member
 };
 
 //---------------------------------------------------------------------------//

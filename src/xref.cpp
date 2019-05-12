@@ -451,8 +451,11 @@ void XRefStream::GetRawMatrix_()
   auto new_end_marker = remove(array_widths_.begin(), array_widths_.end(), 0);
   array_widths_.erase(new_end_marker, array_widths_.end());
 
-  // if no record of column numbers, infer from number of /W entries >0
-  if(number_of_columns_ == 0) number_of_columns_ = array_widths_.size();
+  // if no record of column numbers, infer from number of /W entries
+  if(number_of_columns_ == 0)
+  {
+    for(auto entry : array_widths_) number_of_columns_ += entry;
+  }
 
   // Predictors above 10 require an extra column
   if(predictor_ > 9) number_of_columns_++;

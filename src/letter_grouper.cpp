@@ -30,9 +30,9 @@ TextTable LetterGrouper::Out()
 LetterGrouper::LetterGrouper(TextBox t_text_box) : text_box_(move(t_text_box))
 {
   text_box_.RemoveDuplicates();
-  MakeGrid();     // Split the glyphs into 256 cells to reduce search space
-  CompareCells(); // Find adjacent glyphs
-  Merge();        // Glue adjacent glyphs together
+  MakeGrid_();     // Split the glyphs into 256 cells to reduce search space
+  CompareCells_(); // Find adjacent glyphs
+  Merge_();        // Glue adjacent glyphs together
 }
 
 //---------------------------------------------------------------------------//
@@ -49,7 +49,7 @@ LetterGrouper::LetterGrouper(TextBox t_text_box) : text_box_(move(t_text_box))
 // smaller. The grid position is easily stored as a single byte, with the first
 // 4 bits representing the x position and the second representing the y.
 
-void LetterGrouper::MakeGrid()
+void LetterGrouper::MakeGrid_()
 {
   // Grid column width in user space
   float dx = (text_box_.Width()) / 16;
@@ -111,7 +111,7 @@ TextBox LetterGrouper::Output()
 // North and South. If there is no match found in these it will also look in
 // the cells at the NorthEast, East and SouthEast.
 
-void LetterGrouper::CompareCells()
+void LetterGrouper::CompareCells_()
 {
   // For each of 16 columns of cells on page
   for(uint8_t column = 0; column < 16; ++column)
@@ -139,7 +139,7 @@ void LetterGrouper::CompareCells()
           if(row == 15 && (index % 3 == 1)) continue;
 
           uint8_t cell = (column + (index / 3)) | ((row + index % 3 - 1) << 4);
-          MatchRight(element, cell);
+          MatchRight_(element, cell);
         }
       }
     }
@@ -151,7 +151,7 @@ void LetterGrouper::CompareCells()
 // by its cell and the order it appears in the vector of glyphs contained in
 // that cell.
 
-void LetterGrouper::MatchRight(TextPointer element, uint8_t key)
+void LetterGrouper::MatchRight_(TextPointer element, uint8_t key)
 {
   // The key is the address of the cell in the grid.
   auto& cell = grid_[key];
@@ -189,7 +189,7 @@ void LetterGrouper::MatchRight(TextPointer element, uint8_t key)
 // the latter's size and position parameters and declaring the leftward glyph
 // "consumed"
 
-void LetterGrouper::Merge()
+void LetterGrouper::Merge_()
 {
   // For each column in the x-axis
   for(uint8_t column = 0; column < 16; ++column)

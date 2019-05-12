@@ -45,10 +45,9 @@
 
 class TextElement : public Box
 {
+  typedef std::shared_ptr<TextElement> TextPointer;
 
-typedef std::shared_ptr<TextElement> TextPointer;
-
-public:
+ public:
   TextElement(float t_left, float t_right, float t_top, float t_bottom,
               std::shared_ptr<Font> t_font, std::vector<Unicode> t_glyphs)
     : Box(t_left, t_right, t_top, t_bottom),
@@ -132,7 +131,7 @@ public:
   std::string Utf();
 
 
-private:
+ private:
   std::shared_ptr<Font> font_;           // Font used to draw text
   std::vector<Unicode> glyph_;           // The actual Unicode glyphs encoded
   std::shared_ptr<TextElement> join_;    // address of closest adjacent element

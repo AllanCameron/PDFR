@@ -26,9 +26,9 @@ constexpr int EDGECOUNT = 4;
 
 WordGrouper::WordGrouper(TextBox&& t_text_box): textbox_(move(t_text_box))
 {
-  FindEdges();
-  AssignEdges();
-  FindRightMatch();
+  FindEdges_();
+  AssignEdges_();
+  FindRightMatch_();
 };
 
 //---------------------------------------------------------------------------//
@@ -58,7 +58,7 @@ TextTable WordGrouper::Out()
 // return are data members of the class, we need to pass the map we wish to
 // create by reference.
 
-void WordGrouper::Tabulate(const vector<float>& t_supplied_vector,
+void WordGrouper::Tabulate_(const vector<float>& t_supplied_vector,
                             unordered_map<int, size_t>& t_table   )
 {
   // Take each member of the supplied vector
@@ -87,7 +87,7 @@ void WordGrouper::Tabulate(const vector<float>& t_supplied_vector,
 // This uses the Tabulate function to find left, right and centre-aligned text
 // elements on the page.
 
-void WordGrouper::FindEdges()
+void WordGrouper::FindEdges_()
 {
   // Create vectors of left and right edges of text elements
   vector<float> left, right;
@@ -105,9 +105,9 @@ void WordGrouper::FindEdges()
   }
 
   // Use Tabulate to find left and right edges as well as midpoints
-  Tabulate(left,   left_edges_);
-  Tabulate(right,  right_edges_);
-  Tabulate(midvec, mids_);
+  Tabulate_(left,   left_edges_);
+  Tabulate_(right,  right_edges_);
+  Tabulate_(midvec, mids_);
 }
 
 //---------------------------------------------------------------------------//
@@ -115,7 +115,7 @@ void WordGrouper::FindEdges()
 // aligned element so it "knows" which side(s), if any, are eligible to join
 // other elements
 
-void WordGrouper::AssignEdges()
+void WordGrouper::AssignEdges_()
 {
   for(auto& element : textbox_)
   {
@@ -150,7 +150,7 @@ void WordGrouper::AssignEdges()
 // is, find the most appropriate match to its right that is elligible and stick
 // the two together.
 
-void WordGrouper::FindRightMatch()
+void WordGrouper::FindRightMatch_()
 {
   // Handle empty data
   if(textbox_.empty()) throw runtime_error("empty data");

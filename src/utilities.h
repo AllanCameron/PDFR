@@ -280,7 +280,7 @@ class TreeNode
   }
   //-------------------------------------------------------------------------//
 
-private:
+ private:
   Node parent_;             // Shared pointer to parent TreeNode<T>
   std::vector<Node> kids_;  // Contains vector of shared pointers to child nodes
   T data_;                  // The object contained in this tree node itself

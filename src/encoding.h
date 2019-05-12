@@ -107,13 +107,19 @@ class Encoding
   std::shared_ptr<Document> document_;  // pointer to the containing document
   std::string base_encoding_;           // value of /BaseEncoding entry
 
+  // The entries_ vector gives a pair of type : entry for each entity pushed
+  // onto the stack by the lexer. We therefore know whether we are dealing with
+  // a code point or a name when we parse the stack
+  std::vector<std::pair<DifferencesState, std::string>> entries_;
+
   // private member functions
 
   // uses lexer to parse /Differences entry
   void ReadDifferences_(const std::string& differences_entry);
 
   // finds encoding dictionary, gets /basencoding and /Differences entries
-  void ReadEncoding_();
+  void ReadEncoding_();           // Tokenizer
+  void ReadDifferenceEntries_();  // Parser
 
   // parses CMap encoding ranges
   void ProcessUnicodeRange_(std::vector<std::string>& bf_range_from_cmap);
@@ -125,9 +131,8 @@ class Encoding
   void MapUnicode_();
 
   // Helper function for parser
-  void Write_(std::vector<std::pair<DifferencesState, std::string>>& entries,
-             DifferencesState& state_to_push_to_entries,
-             std::string& string_to_push_to_entries);
+  void Write_(DifferencesState& state_to_push_to_entries,
+              std::string& string_to_push_to_entries);
 };
 
 //---------------------------------------------------------------------------//

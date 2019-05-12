@@ -16,37 +16,59 @@
 using namespace std;
 
 //---------------------------------------------------------------------------//
-//
+// The LineGrouper constructor takes the WordGrouper output and goes through all
+// of its text boxes. If the elements within each box can be grouped together
+// into a single logical component, then they are glued together into a logical
+// unit. Otherwise, the box is split vertically.
 
 LineGrouper::LineGrouper(vector<TextBox> t_text_boxes)
   : text_boxes_(t_text_boxes)
 {
   size_t i = 0;
-  if(text_boxes_.empty()) throw runtime_error("No textboxes on page");
 
-  while (i < text_boxes_.size())
+  // If there are no textboxes, there is nothing to do.
+  if( !text_boxes_.empty())
   {
-    if (text_boxes_[i].size() < 2){++i; continue;}
-    sort(text_boxes_[i].begin(), text_boxes_[i].end(), ReadingOrder());
-    FindBreaks(text_boxes_[i]);
-    if (text_boxes_[i].size() < 2){++i; continue;}
-    LineEndings(text_boxes_[i]);
-    PasteLines(text_boxes_[i++]);
+    while (i < text_boxes_.size())
+    {
+      // There is no point processing a textbox with 0 or 1 elements.
+      if (text_boxes_[i].size() < 2){++i; continue;}
+
+      // Ensures the text elements are in the correct reading order in the box.
+      sort(text_boxes_[i].begin(), text_boxes_[i].end(), ReadingOrder_());
+
+      // Finds logical breaks within the text box and splits if needed.
+      FindBreaks_(text_boxes_[i]);
+
+      // After splitting, there may only be 1 element left in the box.
+      if (text_boxes_[i].size() < 2){++i; continue;}
+
+      // Makes sure the lines have correct final character before being pasted
+      LineEndings_(text_boxes_[i]);
+
+      // Pastes the text elements together
+      PasteLines_(text_boxes_[i++]);
+    }
   }
 };
 
 //---------------------------------------------------------------------------//
+// Since the TextElements are now sorted by reading order, we can compare
+// consecutive elements in a textbox to work out whether they belong to the
+// same logical group. If they don't, then we call SplitBox_ to seperate them.
 //
+// This method identifies whether a new line is indented compared the previous
+// line.
 
-void LineGrouper::FindBreaks(TextBox& t_text_box)
+void LineGrouper::FindBreaks_(TextBox& t_text_box)
 {
+  // For each TextElement in the TextBox
   for(size_t i = 1; i < t_text_box.size(); ++i)
   {
-    if(t_text_box[i]->GetLeft() - t_text_box[i - 1]->GetLeft() > 0.1
-         &&
-       t_text_box[i]->GetBottom() < t_text_box[i - 1]->GetBottom())
+    if(t_text_box[i]->GetBottom() < t_text_box[i - 1]->GetBottom() && // Below
+       t_text_box[i]->GetLeft() - t_text_box[i - 1]->GetLeft() > 0.1) // To left
     {
-      SplitBox(t_text_box, t_text_box[i - 1]->GetBottom());
+      SplitBox_(t_text_box, t_text_box[i - 1]->GetBottom());
       break;
     }
 
@@ -54,10 +76,17 @@ void LineGrouper::FindBreaks(TextBox& t_text_box)
 }
 
 //---------------------------------------------------------------------------//
+// To join lines together properly, we normally want to add a space to seperate
+// the word ending the line above and the first word of the line below. However,
+// we don't want to add an extra whitespace if the line already ends in one.
+// Furthermore, we don't want to add a space between the two fragments of a
+// hyphenated word, and instead we should just remove the hyphen.
 //
+// This method handles these various possibilities
 
-void LineGrouper::LineEndings(TextBox& t_text_box)
+void LineGrouper::LineEndings_(TextBox& t_text_box)
 {
+  // For each element in the TextBox
   for(size_t i = 0; i < t_text_box.size() - 1; ++i)
   {
     auto& element = t_text_box[i];
@@ -78,9 +107,9 @@ void LineGrouper::LineEndings(TextBox& t_text_box)
 }
 
 //---------------------------------------------------------------------------//
-//
+// Combines the text elements into a single element with the textbox
 
-void LineGrouper::PasteLines(TextBox& t_text_box)
+void LineGrouper::PasteLines_(TextBox& t_text_box)
 {
   for(size_t i = 1; i < t_text_box.size(); ++i)
   {
@@ -90,9 +119,9 @@ void LineGrouper::PasteLines(TextBox& t_text_box)
 }
 
 //---------------------------------------------------------------------------//
-//
+// Divides a TextBox into two by a horizontal line given as a y value
 
-void LineGrouper::SplitBox(TextBox& t_old_one, float t_top_edge)
+void LineGrouper::SplitBox_(TextBox& t_old_one, float t_top_edge)
 {
   if(t_old_one.empty()) return;
   TextBox new_one = t_old_one;
@@ -112,13 +141,5 @@ void LineGrouper::SplitBox(TextBox& t_old_one, float t_top_edge)
   t_old_one.SetBottom(t_old_one.back()->GetBottom());
   new_one.SetTop(t_old_one.front()->GetTop());
   text_boxes_.push_back(new_one);
-}
-
-
-//---------------------------------------------------------------------------//
-
-vector<TextBox>& LineGrouper::Output()
-{
-  return text_boxes_;
 }
 

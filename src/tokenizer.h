@@ -49,12 +49,12 @@
 
 class Tokenizer
 {
-public:
+ public:
   // Constructor. Takes a string pointer to the page description program
   // and a fresh Parser object
   Tokenizer(std::shared_ptr<std::string> input_string, Parser* parser_object);
 
-private:
+ private:
   // Enumerates the types of characters that can alter state differently
   enum CharType
   {

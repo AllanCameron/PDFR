@@ -56,10 +56,10 @@ class LetterGrouper
   std::unordered_map<uint8_t, std::vector<TextPointer>> grid_;
 
   // private methods
-  void MakeGrid();                    // assigns each glyph to a 16 x 16 grid
-  void CompareCells();                // co-ordinates matching between cells
-  void MatchRight(TextPointer, uint8_t); // compare all glyphs in cell
-  void Merge();                       // join matching glyphs together
+  void MakeGrid_();                       // Assigns glyphs to a 16 x 16 grid
+  void CompareCells_();                   // Co-ordinates matching between cells
+  void MatchRight_(TextPointer, uint8_t); // Compares all glyphs in cell
+  void Merge_();                          // Joins matching glyphs together
 };
 
 //---------------------------------------------------------------------------//
