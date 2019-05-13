@@ -87,16 +87,14 @@ void Concatenate(std::vector<T>& t_start, const std::vector<T>& t_append)
 // vector from lowest to highest
 
 template <typename T>
-std::vector<int> Order(const std::vector<T>& t_data)
+std::vector<int> Order(std::vector<T> t_data)
 {
   std::vector<int> index(t_data.size(), 0); // a new int vector to store results
-  std::iota(std::begin(index), std::end(index), 0); // fill with ascending ints
-
-  // Use a lambda function to sort 'index' based on the order of 'data'
-  sort(index.begin(), index.end(), [&](const int& low, const int& high)
+  for(size_t i = 0; i < t_data.size(); ++i)
   {
-    return (t_data[low] < t_data[high]);
-  });
+    index[i] = std::count_if(t_data.begin(), t_data.end(),
+               [&](T other) { return other < t_data[i]; });
+  }
 
   return index;
 }
@@ -105,10 +103,11 @@ std::vector<int> Order(const std::vector<T>& t_data)
 // Sort one vector by another's order. Modifies supplied vector
 
 template <typename Ta, typename Tb>
-void SortBy(std::vector<Ta>& t_sortee, const std::vector<Tb>& t_sorter)
+std::vector<Ta> SortBy(std::vector<Ta> t_sortee,
+                       const std::vector<Tb>& t_sorter)
 {
   // Nothing to do!
-  if(t_sortee.empty()) return;
+  if(t_sortee.empty()) return t_sortee;
 
   // Throw error if lengths don't match
   if(t_sortee.size() != t_sorter.size())
@@ -122,7 +121,7 @@ void SortBy(std::vector<Ta>& t_sortee, const std::vector<Tb>& t_sorter)
   // Use Order(t_sorter) as defined above to sort sortee
   for(auto i : Order(t_sorter)) result.emplace_back(t_sortee[i]);
 
-  std::swap(result, t_sortee);
+  return result;
 }
 
 //---------------------------------------------------------------------------//

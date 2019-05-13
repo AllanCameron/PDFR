@@ -160,7 +160,7 @@ vector<string> MultiCarve(const string& t_string,
 
 bool IsAscii(const string& t_string)
 {
-  if (t_string.empty()) return false;
+  if (t_string.empty()) return false; // Not sure if this is true or false
 
   // Use minmax to get a pair of iterators pointing to min & max char values
   auto minmax_ptrs = minmax_element(t_string.begin(), t_string.end());
@@ -213,10 +213,10 @@ string ConvertIntToHex(int t_int)
 {
   if (t_int < 0 || t_int > 0xffff) return "FFFF"; // Returns max if out of range
   string hex {"0123456789ABCDEF"};
-  hex += hex[(t_int & 0xf000) >> 12]; // Gets index of hex from first 4 bits
-  hex += hex[(t_int & 0x0f00) >>  8]; // Gets index of hex from second 4 bits
-  hex += hex[(t_int & 0x00f0) >>  4]; // Gets index of hex from third 4 bits
-  hex += hex[(t_int & 0x000f) >>  0]; // Gets index of hex from last 4 bits
+  hex += hex[(t_int & 0xf000) >> 12];  // Gets index of hex from first 4 bits
+  hex += hex[(t_int & 0x0f00) >>  8];  // Gets index of hex from second 4 bits
+  hex += hex[(t_int & 0x00f0) >>  4];  // Gets index of hex from third 4 bits
+  hex += hex[(t_int & 0x000f) >>  0];  // Gets index of hex from last 4 bits
   return string {hex, 16, 4};
 }
 
@@ -247,9 +247,16 @@ char GetSymbolType(const char t_char)
 
 vector<RawChar> ConvertHexToRawChar(string& t_string)
 {
+  // Prepends zeros until the string can be split into length-4 sections
   while (t_string.size() % 4) t_string = '0' + t_string;
-  vector<RawChar> raw_vector; // vector to store results
+
+  // Declares vector to store results and ensures it is large enough to do so
+  vector<RawChar> raw_vector;
   raw_vector.reserve(t_string.size() / 4);
+
+  // Note this loop reads 4 chars at a time and stops incrementing at size - 3.
+  // It looks up each character in the hexmap and places it in the correct
+  // 4-bit section of the 16-bit result using the bit shift operator.
   for (size_t i = 0; i < (t_string.size() - 3); i += 4)
   {
     raw_vector.emplace_back(((s_hexmap[t_string[i + 0]] & 0x000f) << 12)  |
@@ -271,10 +278,13 @@ vector<RawChar> ConvertHexToRawChar(string& t_string)
 
 vector<RawChar> ConvertStringToRawChar(const string& t_string)
 {
-  vector<RawChar> result;
-  if (t_string.empty()) return result;
-  result.reserve(t_string.size());
-  for (auto string_char : t_string) result.emplace_back(0x00ff & string_char);
+  vector<RawChar> result {};            // Declare result vector
+  if (t_string.empty()) return result;  // If string empty, return empty vector
+  result.reserve(t_string.size());      // Otherwise, reserve enough space
+  for (auto string_char : t_string)     // Then place 2 bytes per char in result
+  {
+    result.emplace_back(0x00ff & string_char);
+  }
   return result;
 }
 
@@ -292,16 +302,16 @@ vector<int> ParseReferences(const string& t_string)
   // Defines the possible states of the finite state machine (fsm)
   enum ReferenceState
   {
-    WAIT_FOR_START, // Waiting for an integer
+    START,          // Waiting for an integer
     IN_FIRST_INT,   // In an integer
     WAIT_FOR_GEN,   // Waiting for a generation number
     IN_GEN,         // In a second integer (generation number)
     WAIT_FOR_R      // Wait to see if next char is R to confirm this is a ref
   };
 
-  vector<int> result; // vector to hold result
-  string buffer; // a buffer to hold characters until stored or discarded
-  ReferenceState state = WAIT_FOR_START; // the current state of the fsm
+  vector<int> result;            // Vector to hold and return result
+  string buffer;                 // Buffer to hold characters until needed
+  ReferenceState state = START;  // Current state of finite state machine
 
   // The main loop cycles through each char in the string to write the result
   for (const auto& chr : t_string)
@@ -310,7 +320,7 @@ vector<int> ParseReferences(const string& t_string)
     switch(state)
     {
       // To begin with, ignore all input until a digit is reached
-      case WAIT_FOR_START:  if (m == 'D'){ buffer += chr; state = IN_FIRST_INT;}
+      case START:  if (m == 'D'){ buffer += chr; state = IN_FIRST_INT;}
                             break;
 
       // Now in the first int. Write digits to the buffer until a space is
@@ -323,7 +333,7 @@ vector<int> ParseReferences(const string& t_string)
                               case 'D' : buffer += chr;         break;
                               case ' ' : state = WAIT_FOR_GEN;  break;
                               default  : buffer.clear();
-                                         state = WAIT_FOR_START;
+                                         state = START;
                             }
                             break;
 
@@ -332,7 +342,7 @@ vector<int> ParseReferences(const string& t_string)
       // digit. If so, we proceed; otherwise, we start looking again from the
       // current point in the string
       case WAIT_FOR_GEN:    if (m == 'D') state = IN_GEN;
-                            else {buffer.clear(); state = WAIT_FOR_START;}
+                            else {buffer.clear(); state = START;}
                             break;
 
       // We now have an integer stored in the buffer, and confirmed this was
@@ -347,7 +357,7 @@ vector<int> ParseReferences(const string& t_string)
                               case 'D' :                        break;
                               case ' ' : state = WAIT_FOR_R;    break;
                               default  : buffer.clear();
-                                         state = WAIT_FOR_START;
+                                         state = START;
                             }
                             break;
 
@@ -357,7 +367,7 @@ vector<int> ParseReferences(const string& t_string)
       // the buffer as an int. In either case, we wipe the buffer and start
       // looking for the next reference until the end of the given string
       case WAIT_FOR_R:      if (chr == 'R') result.push_back(stoi(buffer));
-                            buffer.clear(); state = WAIT_FOR_START;
+                            buffer.clear(); state = START;
                             break;
     }
   }
@@ -375,7 +385,7 @@ vector<int> ParseReferences(const string& t_string)
 vector<int> ParseInts(const string& t_string)
 {
   // Define the possible states of the lexer
-    enum IntState
+  enum IntState
   {
     WAITING,// Waiting for digit or minus sign
     NEG,    // Found a minus sign, looking to see if this starts a negative int
@@ -383,9 +393,9 @@ vector<int> ParseInts(const string& t_string)
     IGNORE  // Ignoring any digits between decimal point and next non-number
   };
 
-  vector<int> result; // vector to store results
-  string buffer;      // string buffer to hold characters which may be ints
-  IntState state = WAITING; // current state of fsm.
+  vector<int> result;       // Vector to store results
+  string buffer;            // String buffer to hold chars which may be ints
+  IntState state = WAITING; // Current state of the finite state machine.
 
   // The main loop cycles through each char in the string to write the result
   for (auto chr : t_string)
@@ -395,23 +405,41 @@ vector<int> ParseInts(const string& t_string)
     {
       case WAITING: if (m == 'D')
                     {
-                      if (buffer.length() > 10) state = IGNORE;
-                      else {buffer += chr;state = INT;}
+                      if (buffer.length() > 10)
+                      {
+                        state = IGNORE;
+                      }
+                      else
+                      {
+                        buffer += chr;
+                        state = INT;
+                      }
                     }
-                    else if (chr == '-'){ buffer += chr; state = NEG;}
+                    else if (chr == '-')
+                    {
+                      buffer += chr;
+                      state = NEG;
+                    }
                     break;
-      case NEG    : if (m == 'D'){buffer += chr; state = INT;}
+
+      case NEG    : if (m == 'D')
+                    {
+                      buffer += chr;
+                      state = INT;
+                    }
                     else { buffer.clear(); state = WAITING;}
                     break;
+
       case INT    : if (m == 'D') buffer += chr;
                     else
                     {
                       if (buffer != "-") result.push_back(stoi(buffer));
                       buffer.clear();
                       if (chr == '.') state = IGNORE;
-                      else         state = WAITING;
+                      else            state = WAITING;
                     }
                     break;
+
       case IGNORE : if (m != 'D') state = WAITING; break;
     }
   }
@@ -430,16 +458,19 @@ vector<int> ParseInts(const string& t_string)
 
 vector<float> ParseFloats(const string& t_string)
 {
-  vector<float> result; // vector to store and return results
-  string buffer; // a buffer to hold characters until stored or discarded
-  enum FloatState // The possible states of the fsm
+  enum FloatState  // The possible states of the finite state machine
   {
-    WAITING,// awaiting the first character that might represent a number
-    NEG,    // found a minus sign. Could be start of negative number
-    PRE,    // Now reading an integer, waiting for whitespace or decimal point
-    POST    // Have read integer and found point, now reading fractional number
+    WAITING,       // Awaiting a character that might represent a number
+    NEG,           // Found a minus sign. Could be start of negative number
+    PRE,           // Reading an integer until whitespace or decimal point
+    POST           // Reading fractional number after integer and point found
   };
-  FloatState state = WAITING; // current state of fsm
+
+  vector<float> result;        // Vector to store and return results
+  string buffer;               // A buffer to hold characters until needed
+  FloatState state = WAITING;  // Current state of the finite state machine
+
+  // The main loop cycles through each char in the string to write the result
   for (const auto& chr : t_string)
   {
     char m = GetSymbolType(chr);
@@ -449,10 +480,12 @@ vector<float> ParseFloats(const string& t_string)
                   else if (chr == '-'){ buffer += chr; state = NEG;}
                   else if (chr == '.'){ buffer += chr; state = POST;}
                   break;
+
     case NEG:     if (m == 'D'){ buffer += chr; state = PRE;}
                   else if (chr == '.'){ buffer = "-0."; state = POST;}
                   else {buffer.clear(); state = WAITING;}
                   break;
+
     case PRE:     if (m == 'D') buffer += chr;
                   else if (chr == '.'){ buffer += chr; state = POST;}
                   else
@@ -461,12 +494,14 @@ vector<float> ParseFloats(const string& t_string)
                     buffer.clear(); state = WAITING;
                   }
                   break;
+
     case POST:    if (m == 'D') buffer += chr;
                   else{ result.push_back(stof(buffer));
                         state = WAITING; buffer.clear();}
                   break;
     }
   }
+
   if (state == PRE  && !buffer.empty()) result.push_back(stof(buffer));
   if (state == POST && buffer != "-0.") result.push_back(stof(buffer));
   return result;

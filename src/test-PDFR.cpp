@@ -1,7 +1,27 @@
+//---------------------------------------------------------------------------//
+//                                                                           //
+//  PDFR unit testing file                                                   //
+//                                                                           //
+//  Copyright (C) 2018 - 2019 by Allan Cameron                               //
+//                                                                           //
+//  Licensed under the MIT license - see https://mit-license.org             //
+//  or the LICENSE file in the project root directory                        //
+//                                                                           //
+//---------------------------------------------------------------------------//
+
 #include <testthat.h>
 #include "pdfr.h"
 
+//---------------------------------------------------------------------------//
+
 using namespace std;
+
+//---------------------------------------------------------------------------//
+// Most of the tests we will be running require actual pdf files. However, we
+// can directly test the global utility functions and the Dictionary class
+// without needing an actual pdf file. To do this, we will define some variables
+// in a "TestItems" namespace. We will use these in our unit tests using the
+// Catch framework.
 
 namespace TestItems
 {
@@ -18,15 +38,34 @@ string test_hexstring = "01ABEF2A";
 string test_broken_hexstring = "01ABEX F2A";
 vector<int> test_ints {1, 2, 31};
 vector<float> test_floats {3.14, 2.72, 1.4};
-string test_dictionary = " <</A Success>>";
-vector<string> test_keys = {"/Here", "/Are", "/The", "/Keys"};
-vector<string> test_values = {"/These", "/Strings", "/Are", "/Values"};
+string test_dict_string =
+" <</A Success/Ref 125 0 R/Dict <</Subdict Success>>/SomeInts [1 2 31]\
+/SomeFloats [3.14 2.72 1.4]/Length 15>> stream\r\nNow in a stream\r\nendstream";
+Dictionary test_dictionary = Dictionary(make_shared<string>(test_dict_string));
+vector<int> test_sortby = {3, 2, 0, 4, 1};
+vector<int> test_order  = {2, 4, 1, 0, 3};
+vector<char> test_chars = {'c', 'e', 'b', 'a', 'd'};
+vector<char> test_alpha = {'a', 'b', 'c', 'd', 'e'};
 }
+
+//---------------------------------------------------------------------------//
+// We use this namespace here to prevent polluting the global namespace
 
 using namespace TestItems;
 
-context("Utilities")
+//---------------------------------------------------------------------------//
+// The tests are laid out in groups of assertions under named "contexts".
+// Within each context we use named "test_that" subgroups, each containing
+// one or more assertions.
+
+context("utilities.h")
 {
+  test_that("Order and SortBy work as expected.")
+  {
+    expect_true(Order(test_chars) == test_order);
+    expect_true(test_alpha == SortBy(test_chars, test_sortby));
+  }
+
   test_that("CarveOut correctly splits a string between two delimiters.")
   {
     expect_true(CarveOut("Hello there world!", "Hello", "world") == " there ");
@@ -99,11 +138,19 @@ context("Utilities")
   }
 }
 
-context("Dictionary")
+context("dictionary.h")
 {
   test_that("Dictionary can be created successfully.")
   {
-    expect_true(Dictionary(make_shared<string>(test_dictionary)).GetString("/A")
-        == "Success");
+    expect_true(test_dictionary.GetString("/A") == "Success");
+  }
+
+  test_that("Dictionary entries are read correctly.")
+  {
+    expect_true(test_dictionary.GetReference("/Ref") == 125);
+    expect_true(test_dictionary.GetInts("/SomeInts") == test_ints);
+    expect_true(test_dictionary.GetFloats("/SomeFloats") == test_floats);
+    expect_true(test_dictionary.GetDictionary("/Dict").GetString("/Subdict") ==
+      "Success");
   }
 }
