@@ -26,26 +26,31 @@ using namespace std;
 namespace TestItems
 {
 string test_target("I'm not a pheasant plucker, I'm a pheasant plucker's son");
-vector<string> test_multicarve1 = vector<string> {" not a pheasant ",
-                                                  " a pheasant "};
-vector<string> test_multicarve2 = vector<string> {"not", "pheasant", "I'm",
-                                                  "pheasant"};
-vector<uint8_t> test_bytes = vector<uint8_t>   { 0x01, 0xAB, 0xEF, 0x2A };
-vector<RawChar> test_rawchar = vector<RawChar> { 0x01AB, 0xEF2A };
-vector<RawChar> test_hello_rawchar = vector<RawChar> { 0x0048, 0x0065, 0x006c,
-                                                       0x006c, 0x006f};
-string test_hexstring = "01ABEF2A";
-string test_broken_hexstring = "01ABEX F2A";
-vector<int> test_ints {1, 2, 31};
-vector<float> test_floats {3.14, 2.72, 1.4};
+vector<string> test_multicarve1 {" not a pheasant ", " a pheasant "};
+vector<string> test_multicarve2 {"not", "pheasant", "I'm", "pheasant"};
+
+auto test_bytes = vector<uint8_t>   { 0x01, 0xAB, 0xEF, 0x2A };
+auto test_rawchar = vector<RawChar> { 0x01AB, 0xEF2A };
+auto test_hello_rawchar = vector<RawChar> { 0x48, 0x65, 0x6c, 0x6c, 0x6f};
+
+string test_hexstring        = "01ABEF2A",
+       test_broken_hexstring = "01ABEX F2A";
+
+vector<int>   test_ints   = {1, 2, 31},
+              test_sortby = {3, 2, 0, 4, 1},
+              test_order  = {2, 4, 1, 0, 3};
+vector<float> test_floats = {3.14, 2.72, 1.4};
+
+string reference_string = "<</Refs 1 0 R 2 0 R 31 5 R>>";
 string test_dict_string =
-" <</A Success/Ref 125 0 R/Dict <</Subdict Success>>/SomeInts [1 2 31]\
-/SomeFloats [3.14 2.72 1.4]/Length 15>> stream\r\nNow in a stream\r\nendstream";
+" <</A Success/Ref 1 0 R 2 0 R 31 5 R/Dict <</Subdict Success>>\
+/SomeInts [1 2 31]/SomeFloats [3.14 2.72 1.4]/Length 15>>\
+stream\r\nNow in a stream\r\nendstream";
+
 Dictionary test_dictionary = Dictionary(make_shared<string>(test_dict_string));
-vector<int> test_sortby = {3, 2, 0, 4, 1};
-vector<int> test_order  = {2, 4, 1, 0, 3};
-vector<char> test_chars = {'c', 'e', 'b', 'a', 'd'};
-vector<char> test_alpha = {'a', 'b', 'c', 'd', 'e'};
+
+vector<char> test_chars = {'c', 'e', 'b', 'a', 'd'},
+             test_alpha = {'a', 'b', 'c', 'd', 'e'};
 }
 
 //---------------------------------------------------------------------------//
@@ -118,7 +123,7 @@ context("utilities.h")
 
   test_that("References are parsed in strings.")
   {
-    expect_true(ParseReferences("<</Refs 1 0 R 2 0 R 31 5 R>>") == test_ints);
+    expect_true(ParseReferences(reference_string) == test_ints);
   }
 
   test_that("Ints are parsed as expected.")
@@ -138,6 +143,12 @@ context("utilities.h")
   }
 }
 
+//---------------------------------------------------------------------------//
+// Tests the public interface to Dictionary. The private methods are also
+// tested by implication, since the private methods are used to build the
+// Dictionary structure, and an error in Dictionary construction will lead to
+// an error in retrieving data from the created Dictionary
+
 context("dictionary.h")
 {
   test_that("Dictionary can be created successfully.")
@@ -147,7 +158,8 @@ context("dictionary.h")
 
   test_that("Dictionary entries are read correctly.")
   {
-    expect_true(test_dictionary.GetReference("/Ref") == 125);
+    expect_true(test_dictionary.GetReference("/Ref") == 1);
+    expect_true(test_dictionary.GetReferences("/Ref") == test_ints);
     expect_true(test_dictionary.GetInts("/SomeInts") == test_ints);
     expect_true(test_dictionary.GetFloats("/SomeFloats") == test_floats);
     expect_true(test_dictionary.GetDictionary("/Dict").GetString("/Subdict") ==
