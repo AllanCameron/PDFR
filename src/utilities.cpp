@@ -317,7 +317,7 @@ vector<int> ParseReferences(const string& t_string)
   for (const auto& chr : t_string)
   {
     char m = GetSymbolType(chr);
-    switch(state)
+    switch (state)
     {
       // To begin with, ignore all input until a digit is reached
       case START:  if (m == 'D'){ buffer += chr; state = IN_FIRST_INT;}
@@ -328,7 +328,7 @@ vector<int> ParseReferences(const string& t_string)
       // and are waiting for the generation number. If we come across anything
       // other than a space or digit, we were not in the object number and we
       // go back to a waiting state while progressing through the string.
-      case IN_FIRST_INT:    switch(m)
+      case IN_FIRST_INT:    switch (m)
                             {
                               case 'D' : buffer += chr;         break;
                               case ' ' : state = WAIT_FOR_GEN;  break;
@@ -352,7 +352,7 @@ vector<int> ParseReferences(const string& t_string)
       // a space. A space means we should switch to waiting for an R. Any other
       // char means this is not a reference and we start looking again from
       // this point in the string
-      case IN_GEN:          switch(m)
+      case IN_GEN:          switch (m)
                             {
                               case 'D' :                        break;
                               case ' ' : state = WAIT_FOR_R;    break;
@@ -401,7 +401,7 @@ vector<int> ParseInts(const string& t_string)
   for (auto chr : t_string)
   {
     char m = GetSymbolType(chr);
-    switch(state)
+    switch (state)
     {
       case WAITING: if (m == 'D')
                     {
@@ -474,7 +474,7 @@ vector<float> ParseFloats(const string& t_string)
   for (const auto& chr : t_string)
   {
     char m = GetSymbolType(chr);
-    switch(state)
+    switch (state)
     {
     case WAITING: if (m == 'D'){ buffer += chr; state = PRE;}
                   else if (chr == '-'){ buffer += chr; state = NEG;}

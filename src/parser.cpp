@@ -138,7 +138,7 @@ void Parser::ET_()
 void Parser::Tf_()
 {
   // Should be 2 operators: 1 is not defined
-  if(operands_.size() > 1)
+  if (operands_.size() > 1)
   {
     current_font_ = operands_[0];                  // Read fontID
     working_font_ = page_->GetFont(current_font_); // Get font from fontID
@@ -267,7 +267,7 @@ void Parser::TJ_()
     }
 
     // Now we can process the string given the current user space and font
-    if(!operands_[index].empty()) ProcessRawChar_(scale, text_space, initial_x);
+   if (!operands_[index].empty()) ProcessRawChar_(scale, text_space, initial_x);
   }
 }
 
@@ -289,7 +289,7 @@ void Parser::ProcessRawChar_(float& t_scale, Matrix& t_text_space,
 
     // If the first character is not a space, record its position as is and
     // adjust for character spacing
-    if(glyph_pair.first != 0x0020)
+    if (glyph_pair.first != 0x0020)
     {
       left = t_text_space[6];
       bottom = t_text_space[7];

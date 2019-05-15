@@ -194,7 +194,7 @@ void DictionaryBuilder::TokenizeDictionary_()
 void DictionaryBuilder::SetKey_(string t_buffer, DictionaryState t_state)
 {
   // If no key is awaiting value, store name as a key
-  if(!key_pending_) pending_key_ = buffer_;
+  if (!key_pending_) pending_key_ = buffer_;
 
   // Otherwise the name is a value so store it
   else map_[pending_key_] = buffer_;
@@ -384,7 +384,7 @@ void DictionaryBuilder::HandleClose_(char t_input_char)
     case 'L': if (char_num_ < string_ptr_->length() - 7)
               {
                 // OK, so is it "stream"?
-                if(string_ptr_->substr(char_num_, 6) == "stream")
+                if (string_ptr_->substr(char_num_, 6) == "stream")
                 {
                   char_num_ += 6;
 

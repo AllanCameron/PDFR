@@ -39,7 +39,7 @@ void Font::ReadFontName_()
   // Reads /BaseFont entry
   string base_font(font_dictionary_.GetString("/BaseFont"));
 
-  if(base_font.size() > 7 && base_font[7] == '+')
+  if (base_font.size() > 7 && base_font[7] == '+')
   {
     font_name_ = base_font.substr(8, base_font.size() - 8);
   }
@@ -62,10 +62,10 @@ vector<pair<Unicode, int>> Font::MapRawChar(const vector<RawChar>& t_raw_vector)
   vector<pair<Unicode, int>> result;
   result.reserve(t_raw_vector.size());
 
-  for(const auto& raw_char : t_raw_vector)
+  for (const auto& raw_char : t_raw_vector)
   {
     auto finder = glyph_map_.find(raw_char);
-    if(finder != glyph_map_.end())
+    if (finder != glyph_map_.end())
     {
       result.push_back(finder->second);
     }
@@ -94,9 +94,9 @@ void Font::MakeGlyphTable_()
   // character codes or to the final Unicode translations
 
   // If the widths refer to RawChar code points, map every RawChar to a width
-  if(widths.WidthsAreForRaw())
+  if (widths.WidthsAreForRaw())
   {
-    for(auto& key_value_pair : *encoding_map)
+    for (auto& key_value_pair : *encoding_map)
     {
       auto& key = key_value_pair.first;
       glyph_map_[key] = make_pair(encodings.Interpret(key),
@@ -106,7 +106,7 @@ void Font::MakeGlyphTable_()
   // Otherwise widths refer to Unicode glyphs, so map each to a width
   else
   {
-    for(auto& key_value_pair : *encoding_map)
+    for (auto& key_value_pair : *encoding_map)
     {
       auto& key = key_value_pair.first;
       glyph_map_[key] = make_pair(encodings.Interpret(key),

@@ -72,7 +72,7 @@ class TextElement : public Box
 
   inline void SetJoin(TextPointer element) { this->join_ = element;}
   inline TextPointer GetJoin()             { return this->join_; }
-  inline bool HasJoin() const { if(join_) return true; else return false;}
+  inline bool HasJoin() const { if (join_) return true; else return false;}
 
   inline std::string GetFontName() const { return this->font_->GetFontName();}
   inline std::vector<Unicode> GetGlyph() const { return this->glyph_;}
@@ -149,6 +149,9 @@ typedef std::shared_ptr<TextElement> TextPointer;
 
 class TextBox : public Box
 {
+  using TextBoxIterator = std::vector<TextPointer>::iterator;
+  using TextBoxConstIterator = std::vector<TextPointer>::const_iterator;
+
  public:
   // Standard constructor - takes vector of TextElement pointers and the minbox
   TextBox(std::vector<TextPointer> t_text, Box t_box)
@@ -175,12 +178,13 @@ class TextBox : public Box
   // Lvalue assignment constructor
   TextBox& operator=(const TextBox& t_textbox) = default;
 
-  typedef std::vector<TextPointer>::iterator TextBoxIterator;
-  typedef std::vector<TextPointer>::const_iterator TextBoxConstIterator;
-
   // Functions to copy the methods of vectors to access main data object
   inline TextBoxIterator begin() {return data_.begin(); }
   inline TextBoxIterator end()   {return data_.end(); }
+  inline void erase(TextBoxIterator start, TextBoxIterator finish)
+  {
+    data_.erase(start, finish);
+  }
   inline TextBoxConstIterator cbegin() const {return data_.cbegin(); }
   inline TextBoxConstIterator cend() const {return data_.cend(); }
   inline TextPointer& operator[](int t_index) { return data_[t_index]; }

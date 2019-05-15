@@ -26,7 +26,7 @@ using namespace std;
 shared_ptr<Page> get_page(string file_name, int page_number)
 {
   // Pages are numbered from 1. Any less than this should throw an error
-  if(page_number < 1) Rcpp::stop("Invalid page number");
+  if (page_number < 1) Rcpp::stop("Invalid page number");
 
   // Create the Document object
   auto document_ptr = make_shared<Document>(file_name);
@@ -38,7 +38,7 @@ shared_ptr<Page> get_page(string file_name, int page_number)
 shared_ptr<Page> get_page(vector<uint8_t> raw_file, int page_number)
 {
   // Pages are numbered from 1. Any less than this should throw an error
-  if(page_number < 1) Rcpp::stop("Invalid page number");
+  if (page_number < 1) Rcpp::stop("Invalid page number");
 
   // Create the Document object
   auto document_ptr = make_shared<Document>(raw_file);
@@ -64,13 +64,13 @@ Rcpp::DataFrame get_glyph_map(const string& file_name, int page_number)
   vector<string> font_names;
 
   // For each font string on the page...
-  for(auto& font_string : page_ptr->GetFontNames())
+  for (auto& font_string : page_ptr->GetFontNames())
   {
     // Get a pointer to the font
     auto&& font_ptr = page_ptr->GetFont(font_string);
 
     // for each code point in the font, copy the fontname and input codepoint
-    for(auto& key : font_ptr->GetGlyphKeys())
+    for (auto& key : font_ptr->GetGlyphKeys())
     {
       font_names.push_back(font_string);
       codepoint.push_back(key);
@@ -103,13 +103,13 @@ Rcpp::DataFrame xrefcreator(shared_ptr<const string> file_string)
   vector<int> object {}, start_byte {}, holding_object {};
 
   // If the xref has entries
-  if(!Xref.GetAllObjectNumbers().empty())
+  if (!Xref.GetAllObjectNumbers().empty())
   {
     // Get all of its object numbers
     vector<int>&& all_objects = Xref.GetAllObjectNumbers();
 
     // Then for each listed object, store its number, start byte and container
-    for(int object_num : all_objects)
+    for (int object_num : all_objects)
     {
       object.push_back(object_num);
       start_byte.push_back(Xref.GetObjectStartByte(object_num));
@@ -251,11 +251,11 @@ Rcpp::List get_text_boxes(shared_ptr<Page> page_ptr)
   int polygonNumber = 0;
   auto text_boxes = linegrouper.Output();
 
-  for(auto& box : text_boxes)
+  for (auto& box : text_boxes)
   {
-    for(auto& element : box)
+    for (auto& element : box)
     {
-      if(!element->IsConsumed())
+      if (!element->IsConsumed())
       {
         left.push_back(element->GetLeft());
         right.push_back(element->GetRight());
@@ -292,7 +292,7 @@ Rcpp::List get_pdf_page_from_string (const string& file_name,
   auto page_ptr = get_page(file_name, page_number);
 
   // Process the page if requested
-  if(!each_glyph) return get_text_boxes(page_ptr);
+  if (!each_glyph) return get_text_boxes(page_ptr);
 
   // Otherwise return a data frame of individual letters
   else return get_single_text_elements(page_ptr);
@@ -308,7 +308,7 @@ Rcpp::List get_pdf_page_from_raw(const vector<uint8_t>& raw_file,
   auto page_ptr = get_page(raw_file, page_number);
 
   // Process the page if requested
-  if(!each_glyph) return get_text_boxes(page_ptr);
+  if (!each_glyph) return get_text_boxes(page_ptr);
 
   // Otherwise return a data frame of individual letters
   else return get_single_text_elements(page_ptr);
@@ -324,7 +324,7 @@ Rcpp::DataFrame pdfdoc_common(shared_ptr<Document> document_ptr)
   vector<int> page_number_of_element;
 
   // Loop through each page, get its contents and add it to the output list
-  for(size_t page_number = 0; page_number < number_of_pages; page_number++)
+  for (size_t page_number = 0; page_number < number_of_pages; page_number++)
   {
     // Create a new page pbject
     auto page_ptr = make_shared<Page>(document_ptr, page_number);
@@ -359,7 +359,7 @@ Rcpp::DataFrame pdfdoc_common(shared_ptr<Document> document_ptr)
     }
 
     // Clear the static font map if we are on the last page.
-    if(page_number == (number_of_pages - 1)) page_ptr->ClearFontMap();
+    if (page_number == (number_of_pages - 1)) page_ptr->ClearFontMap();
   }
 
   // Build and return an R data frame
@@ -467,7 +467,7 @@ Rcpp::DataFrame pdf_boxes(shared_ptr<Page> page_ptr)
   int group = 0;
 
   // Fill our holding vectors from the output of the page parsing algorithm
-  for(auto bounding_box : Poly)
+  for (auto bounding_box : Poly)
   {
     xmin.push_back(bounding_box.GetLeft());
     ymin.push_back(bounding_box.GetBottom());

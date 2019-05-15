@@ -27,7 +27,7 @@ void TextElement::MergeLetters(TextElement& t_matcher)
   t_matcher.SetLeft(this->GetLeft());
 
   // Ensure bottom is the lowest value of the two glyphs
-  if(this->GetBottom() < t_matcher.GetBottom())
+  if (this->GetBottom() < t_matcher.GetBottom())
     t_matcher.SetBottom(this->GetBottom());
 
   // The checked glyph is now consumed - move to the next
@@ -53,7 +53,7 @@ void TextElement::JoinWords(TextElement& t_other)
     this->glyph_.push_back(0x0020);
 
     // If the gap is wide enough, add two spaces
-    if(t_other.GetLeft() - this->GetRight() > 1 * this->GetSize())
+    if (t_other.GetLeft() - this->GetRight() > 1 * this->GetSize())
     {
       this->glyph_.push_back(0x0020);
     }
@@ -63,7 +63,7 @@ void TextElement::JoinWords(TextElement& t_other)
 
     // The rightmost glyph's right edge properties are also copied over
     this->SetRight(t_other.GetRight());
-    if(t_other.IsRightEdge()) this->MakeRightEdge();
+    if (t_other.IsRightEdge()) this->MakeRightEdge();
 
     // The word will take up the size of its largest glyph
     this->SetTop(max(this->GetSize(), t_other.GetSize()) + this->GetBottom());
@@ -84,10 +84,10 @@ void TextElement::ConcatenateUnicode(const std::vector<Unicode>& t_other)
 TextTable::TextTable(const TextBox& t_text_box):
 Box((Box) t_text_box)
 {
-  for(auto ptr = t_text_box.cbegin(); ptr != t_text_box.cend(); ++ptr)
+  for (auto ptr = t_text_box.cbegin(); ptr != t_text_box.cend(); ++ptr)
   {
     auto& element = *ptr;
-    if(!element->IsConsumed())
+    if (!element->IsConsumed())
     {
       this->text_.push_back(element->Utf());
       this->lefts_.push_back(element->GetLeft());
@@ -109,7 +109,7 @@ void TextBox::RemoveDuplicates()
     if ((*this_row)->IsConsumed()) continue;
     for (auto other_row = this_row; other_row != data_.end(); ++other_row)
     {
-      if(other_row == this_row) continue;
+      if (other_row == this_row) continue;
 
       if (**other_row == **this_row)
       {
@@ -139,10 +139,10 @@ void TextTable::Join(TextTable& t_other)
 string TextElement::Utf()
 {
   std::string result_string {}; // empty string for results
-  for(auto& point : this->glyph_) // for each uint16_t in the input vector...
+  for (auto& point : this->glyph_) // for each uint16_t in the input vector...
   {
     // values less than 128 are just single-byte ASCII
-    if(point < 0x0080)
+    if (point < 0x0080)
     {
       result_string.push_back(point & 0x007f);
       continue;
@@ -156,7 +156,7 @@ string TextElement::Utf()
     // to 110 and 10 respectively to give the 16-bit number 110 11000 10 011111,
     // which as two bytes is 11011000 10011111 or d8 9f. Thus the UTF-8
     // encoding for character U+061f is the two-byte sequence d8 9f.
-    if(point > 0x007f && point < 0x0800)
+    if (point > 0x007f && point < 0x0800)
     {
       // construct byte with bits 110 and first 5 bits of unicode point number
       result_string.push_back((0x00c0 | ((point >> 6) & 0x001f)));
@@ -170,14 +170,14 @@ string TextElement::Utf()
     // (65535 or 0xffff) are given by 16 bits split over three bytes in the
     // following format: 1110xxxx 10xxxxxx 10xxxxxx. Each x here takes one of
     // the 16 bits representing 2048 - 65535.
-    if(point > 0x07ff)
+    if (point > 0x07ff)
     {
       // First we specifically change ligatures to appropriate Ascii values
-      if(point == 0xFB00) {result_string += "ff"; continue;}
-      if(point == 0xFB01) {result_string += "fi"; continue;}
-      if(point == 0xFB02) {result_string += "fl"; continue;}
-      if(point == 0xFB03) {result_string += "ffi"; continue;}
-      if(point == 0xFB04) {result_string += "ffl"; continue;}
+      if (point == 0xFB00) {result_string += "ff"; continue;}
+      if (point == 0xFB01) {result_string += "fi"; continue;}
+      if (point == 0xFB02) {result_string += "fl"; continue;}
+      if (point == 0xFB03) {result_string += "ffi"; continue;}
+      if (point == 0xFB04) {result_string += "ffl"; continue;}
 
       // construct byte with 1110 and first 4 bits of unicode point number
       result_string.push_back(0x00e0 | ((point >> 12) & 0x000f));

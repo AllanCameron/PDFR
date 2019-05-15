@@ -80,18 +80,18 @@ class Whitespace
   std::vector<std::shared_ptr<Vertex>> vertices_; // Used to make polygons
   static const size_t DIVISIONS_ = 400; // number of strips used for whitespace
 
-  void GetMaxLineSize();
-  void PageDimensions();    // Gets page margins
-  void CleanAndSortBoxes(); // Helper to remove Boxes flagged for deletion
-  void MakeStrips();        // Cover the whitespace with tall thin strips
-  void MergeStrips();       // merge adjacent strips into boxes
-  void RemoveSmall();       // remove insufficiently tall boxes
-  void MakeVertices();      // use Boxes to find vertices of polygons
-  void TidyVertices();      // identify and remove the unneeded vertices
-  void TracePolygons();     // trace around polygons by following vertices
-  void MakePolygonMap();    // map polygons to size_t keys
-  void PolygonMax();        // find bounding boxes of polygons
-  void RemoveEngulfed();    // remove boxes within other boxes
+  void GetMaxLineSize_();
+  void PageDimensions_();    // Gets page margins
+  void CleanAndSortBoxes_(); // Helper to remove Boxes flagged for deletion
+  void MakeStrips_();        // Cover the whitespace with tall thin strips
+  void MergeStrips_();       // merge adjacent strips into boxes
+  void RemoveSmall_();       // remove insufficiently tall boxes
+  void MakeVertices_();      // use Boxes to find vertices of polygons
+  void TidyVertices_();      // identify and remove the unneeded vertices
+  void TracePolygons_();     // trace around polygons by following vertices
+  void MakePolygonMap_();    // map polygons to size_t keys
+  void PolygonMax_();        // find bounding boxes of polygons
+  void RemoveEngulfed_();    // remove boxes within other boxes
 };
 
 //---------------------------------------------------------------------------//

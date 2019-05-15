@@ -58,7 +58,7 @@ void LetterGrouper::MakeGrid_()
   float dy = (text_box_.Height()) / 16;
 
   // For each glyph
-  for(auto& element : text_box_)
+  for (auto& element : text_box_)
   {
     // Calculate the row and column number the glyph's bottom left corner is in
     // There will be exactly 16 rows and columns, each numbered 0-15 (4 bits)
@@ -88,7 +88,7 @@ TextBox LetterGrouper::Output()
 
   // Now copy all the text_ptrs from the grid to a vector
   vector<TextPointer> v;
-  for(auto& cell : grid_)
+  for (auto& cell : grid_)
   {
     copy_if(cell.second.begin(), cell.second.end(), back_inserter(v), extant);
   }
@@ -114,10 +114,10 @@ TextBox LetterGrouper::Output()
 void LetterGrouper::CompareCells_()
 {
   // For each of 16 columns of cells on page
-  for(uint8_t column = 0; column < 16; ++column)
+  for (uint8_t column = 0; column < 16; ++column)
   {
     // For each row in the column
-    for(uint8_t row = 0; row < 16; ++row)
+    for (uint8_t row = 0; row < 16; ++row)
     {
       // Get the 1-byte address of the cell
       uint8_t key = column | (row << 4);
@@ -126,17 +126,17 @@ void LetterGrouper::CompareCells_()
       vector<TextPointer>& maingroup = grid_[key];
 
       // Empty cell - nothing to be done
-      if(maingroup.empty()) continue;
+      if (maingroup.empty()) continue;
 
       // For each glyph in the cell
-      for(auto& element : maingroup)
+      for (auto& element : maingroup)
       {
-        for(int index = 0; index < 6; ++index)
+        for (int index = 0; index < 6; ++index)
         {
-          if(column == 15 &&  index > 2) break;
-          if(element->HasJoin() && index == 3 ) break;
-          if(row == 0 && (index % 3 == 2)) continue;
-          if(row == 15 && (index % 3 == 1)) continue;
+          if (column == 15 &&  index > 2) break;
+          if (element->HasJoin() && index == 3 ) break;
+          if (row == 0 && (index % 3 == 2)) continue;
+          if (row == 15 && (index % 3 == 1)) continue;
 
           uint8_t cell = (column + (index / 3)) | ((row + index % 3 - 1) << 4);
           MatchRight_(element, cell);
@@ -157,26 +157,26 @@ void LetterGrouper::MatchRight_(TextPointer element, uint8_t key)
   auto& cell = grid_[key];
 
   // some cells are empty - nothing to do
-  if(cell.empty()) return;
+  if (cell.empty()) return;
 
   // For each glyph in the cell
-  for(uint16_t i = 0; i < cell.size(); ++i)
+  for (uint16_t i = 0; i < cell.size(); ++i)
   {
     // If in good position to be next glyph
-    if(element->IsAdjoiningLetter(*(cell[i])))
+    if (element->IsAdjoiningLetter(*(cell[i])))
     {
       // Consume if identical. Skip if already consumed
-      if(*cell[i] == *element) element->Consume();
-      if(cell[i]->IsConsumed()) continue; // ignore if marked for deletion
+      if (*cell[i] == *element) element->Consume();
+      if (cell[i]->IsConsumed()) continue; // ignore if marked for deletion
 
-      if(!element->HasJoin())
+      if (!element->HasJoin())
       {
         element->SetJoin(cell[i]);
         continue; // don't bother checking next statement
       }
 
       // If already a match but this one is better...
-      if(element->GetJoin()->GetLeft() > cell[i]->GetLeft())
+      if (element->GetJoin()->GetLeft() > cell[i]->GetLeft())
       {
         element->SetJoin(cell[i]);
       }
@@ -192,22 +192,22 @@ void LetterGrouper::MatchRight_(TextPointer element, uint8_t key)
 void LetterGrouper::Merge_()
 {
   // For each column in the x-axis
-  for(uint8_t column = 0; column < 16; ++column)
+  for (uint8_t column = 0; column < 16; ++column)
   {
     // For each cell in that column
-    for(uint8_t row = 0; row < 16; ++row)
+    for (uint8_t row = 0; row < 16; ++row)
     {
       // Get the cell's contents
       vector<TextPointer>& cell = grid_[column | (row << 4)];
 
       // If the cell is empty there's nothing to do
-      if(cell.empty()) continue;
+      if (cell.empty()) continue;
 
       // For each glyph in the cell
-      for(auto& element : cell)
+      for (auto& element : cell)
       {
         // If glyph is viable and matches another glyph to the right
-        if(element->IsConsumed() || !element->HasJoin()) continue;
+        if (element->IsConsumed() || !element->HasJoin()) continue;
 
         // Look up the right-matching glyph
         auto matcher = element->GetJoin();

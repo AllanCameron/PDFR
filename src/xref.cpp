@@ -88,7 +88,7 @@ void XRef::LocateXRefs_()
   xref_locations_.emplace_back(stoi(xref_string));
 
   // If no XRef location is found, then we're stuck. Throw an error.
-  if(xref_locations_.empty()) throw runtime_error("No XRef entry found");
+  if (xref_locations_.empty()) throw runtime_error("No XRef entry found");
 
   // The first dictionary found after any XRef offset is always a trailer
   // dictionary, though sometimes it doubles as an XRefStream dictionary.
@@ -127,7 +127,7 @@ void XRef::ReadXRefStrings_()
 
     // If it contains a dictionary, process as a stream, otherwise as a string
     auto finder = xref_string.substr(0, 15).find("<<", 0);
-    if(finder != string::npos) ReadXRefFromStream_(start);
+    if (finder != string::npos) ReadXRefFromStream_(start);
     else ReadXRefFromString_(xref_string);
   }
 }
@@ -143,7 +143,7 @@ void XRef::ReadXRefFromStream_(int t_location)
   auto xref_table = XRefStream(make_shared<XRef>(*this), t_location).Table_();
 
   // Throws if XRefStream returns an empty table
-  if(xref_table.empty()) throw runtime_error("XRef table empty");
+  if (xref_table.empty()) throw runtime_error("XRef table empty");
 
   // Fill the XRef data map from the table -------------------//
   for (size_t j = 0; j < xref_table[0].size(); j++)
@@ -152,7 +152,7 @@ void XRef::ReadXRefFromStream_(int t_location)
 
     xref_table_[object_number] = XRefRow {position, 0, position};
 
-    if(xref_table[0][j] != 2) xref_table_[object_number].in_object = 0;
+    if (xref_table[0][j] != 2) xref_table_[object_number].in_object = 0;
 
     else xref_table_[object_number].startbyte = 0;
   }
@@ -173,14 +173,14 @@ void XRef::ReadXRefFromString_(string& t_xref_string)
 
   // A valid XRef has >= 4 ints in it and must have an even number of ints
   auto xref_size = all_ints.size();
-  if(xref_size < 4 || xref_size % 2) throw runtime_error("Malformed XRef");
+  if (xref_size < 4 || xref_size % 2) throw runtime_error("Malformed XRef");
 
   // This loop starts on the second row of the table. Even numbers are the
   // byte offsets and odd numbers are the in_use numbers
   for (int bytestore = 0, i = 2; i < (int) all_ints.size(); ++i)
   {
     // If an odd number index and the integer is in use, store to map
-    if(i % 2 && all_ints[i] < 0xffff)
+    if (i % 2 && all_ints[i] < 0xffff)
     {
       // Numbers each row by counting pairs of numbers past initial object
       xref_table_[all_ints[0] + (i / 2) - 1] = XRefRow {bytestore, 0, 0};
@@ -198,7 +198,7 @@ size_t XRef::GetObjectStartByte(int t_object_number) const
 {
   auto found = xref_table_.find(t_object_number);
 
-  if(found == xref_table_.end()) throw runtime_error("Object does not exist");
+  if (found == xref_table_.end()) throw runtime_error("Object does not exist");
 
   return found->second.startbyte;
 }
@@ -212,10 +212,10 @@ size_t XRef::GetObjectEndByte(int t_object_number) const
   auto row = xref_table_.find(t_object_number);
 
   // throw an error if objnum isn't a valid object
-  if(row == xref_table_.end()) throw runtime_error("Object doesn't exist");
+  if (row == xref_table_.end()) throw runtime_error("Object doesn't exist");
 
   // If the object is in an object stream, return 0;
-  if(row->second.in_object) return 0;
+  if (row->second.in_object) return 0;
 
   // else find the first match of "endobj" and return
   return file_string_->find("endobj", row->second.startbyte);
@@ -229,7 +229,7 @@ size_t XRef::GetHoldingNumberOf(int t_object_number) const
 {
   auto row = xref_table_.find(t_object_number);
 
-  if(row == xref_table_.end()) throw runtime_error("Object does not exist");
+  if (row == xref_table_.end()) throw runtime_error("Object does not exist");
 
   return row->second.in_object;
 }
@@ -246,7 +246,7 @@ vector<int> XRef::GetAllObjectNumbers() const
 
 int XRef::GetStreamLength_(const Dictionary& t_dictionary) const
 {
-  if(t_dictionary.ContainsReferences("/Length"))
+  if (t_dictionary.ContainsReferences("/Length"))
   {
     int length_object_number = t_dictionary.GetReference("/Length");
     size_t first_position = GetObjectStartByte(length_object_number);
@@ -269,7 +269,7 @@ vector<size_t> XRef::GetStreamLocation(int t_object_start) const
   Dictionary dictionary = Dictionary(file_string_, t_object_start);
 
   // If the stream exists, get its start / stop positions as a length-2 array
-  if(dictionary.HasKey("stream") && dictionary.HasKey("/Length"))
+  if (dictionary.HasKey("stream") && dictionary.HasKey("/Length"))
   {
     size_t stream_length = (size_t) GetStreamLength_(dictionary);
     size_t stream_start  = (size_t) dictionary.GetInts("stream")[0];
@@ -309,12 +309,12 @@ Dictionary XRef::GetTrailer() const
 void XRef::CreateCrypto_()
 {
    // if there's no encryption dictionary, there's nothing else to do
-  if(!trailer_dictionary_.HasKey("/Encrypt")) return;
+  if (!trailer_dictionary_.HasKey("/Encrypt")) return;
 
   int encryption_number = trailer_dictionary_.GetReference("/Encrypt");
 
   // No encryption dict - exception?
-  if(xref_table_.find(encryption_number) == xref_table_.end()) return;
+  if (xref_table_.find(encryption_number) == xref_table_.end()) return;
 
   // mark file as encrypted and read the encryption dictionary
   encrypted_ = true;
@@ -353,7 +353,7 @@ XRefStream::XRefStream(shared_ptr<XRef> t_xref, int t_starts_at)
     dictionary_(Dictionary(xref_->File(), object_start_))
 {
   // If there is no /W entry, we don't know how to interpret the stream.
-  if(!dictionary_.ContainsInts("/W")) throw runtime_error("No /W entry found.");
+  if (!dictionary_.ContainsInts("/W")) throw runtime_error("No /W entry found.");
 
   ReadIndex_();       // Reads Index so we know which objects are in stream
   ReadParameters_();  // Reads the PNG decoding parameters
@@ -386,7 +386,7 @@ void XRefStream::ReadIndex_()
   // Gets the numbers in the /Index entry
   auto index_entries = dictionary_.GetInts("/Index");
 
-  if(!index_entries.empty())
+  if (!index_entries.empty())
   {
     for (size_t i = 0; i < index_entries.size(); i += 2)
     {
@@ -407,19 +407,19 @@ void XRefStream::ReadParameters_()
 {
   string sub_dictionary_string = "<<>>";
 
-  if(dictionary_.HasKey("/DecodeParms"))
+  if (dictionary_.HasKey("/DecodeParms"))
   {
     sub_dictionary_string = dictionary_.GetString("/DecodeParms");
   }
 
   Dictionary sub_dictionary(make_shared<string>(sub_dictionary_string));
 
-  if(sub_dictionary.ContainsInts("/Columns"))
+  if (sub_dictionary.ContainsInts("/Columns"))
   {
     number_of_columns_ = sub_dictionary.GetInts("/Columns")[0];
   }
 
-  if(sub_dictionary.ContainsInts("/Predictor"))
+  if (sub_dictionary.ContainsInts("/Predictor"))
   {
     predictor_ = sub_dictionary.GetInts("/Predictor")[0];
   }
@@ -436,7 +436,7 @@ void XRefStream::GetRawMatrix_()
   string stream = xref_->File()->substr(stream_location[0], stream_location[1]);
 
   // Applies decompression to stream if needed
-  if(dictionary_.GetString("/Filter").find("/FlateDecode", 0) != string::npos)
+  if (dictionary_.GetString("/Filter").find("/FlateDecode", 0) != string::npos)
   {
     FlateDecode(stream);
   }
@@ -452,15 +452,15 @@ void XRefStream::GetRawMatrix_()
   array_widths_.erase(new_end_marker, array_widths_.end());
 
   // if no record of column numbers, infer from number of /W entries
-  if(number_of_columns_ == 0)
+  if (number_of_columns_ == 0)
   {
-    for(auto entry : array_widths_) number_of_columns_ += entry;
+    for (auto entry : array_widths_) number_of_columns_ += entry;
   }
 
   // Predictors above 10 require an extra column
-  if(predictor_ > 9) number_of_columns_++;
+  if (predictor_ > 9) number_of_columns_++;
 
-  if(number_of_columns_ == 0) throw runtime_error("divide by zero error");
+  if (number_of_columns_ == 0) throw runtime_error("divide by zero error");
 
   // Gets number of rows
   int number_of_rows = int_stream.size() / number_of_columns_;
@@ -486,7 +486,7 @@ void XRefStream::GetRawMatrix_()
 
 void XRefStream::DiffUp_()
 {
-  if(predictor_ == 12)
+  if (predictor_ == 12)
   {
     // For each row
     for (size_t row = 1; row < raw_matrix_.size(); ++row )
@@ -519,7 +519,7 @@ void XRefStream::ModuloTranspose_()
 
     // the new column is pushed to the final array unless it is the first
     // column (which is skipped when the predictor is > 9)
-    if(predictor_ < 10 || i > 0) final_array_.push_back(temp_column);
+    if (predictor_ < 10 || i > 0) final_array_.push_back(temp_column);
   }
 }
 
@@ -583,13 +583,13 @@ void XRefStream::MergeColumns_()
 void XRefStream::NumberRows_()
 {
   // If there are only two columns append a zero filled column of the same size
-  if(result_.size() == 2)
+  if (result_.size() == 2)
   {
     result_.emplace_back(vector<int>(result_[0].size(), 0));
   }
 
   // if no index entries, assume start at object 0
-  if(object_numbers_.empty())
+  if (object_numbers_.empty())
   {
     // create extra column numbered sequentially from first of objectNumbers
     object_numbers_.resize(result_[0].size());

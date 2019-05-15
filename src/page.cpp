@@ -54,17 +54,17 @@ void Page::ReadBoxes()
   // This do...while loop allows upwards iteration through /Pages nodes
   do{
     // For each of the box names
-    for(auto& box_name : box_names)
+    for (auto& box_name : box_names)
     {
       vector<float>&& this_box = box_header.GetFloats(box_name);
       if (!this_box.empty()) minbox = this_box;
     }
 
     // If no boxes found
-    if(minbox.empty())
+    if (minbox.empty())
     {
       // Find the parent object number and get its object dictionary
-      if(box_header.ContainsReferences("/Parent"))
+      if (box_header.ContainsReferences("/Parent"))
       {
         int parent = box_header.GetReference("/Parent");
         box_header = document_->GetObject(parent)->GetDictionary();
@@ -112,7 +112,7 @@ void Page::ReadResources()
   // If /Resources doesn't contain a dictionary it must be a reference
   if (!header_.ContainsDictionary("/Resources"))
   {
-    if(header_.ContainsReferences("/Resources"))
+    if (header_.ContainsReferences("/Resources"))
     {
       auto resource_number = header_.GetReference("/Resources");
       resources_ = document_->GetObject(resource_number)->GetDictionary();
@@ -146,15 +146,15 @@ void Page::ReadFonts()
 
   // We can now iterate through the font names using getFontNames(), create
   // each font in turn and store it in the fontmap
-  for(auto label : fonts_)
+  for (auto label : fonts_)
   {
     auto found_font = fontmap_.find(label.first);
 
     // If the font is not in the fontmap, insert it
-    if(found_font == fontmap_.end())
+    if (found_font == fontmap_.end())
     {
       // Find the reference for each font name
-      for(auto reference : fonts_.GetReferences(label.first))
+      for (auto reference : fonts_.GetReferences(label.first))
       {
         auto font_dict = document_->GetObject(reference)->GetDictionary();
         auto font_ptr = make_shared<Font>(document_, font_dict, label.first);
@@ -204,11 +204,11 @@ void Page::ReadXObjects()
     xobject_string = resources_.GetString("/XObject");
 
   // Sanity check - the entry shouldn't be empty
-  if(xobject_string.empty()) return;
+  if (xobject_string.empty()) return;
 
   // If /xobject entry is a dictionary, create a dictionary object
   Dictionary xobject_dictionary;
-  if(xobject_string.find("<<") != string::npos)
+  if (xobject_string.find("<<") != string::npos)
   {
     xobject_dictionary = Dictionary(make_shared<string>(xobject_string));
   }
@@ -221,12 +221,12 @@ void Page::ReadXObjects()
   }
 
   // We now have a dictionary of {xobject name: ref} from which to get xobjects
-  for(auto& entry : xobject_dictionary)
+  for (auto& entry : xobject_dictionary)
   {
     std::vector<int> xobjects = xobject_dictionary.GetReferences(entry.first);
 
     // map xobject strings to the xobject names
-    if(!xobjects.empty())
+    if (!xobjects.empty())
     {
       xobjects_[entry.first] = document_->GetObject(xobjects[0])->GetStream();
     }
@@ -249,7 +249,7 @@ void Page::ExpandContents(vector<int> t_object_numbers_to_add, Node t_parent)
   auto kid_nodes = t_parent->GetKids();
 
   // Now for each get a vector of ints for its kid nodes
-  for(auto& kid : kid_nodes)
+  for (auto& kid : kid_nodes)
   {
     // Read the contents from the dictionary entry
     auto kid_dictionary = document_->GetObject(kid->Get())->GetDictionary();
@@ -282,7 +282,7 @@ shared_ptr<string> Page::GetPageContents()
 shared_ptr<string> Page::GetXObject(const string& t_object_id)
 {
   // Use a non-inserting finder. If object not found return empty string
-  if(xobjects_.find(t_object_id) == xobjects_.end())
+  if (xobjects_.find(t_object_id) == xobjects_.end())
   {
     return make_shared<string>(string(""));
   }
@@ -298,11 +298,11 @@ shared_ptr<string> Page::GetXObject(const string& t_object_id)
 shared_ptr<Font> Page::GetFont(const string& t_font_id)
 {
   // If no fonts on the page, throw an error
-  if(fontmap_.empty()) throw runtime_error("No fonts available for page");
+  if (fontmap_.empty()) throw runtime_error("No fonts available for page");
 
   // If we can't find a specified font, return the first font in the map
   auto font_finder = fontmap_.find(t_font_id);
-  if(font_finder == fontmap_.end()) return fontmap_.begin()->second;
+  if (font_finder == fontmap_.end()) return fontmap_.begin()->second;
 
   // Otherwise we're all good and return the requested font
   return font_finder->second;

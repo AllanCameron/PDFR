@@ -56,10 +56,10 @@ class WordGrouper
   WordGrouper(TextBox&&);
 
   // Output individual text elements for next phase of layout analysis
-  TextBox& Output();
+  inline TextBox& Output() { return textbox_; }
 
   // Output text elements with sizes, fonts, positions to API
-  TextTable Out();
+  inline TextTable Out() const { return TextTable(textbox_);}
 
  private:
   // Make a table of values in a vector of floats rounded to one decimal place

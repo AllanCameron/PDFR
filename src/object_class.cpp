@@ -29,7 +29,7 @@ Object::Object(shared_ptr<const XRef> t_xref, int t_object_number) :
   size_t stop  = xref_->GetObjectEndByte(object_number_);
 
   // We check to see if the object has a header dictionary by finding '<<'
-  if(xref_->File()->substr(start, 20).find("<<") == string::npos)
+  if (xref_->File()->substr(start, 20).find("<<") == string::npos)
   {
     // No dictionary found - make blank dictionary for header
     header_ = Dictionary();
@@ -47,7 +47,7 @@ Object::Object(shared_ptr<const XRef> t_xref, int t_object_number) :
     stream_location_ = xref_->GetStreamLocation(start);
 
     // The object may contain an object stream that needs unpacked
-    if(header_.GetString("/Type") == "/ObjStm")
+    if (header_.GetString("/Type") == "/ObjStm")
     {
       // Get the object stream
       ReadStreamFromStreamLocations_();
@@ -79,13 +79,13 @@ void Object::IndexObjectStream_()
   vector<int> index = ParseInts(index_string);
 
   // If this is empty, something has gone wrong.
-  if(index.empty()) throw runtime_error("Couldn't parse object stream");
+  if (index.empty()) throw runtime_error("Couldn't parse object stream");
 
   // We now set up a loop that determines which numbers are object numbers and
   // which are byte offsets
-  for(size_t byte_length, i = 1; i < index.size(); i += 2)
+  for (size_t byte_length, i = 1; i < index.size(); i += 2)
   {
-    if(i == (index.size() - 1)) byte_length = stream_string.size() - index[i];
+    if (i == (index.size() - 1)) byte_length = stream_string.size() - index[i];
     else byte_length = index[i + 2] - index[i];
     auto&& index_pair = make_pair(index[i] + startbyte, byte_length);
     object_stream_index_[index[i - 1]] = index_pair;
@@ -103,7 +103,7 @@ Object::Object(shared_ptr<Object> t_holder, int t_object_number):
   stream_location_({0, 0})
 {
   auto finder = t_holder->object_stream_index_.find(object_number_);
-  if(finder == t_holder->object_stream_index_.end())
+  if (finder == t_holder->object_stream_index_.end())
   {
     throw runtime_error("Object not found in stream");
   }
@@ -113,7 +113,7 @@ Object::Object(shared_ptr<Object> t_holder, int t_object_number):
   auto stream_string  = t_holder->stream_.substr(index_position, index_length);
 
   // Most stream objects consist of just a dictionary
-  if(stream_string[0] == '<')
+  if (stream_string[0] == '<')
   {
     header_ = Dictionary(make_shared<string>(stream_string));
     stream_ = "";             // stream objects don't have their own stream
@@ -126,11 +126,11 @@ Object::Object(shared_ptr<Object> t_holder, int t_object_number):
     // Annoyingly, some "objects" in an object stream are just pointers
     // to other objects. This is pointless but does happen and needs to
     // be handled by recursively calling the constructor
-    if(stream_.size() < 15 && stream_.find(" R", 0) < 15)
+    if (stream_.size() < 15 && stream_.find(" R", 0) < 15)
     {
       size_t new_number = ParseReferences(stream_)[0];
       size_t holder = xref_->GetHoldingNumberOf(new_number);
-      if(holder == 0) *this = Object(xref_, new_number);
+      if (holder == 0) *this = Object(xref_, new_number);
       else *this = Object(make_shared<Object>(xref_, holder), new_number);
       this->object_number_ = t_object_number;
     }
@@ -152,7 +152,7 @@ Dictionary Object::GetDictionary()
 string Object::GetStream()
 {
   // If the stream has not already been processed, do it now
-  if(stream_.empty()) ReadStreamFromStreamLocations_();
+  if (stream_.empty()) ReadStreamFromStreamLocations_();
   return stream_;
 }
 
@@ -163,13 +163,13 @@ string Object::GetStream()
 void Object::ApplyFilters_()
 {
   // Decrypt if necessary
-  if(xref_->IsEncrypted()) xref_->Decrypt(stream_, object_number_, 0);
+  if (xref_->IsEncrypted()) xref_->Decrypt(stream_, object_number_, 0);
 
   // Read filters
   string filters = header_.GetString("/Filter");
 
   // Apply filters
-  if(filters.find("/FlateDecode") != string::npos) FlateDecode(stream_);
+  if (filters.find("/FlateDecode") != string::npos) FlateDecode(stream_);
 
 }
 

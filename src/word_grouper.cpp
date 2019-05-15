@@ -32,25 +32,6 @@ WordGrouper::WordGrouper(TextBox&& t_text_box): textbox_(move(t_text_box))
 };
 
 //---------------------------------------------------------------------------//
-// This returns a single text box of the page for further processing if needed
-
-TextBox& WordGrouper::Output()
-{
-  return textbox_;
-}
-
-//---------------------------------------------------------------------------//
-// This returns a "gridoutput" object, which is a struct of several vectors of
-// the same length, essentially a transposed version of allRows. This allows
-// the results of WordGrouper to be passed out to an API if no further
-// processing is required.
-
-TextTable WordGrouper::Out()
-{
-  return TextTable(textbox_);
-}
-
-//---------------------------------------------------------------------------//
 // Makes a table of supplied vector of floats. Multiplies them by 10 and
 // casts to int as a way of rounding to 1 decimal place. It then removes any
 // keys whose counts are less than EDGECOUNT, so the remaining keys are the
@@ -91,7 +72,7 @@ void WordGrouper::FindEdges_()
 {
   // Create vectors of left and right edges of text elements
   vector<float> left, right;
-  for(auto& element : textbox_)
+  for (auto& element : textbox_)
   {
     left.push_back(element->GetLeft());
     right.push_back(element->GetRight());
@@ -99,7 +80,7 @@ void WordGrouper::FindEdges_()
 
   // Create a vector of midpoints of text elements
   vector<float> midvec;
-  for(size_t i = 0; i < right.size(); ++i)
+  for (size_t i = 0; i < right.size(); ++i)
   {
     midvec.emplace_back((right[i] + left[i]) / 2);
   }
@@ -117,26 +98,26 @@ void WordGrouper::FindEdges_()
 
 void WordGrouper::AssignEdges_()
 {
-  for(auto& element : textbox_)
+  for (auto& element : textbox_)
   {
     int left_int = element->GetLeft() * 10;
     int right_int = element->GetRight() * 10;
     int mid_int = (element->GetRight() + element->GetLeft()) * 5;
 
     // Non-unique left edge - assume column edge
-    if(left_edges_.find(left_int) != left_edges_.end())
+    if (left_edges_.find(left_int) != left_edges_.end())
     {
       element->MakeLeftEdge();
     }
 
     // Non-unique right edge - assume column edge
-    if(right_edges_.find(right_int) != right_edges_.end())
+    if (right_edges_.find(right_int) != right_edges_.end())
     {
       element->MakeRightEdge();
     }
 
     // Non-unique centre value - assume centred column
-    if(mids_.find(mid_int) != mids_.end())
+    if (mids_.find(mid_int) != mids_.end())
     {
       element->MakeCentred();
     }
@@ -153,24 +134,24 @@ void WordGrouper::AssignEdges_()
 void WordGrouper::FindRightMatch_()
 {
   // Handle empty data
-  if(textbox_.empty()) throw runtime_error("empty data");
+  if (textbox_.empty()) throw runtime_error("empty data");
 
-  for(auto element = textbox_.begin(); element != textbox_.end(); ++element)
+  for (auto element = textbox_.begin(); element != textbox_.end(); ++element)
   {
     // Check the row is elligible for matching
-    if( (*element)->IsConsumed()) continue;
+    if ( (*element)->IsConsumed()) continue;
 
     // If elligible, check every other word for the best match
-    for(auto other = element; other != textbox_.end(); ++other)
+    for (auto other = element; other != textbox_.end(); ++other)
     {
       // Don't match against itself
-      if(element == other) continue;
+      if (element == other) continue;
 
       // These TextElement functions are quite complex in themselves
-      if((*element)->IsElligibleToJoin(**other))
+      if ((*element)->IsElligibleToJoin(**other))
       {
         (*element)->JoinWords(**other);
-        --element;  // Keep matching same element until no otehr matches found
+        --element;  // Keep matching same element until no other matches found
         break;
       }
     }

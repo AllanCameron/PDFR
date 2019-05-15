@@ -51,7 +51,7 @@ unordered_map<uint8_t, pair<Direction, Direction>> Vertex::arrows_ =
 
 shared_ptr<Vertex> Box::GetVertex(int t_corner)
 {
-  switch(t_corner)
+  switch (t_corner)
   {
     case 0 : return std::make_shared<Vertex>(left_,  top_,    0x02);
     case 1 : return std::make_shared<Vertex>(right_, top_,    0x01);
@@ -69,8 +69,8 @@ shared_ptr<Vertex> Box::GetVertex(int t_corner)
 
 void Box::RecordImpingementOn(Vertex& t_vertex)
 {
-  if(IsNorthWestOf(t_vertex)) t_vertex.SetFlags(0x08);
-  if(IsNorthEastOf(t_vertex)) t_vertex.SetFlags(0x04);
-  if(IsSouthEastOf(t_vertex)) t_vertex.SetFlags(0x02);
-  if(IsSouthWestOf(t_vertex)) t_vertex.SetFlags(0x01);
+  if (IsNorthWestOf(t_vertex)) t_vertex.SetFlags(0x08);
+  if (IsNorthEastOf(t_vertex)) t_vertex.SetFlags(0x04);
+  if (IsSouthEastOf(t_vertex)) t_vertex.SetFlags(0x02);
+  if (IsSouthWestOf(t_vertex)) t_vertex.SetFlags(0x01);
 }

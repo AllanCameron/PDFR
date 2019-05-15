@@ -63,14 +63,14 @@ void Document::BuildDocument_()
 shared_ptr<Object> Document::GetObject(int t_object_number)
 {
   // Check if object n is already stored
-  if(object_cache_.find(t_object_number) == object_cache_.end())
+  if (object_cache_.find(t_object_number) == object_cache_.end())
   {
     // If it is not stored, check whether it is in an object stream
     size_t holder = xref_->GetHoldingNumberOf(t_object_number);
 
     // If object is in a stream, create it recursively from the stream object.
     // Otherwise create & store it directly
-    if(holder)
+    if (holder)
     {
       auto object_ptr = make_shared<Object>(GetObject(holder), t_object_number);
       object_cache_[t_object_number] = object_ptr;
@@ -161,7 +161,7 @@ void Document::ExpandKids_(const vector<int>& t_object_numbers,
   auto kid_nodes = t_parent_node->GetKids();
 
   // For each new node get a vector of ints for its kid nodes
-  for(auto& kid : kid_nodes)
+  for (auto& kid : kid_nodes)
   {
     auto refs = GetObject(kid->Get())->GetDictionary().GetReferences("/Kids");
 
@@ -176,7 +176,7 @@ void Document::ExpandKids_(const vector<int>& t_object_numbers,
 Dictionary Document::GetPageHeader(size_t t_page_number)
 {
   // Ensure the pagenumber is valid
-  if(page_object_numbers_.size() < t_page_number)
+  if (page_object_numbers_.size() < t_page_number)
   {
     throw runtime_error("Invalid page number");
   }

@@ -27,7 +27,7 @@ LineGrouper::LineGrouper(vector<TextBox> t_text_boxes)
   size_t i = 0;
 
   // If there are no textboxes, there is nothing to do.
-  if( !text_boxes_.empty())
+  if ( !text_boxes_.empty())
   {
     while (i < text_boxes_.size())
     {
@@ -63,9 +63,9 @@ LineGrouper::LineGrouper(vector<TextBox> t_text_boxes)
 void LineGrouper::FindBreaks_(TextBox& t_text_box)
 {
   // For each TextElement in the TextBox
-  for(size_t i = 1; i < t_text_box.size(); ++i)
+  for (size_t i = 1; i < t_text_box.size(); ++i)
   {
-    if(t_text_box[i]->GetBottom() < t_text_box[i - 1]->GetBottom() && // Below
+    if (t_text_box[i]->GetBottom() < t_text_box[i - 1]->GetBottom() && // Below
        t_text_box[i]->GetLeft() - t_text_box[i - 1]->GetLeft() > 0.1) // To left
     {
       SplitBox_(t_text_box, t_text_box[i - 1]->GetBottom());
@@ -87,10 +87,10 @@ void LineGrouper::FindBreaks_(TextBox& t_text_box)
 void LineGrouper::LineEndings_(TextBox& t_text_box)
 {
   // For each element in the TextBox
-  for(size_t i = 0; i < t_text_box.size() - 1; ++i)
+  for (size_t i = 0; i < t_text_box.size() - 1; ++i)
   {
     auto& element = t_text_box[i];
-    switch(element->GetGlyph().back())
+    switch (element->GetGlyph().back())
     {
       case 0x0020:                          break;
       case 0x00A0:                          break;
@@ -111,35 +111,47 @@ void LineGrouper::LineEndings_(TextBox& t_text_box)
 
 void LineGrouper::PasteLines_(TextBox& t_text_box)
 {
-  for(size_t i = 1; i < t_text_box.size(); ++i)
+  for (auto& element : t_text_box)
   {
-    t_text_box[0]->ConcatenateUnicode(t_text_box[i]->GetGlyph());
+    if (&element == &(t_text_box[0])) continue;
+    t_text_box[0]->ConcatenateUnicode(element->GetGlyph());
   }
+
   t_text_box.resize(1);
 }
 
 //---------------------------------------------------------------------------//
 // Divides a TextBox into two by a horizontal line given as a y value
 
-void LineGrouper::SplitBox_(TextBox& t_old_one, float t_top_edge)
+void LineGrouper::SplitBox_(TextBox& t_upper, float t_top_edge)
 {
-  if(t_old_one.empty()) return;
-  TextBox new_one = t_old_one;
-  new_one.clear();
-  size_t breakpoint = 0;
+  if (t_upper.empty()) return; // Don't split the box if it's empty
 
-  for(size_t i = 0; i < t_old_one.size(); ++i)
-  {
-    if(t_old_one[i]->GetBottom() < t_top_edge)
-    {
-      if(breakpoint != 0) breakpoint = i;
-      new_one.push_back(t_old_one[i]);
-    }
-  }
-  if(breakpoint > 0) t_old_one.resize(breakpoint - 1);
+  // Lambda to find elements whose bottom edge is below the cutoff
+  auto FindLower = [&](TextPointer text_ptr) -> bool
+                   { return text_ptr->GetBottom() < t_top_edge; };
 
-  t_old_one.SetBottom(t_old_one.back()->GetBottom());
-  new_one.SetTop(t_old_one.front()->GetTop());
-  text_boxes_.push_back(new_one);
+  // Gets an iterator to the first element below the cutoff
+  auto split_at = find_if(t_upper.begin(), t_upper.end(), FindLower);
+
+  // We won't split the box if all or none of the elements would be moved
+  // to a new box
+  if (split_at == t_upper.begin() || split_at == t_upper.end()) return;
+
+  // Create a new textbox using a vector of all elements below the cutoff
+  // and a down-cast copy of the text box
+  TextBox lower(vector<TextPointer>(split_at, t_upper.end()), (Box) t_upper);
+
+  // Now we can erase the lower elements we have just copied from the upper box
+  t_upper.erase(split_at, t_upper.end());
+
+  // We also need to readjust the margins of our bounding boxes based on their
+  // new contents
+  t_upper.SetBottom(t_upper.back()->GetBottom());
+  lower.SetTop(t_upper.front()->GetTop());
+
+  // The upper box has been changed in place, but the lower box needs to be
+  // added to our collection as a new member
+  text_boxes_.push_back(lower);
 }
 

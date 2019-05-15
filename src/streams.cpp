@@ -57,7 +57,7 @@ void FlateDecode(string& t_message)
     inflateEnd(stream);
 
     // If the result doesn't fit, try again with the array being twice as big
-    if(stream->total_out >= array_size)
+    if (stream->total_out >= array_size)
     {
       delete[] output_array;
       factor *= 2;

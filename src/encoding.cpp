@@ -49,12 +49,12 @@ void Encoding::ReadDifferences_(const string& t_differences_string)
   // parsing task, so I have kept it as a single function (albeit one with
   // nested switch - case expressions)
 
-  for(auto i : t_differences_string)
+  for (auto i : t_differences_string)
   {
     char n = GetSymbolType(i);  // determine character type
-    switch(state)             // state switch
+    switch (state)             // state switch
     {
-      case NEWSYMB:   switch(n)   // if number switch to NUM, if / to NAME
+      case NEWSYMB:   switch (n)   // if number switch to NUM, if / to NAME
                       {           // stop if closing bracket, else continue
                         case 'D': buffer = i; state = NUM;       break;
                         case '/': buffer = i; state = NAME;      break;
@@ -63,7 +63,7 @@ void Encoding::ReadDifferences_(const string& t_differences_string)
                       };
                       break;
 
-      case NUM:       switch(n)   // write number to buffer, switch to name
+      case NUM:       switch (n)   // write number to buffer, switch to name
                       {           // if char is '/'
                         case 'D': buffer += i ;                  break;
                         case '/': Write_(state, buffer);
@@ -72,7 +72,7 @@ void Encoding::ReadDifferences_(const string& t_differences_string)
                                   buffer = ""; state = NEWSYMB;  break;
                       }
                       break;
-      case NAME:      switch(n)   // write name unless space or slash etc
+      case NAME:      switch (n)   // write name unless space or slash etc
                       {
                         case 'L': buffer += i;                   break;
                         case '.': buffer += i;                   break;
@@ -87,7 +87,7 @@ void Encoding::ReadDifferences_(const string& t_differences_string)
                       break;
       default:        break;
     }
-    if(state == STOP) break;
+    if (state == STOP) break;
   }
   ReadDifferenceEntries_();
 }
@@ -104,10 +104,10 @@ void Encoding::ReadDifferenceEntries_()
   RawChar code_point = 0; // The raw code point to be mapped to Unicode
 
    // This loop writes the results vector to encoding map
-  for(auto& entry : entries_)
+  for (auto& entry : entries_)
   {
     // If the vector entry is a number, convert to RawChar
-    if(entry.first == NUM) code_point = (RawChar) stoi(entry.second);
+    if (entry.first == NUM) code_point = (RawChar) stoi(entry.second);
 
     // Otherwise it's a name - convert it to Unicode, write it to the
     // encoding map and post-increment the mapping rawchar in case the next
@@ -115,7 +115,7 @@ void Encoding::ReadDifferenceEntries_()
     else
     {
       auto finder = adobe_to_unicode_.find(entry.second);
-      if(finder != adobe_to_unicode_.end())
+      if (finder != adobe_to_unicode_.end())
       {
         encoding_map_[code_point++] = adobe_to_unicode_.at(entry.second);
       }
@@ -169,7 +169,7 @@ void Encoding::MapUnicode_()
 void Encoding::ProcessUnicodeChars_(vector<string>& t_bf_chars)
 {
   // There may be many entries, so we process each of the given strings
-  for(auto& entry : t_bf_chars)
+  for (auto& entry : t_bf_chars)
   {
     // use MultiCarve() to get ascii-encoded byte representations
     vector<string> all_entries = MultiCarve(entry, "<", ">");
@@ -178,7 +178,7 @@ void Encoding::ProcessUnicodeChars_(vector<string>& t_bf_chars)
     // converts them to rawchar. It stores this number as 'key', then
     // converts the ascii-encoded bytes in the second column, converts them
     // to Unicode and makes them the raw key's mapped value in the encoding map
-    for(size_t i = 0; i < (all_entries.size() - 1); i += 2)
+    for (size_t i = 0; i < (all_entries.size() - 1); i += 2)
     {
         RawChar key = ConvertHexToRawChar(all_entries[i])[0];
         encoding_map_[key] = ConvertHexToRawChar(all_entries[i + 1])[0];
@@ -196,16 +196,16 @@ void Encoding::ProcessUnicodeChars_(vector<string>& t_bf_chars)
 void Encoding::ProcessUnicodeRange_(vector<string>& t_bf_ranges)
 {
   // There may be many entries, so we process each of the given strings
-  for(auto& ranges : t_bf_ranges)
+  for (auto& ranges : t_bf_ranges)
   {
     // Uses MultiCarve() from utilities.h to get ascii-endoded byte strings
     auto all_entries = MultiCarve(ranges, "<", ">");
 
     // Sanity check - there should be at least three entries for a valid range
-    if(all_entries.size() < 3) throw runtime_error("No entries in range");
+    if (all_entries.size() < 3) throw runtime_error("No entries in range");
 
     // Loop to calculate entries and fill encoding map
-    for(size_t j = 2; j < all_entries.size(); j += 3)
+    for (size_t j = 2; j < all_entries.size(); j += 3)
     {
       // first column == first code point; second column == last code point
       RawChar first = ConvertHexToRawChar(all_entries[j - 2]).at(0);
@@ -216,7 +216,7 @@ void Encoding::ProcessUnicodeRange_(vector<string>& t_bf_ranges)
       Unicode start = (Unicode) ConvertHexToRawChar(all_entries[j]).at(0);
 
       // Now we can fill the encoding map from the data in the row
-      for(int increment = 0; increment <= (last - first); ++increment)
+      for (int increment = 0; increment <= (last - first); ++increment)
       {
         encoding_map_[first + increment] = start + increment;
       }
@@ -237,27 +237,27 @@ void Encoding::ReadEncoding_()
   string encoding_name = encoding_dictionary.GetString("/Encoding");
 
   // If an encoding dictionary exists, gets it and read the baseencoding entry
-  if(font_dictionary_.ContainsReferences("/Encoding"))
+  if (font_dictionary_.ContainsReferences("/Encoding"))
   {
     auto encoding_object_number = font_dictionary_.GetReference("/Encoding");
     auto encoding_object_ptr = document_->GetObject(encoding_object_number);
     encoding_dictionary = encoding_object_ptr->GetDictionary();
-    if(encoding_dictionary.HasKey("/BaseEncoding"))
+    if (encoding_dictionary.HasKey("/BaseEncoding"))
     {
       encoding_name = encoding_dictionary.GetString("/BaseEncoding");
     }
   }
 
   // Now we should have an encoding name to specify our encoding map
-  if( encoding_name == "/WinAnsiEncoding")
+  if ( encoding_name == "/WinAnsiEncoding")
   {
     encoding_map_ = winansi_to_unicode_;
   }
-  else if(encoding_name == "/MacRomanEncoding")
+  else if (encoding_name == "/MacRomanEncoding")
   {
     encoding_map_ = macroman_to_unicode_;
   }
-  else if(encoding_name == "/PDFDocEncoding")
+  else if (encoding_name == "/PDFDocEncoding")
   {
     encoding_map_ = pdfdoc_to_unicode_;
   }
@@ -265,13 +265,13 @@ void Encoding::ReadEncoding_()
   // If no encoding name is specified, we take a direct RawChar : Unicode map
   else
   {
-    for(RawChar raw_char = 0x0000; raw_char < 0x0100; ++raw_char)
+    for (RawChar raw_char = 0x0000; raw_char < 0x0100; ++raw_char)
     {
       encoding_map_[raw_char] = (Unicode) raw_char;
     }
   }
   // Call Differences() if a /Differences entry is found to modify encoding
-  if(encoding_dictionary.HasKey("/Differences"))
+  if (encoding_dictionary.HasKey("/Differences"))
   {
     base_encoding_ = encoding_dictionary.GetString("/Differences");
     ReadDifferences_(base_encoding_);
@@ -287,7 +287,7 @@ Unicode Encoding::Interpret(const RawChar& t_raw)
 {
   // If no translation found, return the raw character code point
   auto found = encoding_map_.find(t_raw);
-  if(found != encoding_map_.end()) return found->second;
+  if (found != encoding_map_.end()) return found->second;
   else return t_raw;
 }
 

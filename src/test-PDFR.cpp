@@ -44,7 +44,8 @@ vector<float> test_floats = {3.14, 2.72, 1.4};
 string reference_string = "<</Refs 1 0 R 2 0 R 31 5 R>>";
 string test_dict_string =
 " <</A Success/Ref 1 0 R 2 0 R 31 5 R/Dict <</Subdict Success>>\
-/SomeInts [1 2 31]/SomeFloats [3.14 2.72 1.4]/Length 15>>\
+/SomeInts [1 2 31]/SplitBy /r/n(A line break)\
+/SomeFloats [3.14 2.72 1.4]/Length 15>>\
 stream\r\nNow in a stream\r\nendstream";
 
 Dictionary test_dictionary = Dictionary(make_shared<string>(test_dict_string));

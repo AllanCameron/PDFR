@@ -72,16 +72,16 @@ Tokenizer::Tokenizer(shared_ptr<string> t_input, Parser* t_interpreter)
 
 void Tokenizer::PushBuffer_(const TokenState t_type, const TokenState t_state)
 {
-  if(buffer_ == "Do" && t_state == IDENTIFIER)
+  if (buffer_ == "Do" && t_state == IDENTIFIER)
   {
     string loop_name = interpreter_->GetOperand();
-    if(loop_name != in_loop_)
+    if (loop_name != in_loop_)
     {
       in_loop_ = loop_name;
       shared_ptr<string> xobject = interpreter_->GetXObject(in_loop_);
 
       // Don't try to parse binary objects like images etc
-      if(IsAscii(*xobject)) Tokenizer(xobject, interpreter_);
+      if (IsAscii(*xobject)) Tokenizer(xobject, interpreter_);
     }
   }
 

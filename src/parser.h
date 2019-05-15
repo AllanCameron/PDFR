@@ -125,7 +125,7 @@ class Matrix
     std::array<float, 9> new_data {};
 
     // Use indices to fill by loop
-    for(size_t i = 0; i < 9; ++i)
+    for (size_t i = 0; i < 9; ++i)
     {
       new_data[i] = (data_[i % 3 + 0] * t_other.data_[3 * (i / 3) + 0] +
                      data_[i % 3 + 3] * t_other.data_[3 * (i / 3) + 1] +
@@ -141,7 +141,7 @@ class Matrix
     std::array<float, 9> new_data {};
 
     // Use indices to fill by loop
-    for(size_t i = 0; i < 9; ++i)
+    for (size_t i = 0; i < 9; ++i)
     {
       new_data[i] = (data_[i % 3 + 0] * t_other.data_[3 * (i / 3) + 0] +
                      data_[i % 3 + 3] * t_other.data_[3 * (i / 3) + 1] +
@@ -214,7 +214,7 @@ class Parser
   // operands stack. This public method passes that name out of the Parser.
   inline std::string GetOperand()
   {
-    if(this->operands_.empty()) return std::string {};
+    if (this->operands_.empty()) return std::string {};
     else return this->operands_[0];
   }
 

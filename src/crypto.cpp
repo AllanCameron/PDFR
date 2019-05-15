@@ -153,7 +153,7 @@ void Crypto::Md5Mix_(int t_cycle,
             g = mixarray[t_cycle / 16][t_cycle % 4];
 
   // Mangle bytes in various ways as per Md5 algorithm
-  switch(t_cycle / 16 + 1)
+  switch (t_cycle / 16 + 1)
   {
     case 1  : e     = t_fingerprint[(1 * t_cycle + 0) % 16];
               mixer = (t_deque[0] + ((t_deque[1] & t_deque[2]) |

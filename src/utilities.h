@@ -66,7 +66,7 @@ std::vector<K> GetKeys(const std::unordered_map<K, V>& t_map)
   typename std::unordered_map<K, V>::const_iterator it;
 
   // The following loop iterates through the map, gets the key and stores it
-  for(it = t_map.begin(); it != t_map.end(); ++it) result.push_back(it->first);
+  for (it = t_map.begin(); it != t_map.end(); ++it) result.push_back(it->first);
 
   return result;
 }
@@ -90,7 +90,7 @@ template <typename T>
 std::vector<int> Order(std::vector<T> t_data)
 {
   std::vector<int> index(t_data.size(), 0); // a new int vector to store results
-  for(size_t i = 0; i < t_data.size(); ++i)
+  for (size_t i = 0; i < t_data.size(); ++i)
   {
     index[i] = std::count_if(t_data.begin(), t_data.end(),
                [&](T other) { return other < t_data[i]; });
@@ -107,10 +107,10 @@ std::vector<Ta> SortBy(std::vector<Ta> t_sortee,
                        const std::vector<Tb>& t_sorter)
 {
   // Nothing to do!
-  if(t_sortee.empty()) return t_sortee;
+  if (t_sortee.empty()) return t_sortee;
 
   // Throw error if lengths don't match
-  if(t_sortee.size() != t_sorter.size())
+  if (t_sortee.size() != t_sorter.size())
   {
     throw std::runtime_error("SortBy requires equal-lengthed vectors");
   }
@@ -119,7 +119,7 @@ std::vector<Ta> SortBy(std::vector<Ta> t_sortee,
   std::vector<Ta> result;
 
   // Use Order(t_sorter) as defined above to sort sortee
-  for(auto i : Order(t_sorter)) result.emplace_back(t_sortee[i]);
+  for (auto i : Order(t_sorter)) result.emplace_back(t_sortee[i]);
 
   return result;
 }
@@ -162,7 +162,7 @@ class TreeNode
   void AddKids(std::vector<T> t_data)
   {
     // For each object, make a new TreeNode with it using 'this' as parent
-    for(auto datum : t_data)
+    for (auto datum : t_data)
     {
       kids_.push_back(std::make_shared<TreeNode<T>>(datum, Node(this)));
     }
@@ -180,7 +180,7 @@ class TreeNode
   Node TopNode()
   {
     // If parent node is nullptr then !parent_ will be true.
-    if(!parent_) return Node(this);
+    if (!parent_) return Node(this);
 
     // Get the parent node of the current node
     Node next_node_up = parent_;
@@ -234,13 +234,13 @@ class TreeNode
     std::vector<T> result;
 
     // For each child node, put its object in our vector
-    for(auto& kid : kids_)
+    for (auto& kid : kids_)
     {
       result.push_back(kid->data_);
 
       // If the child node has its own child nodes, we just want to call the
       // function recursively and append each new result to our vector
-      if(kid->HasKids())
+      if (kid->HasKids())
       {
         std::vector<T> temporary = kid->GetDescendants();
         result.reserve(temporary.size() + result.size());
@@ -260,9 +260,9 @@ class TreeNode
     std::vector<T> result;
 
     // For each child node, if it is a leaf, append to our vector
-    for(auto& kid : kids_)
+    for (auto& kid : kids_)
     {
-      if(!kid->HasKids())
+      if (!kid->HasKids())
       {
         result.push_back(kid->data_);
       }

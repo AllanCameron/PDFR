@@ -113,7 +113,7 @@ class Box
   // Constructor from length-4 vector
   Box(std::vector<float> t_vector): flags_(0)
   {
-    if(t_vector.size() < 4) throw std::runtime_error("Box needs four floats");
+    if (t_vector.size() < 4) throw std::runtime_error("Box needs four floats");
     left_   = t_vector[0];
     right_  = t_vector[2];
     top_    = t_vector[3];
@@ -127,7 +127,7 @@ class Box
   // using getters if we need to calculate the edge we're interested in getting.
   inline float Edge(int t_side) const
   {
-    switch(t_side)
+    switch (t_side)
     {
       case 0: return left_;
       case 1: return bottom_;
@@ -170,10 +170,10 @@ class Box
   // and the given vertex
   inline void ExpandBoxToIncludeVertex(const Vertex& t_corner)
   {
-      if(t_corner.GetX() < left_)    left_   = t_corner.GetX();
-      if(t_corner.GetX() > right_)   right_  = t_corner.GetX();
-      if(t_corner.GetY() < bottom_)  bottom_ = t_corner.GetY();
-      if(t_corner.GetY() > top_)     top_    = t_corner.GetY();
+      if (t_corner.GetX() < left_)    left_   = t_corner.GetX();
+      if (t_corner.GetX() > right_)   right_  = t_corner.GetX();
+      if (t_corner.GetY() < bottom_)  bottom_ = t_corner.GetY();
+      if (t_corner.GetY() > top_)     top_    = t_corner.GetY();
   }
 
   // Compare two boxes for exact equality
