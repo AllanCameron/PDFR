@@ -66,7 +66,7 @@ class Whitespace
   Whitespace(TextBox);
 
   //  Output the text element groups directly
-  std::vector<TextBox> Output();
+  PageBox Output();
 
   // Output the final text box co-ordinates
   std::vector<Box> WSBoxOut() const;

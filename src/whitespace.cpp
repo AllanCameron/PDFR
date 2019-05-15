@@ -457,7 +457,7 @@ void Whitespace::RemoveEngulfed_()
 // Finally we need to group our text items together in the text boxes for
 // joining and analysis.
 
-vector<TextBox> Whitespace::Output()
+PageBox Whitespace::Output()
 {
   vector<TextBox> result;
   for (auto& box : boxes_)
@@ -479,5 +479,5 @@ vector<TextBox> Whitespace::Output()
     result.emplace_back(TextBox(move(text_vector), move(box)));
   }
 
-  return result;
+  return PageBox((Box) page_text_, result);
 }

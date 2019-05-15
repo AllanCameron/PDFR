@@ -21,7 +21,7 @@ using namespace std;
 // into a single logical component, then they are glued together into a logical
 // unit. Otherwise, the box is split vertically.
 
-LineGrouper::LineGrouper(vector<TextBox> t_text_boxes)
+LineGrouper::LineGrouper(PageBox t_text_boxes)
   : text_boxes_(t_text_boxes)
 {
   size_t i = 0;

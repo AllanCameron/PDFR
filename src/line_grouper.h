@@ -49,10 +49,10 @@ class LineGrouper
 {
  public:
   // Constructor takes the output of WordGrouper - a vector of TextBoxes
-  LineGrouper(std::vector<TextBox> text_box_from_word_grouper);
+  LineGrouper(PageBox page_box_from_whitespace);
 
   // The output is also a vector of TextBoxes
-  inline std::vector<TextBox>& Output() { return text_boxes_; }
+  inline PageBox& Output() { return text_boxes_; }
 
  private:
   void FindBreaks_(TextBox&);   // Identifies paragraph breaks
@@ -72,13 +72,13 @@ class LineGrouper
     {
       if (row1->GetBottom()  > row2->GetBottom() ) return true;
       if (row1->GetBottom() == row2->GetBottom() &&
-          row1->GetLeft()    < row2->GetLeft()) return true;
+          row1->GetLeft()    < row2->GetLeft()   ) return true;
       return false;
     }
   };
 
   // private data member
-  std::vector<TextBox> text_boxes_;
+  PageBox text_boxes_;
 };
 
 

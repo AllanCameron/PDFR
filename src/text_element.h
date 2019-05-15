@@ -235,4 +235,21 @@ class TextTable: public Box
   std::vector<float> lefts_, rights_, bottoms_, tops_, sizes_;
 };
 
+class PageBox : public Box
+{
+ public:
+  PageBox(const Box& t_box, std::vector<TextBox> t_text_boxes)
+    : Box(t_box), data_(t_text_boxes) {}
+
+  inline TextBox& operator[](size_t i) { return data_[i];}
+  inline std::vector<TextBox>::iterator begin() { return data_.begin();}
+  inline std::vector<TextBox>::iterator end() { return data_.end();}
+  inline bool empty() const { return data_.empty();}
+  inline size_t size() const { return data_.size();}
+  inline void push_back(TextBox t_textbox) { data_.push_back(t_textbox);}
+
+private:
+  std::vector<TextBox> data_;
+};
+
 #endif
