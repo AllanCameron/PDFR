@@ -189,24 +189,14 @@ class Parser
   // Basic constructor
   Parser(std::shared_ptr<Page>);
 
-  // Copy constructor
-  Parser(const Parser& t_other): text_box_(t_other.text_box_){}
-
   // Move constructor
   Parser(Parser&& t_other) noexcept : text_box_(std::move(t_other.text_box_)){}
-
-  // Assignment constructor
-  Parser& operator=(const Parser& t_other)
-  {
-    text_box_ = std::move(t_other.text_box_);
-    return *this;
-  }
 
   // Public function called by tokenizer to update graphics state
   void Reader(std::string& token, Token::TokenState token_type);
 
   // Access results
-  inline TextBox& Output() { return this->text_box_; }
+  inline std::unique_ptr<TextBox> Output() {return std::move(this->text_box_);}
 
   // To allow recursive parsing of form xobjects, the tokenizer needs to access
   // the name of the xobject. At the point when the "Do" identifier is read by
@@ -227,7 +217,7 @@ class Parser
  private:
   // Private data members
   std::shared_ptr<Page>           page_;              // Pointer to this page
-  TextBox                         text_box_;          // Main output structure
+  std::unique_ptr<TextBox>        text_box_;          // Main output structure
 
   // Variables used to maintain state between calls
   std::shared_ptr<Font>           working_font_;      // Pointer to working font

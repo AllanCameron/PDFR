@@ -53,13 +53,13 @@ class WordGrouper
 {
  public:
   // Constructor
-  WordGrouper(TextBox&&);
+  WordGrouper(std::unique_ptr<TextBox>);
 
   // Output individual text elements for next phase of layout analysis
-  inline TextBox& Output() { return textbox_; }
+  inline std::unique_ptr<TextBox> Output() { return std::move(text_box_); }
 
   // Output text elements with sizes, fonts, positions to API
-  inline TextTable Out() const { return TextTable(textbox_);}
+  inline TextTable Out() const { return TextTable(*text_box_);}
 
  private:
   // Make a table of values in a vector of floats rounded to one decimal place
@@ -78,7 +78,7 @@ class WordGrouper
   std::unordered_map<int, size_t> left_edges_,        // The tables of edges
                                   right_edges_,
                                   mids_;
-  TextBox                         textbox_;           // The main data member
+  std::unique_ptr<TextBox>        text_box_;           // The main data member
 };
 
 //---------------------------------------------------------------------------//

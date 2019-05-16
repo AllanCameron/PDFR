@@ -19,7 +19,7 @@ using namespace std;
 
 TextTable LetterGrouper::Out()
 {
-  return TextTable(text_box_);
+  return TextTable(*text_box_);
 }
 
 //---------------------------------------------------------------------------//
@@ -27,9 +27,10 @@ TextTable LetterGrouper::Out()
 // page into an easily addressable 16 x 16 grid, find glyphs in close proximity
 // to each other, and glue them together, respectively.
 
-LetterGrouper::LetterGrouper(TextBox t_text_box) : text_box_(move(t_text_box))
+LetterGrouper::LetterGrouper(std::unique_ptr<TextBox> t_text_box)
+  : text_box_(move(t_text_box))
 {
-  text_box_.RemoveDuplicates();
+  text_box_->RemoveDuplicates();
   MakeGrid_();     // Split the glyphs into 256 cells to reduce search space
   CompareCells_(); // Find adjacent glyphs
   Merge_();        // Glue adjacent glyphs together
@@ -52,18 +53,18 @@ LetterGrouper::LetterGrouper(TextBox t_text_box) : text_box_(move(t_text_box))
 void LetterGrouper::MakeGrid_()
 {
   // Grid column width in user space
-  float dx = (text_box_.Width()) / 16;
+  float dx = (text_box_->Width()) / 16;
 
   // Grid row height in user space
-  float dy = (text_box_.Height()) / 16;
+  float dy = (text_box_->Height()) / 16;
 
   // For each glyph
-  for (auto& element : text_box_)
+  for (auto element : *text_box_)
   {
     // Calculate the row and column number the glyph's bottom left corner is in
     // There will be exactly 16 rows and columns, each numbered 0-15 (4 bits)
-    uint8_t column = (element->GetLeft() - text_box_.GetLeft()) / dx;
-    uint8_t row = 15 - (element->GetBottom() - text_box_.GetBottom()) / dy;
+    uint8_t column = (element->GetLeft() - text_box_->GetLeft()) / dx;
+    uint8_t row = 15 - (element->GetBottom() - text_box_->GetBottom()) / dy;
 
     // Convert the two 4-bit row and column numbers to a single byte
     uint8_t index = (row << 4) | column;
@@ -76,7 +77,7 @@ void LetterGrouper::MakeGrid_()
 //---------------------------------------------------------------------------//
 // Allows the main data object to be output after calculations done
 
-TextBox LetterGrouper::Output()
+std::unique_ptr<TextBox> LetterGrouper::Output()
 {
   // This lambda is used to find text_ptrs that aren't flagged for deletion
   auto extant = [&](const TextPointer& elem) -> bool
@@ -96,10 +97,9 @@ TextBox LetterGrouper::Output()
   // Sort left to right
   sort(v.begin(), v.end(), left_sort);
 
-  text_box_.SwapData(v);
+  text_box_->SwapData(v);
 
-  return text_box_;
-
+  return move(text_box_);
 }
 
 //---------------------------------------------------------------------------//

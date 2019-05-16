@@ -42,15 +42,15 @@ class LetterGrouper
 {
  public:
   // constructor.
-  LetterGrouper(TextBox);
+  LetterGrouper(std::unique_ptr<TextBox>);
 
   // Passes text elements to WordGrouper for further construction if needed
-  TextBox Output();
+  std::unique_ptr<TextBox> Output();
   TextTable Out(); // output table to interface if ungrouped words needed
 
  private:
   // A copy of the parser output used to create grid
-  TextBox text_box_;
+  std::unique_ptr<TextBox> text_box_;
 
   // Main data member - a 16 x 16 grid of cells, each with a TextPointer vector
   std::unordered_map<uint8_t, std::vector<TextPointer>> grid_;

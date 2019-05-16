@@ -15,6 +15,7 @@
 //---------------------------------------------------------------------------//
 
 using namespace std;
+using namespace Rcpp;
 
 //---------------------------------------------------------------------------//
 // The two get_page functions are helpers to take either a string representing
@@ -26,7 +27,7 @@ using namespace std;
 shared_ptr<Page> get_page(string file_name, int page_number)
 {
   // Pages are numbered from 1. Any less than this should throw an error
-  if (page_number < 1) Rcpp::stop("Invalid page number");
+  if (page_number < 1) stop("Invalid page number");
 
   // Create the Document object
   auto document_ptr = make_shared<Document>(file_name);
@@ -35,10 +36,13 @@ shared_ptr<Page> get_page(string file_name, int page_number)
   return make_shared<Page>(document_ptr, page_number - 1);
 }
 
+//---------------------------------------------------------------------------//
+// Raw version
+
 shared_ptr<Page> get_page(vector<uint8_t> raw_file, int page_number)
 {
   // Pages are numbered from 1. Any less than this should throw an error
-  if (page_number < 1) Rcpp::stop("Invalid page number");
+  if (page_number < 1) stop("Invalid page number");
 
   // Create the Document object
   auto document_ptr = make_shared<Document>(raw_file);
@@ -54,7 +58,7 @@ shared_ptr<Page> get_page(vector<uint8_t> raw_file, int page_number)
 // also given its own column. This export may be removed in production or moved
 // to a debugging version
 
-Rcpp::DataFrame get_glyph_map(const string& file_name, int page_number)
+DataFrame get_glyph_map(const string& file_name, int page_number)
 {
   // Create Document and page objects
   auto page_ptr = get_page(file_name, page_number);
@@ -83,10 +87,10 @@ Rcpp::DataFrame get_glyph_map(const string& file_name, int page_number)
   page_ptr->ClearFontMap();
 
   // put all the glyphs in a single dataframe and return
-  return  Rcpp::DataFrame::create(Rcpp::Named("Font")      = font_names,
-                                  Rcpp::Named("Codepoint") = codepoint,
-                                  Rcpp::Named("Unicode")   = unicode,
-                                  Rcpp::Named("Width")     = width);
+  return  DataFrame::create(Named("Font")      = font_names,
+                            Named("Codepoint") = codepoint,
+                            Named("Unicode")   = unicode,
+                            Named("Width")     = width);
 }
 
 //---------------------------------------------------------------------------//
@@ -94,7 +98,7 @@ Rcpp::DataFrame get_glyph_map(const string& file_name, int page_number)
 // get_xref. It acts as a helper function and common final pathway for the
 // raw and filepath versions of get_xref
 
-Rcpp::DataFrame xrefcreator(shared_ptr<const string> file_string)
+DataFrame xrefcreator(shared_ptr<const string> file_string)
 {
   // Create the xref from the given string pointer
   XRef Xref(file_string);
@@ -118,9 +122,9 @@ Rcpp::DataFrame xrefcreator(shared_ptr<const string> file_string)
   }
 
   // Use the containers to fill the dataframe and return it to caller
-  return Rcpp::DataFrame::create(Rcpp::Named("Object") = object,
-                                 Rcpp::Named("StartByte") = start_byte,
-                                 Rcpp::Named("InObject") = holding_object);
+  return DataFrame::create(Named("Object")    = object,
+                           Named("StartByte") = start_byte,
+                           Named("InObject")  = holding_object);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -128,7 +132,7 @@ Rcpp::DataFrame xrefcreator(shared_ptr<const string> file_string)
 // the file path into a single large string, a pointer to which is used to
 // call the xrefcreator
 
-Rcpp::DataFrame get_xref_from_string(const string& filename)
+DataFrame get_xref_from_string(const string& filename)
 {
   // This one-liner gets the file string, builds the xref and turns it into an
   // R data frame
@@ -140,7 +144,7 @@ Rcpp::DataFrame get_xref_from_string(const string& filename)
 // raw data vector as a single large string, a pointer to which is used to
 // call the xrefcreator
 
-Rcpp::DataFrame get_xref_from_raw(const vector<uint8_t>& raw_file)
+DataFrame get_xref_from_raw(const vector<uint8_t>& raw_file)
 {
   // Cast raw vector to string
   string file_string(raw_file.begin(), raw_file.end());
@@ -157,16 +161,15 @@ Rcpp::DataFrame get_xref_from_raw(const vector<uint8_t>& raw_file)
 // of two named values - the dictionary, as a named character vector, and the
 // decrypted / decompressed stream as a single string
 
-Rcpp::List get_object_from_string(const string& file_name, int object)
+List get_object_from_string(const string& file_name, int object)
 {
   // Create the Document
   auto document_ptr = make_shared<Document>(file_name);
 
-  // Fill an Rcpp::List with the requested object's elements and return
-  return Rcpp::List::create(
-    Rcpp::Named("header") =
-      document_ptr->GetObject(object)->GetDictionary().GetMap(),
-    Rcpp::Named("stream") = document_ptr->GetObject(object)->GetStream());
+  // Fill an List with the requested object's elements and return
+  return List::create(
+    Named("header") = document_ptr->GetObject(object)->GetDictionary().GetMap(),
+    Named("stream") = document_ptr->GetObject(object)->GetStream());
 }
 
 //---------------------------------------------------------------------------//
@@ -177,16 +180,16 @@ Rcpp::List get_object_from_string(const string& file_name, int object)
 // of two named values - the dictionary, as a named character vector, and the
 // decrypted / decompressed stream as a single string
 
-Rcpp::List get_object_from_raw(const vector<uint8_t>& raw_file, int object)
+List get_object_from_raw(const vector<uint8_t>& raw_file, int object)
 {
   // Create the Document
   auto document_ptr = make_shared<Document>(raw_file);
 
-  // Fill an Rcpp::List with the requested object and return
-  return Rcpp::List::create(
-    Rcpp::Named("header") =
+  // Fill an List with the requested object and return
+  return List::create(
+    Named("header") =
       document_ptr->GetObject(object)->GetDictionary().GetMap(),
-    Rcpp::Named("stream") = document_ptr->GetObject(object)->GetStream());
+    Named("stream") = document_ptr->GetObject(object)->GetStream());
 }
 
 //---------------------------------------------------------------------------//
@@ -194,7 +197,7 @@ Rcpp::List get_object_from_raw(const vector<uint8_t>& raw_file, int object)
 // from the Parser. It packages the dataframe with a vector of page
 // dimensions to allow plotting etc
 
-Rcpp::List get_single_text_elements(shared_ptr<Page> t_page_ptr)
+List get_single_text_elements(shared_ptr<Page> t_page_ptr)
 {
   // Create new Parser
   Parser parser_object = Parser(t_page_ptr);
@@ -204,87 +207,63 @@ Rcpp::List get_single_text_elements(shared_ptr<Page> t_page_ptr)
 
   // Obtain output from Parser and transpose into a text table
   auto text_box = parser_object.Output();
-  TextTable table(text_box);
+  TextTable table(*text_box);
 
   // Ensure the static fontmap is cleared after use
   t_page_ptr->ClearFontMap();
 
   // Now create the data frame
-  Rcpp::DataFrame db =  Rcpp::DataFrame::create(
-                        Rcpp::Named("text")   = table.GetText(),
-                        Rcpp::Named("left")   = table.GetLefts(),
-                        Rcpp::Named("bottom") = table.GetBottoms(),
-                        Rcpp::Named("right")  = table.GetRights(),
-                        Rcpp::Named("font")   = table.GetFontNames(),
-                        Rcpp::Named("size")   = table.GetSizes(),
-                        Rcpp::Named("stringsAsFactors") = false);
+  DataFrame db =  DataFrame::create(Named("text")   = table.GetText(),
+                                    Named("left")   = table.GetLefts(),
+                                    Named("bottom") = table.GetBottoms(),
+                                    Named("right")  = table.GetRights(),
+                                    Named("font")   = table.GetFontNames(),
+                                    Named("size")   = table.GetSizes(),
+                                    Named("stringsAsFactors") = false);
 
   // Return it as a list along with the page dimensions
-  return Rcpp::List::create(
-                        Rcpp::Named("Box") = t_page_ptr->GetMinbox().vector(),
-                        Rcpp::Named("Elements") = move(db));
+  return List::create(Named("Box") = t_page_ptr->GetMinbox().vector(),
+                      Named("Elements") = move(db));
 }
 
 //---------------------------------------------------------------------------//
 
-Rcpp::List get_text_boxes(shared_ptr<Page> page_ptr)
+List get_text_boxes(shared_ptr<Page> page_ptr)
 {
   // Create new Parser
-  Parser parser_object(page_ptr);
+  auto parser_object = new Parser(page_ptr);
 
   // Read page contents to Parser
-  Tokenizer(page_ptr->GetPageContents(), &parser_object);
+  Tokenizer(page_ptr->GetPageContents(), parser_object);
 
   // Group letters and words
-  LetterGrouper grouped_letters(parser_object.Output());
-  WordGrouper grouped_words(grouped_letters.Output());
-
-  // Arrange text into text boxes separated by whitespace
-  Whitespace WS(grouped_words.Output());
-
-  // Join lines of text within single text boxes
-  LineGrouper linegrouper(WS.Output());
-
-  std::vector<float> left, right, size, bottom;
-  std::vector<std::string> glyph, font;
-  std::vector<int> polygon;
-  int polygonNumber = 0;
-  auto text_boxes = linegrouper.Output();
-
-  for (auto& box : text_boxes)
-  {
-    for (auto& element : box)
-    {
-      if (!element->IsConsumed())
-      {
-        left.push_back(element->GetLeft());
-        right.push_back(element->GetRight());
-        size.push_back(element->GetSize());
-        bottom.push_back(element->GetBottom());
-        glyph.push_back(element->Utf());
-        font.push_back(element->GetFontName());
-        polygon.push_back(polygonNumber);
-      }
-    }
-    polygonNumber++;
-  }
+  auto grouped_letters = new LetterGrouper(parser_object->Output());
+  delete parser_object;
+  auto grouped_words = new WordGrouper(grouped_letters->Output());
+  delete grouped_letters;
+  auto WS = new Whitespace(grouped_words->Output());
+  delete grouped_words;
+  auto linegrouper = new LineGrouper(WS->Output());
+  delete WS;
+  auto text_table = TextTable(linegrouper->Output());
+  delete linegrouper;
   page_ptr->ClearFontMap();
-  Rcpp::DataFrame db =  Rcpp::DataFrame::create(
-                        Rcpp::Named("text") = std::move(glyph),
-                        Rcpp::Named("left") = std::move(left),
-                        Rcpp::Named("right") = std::move(right),
-                        Rcpp::Named("bottom") = std::move(bottom),
-                        Rcpp::Named("font") = std::move(font),
-                        Rcpp::Named("size") = std::move(size),
-                        Rcpp::Named("box") = std::move(polygon),
-                        Rcpp::Named("stringsAsFactors") = false);
-return Rcpp::List::create(Rcpp::Named("Box") = page_ptr->GetMinbox().vector(),
-                          Rcpp::Named("Elements") = std::move(db));
+  DataFrame db =  DataFrame::create(
+                    Named("text")             = move(text_table.GetText()),
+                    Named("left")             = move(text_table.GetLefts()),
+                    Named("right")            = move(text_table.GetRights()),
+                    Named("bottom")           = move(text_table.GetBottoms()),
+                    Named("font")             = move(text_table.GetFontNames()),
+                    Named("size")             = move(text_table.GetSizes()),
+                    Named("stringsAsFactors") = false);
+
+return List::create(Named("Box") = page_ptr->GetMinbox().vector(),
+                    Named("Elements") = move(db));
 }
 
 //---------------------------------------------------------------------------//
 
-Rcpp::List get_pdf_page_from_string (const string& file_name,
+List get_pdf_page_from_string (const string& file_name,
                                      int page_number,
                                      bool each_glyph)
 {
@@ -300,9 +279,9 @@ Rcpp::List get_pdf_page_from_string (const string& file_name,
 
 //---------------------------------------------------------------------------//
 
-Rcpp::List get_pdf_page_from_raw(const vector<uint8_t>& raw_file,
-                                 int page_number,
-                                 bool each_glyph)
+List get_pdf_page_from_raw(const vector<uint8_t>& raw_file,
+                           int page_number,
+                           bool each_glyph)
 {
   // Create the page object
   auto page_ptr = get_page(raw_file, page_number);
@@ -316,7 +295,7 @@ Rcpp::List get_pdf_page_from_raw(const vector<uint8_t>& raw_file,
 
 //---------------------------------------------------------------------------//
 
-Rcpp::DataFrame pdfdoc_common(shared_ptr<Document> document_ptr)
+DataFrame pdfdoc_common(shared_ptr<Document> document_ptr)
 {
   auto number_of_pages = document_ptr->GetPageObjectNumbers().size();
   vector<float> left, right, size, bottom;
@@ -363,15 +342,14 @@ Rcpp::DataFrame pdfdoc_common(shared_ptr<Document> document_ptr)
   }
 
   // Build and return an R data frame
-  return  Rcpp::DataFrame::create(
-          Rcpp::Named("text")             = glyph,
-          Rcpp::Named("left")             = left,
-          Rcpp::Named("right")            = right,
-          Rcpp::Named("bottom")           = bottom,
-          Rcpp::Named("font")             = font,
-          Rcpp::Named("size")             = size,
-          Rcpp::Named("page")             = page_number_of_element,
-          Rcpp::Named("stringsAsFactors") = false);
+  return  DataFrame::create(Named("text")             = glyph,
+                            Named("left")             = left,
+                            Named("right")            = right,
+                            Named("bottom")           = bottom,
+                            Named("font")             = font,
+                            Named("size")             = size,
+                            Named("page")             = page_number_of_element,
+                            Named("stringsAsFactors") = false);
 }
 
 //---------------------------------------------------------------------------//
@@ -380,7 +358,7 @@ Rcpp::DataFrame pdfdoc_common(shared_ptr<Document> document_ptr)
 // containing all of the text elements in a Document, including their location
 // and page number
 
-Rcpp::DataFrame get_pdf_document_from_string(const string& file_name)
+DataFrame get_pdf_document_from_string(const string& file_name)
 {
   // Simply create a new Document pointer from the file name
   auto document_ptr = make_shared<Document>(file_name);
@@ -396,7 +374,7 @@ Rcpp::DataFrame get_pdf_document_from_string(const string& file_name)
 // data frame containing all of the text elements in a document, including their
 // location and page number.
 
-Rcpp::DataFrame get_pdf_document_from_raw(const vector<uint8_t>& raw_data)
+DataFrame get_pdf_document_from_raw(const vector<uint8_t>& raw_data)
 {
   // Simply create a new Document pointer from the raw data
   auto document_ptr = make_shared<Document>(raw_data);
@@ -441,7 +419,7 @@ string get_page_string_from_raw(const vector<uint8_t>& raw_file,
 
 //---------------------------------------------------------------------------//
 
-Rcpp::DataFrame pdf_boxes(shared_ptr<Page> page_ptr)
+DataFrame pdf_boxes(shared_ptr<Page> page_ptr)
 {
   // Create an empty Parser object
   Parser parser_object(page_ptr);
@@ -480,19 +458,18 @@ Rcpp::DataFrame pdf_boxes(shared_ptr<Page> page_ptr)
   page_ptr->ClearFontMap();
 
   // Build and return an R dataframe
-  return Rcpp::DataFrame::create(
-    Rcpp::Named("xmin") = xmin,
-    Rcpp::Named("ymin") = ymin,
-    Rcpp::Named("xmax") = xmax,
-    Rcpp::Named("ymax") = ymax,
-    Rcpp::Named("box") = groups,
-    Rcpp::Named("stringsAsFactors") = false
+  return DataFrame::create( Named("xmin")             = xmin,
+                            Named("ymin")             = ymin,
+                            Named("xmax")             = xmax,
+                            Named("ymax")             = ymax,
+                            Named("box")              = groups,
+                            Named("stringsAsFactors") = false
   );
 }
 
 //---------------------------------------------------------------------------//
 
-Rcpp::DataFrame get_pdf_boxes_from_string(const string& file_name,
+DataFrame get_pdf_boxes_from_string(const string& file_name,
                                           int page_number)
 {
   // Create the page object
@@ -504,7 +481,7 @@ Rcpp::DataFrame get_pdf_boxes_from_string(const string& file_name,
 
 //---------------------------------------------------------------------------//
 
-Rcpp::DataFrame get_pdf_boxes_from_raw(const vector<uint8_t>& raw_data,
+DataFrame get_pdf_boxes_from_raw(const vector<uint8_t>& raw_data,
                                        int page_number)
 {
   // Create the page object

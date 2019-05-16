@@ -52,7 +52,7 @@ class LineGrouper
   LineGrouper(PageBox page_box_from_whitespace);
 
   // The output is also a vector of TextBoxes
-  inline PageBox& Output() { return text_boxes_; }
+  inline TextBox Output() { return text_boxes_.CastToTextBox(); }
 
  private:
   void FindBreaks_(TextBox&);   // Identifies paragraph breaks

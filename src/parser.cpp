@@ -40,7 +40,7 @@ std::unordered_map<std::string, FunctionPointer> Parser::function_map_ =
 
 Parser::Parser(shared_ptr<Page> pag) :      // Long initializer list...
   page_(pag),                               // Pointer to page of interest
-  text_box_(Box(page_->GetMinbox())),       // Container for results
+  text_box_(unique_ptr<TextBox>(new TextBox(Box(page_->GetMinbox())))),
   current_font_size_(0),                    // Pointsize of current font
   font_size_stack_({current_font_size_}),   // History of pointsize
   tm_state_(Matrix()),                      // Transformation matrix
@@ -311,10 +311,10 @@ void Parser::ProcessRawChar_(float& t_scale, Matrix& t_text_space,
       // record width of char taking Th (horizontal scaling) into account
       width = t_scale * (glyph_width / 1000) * (th_ / 100);
       right = left + width;
-      text_box_.emplace_back(make_shared<TextElement>
-                            (left, right, bottom + t_scale,
-                             bottom, working_font_,
-                             vector<Unicode>{glyph_pair.first}));
+      text_box_->emplace_back(make_shared<TextElement>
+                             (left, right, bottom + t_scale,
+                              bottom, working_font_,
+                              vector<Unicode>{glyph_pair.first}));
     }
   }
   raw_.clear();

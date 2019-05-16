@@ -197,6 +197,8 @@ pdfplot <- function(pdf, page = 1, atomic = FALSE, textsize = 1)
 {
   x <- pdfpage(pdf, page, atomic, FALSE)
   y <- x$Elements
+  if(atomic == FALSE)
+  {
   G <- ggplot2::ggplot(data = y, ggplot2::aes(x = y$left, y = y$bottom,
                        size = I(textsize*170 * y$size / (x$Box[4] - x$Box[2]))),
                        lims = x$Box )
@@ -208,6 +210,20 @@ pdfplot <- function(pdf, page = 1, atomic = FALSE, textsize = 1)
   ) + ggplot2::coord_equal(
   ) + ggplot2::scale_size_identity(
   )
+  }
+  else
+  {
+  G <- ggplot2::ggplot(data = y, ggplot2::aes(x = y$left, y = y$bottom,
+                       size = I(textsize*170 * y$size / (x$Box[4] - x$Box[2]))),
+                       lims = x$Box )
+  G + ggplot2::geom_rect(ggplot2::aes(xmin = x$Box[1], ymin = x$Box[2],
+                                      xmax = x$Box[3], ymax = x$Box[4]),
+                         fill = "white", colour = "black", size = 0.2
+  ) + ggplot2::geom_text(ggplot2::aes(label = y$text), hjust = 0, vjust = 0
+  ) + ggplot2::coord_equal(
+  ) + ggplot2::scale_size_identity(
+  )
+  }
 }
 
 ##---------------------------------------------------------------------------##

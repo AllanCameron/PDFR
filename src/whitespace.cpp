@@ -29,8 +29,8 @@ static const float MAX_LINE_FACTOR = 0.3;
 // then trace round all the vertices, storing every connected loop as a
 // polygon surrounding a text element.
 
-Whitespace::Whitespace(TextBox word_grouper_output):
-  page_text_(move(word_grouper_output))
+Whitespace::Whitespace(std::unique_ptr<TextBox> word_grouper_output):
+  text_box_(move(word_grouper_output))
 {
   GetMaxLineSize_();
   PageDimensions_();
@@ -52,7 +52,7 @@ void Whitespace::GetMaxLineSize_()
 {
   std::vector<float> font_sizes;
 
-  for (auto& element : page_text_) font_sizes.push_back(element->GetSize());
+  for (auto& element : *text_box_) font_sizes.push_back(element->GetSize());
 
   sort(font_sizes.begin(), font_sizes.end());
   max_line_space_ = font_sizes[font_sizes.size()/2] * MAX_LINE_FACTOR;
@@ -66,26 +66,26 @@ void Whitespace::GetMaxLineSize_()
 
 void Whitespace::PageDimensions_()
 {
-  for (auto& element : page_text_)
+  for (auto& element : *text_box_)
   {
-    if (element->GetRight() > page_text_.GetRight())
+    if (element->GetRight() > text_box_->GetRight())
     {
-      page_text_.SetRight(page_text_.GetRight() + 10.0);
+      text_box_->SetRight(text_box_->GetRight() + 10.0);
     }
 
-    if (element->GetLeft() < page_text_.GetLeft())
+    if (element->GetLeft() < text_box_->GetLeft())
     {
-      page_text_.SetLeft(page_text_.GetLeft() - 10.0);
+      text_box_->SetLeft(text_box_->GetLeft() - 10.0);
     }
 
-    if ((element->GetBottom() + element->GetSize()) > page_text_.GetTop())
+    if ((element->GetBottom() + element->GetSize()) > text_box_->GetTop())
     {
-      page_text_.SetTop(page_text_.GetTop() + 10.0);
+      text_box_->SetTop(text_box_->GetTop() + 10.0);
     }
 
-    if (element->GetBottom() < page_text_.GetBottom())
+    if (element->GetBottom() < text_box_->GetBottom())
     {
-      page_text_.SetBottom(page_text_.GetBottom() - 10.0);
+      text_box_->SetBottom(text_box_->GetBottom() - 10.0);
     }
   }
 }
@@ -140,21 +140,21 @@ void Whitespace::CleanAndSortBoxes_()
 void Whitespace::MakeStrips_()
 {
   // Find strip widths
-  float pixwidth = page_text_.Width() / DIVISIONS_;
+  float pixwidth = text_box_->Width() / DIVISIONS_;
 
   // The first strip starts at the left edge and stops one stripwidth to right
-  float L_Edge = page_text_.GetLeft();
+  float L_Edge = text_box_->GetLeft();
   float R_Edge = L_Edge + pixwidth;
 
   // For each of these page divisions
   for (size_t i = 0; i < DIVISIONS_; ++i)
   {
     // Create top/bottom bounds for boxes at top/bottom of page.
-    vector<float> tops = {page_text_.GetTop()};
-    vector<float> bottoms = {page_text_.GetBottom()};
+    vector<float> tops = {text_box_->GetTop()};
+    vector<float> bottoms = {text_box_->GetBottom()};
 
     // Now for each text element on the page
-    for (const auto& j : page_text_)
+    for (const auto& j : *text_box_)
     {
       // If it obstructs our strip, store its upper and lower bounds
       if (j->GetLeft() < R_Edge && j->GetRight() > L_Edge)
@@ -219,7 +219,7 @@ void Whitespace::RemoveSmall_()
   {
     // Remove only undeleted boxes who are not at the page border and are short
     if (!box.IsConsumed()              &&
-       !box.SharesEdge(page_text_)    &&
+       !box.SharesEdge(*text_box_)     &&
        box.Height() < max_line_space_  )
     {
       box.Consume();
@@ -301,7 +301,7 @@ void Whitespace::TracePolygons_()
   for (auto& vertex : vertices_)
   {
     // Use the Direction enum as an int to get points beyond page edges
-    float outer_edge = page_text_.Edge(vertex->Out()) +
+    float outer_edge = text_box_->Edge(vertex->Out()) +
                        (2 * (vertex->Out() / 2) - 1) * 100;
 
     // "edge" keeps track of the nearest vertex
@@ -421,7 +421,7 @@ void Whitespace::PolygonMax_()
     }
 
     // If the box is not the page itself, append this polygon to our result
-    if (!bounding_box.IsApproximatelySameAs(page_text_))
+    if (!bounding_box.IsApproximatelySameAs(*text_box_))
     {
       boxes_.emplace_back(move(bounding_box));
     }
@@ -463,15 +463,13 @@ PageBox Whitespace::Output()
   for (auto& box : boxes_)
   {
     vector<TextPointer> text_vector;
-    int start_at = 0;
-    for (auto text_it  = page_text_.begin() + start_at;
-             text_it != page_text_.end(); ++text_it)
+    auto start_loop_at = text_box_->begin();
+    for (auto text_it  = start_loop_at; text_it != text_box_->end(); ++text_it)
     {
-
       if (box.Engulfs(**text_it) && !(*text_it)->IsConsumed())
       {
         text_vector.push_back(*text_it);
-        start_at = distance(page_text_.begin(), text_it);
+        start_loop_at = text_it;
       }
 
       if ((*text_it)->IsBeyond(box)) break;
@@ -479,5 +477,5 @@ PageBox Whitespace::Output()
     result.emplace_back(TextBox(move(text_vector), move(box)));
   }
 
-  return PageBox((Box) page_text_, result);
+  return PageBox((Box) *text_box_, result);
 }

@@ -51,7 +51,7 @@ class TextElement : public Box
   TextElement(float t_left, float t_right, float t_top, float t_bottom,
               std::shared_ptr<Font> t_font, std::vector<Unicode> t_glyphs)
     : Box(t_left, t_right, t_top, t_bottom),
-      font_(t_font), glyph_(t_glyphs), join_(nullptr) {};
+      font_(t_font), glyph_(t_glyphs), join_(nullptr), group_(0) {};
 
   // Inevitably, we need to define some "magic number" constants to define
   // how close together text elements have to be to clump together
@@ -135,6 +135,7 @@ class TextElement : public Box
   std::shared_ptr<Font> font_;           // Font used to draw text
   std::vector<Unicode> glyph_;           // The actual Unicode glyphs encoded
   std::shared_ptr<TextElement> join_;    // address of closest adjacent element
+  size_t group_;                         // Which textbox does this belong to?
 };
 
 //---------------------------------------------------------------------------//
@@ -178,6 +179,20 @@ class TextBox : public Box
   // Lvalue assignment constructor
   TextBox& operator=(const TextBox& t_textbox) = default;
 
+  std::shared_ptr<TextElement> CastToElement()
+  {
+    if (data_.size() != 1)
+    {
+      throw std::runtime_error("Can only cast size one TextBox to TextElement");
+    }
+    auto& element = data_[0];
+    element->SetLeft(this->GetLeft());
+    element->SetRight(this->GetRight());
+    element->SetTop(this->GetTop());
+    element->SetBottom(this->GetBottom());
+    return element;
+  }
+
   // Functions to copy the methods of vectors to access main data object
   inline TextBoxIterator begin() {return data_.begin(); }
   inline TextBoxIterator end()   {return data_.end(); }
@@ -207,6 +222,7 @@ class TextBox : public Box
 
   void RemoveDuplicates();
 
+
  private:
   // The data member
   std::vector<TextPointer> data_;
@@ -222,13 +238,13 @@ class TextTable: public Box
  public:
   TextTable(const TextBox&);
   void Join(TextTable&);
-  inline std::vector<float>       GetLefts()     const { return this->lefts_;  }
-  inline std::vector<float>       GetRights()    const { return this->rights_; }
-  inline std::vector<float>       GetTops()      const { return this->tops_;   }
-  inline std::vector<float>       GetBottoms()   const { return this->bottoms_;}
-  inline std::vector<float>       GetSizes()     const { return this->sizes_;  }
-  inline std::vector<std::string> GetFontNames() const { return this->fonts_;  }
-  inline std::vector<std::string> GetText()      const { return this->text_;   }
+  inline std::vector<float>&       GetLefts()      { return this->lefts_;  }
+  inline std::vector<float>&       GetRights()     { return this->rights_; }
+  inline std::vector<float>&       GetTops()       { return this->tops_;   }
+  inline std::vector<float>&       GetBottoms()    { return this->bottoms_;}
+  inline std::vector<float>&       GetSizes()      { return this->sizes_;  }
+  inline std::vector<std::string>& GetFontNames()  { return this->fonts_;  }
+  inline std::vector<std::string>& GetText()       { return this->text_;   }
 
  private:
   std::vector<std::string> text_, fonts_;
@@ -247,6 +263,12 @@ class PageBox : public Box
   inline bool empty() const { return data_.empty();}
   inline size_t size() const { return data_.size();}
   inline void push_back(TextBox t_textbox) { data_.push_back(t_textbox);}
+  TextBox CastToTextBox()
+  {
+    auto result = TextBox((Box) *this);
+    for (auto box : data_) result.push_back(box.CastToElement());
+    return result;
+  }
 
 private:
   std::vector<TextBox> data_;

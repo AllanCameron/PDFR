@@ -63,7 +63,7 @@ class Whitespace
 {
  public:
   // constructor
-  Whitespace(TextBox);
+  Whitespace(std::unique_ptr<TextBox>);
 
   //  Output the text element groups directly
   PageBox Output();
@@ -73,7 +73,7 @@ class Whitespace
 
  private:
   //The main output is a collection of pairs of text boxes with their elements
-  TextBox page_text_; // A copy of word grouper's output
+  std::unique_ptr<TextBox> text_box_; // A copy of word grouper's output
   std::unordered_map<size_t, std::vector<std::shared_ptr<Vertex>>> polygonmap_;
   float max_line_space_;    // The average font size on the page
   std::vector<Box> boxes_;  // Used in construction AND output

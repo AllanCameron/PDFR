@@ -24,7 +24,8 @@ constexpr int EDGECOUNT = 4;
 // and finds its column edges, then joins elligible words together as long as
 // they do not belong to different columns.
 
-WordGrouper::WordGrouper(TextBox&& t_text_box): textbox_(move(t_text_box))
+WordGrouper::WordGrouper(std::unique_ptr<TextBox> t_text_box)
+  : text_box_(move(t_text_box))
 {
   FindEdges_();
   AssignEdges_();
@@ -72,7 +73,7 @@ void WordGrouper::FindEdges_()
 {
   // Create vectors of left and right edges of text elements
   vector<float> left, right;
-  for (auto& element : textbox_)
+  for (auto& element : *text_box_)
   {
     left.push_back(element->GetLeft());
     right.push_back(element->GetRight());
@@ -98,7 +99,7 @@ void WordGrouper::FindEdges_()
 
 void WordGrouper::AssignEdges_()
 {
-  for (auto& element : textbox_)
+  for (auto& element : *text_box_)
   {
     int left_int = element->GetLeft() * 10;
     int right_int = element->GetRight() * 10;
@@ -134,15 +135,15 @@ void WordGrouper::AssignEdges_()
 void WordGrouper::FindRightMatch_()
 {
   // Handle empty data
-  if (textbox_.empty()) throw runtime_error("empty data");
+  if (text_box_->empty()) throw runtime_error("empty data");
 
-  for (auto element = textbox_.begin(); element != textbox_.end(); ++element)
+  for (auto element = text_box_->begin(); element != text_box_->end(); ++element)
   {
     // Check the row is elligible for matching
-    if ( (*element)->IsConsumed()) continue;
+    if ((*element)->IsConsumed()) continue;
 
     // If elligible, check every other word for the best match
-    for (auto other = element; other != textbox_.end(); ++other)
+    for (auto other = element; other != text_box_->end(); ++other)
     {
       // Don't match against itself
       if (element == other) continue;
