@@ -47,6 +47,32 @@ string test_dict_string =
 /SomeInts [1 2 31]/SplitBy /r/n(A line break)\
 /SomeFloats [3.14 2.72 1.4]/Length 15>>\
 stream\r\nNow in a stream\r\nendstream";
+string full_pdf_string =
+"%PDF-1.1\r\n%¥±ë\r\n\r\n1 0 obj\r\n  << /Type /Catalog\r\n     \
+/Pages 2 0 R\r\n  >>\r\nendobj\r\n\r\n2 0 obj\r\n  << /Type /Pages\r\n     \
+/Kids [3 0 R]\r\n     /Count 1\r\n     /MediaBox [0 0 300 144]\r\n  \
+>>\r\nendobj\r\n\r\n3 0 obj\r\n  <<  /Type /Page\r\n      \
+/Parent 2 0 R\r\n      /Resources\r\n << /Font\r\n\
+<< /F1\r\n               << /Type /Font\r\n                  \
+/Subtype /Type1\r\n                  /BaseFont /Times-Roman\r\n               \
+>>\r\n           >>\r\n       >>\r\n      /Contents 4 0 R\r\n  \
+>>\r\nendobj\r\n\r\n4 0 obj\r\n  << /Length 55 >>\r\nstream\r\n  BT\r\n    \
+/F1 18 Tf\r\n    0 0 Td\r\n    (Hello World) Tj\r\n  \
+ET\r\nendstream\r\nendobj\r\n\r\nxref\r\n0 5\r\n\
+0000000000 65535 f \r\n\
+0000000021 00000 n \r\n\
+0000000086 00000 n \r\n\
+0000000195 00000 n \r\n\
+0000000473 00000 n \r\n\
+trailer\r\n  <<  /Root 1 0 R\r\n      /Size 5\r\n  \
+>>\r\nstartxref\r\n592\r\n%%EOF";
+vector<uint8_t> pdf_bytes(full_pdf_string.begin(), full_pdf_string.end());
+auto ptr_to_pdf = make_shared<string>(full_pdf_string);
+auto dict_from_pdf = Dictionary(ptr_to_pdf, 195);
+auto resources_test = dict_from_pdf.GetDictionary("/Resources");
+auto font_test = resources_test.GetDictionary("/Font");
+auto subfont_test = font_test.GetDictionary("/F1");
+auto get_font_name = subfont_test.GetString("/BaseFont");
 
 Dictionary test_dictionary = Dictionary(make_shared<string>(test_dict_string));
 
@@ -165,5 +191,6 @@ context("dictionary.h")
     expect_true(test_dictionary.GetFloats("/SomeFloats") == test_floats);
     expect_true(test_dictionary.GetDictionary("/Dict").GetString("/Subdict") ==
       "Success");
+    expect_true(get_font_name == string("/Times-Roman"));
   }
 }

@@ -144,22 +144,36 @@ void Page::ReadFonts()
   // Otherwise, it is a dictionary, so we get the result
   else fonts_ = resources_.GetDictionary("/Font");
 
-  // We can now iterate through the font names using getFontNames(), create
-  // each font in turn and store it in the fontmap
-  for (auto label : fonts_)
+  // We can now iterate through the font dictionary, which will be a sequence
+  // of key:value pairs of fontname : font descriptor, where the font descriptor
+  // is almost always a reference but can also be a direct dictionary
+  for (auto name_descriptor_pair : fonts_)
   {
-    auto found_font = fontmap_.find(label.first);
+    auto& font_name = name_descriptor_pair.first;
+    auto& font_descriptor = name_descriptor_pair.second;
+    auto found_font = fontmap_.find(font_name);
 
-    // If the font is not in the fontmap, insert it
+    // If the font is not in the fontmap, inserts it
     if (found_font == fontmap_.end())
     {
-      // Find the reference for each font name
-      for (auto reference : fonts_.GetReferences(label.first))
+      Dictionary font_dict;
+
+      // Handle the font descriptor being a direct dictionary
+      if (font_descriptor.find("<<") != string::npos)
       {
-        auto font_dict = document_->GetObject(reference)->GetDictionary();
-        auto font_ptr = make_shared<Font>(document_, font_dict, label.first);
-        fontmap_[label.first] = font_ptr;
+        font_dict = Dictionary(make_shared<string>(font_descriptor));
       }
+
+      // If it's not a direct dictionary, it must be a reference
+      else
+      {
+        auto font_reference = fonts_.GetReference(font_name);
+        font_dict = document_->GetObject(font_reference)->GetDictionary();
+      }
+
+      // We should now have a font dictionary from which to create a Font object
+      auto font_ptr = make_shared<Font>(document_, font_dict, font_name);
+      fontmap_[font_name] = font_ptr;
     }
   }
 }
