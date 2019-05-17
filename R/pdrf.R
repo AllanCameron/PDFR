@@ -100,19 +100,19 @@ pdfpage <- function(pdf, page, atomic = FALSE, table_only = TRUE)
   {
     x <- .pdfpageraw(pdf, page, atomic)
   }
-  if(class(pdf) == "character" & length(pdf) == 1 & grepl("[.]pdf$", pdf) &
-     !grepl("/", pdf))
+  if(class(pdf) == "character" & length(pdf) == 1 & grepl("[.]pdf$", pdf[1]) &
+     !grepl("/", pdf[1]))
   {
     x <- .pdfpage(paste0(path.expand("~/"), pdf), page, atomic)
   }
-  if(class(pdf) == "character" & length(pdf) == 1 & grepl("[.]pdf$", pdf) &
-     grepl("/", pdf))
+  if(class(pdf) == "character" & length(pdf) == 1 & grepl("[.]pdf$", pdf[1]) &
+     grepl("/", pdf[1]))
   {
     x <- .pdfpage(pdf, page, atomic)
   }
   if((class(pdf) != "raw"       & class(pdf) != "character") |
      (class(pdf) == "character" & length(pdf) > 1)           |
-     (class(pdf) == "character" & !grepl("[.]pdf$", pdf))    )
+     (class(pdf) == "character" & !grepl("[.]pdf$", pdf[1])) )
   {
     stop("pdfpage requires a single path to a valid pdf or a raw vector.")
   }
@@ -205,8 +205,8 @@ pdfplot <- function(pdf, page = 1, atomic = FALSE, textsize = 1)
   G + ggplot2::geom_rect(ggplot2::aes(xmin = x$Box[1], ymin = x$Box[2],
                                       xmax = x$Box[3], ymax = x$Box[4]),
                          fill = "white", colour = "black", size = 0.2
-  ) + ggplot2::geom_text(ggplot2::aes(label = y$text, colour = factor(y$box)),
-                         hjust = 0, vjust = 0
+  ) + ggplot2::geom_text(ggplot2::aes(label = y$text, colour = factor(y$bottom),
+                         hjust = 0, vjust = 0)
   ) + ggplot2::coord_equal(
   ) + ggplot2::scale_size_identity(
   )
@@ -266,13 +266,13 @@ getpagestring <- function(pdf, page)
   {
     x <- .pagestringraw(pdf, page)
   }
-  if(class(pdf) == "character" & length(pdf) == 1 & grepl("[.]pdf$", pdf))
+  if(class(pdf) == "character" & length(pdf) == 1 & grepl("[.]pdf$", pdf[1]))
   {
     x <- .pagestring(pdf, page)
   }
   if((class(pdf) != "raw"       & class(pdf) != "character") |
      (class(pdf) == "character" & length(pdf) > 1)           |
-     (class(pdf) == "character" & !grepl("[.]pdf$", pdf))    )
+     (class(pdf) == "character" & !grepl("[.]pdf$", pdf[1])) )
   {
     stop("pdfpage requires a single path to a valid pdf or a raw vector.")
   }
@@ -299,19 +299,19 @@ pdfdoc <- function(pdf)
   {
     x <- .pdfdocraw(pdf)
   }
-  if(class(pdf) == "character" & length(pdf) == 1 & grepl("[.]pdf$", pdf) &
-     !grepl("/", pdf))
+  if(class(pdf) == "character" & length(pdf) == 1 & grepl("[.]pdf$", pdf[1]) &
+     !grepl("/", pdf[1]))
   {
     x <- .pdfdoc(paste0(path.expand("~/"), pdf))
   }
-  if(class(pdf) == "character" & length(pdf) == 1 & grepl("[.]pdf$", pdf) &
-     grepl("/", pdf))
+  if(class(pdf) == "character" & length(pdf) == 1 & grepl("[.]pdf$", pdf[1]) &
+     grepl("/", pdf[1]))
   {
     x <- .pdfdoc(pdf)
   }
   if((class(pdf) != "raw"       & class(pdf) != "character") |
      (class(pdf) == "character" & length(pdf) > 1)           |
-     (class(pdf) == "character" & !grepl("[.]pdf$", pdf))    )
+     (class(pdf) == "character" & !grepl("[.]pdf$", pdf[1])) )
   {
     stop("pdfdoc requires a single path to a valid pdf or a raw vector.")
   }
@@ -345,19 +345,19 @@ pdfboxes <- function(pdf, pagenum)
   {
     x <- .pdfboxesRaw(pdf, pagenum)
   }
-  if(class(pdf) == "character" & length(pdf) == 1 & grepl("[.]pdf$", pdf) &
-     !grepl("/", pdf))
+  if(class(pdf) == "character" & length(pdf) == 1 & grepl("[.]pdf$", pdf[1]) &
+     !grepl("/", pdf[1]))
   {
     x <- .pdfboxesString(paste0(path.expand("~/"), pdf), pagenum)
   }
-  if(class(pdf) == "character" & length(pdf) == 1 & grepl("[.]pdf$", pdf) &
-     grepl("/", pdf))
+  if(class(pdf) == "character" & length(pdf) == 1 & grepl("[.]pdf$", pdf[1]) &
+     grepl("/", pdf[1]))
   {
     x <- .pdfboxesString(pdf, pagenum)
   }
   if((class(pdf) != "raw"       & class(pdf) != "character") |
      (class(pdf) == "character" & length(pdf) > 1)           |
-     (class(pdf) == "character" & !grepl("[.]pdf$", pdf))    )
+     (class(pdf) == "character" & !grepl("[.]pdf$", pdf[1])) )
   {
     stop("pdfboxes requires a single path to a valid pdf or a raw vector.")
   }

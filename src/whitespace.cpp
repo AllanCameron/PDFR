@@ -150,7 +150,7 @@ void Whitespace::MakeStrips_()
   for (size_t i = 0; i < DIVISIONS_; ++i)
   {
     // Create top/bottom bounds for boxes at top/bottom of page.
-    vector<float> tops = {text_box_->GetTop()};
+    vector<float> tops    = {text_box_->GetTop()};
     vector<float> bottoms = {text_box_->GetBottom()};
 
     // Now for each text element on the page
@@ -206,6 +206,7 @@ void Whitespace::MergeStrips_()
       }
     }
   }
+
   CleanAndSortBoxes_();
 }
 
@@ -411,15 +412,24 @@ void Whitespace::PolygonMax_()
   // For each polygon
   for (auto& shape : polygonmap_)
   {
-    // Define floats that will shrink and invert to fit our text box
-    Box bounding_box(MAXPAGE, -MAXPAGE, -MAXPAGE, MAXPAGE);
+    if(shape.second.empty()) continue;
+
+    // Define floats that will expand outwards to fit our text box
+    float min_left   = shape.second[0]->GetX(),
+          max_right  = shape.second[0]->GetX(),
+          min_bottom = shape.second[0]->GetY(),
+          max_top    = shape.second[0]->GetY();
 
     // Shrink and invert the edges of our bounding box
     for (auto& corner : shape.second)
     {
-      bounding_box.ExpandBoxToIncludeVertex(*corner);
+      min_left   = min(min_left, corner->GetX());
+      max_right  = max(max_right, corner->GetX());
+      min_bottom = min(min_bottom, corner->GetY());
+      max_top    = max(max_top, corner->GetY());
     }
 
+    auto bounding_box = Box(min_left, max_right, max_top, min_bottom);
     // If the box is not the page itself, append this polygon to our result
     if (!bounding_box.IsApproximatelySameAs(*text_box_))
     {

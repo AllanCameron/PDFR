@@ -108,7 +108,8 @@ class Box
  public:
   // Constructor from four separate floats
   Box(float t_left, float t_right, float t_top, float t_bottom):
-    left_(t_left), right_(t_right), top_(t_top), bottom_(t_bottom), flags_(0){}
+    left_(t_left), right_(t_right), top_(t_top), bottom_(t_bottom), flags_(0){
+  }
 
   // Constructor from length-4 vector
   Box(std::vector<float> t_vector): flags_(0)
