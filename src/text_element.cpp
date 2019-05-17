@@ -95,7 +95,7 @@ Box((Box) t_text_box)
       this->rights_.push_back(element->GetRight());
       this->fonts_.push_back(element->GetFontName());
       this->tops_.push_back(element->GetTop());
-      this->sizes_.push_back(element->Height());
+      this->sizes_.push_back(element->GetSize());
     }
   }
 }

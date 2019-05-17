@@ -313,7 +313,7 @@ void Parser::ProcessRawChar_(float& t_scale, Matrix& t_text_space,
       right = left + width;
       text_box_->emplace_back(make_shared<TextElement>
                              (left, right, bottom + t_scale,
-                              bottom, working_font_,
+                              bottom, t_scale, working_font_,
                               vector<Unicode>{glyph_pair.first}));
     }
   }

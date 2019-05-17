@@ -49,9 +49,10 @@ class TextElement : public Box
 
  public:
   TextElement(float t_left, float t_right, float t_top, float t_bottom,
-              std::shared_ptr<Font> t_font, std::vector<Unicode> t_glyphs)
-    : Box(t_left, t_right, t_top, t_bottom),
-      font_(t_font), glyph_(t_glyphs), join_(nullptr), group_(0) {};
+              float t_size, std::shared_ptr<Font> t_font,
+              std::vector<Unicode> t_glyphs)
+    : Box(t_left, t_right, t_top, t_bottom), size_(t_size),
+      font_(t_font), glyph_(t_glyphs), join_(nullptr) {};
 
   // Inevitably, we need to define some "magic number" constants to define
   // how close together text elements have to be to clump together
@@ -65,7 +66,7 @@ class TextElement : public Box
   inline void MakeLeftEdge()  { this->SetFlag(0x08); }
   inline void MakeRightEdge() { this->SetFlag(0x02); }
   inline void MakeCentred()   { this->SetFlag(0x04); }
-
+  inline float GetSize() const override {return this->size_;}
   inline bool IsLeftEdge()  const { return this->HasFlag(0x08); }
   inline bool IsRightEdge() const { return this->HasFlag(0x02); }
   inline bool IsCentred()   const { return this->HasFlag(0x04); }
@@ -132,10 +133,10 @@ class TextElement : public Box
 
 
  private:
+  float size_;
   std::shared_ptr<Font> font_;           // Font used to draw text
   std::vector<Unicode> glyph_;           // The actual Unicode glyphs encoded
   std::shared_ptr<TextElement> join_;    // address of closest adjacent element
-  size_t group_;                         // Which textbox does this belong to?
 };
 
 //---------------------------------------------------------------------------//

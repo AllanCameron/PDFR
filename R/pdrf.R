@@ -186,6 +186,7 @@ get_object <- function(pdf, number)
 #' @param pdf a valid pdf file location
 #' @param page the page number to be plotted
 #' @param atomic a boolean - should each letter treated individually?
+#' @param boxes Show the calculated text bounding boxes
 #' @param textsize the scale of the text to be shown
 #'
 #' @return a ggplot
@@ -193,36 +194,36 @@ get_object <- function(pdf, number)
 #'
 #' @examples pdfplot(testfiles$leeds, 1)
 ##---------------------------------------------------------------------------##
-pdfplot <- function(pdf, page = 1, atomic = FALSE, textsize = 1)
+pdfplot <- function(pdf, page = 1, atomic = FALSE, boxes = FALSE, textsize = 1)
 {
   x <- pdfpage(pdf, page, atomic, FALSE)
   y <- x$Elements
-  if(atomic == FALSE)
-  {
-  G <- ggplot2::ggplot(data = y, ggplot2::aes(x = y$left, y = y$bottom,
+  y$midx <- (y$right + y$left) / 2
+  y$midy <- (y$top + y$bottom) / 2
+  G <- ggplot2::ggplot(data = y, ggplot2::aes(x = y$midx, y = y$midy,
                        size = I(textsize*170 * y$size / (x$Box[4] - x$Box[2]))),
-                       lims = x$Box )
-  G + ggplot2::geom_rect(ggplot2::aes(xmin = x$Box[1], ymin = x$Box[2],
+                       lims = x$Box
+  ) + ggplot2::geom_rect(ggplot2::aes(xmin = x$Box[1], ymin = x$Box[2],
                                       xmax = x$Box[3], ymax = x$Box[4]),
                          fill = "white", colour = "black", size = 0.2
-  ) + ggplot2::geom_text(ggplot2::aes(label = y$text, colour = factor(y$bottom),
-                         hjust = 0, vjust = 0)
   ) + ggplot2::coord_equal(
-  ) + ggplot2::scale_size_identity(
-  )
+  ) + ggplot2::scale_size_identity()
+  if(boxes == TRUE)
+  {
+    G <- G + ggplot2::geom_rect(ggplot2::aes(xmin = y$left, ymin = y$bottom,
+                                             xmax = y$right , ymax = y$top),
+                                fill = "grey", colour = "grey",
+                                size = 0.2, alpha = 0.2)
+  }
+  if(atomic == FALSE)
+  {
+    G + ggplot2::geom_text(ggplot2::aes(label = y$text),
+                           hjust = 0.5, vjust = 0.5)
   }
   else
   {
-  G <- ggplot2::ggplot(data = y, ggplot2::aes(x = y$left, y = y$bottom,
-                       size = I(textsize*170 * y$size / (x$Box[4] - x$Box[2]))),
-                       lims = x$Box )
-  G + ggplot2::geom_rect(ggplot2::aes(xmin = x$Box[1], ymin = x$Box[2],
-                                      xmax = x$Box[3], ymax = x$Box[4]),
-                         fill = "white", colour = "black", size = 0.2
-  ) + ggplot2::geom_text(ggplot2::aes(label = y$text), hjust = 0, vjust = 0
-  ) + ggplot2::coord_equal(
-  ) + ggplot2::scale_size_identity(
-  )
+    G + ggplot2::geom_text(ggplot2::aes(label = y$text),
+                           hjust = 0.5, vjust = 0.5)
   }
 }
 
@@ -295,26 +296,17 @@ getpagestring <- function(pdf, page)
 ##---------------------------------------------------------------------------##
 pdfdoc <- function(pdf)
 {
-  if(class(pdf) == "raw")
-  {
-    x <- .pdfdocraw(pdf)
-  }
-  if(class(pdf) == "character" & length(pdf) == 1 & grepl("[.]pdf$", pdf[1]) &
-     !grepl("/", pdf[1]))
-  {
-    x <- .pdfdoc(paste0(path.expand("~/"), pdf))
-  }
-  if(class(pdf) == "character" & length(pdf) == 1 & grepl("[.]pdf$", pdf[1]) &
-     grepl("/", pdf[1]))
-  {
-    x <- .pdfdoc(pdf)
-  }
   if((class(pdf) != "raw"       & class(pdf) != "character") |
      (class(pdf) == "character" & length(pdf) > 1)           |
      (class(pdf) == "character" & !grepl("[.]pdf$", pdf[1])) )
   {
     stop("pdfdoc requires a single path to a valid pdf or a raw vector.")
   }
+  is_pdf <- grepl("[.]pdf$", pdf[1])
+  valid_pdf_name <- (is.character(pdf) & length(pdf) == 1 & is_pdf)
+  if (is.raw(pdf)) x <- .pdfdocraw(pdf)
+  if (valid_pdf_name & !grepl("/", pdf[1])) paste0(path.expand("~/"), pdf)
+  x <- .pdfdoc(pdf)
   x <- x[order(x$page, -x$bottom, x$left),]
   x$left <- round(x$left, 1)
   x$right <- round(x$right, 1)

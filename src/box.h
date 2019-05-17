@@ -143,7 +143,7 @@ class Box
   inline float GetRight()  const   { return this->right_              ;}
   inline float GetTop()    const   { return this->top_                ;}
   inline float GetBottom() const   { return this->bottom_             ;}
-  inline float GetSize()   const   { return this->top_ - this->bottom_;}
+  inline virtual float GetSize()   const   { return this->top_ - this->bottom_;}
   inline bool  HasFlag(uint8_t t_flag) const
   {
     return (flags_ & t_flag) == t_flag;

@@ -217,6 +217,7 @@ List get_single_text_elements(shared_ptr<Page> t_page_ptr)
                                     Named("left")   = table.GetLefts(),
                                     Named("bottom") = table.GetBottoms(),
                                     Named("right")  = table.GetRights(),
+                                    Named("top")    = table.GetTops(),
                                     Named("font")   = table.GetFontNames(),
                                     Named("size")   = table.GetSizes(),
                                     Named("stringsAsFactors") = false);
@@ -253,6 +254,7 @@ List get_text_boxes(shared_ptr<Page> page_ptr)
                     Named("left")             = move(text_table.GetLefts()),
                     Named("right")            = move(text_table.GetRights()),
                     Named("bottom")           = move(text_table.GetBottoms()),
+                    Named("top")              = move(text_table.GetTops()),
                     Named("font")             = move(text_table.GetFontNames()),
                     Named("size")             = move(text_table.GetSizes()),
                     Named("stringsAsFactors") = false);
