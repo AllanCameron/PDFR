@@ -60,8 +60,8 @@ class TextElement : public Box
   constexpr static float CLUMP_H = 0.01; // horizontal clumping, high = sticky
   constexpr static float CLUMP_V = 0.1;  // vertical clumping, high = sticky
   constexpr static float LINE_CLUMP = 0.7;
-  constexpr static float MAX_WORD_GAP = 2.0;
-  constexpr static float MAX_ALIGN_IGNORE = 0.41;
+  constexpr static float MAX_WORD_GAP = 0.5;
+  constexpr static float MAX_ALIGN_IGNORE = 0.0;
 
   inline void MakeLeftEdge()  { this->SetFlag(0x08); }
   inline void MakeRightEdge() { this->SetFlag(0x02); }
@@ -119,10 +119,9 @@ class TextElement : public Box
   inline bool CannotJoinLeftOf(const TextElement& t_other) const
   {
     return
-    ((t_other.IsLeftEdge()  || t_other.IsCentred())  &&
-    (t_other.GetLeft() - GetRight() > MAX_ALIGN_IGNORE * GetSize())) ||
-    ((this->IsRightEdge() || this->IsCentred())   &&
-    (t_other.GetLeft() - GetRight() > MAX_ALIGN_IGNORE * this->GetSize()));
+    ( t_other.IsLeftEdge()  || t_other.IsCentred()  ||
+      this->IsRightEdge()   || this->IsCentred())   &&
+    (t_other.GetLeft() - this->GetRight()) > (MAX_ALIGN_IGNORE * GetSize());
   }
 
   void MergeLetters(TextElement&);

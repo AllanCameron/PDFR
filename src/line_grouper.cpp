@@ -129,7 +129,7 @@ void LineGrouper::SplitBox_(TextBox& t_upper, float t_top_edge)
 
   // Lambda to find elements whose bottom edge is below the cutoff
   auto FindLower = [&](TextPointer text_ptr) -> bool
-                   { return text_ptr->GetBottom() < t_top_edge; };
+                   { return text_ptr->GetTop() < t_top_edge; };
 
   // Gets an iterator to the first element below the cutoff
   auto split_at = find_if(t_upper.begin(), t_upper.end(), FindLower);
@@ -148,7 +148,7 @@ void LineGrouper::SplitBox_(TextBox& t_upper, float t_top_edge)
   // We also need to readjust the margins of our bounding boxes based on their
   // new contents
   t_upper.SetBottom(t_upper.back()->GetBottom());
-  lower.SetTop(t_upper.front()->GetTop());
+  lower.SetTop(lower.front()->GetTop());
 
   // The upper box has been changed in place, but the lower box needs to be
   // added to our collection as a new member
