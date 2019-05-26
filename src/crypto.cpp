@@ -9,6 +9,8 @@
 //                                                                           //
 //---------------------------------------------------------------------------//
 
+#include "utilities.h"
+#include "dictionary.h"
 #include "crypto.h"
 
 using namespace std;
@@ -18,7 +20,7 @@ using namespace std;
 // file key and to check it's right. The crypto object is then kept alive to
 // decode any encoded strings in the file
 
-Crypto::Crypto(Dictionary t_encrypt_dict, Dictionary t_trailer)
+Crypto::Crypto(const Dictionary& t_encrypt_dict, const Dictionary& t_trailer)
   : encryption_dictionary_(t_encrypt_dict),
     trailer_(t_trailer),
     revision_(2)

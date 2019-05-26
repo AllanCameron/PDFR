@@ -9,6 +9,10 @@
 //                                                                           //
 //---------------------------------------------------------------------------//
 
+#include "utilities.h"
+#include "dictionary.h"
+#include "object_class.h"
+#include "document.h"
 #include "encoding.h"
 
 using namespace std;
@@ -19,7 +23,7 @@ using namespace std;
 // any /ToUnicode entry. The first three are co-ordinated by read_encoding()
 // and the last is co-ordinated by map_unicode()
 
-Encoding::Encoding(const Dictionary& t_font_dictionary,
+Encoding::Encoding(shared_ptr<Dictionary> t_font_dictionary,
                    shared_ptr<Document> t_document_ptr)
   : font_dictionary_(t_font_dictionary), document_(t_document_ptr)
 {
@@ -142,10 +146,10 @@ void Encoding::ReadDifferenceEntries_()
 void Encoding::MapUnicode_()
 {
   // If no /ToUnicode entry, nothing to be done
-  if (!font_dictionary_.ContainsReferences("/ToUnicode")) return;
+  if (!font_dictionary_->ContainsReferences("/ToUnicode")) return;
 
   // Otherwise, get the reference and get its stream
-  int unicode_reference = font_dictionary_.GetReference("/ToUnicode");
+  int unicode_reference = font_dictionary_->GetReference("/ToUnicode");
 
   // Get the text stream of the unicode conversion entry
   string unicode_text(document_->GetObject(unicode_reference)->GetStream());
@@ -231,15 +235,15 @@ void Encoding::ProcessUnicodeRange_(vector<string>& t_bf_ranges)
 void Encoding::ReadEncoding_()
 {
   // Starts with private font dictionary member
-  Dictionary encoding_dictionary = font_dictionary_;
+  Dictionary encoding_dictionary = *font_dictionary_;
 
   // Reads the encoding entry
   string encoding_name = encoding_dictionary.GetString("/Encoding");
 
   // If an encoding dictionary exists, gets it and read the baseencoding entry
-  if (font_dictionary_.ContainsReferences("/Encoding"))
+  if (font_dictionary_->ContainsReferences("/Encoding"))
   {
-    auto encoding_object_number = font_dictionary_.GetReference("/Encoding");
+    auto encoding_object_number = font_dictionary_->GetReference("/Encoding");
     auto encoding_object_ptr = document_->GetObject(encoding_object_number);
     encoding_dictionary = encoding_object_ptr->GetDictionary();
     if (encoding_dictionary.HasKey("/BaseEncoding"))

@@ -4,7 +4,7 @@
 \alias{pdfplot}
 \title{pdfplot}
 \usage{
-pdfplot(pdf, page = 1, atomic = FALSE, textsize = 1)
+pdfplot(pdf, page = 1, atomic = FALSE, boxes = FALSE, textsize = 1)
 }
 \arguments{
 \item{pdf}{a valid pdf file location}
@@ -12,6 +12,8 @@ pdfplot(pdf, page = 1, atomic = FALSE, textsize = 1)
 \item{page}{the page number to be plotted}
 
 \item{atomic}{a boolean - should each letter treated individually?}
+
+\item{boxes}{Show the calculated text bounding boxes}
 
 \item{textsize}{the scale of the text to be shown}
 }

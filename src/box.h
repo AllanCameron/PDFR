@@ -15,7 +15,7 @@
 
 #define PDFR_BOX
 
-#include "font.h"
+
 
 //---------------------------------------------------------------------------//
 // Before we get to reading the page description program from the PDF, we first
@@ -34,6 +34,11 @@
 // Vertex is created from the corners of boxes, they go on to form vertices
 // of more complex polygons formed by merging boxes together.
 
+#include<utility>
+#include<unordered_map>
+#include<vector>
+#include<algorithm>
+#include<memory>
 
 //---------------------------------------------------------------------------//
 // This enum allows Vertices to be labelled according to which clockwise
@@ -107,9 +112,8 @@ class Box
 {
  public:
   // Constructor from four separate floats
-  Box(float t_left, float t_right, float t_top, float t_bottom):
-    left_(t_left), right_(t_right), top_(t_top), bottom_(t_bottom), flags_(0){
-  }
+  Box(float t_left, float t_right, float t_top, float t_bottom)
+   : left_(t_left), right_(t_right), top_(t_top), bottom_(t_bottom), flags_(0){}
 
   // Constructor from length-4 vector
   Box(std::vector<float> t_vector): flags_(0)
@@ -160,6 +164,7 @@ class Box
   // AND the other box
   inline void Merge(Box& t_other)
   {
+    if(&t_other == this) return;
     this->left_   = std::min(this->left_,   t_other.left_  );
     this->right_  = std::max(this->right_,  t_other.right_ );
     this->bottom_ = std::min(this->bottom_, t_other.bottom_);
@@ -171,15 +176,16 @@ class Box
   // and the given vertex
   inline void ExpandBoxToIncludeVertex(const Vertex& t_corner)
   {
-      if (t_corner.GetX() < left_)    left_   = t_corner.GetX();
-      if (t_corner.GetX() > right_)   right_  = t_corner.GetX();
-      if (t_corner.GetY() < bottom_)  bottom_ = t_corner.GetY();
-      if (t_corner.GetY() > top_)     top_    = t_corner.GetY();
+    this->left_   = std::min(this->left_,   t_corner.GetX());
+    this->right_  = std::max(this->right_,  t_corner.GetX());
+    this->bottom_ = std::min(this->bottom_, t_corner.GetY());
+    this->top_    = std::max(this->top_,    t_corner.GetY());
   }
 
   // Compare two boxes for exact equality
   inline bool operator==(const Box& t_other) const
   {
+    if (&t_other == this) return true;
     return left_ == t_other.left_ && right_  == t_other.right_  &&
            top_  == t_other.top_  && bottom_ == t_other.bottom_;
   }
@@ -187,12 +193,14 @@ class Box
   // Approximate equality between floats
   inline bool Eq(const float& t_lhs, const float& t_rhs) const
   {
+    if (t_lhs == t_rhs) return true;
     return (t_lhs - t_rhs < 0.1) && (t_rhs - t_lhs < 0.1);
   }
 
   // Test for non-strict equality
   inline bool IsApproximatelySameAs(const Box& t_other) const
   {
+    if (&t_other == this) return true;
     return Eq(left_, t_other.left_) && Eq(right_,  t_other.right_) &&
            Eq(top_,  t_other.top_)  && Eq(bottom_, t_other.bottom_ );
   }
@@ -229,6 +237,7 @@ class Box
   // Check whether one box partially covers another box
   inline bool Encroaches(Box& t_other)
   {
+    if (&t_other == this) return true;
     return (left_ < t_other.right_ && right_ > t_other.left_) &&
            (bottom_ < t_other.top_ && top_ > t_other.bottom_);
   }

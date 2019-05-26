@@ -41,7 +41,13 @@
  * rather than indirectly through byte offsets and binary streams
  */
 
-#include "xref.h"
+#include<string>
+#include<vector>
+#include<memory>
+#include<unordered_map>
+
+class Dictionary;
+class XRef;
 
 //---------------------------------------------------------------------------//
 
@@ -55,7 +61,7 @@ class Object
   Object(std::shared_ptr<Object> holding_object_ptr, int object_number);
 
   // Default constructor
-  Object(){};
+  Object() = delete;
 
   // Returns an Object's stream as a string
   std::string GetStream();
@@ -66,7 +72,7 @@ class Object
  private:
   std::shared_ptr<const XRef> xref_;      // Pointer to creating xref
   int object_number_;                     // The object knows its own number
-  Dictionary header_;                     // The object's dictionary
+  std::shared_ptr<Dictionary> header_;    // The object's dictionary
   std::string stream_;                    // The object's stream or contents
   std::vector<size_t> stream_location_;   // Start position and length of stream
 

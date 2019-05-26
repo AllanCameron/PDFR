@@ -9,6 +9,9 @@
 //                                                                           //
 //---------------------------------------------------------------------------//
 
+#include "utilities.h"
+#include "box.h"
+#include "font.h"
 #include "text_element.h"
 
 using namespace std;
@@ -193,4 +196,13 @@ string TextElement::Utf()
     // therefore not supported at present.
   }
   return result_string;
+}
+
+/*--------------------------------------------------------------------------*/
+// Although this method looks like it should be inlined, doing so would mean
+// having to include font.h in the header file
+
+string TextElement::GetFontName() const
+{
+  return this->font_->GetFontName();
 }

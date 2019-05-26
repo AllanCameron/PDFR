@@ -41,7 +41,7 @@
  * aligned text is intolerant of left or right joins.
  */
 
-#include "letter_grouper.h"
+#include "text_element.h"
 
 //---------------------------------------------------------------------------//
 // The word grouper class takes a pointer to a letter grouper object in its
@@ -52,14 +52,14 @@
 class WordGrouper
 {
  public:
-  // Constructor
-  WordGrouper(std::unique_ptr<TextBox>);
+  // Constructor - takes the main textbox as output from LetterGrouper
+  WordGrouper(std::unique_ptr<TextBox> output_from_lettergrouper);
 
   // Output individual text elements for next phase of layout analysis
   inline std::unique_ptr<TextBox> Output() { return std::move(text_box_); }
 
   // Output text elements with sizes, fonts, positions to API
-  inline TextTable Out() const { return TextTable(*text_box_);}
+  TextTable Out() const;
 
  private:
   // Make a table of values in a vector of floats rounded to one decimal place

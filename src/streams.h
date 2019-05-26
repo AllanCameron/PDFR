@@ -38,7 +38,7 @@
  * This header is required by the xref class, as it needs to be able to deflate
  * xrefstreams.
  */
-#include "dictionary.h"
+#include<string>
 
 //---------------------------------------------------------------------------//
 // Inflates the given string

@@ -158,3 +158,6 @@ void WordGrouper::FindRightMatch_()
     }
   }
 }
+
+
+TextTable WordGrouper::Out() const { return TextTable(*text_box_);}

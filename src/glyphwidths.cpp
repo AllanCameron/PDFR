@@ -9,6 +9,10 @@
 //                                                                           //
 //---------------------------------------------------------------------------//
 
+#include "utilities.h"
+#include "dictionary.h"
+#include "object_class.h"
+#include "document.h"
 #include "glyphwidths.h"
 
 //---------------------------------------------------------------------------//
@@ -28,10 +32,10 @@ using namespace std;
 // built in static corefont tables. Otherwise find and interpret widths.
 
 GlyphWidths::GlyphWidths
-  (Dictionary& t_font_dictionary, shared_ptr<Document> t_document_ptr)
+  (shared_ptr<Dictionary> t_font_dictionary, shared_ptr<Document> t_document_ptr)
   : font_dictionary_(t_font_dictionary),
     document_(t_document_ptr),
-    base_font_(font_dictionary_.GetString("/BaseFont"))
+    base_font_(font_dictionary_->GetString("/BaseFont"))
 {
   ReadCoreFont_();
   if (width_map_.empty()) ReadWidthTable_();
@@ -46,13 +50,13 @@ GlyphWidths::GlyphWidths
 void GlyphWidths::ReadWidthTable_()
 {
   // If widths entry specified, use this by calling parsewidths method
-  if (font_dictionary_.HasKey("/Widths"))
+  if (font_dictionary_->HasKey("/Widths"))
   {
     ParseWidths_();
   }
 
   // otherwise look in descendants using parseDescendants method
-  else if (font_dictionary_.ContainsReferences("/DescendantFonts"))
+  else if (font_dictionary_->ContainsReferences("/DescendantFonts"))
   {
     ParseDescendants_();
   }
@@ -75,18 +79,18 @@ void GlyphWidths::ParseWidths_()
   RawChar first_character = 0x0000;
 
   // Otherwise we read the firstchar entry
-  if (font_dictionary_.ContainsInts("/FirstChar"))
+  if (font_dictionary_->ContainsInts("/FirstChar"))
   {
-    first_character = font_dictionary_.GetInts("/FirstChar")[0];
+    first_character = font_dictionary_->GetInts("/FirstChar")[0];
   }
   // Annoyingly, widths sometimes contains a pointer to another object that
   // contains the width array, either in a stream or as a 'naked object'.
   // Note that contents of a naked object are stored as the object's 'stream'.
 
   // Handle /widths being a reference to another object
-  if (font_dictionary_.ContainsReferences("/Widths"))
+  if (font_dictionary_->ContainsReferences("/Widths"))
   {
-    auto width_object_number = font_dictionary_.GetReference("/Widths");
+    auto width_object_number = font_dictionary_->GetReference("/Widths");
     auto width_object_ptr = document_->GetObject(width_object_number);
 
     // Get the referenced object's stream
@@ -96,7 +100,7 @@ void GlyphWidths::ParseWidths_()
     width_array = ParseFloats(width_object_stream);
   }
   // If /Widths is not a reference get the widths directly
-  else  width_array = font_dictionary_.GetFloats("/Widths");
+  else  width_array = font_dictionary_->GetFloats("/Widths");
 
   // If a width array was found
   if (!width_array.empty())
@@ -121,7 +125,7 @@ void GlyphWidths::ParseWidths_()
 void GlyphWidths::ParseDescendants_()
 {
   // get a pointer to the /Descendantfonts object
-  auto descendant_number = font_dictionary_.GetReference("/DescendantFonts");
+  auto descendant_number = font_dictionary_->GetReference("/DescendantFonts");
   auto descendant_object = document_->GetObject(descendant_number);
 
   // Extract its dictionary and its stream

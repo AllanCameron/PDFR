@@ -34,7 +34,7 @@
 #include<numeric>
 #include<algorithm>
 #include<iostream>
-#include "debugtools.h"
+#include<memory>
 
 //---------------------------------------------------------------------------//
 /* The characters in pdf strings are most portably interpreted as uint16_t.

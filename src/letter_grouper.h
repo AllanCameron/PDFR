@@ -1,17 +1,17 @@
-//---------------------------------------------------------------------------//
-//                                                                           //
-//  PDFR LetterGrouper header file                                           //
-//                                                                           //
-//  Copyright (C) 2018 - 2019 by Allan Cameron                               //
-//                                                                           //
-//  Licensed under the MIT license - see https://mit-license.org             //
-//  or the LICENSE file in the project root directory                        //
-//                                                                           //
-//---------------------------------------------------------------------------//
+//----------------------------------------------------------------------------//
+//                                                                            //
+//  PDFR LetterGrouper header file                                            //
+//                                                                            //
+//  Copyright (C) 2018 - 2019 by Allan Cameron                                //
+//                                                                            //
+//  Licensed under the MIT license - see https://mit-license.org              //
+//  or the LICENSE file in the project root directory                         //
+//                                                                            //
+//----------------------------------------------------------------------------//
 
 #ifndef PDFR_LGROUPER
 
-//---------------------------------------------------------------------------//
+//----------------------------------------------------------------------------//
 
 #define PDFR_LGROUPER
 
@@ -27,9 +27,9 @@
  * as paragraphs, headers and tables.
  */
 
-#include "tokenizer.h"
+#include "text_element.h"
 
-//---------------------------------------------------------------------------//
+//----------------------------------------------------------------------------//
 // The LetterGrouper class contains a constructor, an output map of results,
 // and a method for passing out the minimum text bounding box found in page
 // construction. Its private methods are used only in construction of the
@@ -62,6 +62,6 @@ class LetterGrouper
   void Merge_();                          // Joins matching glyphs together
 };
 
-//---------------------------------------------------------------------------//
+//----------------------------------------------------------------------------//
 
 #endif

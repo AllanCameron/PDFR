@@ -9,6 +9,7 @@
 //                                                                           //
 //---------------------------------------------------------------------------//
 
+#include "utilities.h"
 #include "dictionary.h"
 
 using namespace std;

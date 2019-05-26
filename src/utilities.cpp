@@ -9,8 +9,8 @@
 //                                                                           //
 //---------------------------------------------------------------------------//
 
+#include<fstream>
 #include "utilities.h"
-#include <fstream>   // for GetFile() - uses ifstream
 
 using namespace std;
 

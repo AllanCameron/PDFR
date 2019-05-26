@@ -67,7 +67,16 @@
 
 //---------------------------------------------------------------------------//
 
-#include "document.h"
+#include<string>
+#include<vector>
+#include<unordered_map>
+#include<memory>
+
+class Dictionary;
+class Document;
+using Unicode = uint16_t;
+using RawChar = uint16_t;
+
 
 //---------------------------------------------------------------------------//
 // The GlyphWidths class contains private methods to find the description of
@@ -83,7 +92,8 @@ class GlyphWidths
 {
  public:
   // Constructor
-  GlyphWidths(Dictionary& font_dictionary, std::shared_ptr<Document> doc_ptr);
+  GlyphWidths(std::shared_ptr<Dictionary> font_dictionary,
+              std::shared_ptr<Document> doc_ptr);
 
   // public methods
   int GetWidth(const RawChar& code_point);     // Get width of character code
@@ -97,7 +107,7 @@ class GlyphWidths
 
   // private data
   std::unordered_map<RawChar, int> width_map_;  // The main data member
-  Dictionary font_dictionary_;                  // The font dictionary
+  std::shared_ptr<Dictionary> font_dictionary_; // The font dictionary
   std::shared_ptr<Document> document_;          // Pointer to document
   std::string base_font_;                       // The base font (if any)
   bool width_is_pre_interpretation_;            // Are widths for code points

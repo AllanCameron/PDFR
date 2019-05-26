@@ -66,7 +66,16 @@
  * code points or output (Unicode) characters.
  */
 
-#include "document.h"
+#include<string>
+#include<vector>
+#include<unordered_map>
+#include<memory>
+#include<utility>
+
+class Dictionary;
+class Document;
+using Unicode = uint16_t;
+using RawChar = uint16_t;
 
 //---------------------------------------------------------------------------//
 // The encoding class comprises constructors which use private subroutines
@@ -78,7 +87,7 @@ class Encoding
 {
  public:
   // Constructor
-  Encoding(const Dictionary& font_dictionary,
+  Encoding(std::shared_ptr<Dictionary> font_dictionary,
            std::shared_ptr<Document> ptr_to_document);
 
   // Maps given raw code point to Unicode
@@ -103,7 +112,7 @@ class Encoding
   static const UnicodeMap pdfdoc_to_unicode_;
 
   UnicodeMap encoding_map_;             // The main data member lookup
-  Dictionary font_dictionary_;          // the main font dictionary
+  std::shared_ptr<Dictionary> font_dictionary_; // the main font dictionary
   std::shared_ptr<Document> document_;  // pointer to the containing document
   std::string base_encoding_;           // value of /BaseEncoding entry
 

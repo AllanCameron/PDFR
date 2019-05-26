@@ -9,6 +9,10 @@
 //                                                                           //
 //---------------------------------------------------------------------------//
 
+#include "utilities.h"
+#include "font.h"
+#include "text_element.h"
+#include "page.h"
 #include "parser.h"
 
 //---------------------------------------------------------------------------//
@@ -40,7 +44,7 @@ std::unordered_map<std::string, FunctionPointer> Parser::function_map_ =
 
 Parser::Parser(shared_ptr<Page> pag) :      // Long initializer list...
   page_(pag),                               // Pointer to page of interest
-  text_box_(unique_ptr<TextBox>(new TextBox(Box(page_->GetMinbox())))),
+  text_box_(unique_ptr<TextBox>(new TextBox(Box(*(page_->GetMinbox()))))),
   current_font_size_(0),                    // Pointsize of current font
   font_size_stack_({current_font_size_}),   // History of pointsize
   tm_state_(Matrix()),                      // Transformation matrix
@@ -349,4 +353,9 @@ void Parser::Reader(string& t_token, TokenState t_state)
   }
 }
 
-
+/*---------------------------------------------------------------------------*/
+// Can't inline this without including page.h in header
+shared_ptr<string> Parser::GetXObject(const string& t_inloop) const
+{
+  return page_->GetXObject(t_inloop);
+};

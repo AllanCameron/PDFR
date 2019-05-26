@@ -1,21 +1,22 @@
-//---------------------------------------------------------------------------//
-//                                                                           //
-//  PDFR LineGrouper implementation file                                     //
-//                                                                           //
-//  Copyright (C) 2018 - 2019 by Allan Cameron                               //
-//                                                                           //
-//  Licensed under the MIT license - see https://mit-license.org             //
-//  or the LICENSE file in the project root directory                        //
-//                                                                           //
-//---------------------------------------------------------------------------//
+//----------------------------------------------------------------------------//
+//                                                                            //
+//  PDFR LineGrouper implementation file                                      //
+//                                                                            //
+//  Copyright (C) 2018 - 2019 by Allan Cameron                                //
+//                                                                            //
+//  Licensed under the MIT license - see https://mit-license.org              //
+//  or the LICENSE file in the project root directory                         //
+//                                                                            //
+//----------------------------------------------------------------------------//
 
+#include<algorithm>
 #include "line_grouper.h"
 
-//---------------------------------------------------------------------------//
+//----------------------------------------------------------------------------//
 
 using namespace std;
 
-//---------------------------------------------------------------------------//
+//----------------------------------------------------------------------------//
 // The LineGrouper constructor takes the WordGrouper output and goes through all
 // of its text boxes. If the elements within each box can be grouped together
 // into a single logical component, then they are glued together into a logical
@@ -52,7 +53,7 @@ LineGrouper::LineGrouper(PageBox t_text_boxes)
   }
 };
 
-//---------------------------------------------------------------------------//
+//----------------------------------------------------------------------------//
 // Since the TextElements are now sorted by reading order, we can compare
 // consecutive elements in a textbox to work out whether they belong to the
 // same logical group. If they don't, then we call SplitBox_ to seperate them.
@@ -75,7 +76,7 @@ void LineGrouper::FindBreaks_(TextBox& t_text_box)
   }
 }
 
-//---------------------------------------------------------------------------//
+//----------------------------------------------------------------------------//
 // To join lines together properly, we normally want to add a space to seperate
 // the word ending the line above and the first word of the line below. However,
 // we don't want to add an extra whitespace if the line already ends in one.
@@ -106,7 +107,7 @@ void LineGrouper::LineEndings_(TextBox& t_text_box)
   }
 }
 
-//---------------------------------------------------------------------------//
+//----------------------------------------------------------------------------//
 // Combines the text elements into a single element with the textbox
 
 void LineGrouper::PasteLines_(TextBox& t_text_box)
@@ -120,7 +121,7 @@ void LineGrouper::PasteLines_(TextBox& t_text_box)
   t_text_box.resize(1);
 }
 
-//---------------------------------------------------------------------------//
+//----------------------------------------------------------------------------//
 // Divides a TextBox into two by a horizontal line given as a y value
 
 void LineGrouper::SplitBox_(TextBox& t_upper, float t_top_edge)
@@ -154,4 +155,5 @@ void LineGrouper::SplitBox_(TextBox& t_upper, float t_top_edge)
   // added to our collection as a new member
   text_boxes_.push_back(lower);
 }
+
 

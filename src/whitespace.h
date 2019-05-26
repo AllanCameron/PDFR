@@ -52,7 +52,7 @@
  * on size, shape, position and order on the page.
  */
 
-#include "word_grouper.h"
+#include "text_element.h"
 
 //---------------------------------------------------------------------------//
 // The whitespace class takes a word grouper as an argument in its constructor
@@ -63,7 +63,7 @@ class Whitespace
 {
  public:
   // constructor
-  Whitespace(std::unique_ptr<TextBox>);
+  Whitespace(std::unique_ptr<TextBox> ouput_from_wordgrouper);
 
   //  Output the text element groups directly
   PageBox Output();

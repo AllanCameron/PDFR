@@ -54,9 +54,14 @@
  * of XRef implementation, it has no public interface and is therefore not
  * defined in this header file, but rather within xref.cpp
 */
-#include<utility>
-#include "streams.h"
-#include "crypto.h"
+#include<string>
+#include<vector>
+#include<memory>
+#include<unordered_map>
+//#include<utility>
+
+class Dictionary;
+class Crypto;
 
 /*---------------------------------------------------------------------------*/
 // The main XRef data member is an unordered map with the key being the object
@@ -101,7 +106,7 @@ class XRef
   std::shared_ptr<const std::string> file_string_;  // Pointer to file string
   std::unordered_map<int, XRefRow> xref_table_;     // Main data member
   std::vector<int> xref_locations_;                 // vector of XRef offsets
-  Dictionary trailer_dictionary_;                   // Main trailer dictionary
+  std::shared_ptr<Dictionary> trailer_dictionary_;  // Main trailer dictionary
   bool encrypted_;                                  // Is encryption used?
   std::shared_ptr<Crypto> encryption_;              // Used for encrypted files
 

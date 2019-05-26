@@ -39,8 +39,18 @@
  * points and integer widths for each glyph, given an input vector of RawChars.
  *
  */
-#include "encoding.h"
-#include "glyphwidths.h"
+
+#include<utility>
+#include<string>
+#include<vector>
+#include<unordered_map>
+#include<memory>
+
+class Dictionary;
+class Document;
+using Unicode = uint16_t;
+using RawChar = uint16_t;
+
 
 //---------------------------------------------------------------------------//
 // The GlyphMap is the main data member of the Font class. Although it is
@@ -58,7 +68,9 @@ class Font
 {
  public:
   // Constructor
-  Font(std::shared_ptr<Document> doc, Dictionary font, const std::string& id);
+  Font(std::shared_ptr<Document> doc,
+       std::shared_ptr<Dictionary> font,
+       const std::string& id);
 
   // Default Constructor
   Font(){};
@@ -75,7 +87,7 @@ class Font
 private:
   // private data members
   std::shared_ptr<Document> document_;  // - Pointer to the containing document
-  Dictionary  font_dictionary_;         // - The main font dictionary
+  std::shared_ptr<Dictionary>  font_dictionary_;  // - The main font dictionary
   std::string font_id_,                 // - The name the font as used in PDF
               font_name_;               // - The actual name of the font
   GlyphMap glyph_map_;                  // - Main data member, mapping RawChar

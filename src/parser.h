@@ -48,8 +48,18 @@
  * to reduce the passing around of several parameters.
  */
 
-#include "text_element.h"
+#include<memory>
+#include<vector>
+#include<array>
+#include<unordered_map>
 #include<functional>
+#include<utility>
+#include "text_element.h"
+
+class Page;
+
+
+using RawChar = uint16_t;
 
 //---------------------------------------------------------------------------//
 // The states of the lexer are defined by this enum. It is defined in its own
@@ -209,10 +219,7 @@ class Parser
   }
 
   // This allows us to process an xObject
-  std::shared_ptr<std::string> GetXObject(const std::string& t_inloop) const
-  {
-    return page_->GetXObject(t_inloop);
-  };
+  std::shared_ptr<std::string> GetXObject(const std::string& t_inloop) const;
 
  private:
   // Private data members
@@ -272,7 +279,5 @@ class Parser
   // in a pdf string object
   void ProcessRawChar_(float&, Matrix&, float&);
 };
-
-
 
 #endif

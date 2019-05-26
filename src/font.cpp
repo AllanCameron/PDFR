@@ -9,6 +9,10 @@
 //                                                                           //
 //---------------------------------------------------------------------------//
 
+#include "utilities.h"
+#include "dictionary.h"
+#include "glyphwidths.h"
+#include "encoding.h"
 #include "font.h"
 
 //---------------------------------------------------------------------------//
@@ -21,7 +25,7 @@ using namespace std;
 // to create the main data member
 
 Font::Font(shared_ptr<Document> t_document_ptr,
-           Dictionary t_font_dictionary,
+           shared_ptr<Dictionary> t_font_dictionary,
            const string& t_font_id)
   : document_(t_document_ptr),
     font_dictionary_(t_font_dictionary),
@@ -37,7 +41,7 @@ Font::Font(shared_ptr<Document> t_document_ptr,
 void Font::ReadFontName_()
 {
   // Reads /BaseFont entry
-  string base_font(font_dictionary_.GetString("/BaseFont"));
+  string base_font(font_dictionary_->GetString("/BaseFont"));
 
   if (base_font.size() > 7 && base_font[7] == '+')
   {

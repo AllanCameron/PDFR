@@ -15,7 +15,11 @@
 
 #define PDFR_TEXT_ELEMENT
 
-#include "page.h"
+#include<string>
+#include "box.h"
+
+class Font;
+using Unicode = uint16_t;
 
 //---------------------------------------------------------------------------//
 // The "atom" of our output will be the TextElement. This is a class containing
@@ -75,7 +79,7 @@ class TextElement : public Box
   inline TextPointer GetJoin()             { return this->join_; }
   inline bool HasJoin() const { if (join_) return true; else return false;}
 
-  inline std::string GetFontName() const { return this->font_->GetFontName();}
+  std::string GetFontName() const; // can't inline without including font.h
   inline std::vector<Unicode> GetGlyph() const { return this->glyph_;}
   inline void AddSpace() { glyph_.push_back(0x0020);         }
 
@@ -87,6 +91,7 @@ class TextElement : public Box
 
   inline bool operator ==(const TextElement& t_other) const
   {
+    if (&t_other == this) return true;
     return (t_other.GetLeft()   == this->GetLeft()    &&
             t_other.GetBottom() == this->GetBottom()  &&
             t_other.GetTop()    == this->GetTop()     &&
@@ -95,6 +100,7 @@ class TextElement : public Box
 
   inline bool IsAdjoiningLetter(const TextElement& t_other) const
   {
+    if (&t_other == this) return false;
     return
       t_other.GetLeft() > GetLeft() &&
       abs(t_other.GetBottom() - GetBottom()) < (CLUMP_V * GetSize()) &&
@@ -106,6 +112,7 @@ class TextElement : public Box
 
   inline bool IsOnSameLineAs(const TextElement& t_other) const
   {
+    if (&t_other == this) return true;
     return
     (t_other.GetBottom() - this->GetBottom() < LINE_CLUMP * this->GetSize()) &&
     (this->GetBottom() - t_other.GetBottom() < LINE_CLUMP * this->GetSize());
@@ -113,11 +120,13 @@ class TextElement : public Box
 
   inline bool IsWayBeyond(const TextElement& t_other) const
   {
+    if (&t_other == this) return false;
     return GetLeft() - t_other.GetRight() > MAX_WORD_GAP * t_other.GetSize();
   }
 
   inline bool CannotJoinLeftOf(const TextElement& t_other) const
   {
+    if (&t_other == this) return true;
     return
     ( t_other.IsLeftEdge()  || t_other.IsCentred()  ||
       this->IsRightEdge()   || this->IsCentred())   &&
@@ -132,7 +141,7 @@ class TextElement : public Box
 
 
  private:
-  float size_;
+  float size_;                           // The font size
   std::shared_ptr<Font> font_;           // Font used to draw text
   std::vector<Unicode> glyph_;           // The actual Unicode glyphs encoded
   std::shared_ptr<TextElement> join_;    // address of closest adjacent element
@@ -222,7 +231,6 @@ class TextBox : public Box
 
   void RemoveDuplicates();
 
-
  private:
   // The data member
   std::vector<TextPointer> data_;
@@ -250,6 +258,10 @@ class TextTable: public Box
   std::vector<std::string> text_, fonts_;
   std::vector<float> lefts_, rights_, bottoms_, tops_, sizes_;
 };
+
+
+//---------------------------------------------------------------------------//
+// PageBox class
 
 class PageBox : public Box
 {

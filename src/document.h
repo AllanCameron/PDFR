@@ -51,8 +51,16 @@
  * to access the dictionary pertaining to a particular page
  */
 
-#include "object_class.h"
+#include<string>
+#include<vector>
+#include<unordered_map>
 #include<memory>
+
+class Dictionary;
+class XRef;
+class Object;
+
+template <class T> class TreeNode;
 
 
 //---------------------------------------------------------------------------//
@@ -92,8 +100,8 @@ class Document
   std::string file_path_;                 // Path used to create file (if used)
   const std::string file_string_;         // Full contents of file
   std::shared_ptr<const XRef> xref_;      // Pointer to creating XRef object
-  Dictionary page_directory_;             // dict containing pointers to pages
-  Dictionary catalog_;                    // The pdf catalog dictionary
+  std::shared_ptr<Dictionary> page_directory_;// dict containing pointers to pages
+  std::shared_ptr<Dictionary> catalog_;   // The pdf catalog dictionary
   std::vector<int> page_object_numbers_;  // The object numbers of page headers
 
   // This map holds Object pointers. Since some objects may be read

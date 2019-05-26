@@ -9,8 +9,12 @@
 //                                                                           //
 //---------------------------------------------------------------------------//
 
+#include "utilities.h"
+#include "dictionary.h"
+#include "xref.h"
+#include "object_class.h"
 #include "document.h"
-#include<list>
+
 
 //---------------------------------------------------------------------------//
 // See the document.h file for comments regarding the rationale and use of this
@@ -96,7 +100,7 @@ void Document::ReadCatalog_()
   int root_number = xref_->GetTrailer().GetReference("/Root");
 
   // With errors handled, we can now just get the pointed-to object's dictionary
-  catalog_ = GetObject(root_number)->GetDictionary();
+  catalog_ = make_shared<Dictionary>(GetObject(root_number)->GetDictionary());
 }
 
 /*---------------------------------------------------------------------------*/
@@ -107,13 +111,14 @@ void Document::ReadCatalog_()
 void Document::ReadPageDirectory_()
 {
   // Else get the object number of the /Pages dictionary
-  int page_object_number = catalog_.GetReference("/Pages");
+  int page_object_number = catalog_->GetReference("/Pages");
 
   // Now fetch that object and store it
-  page_directory_ = GetObject(page_object_number)->GetDictionary();
+  page_directory_ = make_shared<Dictionary>(
+                      GetObject(page_object_number)->GetDictionary());
 
   // Ensure /Pages has /kids entry
-  if (!page_directory_.ContainsReferences("/Kids"))
+  if (!page_directory_->ContainsReferences("/Kids"))
   {
     throw runtime_error("No Kids entry in /Pages");
   }
@@ -122,7 +127,7 @@ void Document::ReadPageDirectory_()
   auto root = make_shared<TreeNode<int>>(page_object_number);
 
   // Populate the tree
-  ExpandKids_(page_directory_.GetReferences("/Kids"), root);
+  ExpandKids_(page_directory_->GetReferences("/Kids"), root);
 
   // Get the leafs of the tree
   page_object_numbers_ = root->GetLeafs();

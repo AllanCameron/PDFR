@@ -9,6 +9,10 @@
 //                                                                           //
 //---------------------------------------------------------------------------//
 
+#include "utilities.h"
+#include "dictionary.h"
+#include "streams.h"
+#include "crypto.h"
 #include "xref.h"
 
 //---------------------------------------------------------------------------//
@@ -93,10 +97,11 @@ void XRef::LocateXRefs_()
   // The first dictionary found after any XRef offset is always a trailer
   // dictionary, though sometimes it doubles as an XRefStream dictionary.
   // We make this first one found the canonical trailer dictionary
-  trailer_dictionary_ = Dictionary(file_string_, xref_locations_[0]);
+  trailer_dictionary_ = make_shared<Dictionary>(
+                          file_string_, xref_locations_[0]);
 
   // Now we follow the pointers to all xrefs sequentially.
-  Dictionary temp_dictionary = trailer_dictionary_;
+  Dictionary temp_dictionary = *trailer_dictionary_;
   while (temp_dictionary.ContainsInts("/Prev"))
   {
     xref_locations_.emplace_back(temp_dictionary.GetInts("/Prev")[0]);
@@ -299,7 +304,7 @@ bool XRef::IsEncrypted() const
 
 Dictionary XRef::GetTrailer() const
 {
-  return trailer_dictionary_;
+  return *trailer_dictionary_;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -309,9 +314,9 @@ Dictionary XRef::GetTrailer() const
 void XRef::CreateCrypto_()
 {
    // if there's no encryption dictionary, there's nothing else to do
-  if (!trailer_dictionary_.HasKey("/Encrypt")) return;
+  if (!trailer_dictionary_->HasKey("/Encrypt")) return;
 
-  int encryption_number = trailer_dictionary_.GetReference("/Encrypt");
+  int encryption_number = trailer_dictionary_->GetReference("/Encrypt");
 
   // No encryption dict - exception?
   if (xref_table_.find(encryption_number) == xref_table_.end()) return;
@@ -320,7 +325,7 @@ void XRef::CreateCrypto_()
   encrypted_ = true;
   size_t starts_at = GetObjectStartByte(encryption_number);
   Dictionary&& dictionary = Dictionary(file_string_, starts_at);
-  encryption_ = make_shared<Crypto>(move(dictionary), trailer_dictionary_);
+  encryption_ = make_shared<Crypto>(move(dictionary), *trailer_dictionary_);
 }
 
 /*---------------------------------------------------------------------------*/

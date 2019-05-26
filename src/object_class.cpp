@@ -9,6 +9,10 @@
 //                                                                           //
 //---------------------------------------------------------------------------//
 
+#include "utilities.h"
+#include "dictionary.h"
+#include "streams.h"
+#include "xref.h"
 #include "object_class.h"
 
 //---------------------------------------------------------------------------//
@@ -32,7 +36,7 @@ Object::Object(shared_ptr<const XRef> t_xref, int t_object_number) :
   if (xref_->File()->substr(start, 20).find("<<") == string::npos)
   {
     // No dictionary found - make blank dictionary for header
-    header_ = Dictionary();
+    header_ = make_shared<Dictionary>(Dictionary());
 
     // Finds start and length of contents
     size_t content_start = xref_->File()->find(" obj", start) + 4;
@@ -41,13 +45,13 @@ Object::Object(shared_ptr<const XRef> t_xref, int t_object_number) :
 
   else // Else the object has a header dictionary
   {
-    header_ = Dictionary(xref_->File(), start);
+    header_ = make_shared<Dictionary>(Dictionary(xref_->File(), start));
 
     // Find the stream (if any)
     stream_location_ = xref_->GetStreamLocation(start);
 
     // The object may contain an object stream that needs unpacked
-    if (header_.GetString("/Type") == "/ObjStm")
+    if (header_->GetString("/Type") == "/ObjStm")
     {
       // Get the object stream
       ReadStreamFromStreamLocations_();
@@ -115,12 +119,12 @@ Object::Object(shared_ptr<Object> t_holder, int t_object_number):
   // Most stream objects consist of just a dictionary
   if (stream_string[0] == '<')
   {
-    header_ = Dictionary(make_shared<string>(stream_string));
+    header_ = make_shared<Dictionary>(make_shared<string>(stream_string));
     stream_ = "";             // stream objects don't have their own stream
   }
   else // The object is not a dictionary - maybe just an array or int etc
   {
-    header_ = Dictionary();   // gets an empty dictionary as header
+    header_ = make_shared<Dictionary>(Dictionary());// empty header
     stream_ = stream_string;  // Call the contents a stream for ease
 
     // Annoyingly, some "objects" in an object stream are just pointers
@@ -142,7 +146,7 @@ Object::Object(shared_ptr<Object> t_holder, int t_object_number):
 
 Dictionary Object::GetDictionary()
 {
-  return header_;
+  return *header_;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -166,7 +170,7 @@ void Object::ApplyFilters_()
   if (xref_->IsEncrypted()) xref_->Decrypt(stream_, object_number_, 0);
 
   // Read filters
-  string filters = header_.GetString("/Filter");
+  string filters = header_->GetString("/Filter");
 
   // Apply filters
   if (filters.find("/FlateDecode") != string::npos) FlateDecode(stream_);

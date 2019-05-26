@@ -47,7 +47,10 @@
  * after its creation.
  */
 
-#include "utilities.h"
+#include<vector>
+#include<string>
+#include<memory>
+#include<unordered_map>
 
 //---------------------------------------------------------------------------//
 

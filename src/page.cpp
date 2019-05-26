@@ -9,6 +9,11 @@
 //                                                                           //
 //---------------------------------------------------------------------------//
 
+#include "utilities.h"
+#include "dictionary.h"
+#include "object_class.h"
+#include "document.h"
+#include "box.h"
 #include "page.h"
 
 //---------------------------------------------------------------------------//
@@ -44,7 +49,7 @@ void Page::ReadBoxes()
   // sometimes the box dimensions are inherited from an ancestor node of the
   // page header. We therefore need to look for the boxes in the page header,
   // then, if they are not found, iteratively search the parent nodes
-  Dictionary box_header = header_;
+  Dictionary box_header = *header_;
   vector<string> box_names {"/BleedBox", "/CropBox", "/MediaBox",
                            "/ArtBox", "/TrimBox"};
   vector<float> minbox;
@@ -77,10 +82,10 @@ void Page::ReadBoxes()
     // stop loop if we have minbox or there are no more parent nodes
   } while (minbox.empty() && has_parent);
 
-  minbox_ = Box(minbox);
+  minbox_ = make_shared<Box>(minbox);
 
   // Get the "rotate" value - will need in future feature development
-  if (header_.HasKey("/Rotate")) rotate_ = header_.GetFloats("/Rotate")[0];
+  if (header_->HasKey("/Rotate")) rotate_ = header_->GetFloats("/Rotate")[0];
 }
 
 /*--------------------------------------------------------------------------*/
@@ -90,10 +95,10 @@ void Page::ReadBoxes()
 void Page::ReadHeader()
 {
   // uses public member of document class to get the appropriate header
-  header_ = document_->GetPageHeader(page_number_);
+  header_ = make_shared<Dictionary>(document_->GetPageHeader(page_number_));
 
   // if the header is not of /type /Page, throw an error
-  if (header_.GetString("/Type") != "/Page")
+  if (header_->GetString("/Type") != "/Page")
   {
     // create an error message in case of missing page
     std::string error_message("No header found for page ");
@@ -110,17 +115,18 @@ void Page::ReadHeader()
 void Page::ReadResources()
 {
   // If /Resources doesn't contain a dictionary it must be a reference
-  if (!header_.ContainsDictionary("/Resources"))
+  if (!header_->ContainsDictionary("/Resources"))
   {
-    if (header_.ContainsReferences("/Resources"))
+    if (header_->ContainsReferences("/Resources"))
     {
-      auto resource_number = header_.GetReference("/Resources");
-      resources_ = document_->GetObject(resource_number)->GetDictionary();
+      auto resource_number = header_->GetReference("/Resources");
+      resources_ = make_shared<Dictionary>(
+        document_->GetObject(resource_number)->GetDictionary());
     }
   }
   else // Resources contains a subdictionary
   {
-    resources_ = header_.GetDictionary("/Resources");
+    resources_ =  make_shared<Dictionary>(header_->GetDictionary("/Resources"));
   }
 }
 
@@ -132,22 +138,23 @@ void Page::ReadResources()
 void Page::ReadFonts()
 {
   // If /Font entry of resources_ isn't a dictionary
-  if (!resources_.ContainsDictionary("/Font"))
+  if (!resources_->ContainsDictionary("/Font"))
   {
     // It must be a reference - follow this to get the dictionary
-    if (resources_.ContainsReferences("/Font"))
+    if (resources_->ContainsReferences("/Font"))
     {
-      auto font_number = resources_.GetReference("/Font");
-      fonts_ = document_->GetObject(font_number)->GetDictionary();
+      auto font_number =  resources_->GetReference("/Font");
+      fonts_ =  make_shared<Dictionary>(
+        document_->GetObject(font_number)->GetDictionary());
     }
   }
   // Otherwise, it is a dictionary, so we get the result
-  else fonts_ = resources_.GetDictionary("/Font");
+  else fonts_ =  make_shared<Dictionary>(resources_->GetDictionary("/Font"));
 
   // We can now iterate through the font dictionary, which will be a sequence
   // of key:value pairs of fontname : font descriptor, where the font descriptor
   // is almost always a reference but can also be a direct dictionary
-  for (auto name_descriptor_pair : fonts_)
+  for (auto name_descriptor_pair : *fonts_)
   {
     auto& font_name = name_descriptor_pair.first;
     auto& font_descriptor = name_descriptor_pair.second;
@@ -156,19 +163,21 @@ void Page::ReadFonts()
     // If the font is not in the fontmap, inserts it
     if (found_font == fontmap_.end())
     {
-      Dictionary font_dict;
+      shared_ptr<Dictionary> font_dict;
 
       // Handle the font descriptor being a direct dictionary
       if (font_descriptor.find("<<") != string::npos)
       {
-        font_dict = Dictionary(make_shared<string>(font_descriptor));
+        font_dict = make_shared<Dictionary>(
+                      make_shared<string>(font_descriptor));
       }
 
       // If it's not a direct dictionary, it must be a reference
       else
       {
-        auto font_reference = fonts_.GetReference(font_name);
-        font_dict = document_->GetObject(font_reference)->GetDictionary();
+        auto font_reference = fonts_->GetReference(font_name);
+        font_dict = make_shared<Dictionary>(
+          document_->GetObject(font_reference)->GetDictionary());
       }
 
       // We should now have a font dictionary from which to create a Font object
@@ -190,7 +199,7 @@ void Page::ReadContents()
     auto root = make_shared<TreeNode<int>>(0);
 
     // use expand_contents() to get page header object numbers
-    ExpandContents(header_.GetReferences("/Contents"), root);
+    ExpandContents(header_->GetReferences("/Contents"), root);
     auto contents = root->GetLeafs();
 
     // Get the contents from each object stream and paste them at the bottom
@@ -214,8 +223,8 @@ void Page::ReadXObjects()
   string xobject_string {};
 
   // first find any xobject entries in the resource dictionary
-  if (resources_.HasKey("/XObject"))
-    xobject_string = resources_.GetString("/XObject");
+  if (resources_->HasKey("/XObject"))
+    xobject_string = resources_->GetString("/XObject");
 
   // Sanity check - the entry shouldn't be empty
   if (xobject_string.empty()) return;
@@ -228,9 +237,9 @@ void Page::ReadXObjects()
   }
 
   // If the /XObject string is a reference, follow the reference to dictionary
-  else if (resources_.ContainsReferences("/XObject"))
+  else if (resources_->ContainsReferences("/XObject"))
   {
-    auto xobject_number = resources_.GetReference("/XObject");
+    auto xobject_number = resources_->GetReference("/XObject");
     xobject_dictionary = document_->GetObject(xobject_number)->GetDictionary();
   }
 
@@ -279,7 +288,7 @@ void Page::ExpandContents(vector<int> t_object_numbers_to_add, Node t_parent)
 
 vector<string> Page::GetFontNames()
 {
-  return this->fonts_.GetAllKeys();
+  return this->fonts_->GetAllKeys();
 }
 
 /*--------------------------------------------------------------------------*/

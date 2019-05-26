@@ -41,7 +41,10 @@
  * page contents and Xobjects for example.
  */
 
-#include "box.h"
+#include "font.h"
+
+class Box;
+template <class T> class TreeNode;
 
 //---------------------------------------------------------------------------//
 
@@ -81,7 +84,7 @@ class Page
   std::shared_ptr<Font> GetFont(const std::string& font_name);
 
   // Returns a Box object describing the page's bounding box.
-  inline Box GetMinbox() const { return minbox_;}
+  inline std::shared_ptr<Box> GetMinbox() const { return minbox_;}
 
   // Since the font map is a static object, it should be cleared at the end
   // of processing any particular document. Important!
@@ -89,14 +92,14 @@ class Page
 
  private:
   // private data members
-  std::shared_ptr<Document> document_;        // Pointer to containing document
-  int                       page_number_;     // [Zero-indexed] page number
-  Dictionary                header_,          // The page's header dictionary
-                            resources_,       // Resource sub-dictionary
-                            fonts_;           // Font sub-dictionary
-  Box                       minbox_;          // Page bounding Box
-  std::string               content_string_;  // The page PostScript program
-  double                    rotate_;          // Page rotation in degrees
+  std::shared_ptr<Document>   document_;        // Pointer to main document
+  int                         page_number_;     // [Zero-indexed] page number
+  std::shared_ptr<Dictionary> header_,          // The page's header dictionary
+                              resources_,       // Resource sub-dictionary
+                              fonts_;           // Font sub-dictionary
+  std::shared_ptr<Box>        minbox_;          // Page bounding Box
+  std::string                 content_string_;  // The page PostScript program
+  double                      rotate_;          // Page rotation in degrees
 
   // A map of Xobject strings, which are fragments of page description programs
   std::unordered_map<std::string, std::string> xobjects_;

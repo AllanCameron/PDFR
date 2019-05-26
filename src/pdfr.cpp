@@ -9,8 +9,19 @@
 //                                                                           //
 //---------------------------------------------------------------------------//
 
+#include "utilities.h"
+#include "dictionary.h"
+#include "xref.h"
+#include "object_class.h"
+#include "document.h"
+#include "page.h"
+#include "tokenizer.h"
+#include "parser.h"
+#include "letter_grouper.h"
+#include "word_grouper.h"
+#include "whitespace.h"
+#include "line_grouper.h"
 #include "pdfr.h"
-#include<list>
 
 //---------------------------------------------------------------------------//
 
@@ -223,7 +234,7 @@ List get_single_text_elements(shared_ptr<Page> t_page_ptr)
                                     Named("stringsAsFactors") = false);
 
   // Return it as a list along with the page dimensions
-  return List::create(Named("Box") = t_page_ptr->GetMinbox().vector(),
+  return List::create(Named("Box") = t_page_ptr->GetMinbox()->vector(),
                       Named("Elements") = move(db));
 }
 
@@ -259,7 +270,7 @@ List get_text_boxes(shared_ptr<Page> page_ptr)
                     Named("size")             = move(text_table.GetSizes()),
                     Named("stringsAsFactors") = false);
 
-return List::create(Named("Box") = page_ptr->GetMinbox().vector(),
+return List::create(Named("Box") = page_ptr->GetMinbox()->vector(),
                     Named("Elements") = move(db));
 }
 

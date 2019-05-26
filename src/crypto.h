@@ -52,8 +52,13 @@
  * resides.
  */
 
-#include "dictionary.h"
+#include<string>
+#include<vector>
 #include<deque>         // Needed for md5mix function
+#include<memory>
+
+class Dictionary;
+
 
 //---------------------------------------------------------------------------//
 // The md5 algorithm makes use of 4-byte numbers (unsigned long or uint32_t).
@@ -69,8 +74,7 @@ class Crypto
 {
  public:
   // Constructors
-  Crypto(){};
-  Crypto(Dictionary encryption_dictionary, Dictionary trailer_dictionary);
+  Crypto(const Dictionary& encryption_dictionary, const Dictionary& trailer);
 
   // This is the main decryption function which is also the public interface for
   // the class. It takes the raw stream, the object and generation numbers then
@@ -81,8 +85,8 @@ class Crypto
 
 private:
   // private data members
-  Dictionary encryption_dictionary_;
-  Dictionary trailer_;
+  const Dictionary& encryption_dictionary_;
+  const Dictionary& trailer_;
   int        revision_;
   std::vector<uint8_t> filekey_;
   static const std::vector<uint8_t> default_user_password_;

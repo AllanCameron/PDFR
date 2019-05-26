@@ -15,7 +15,8 @@
 
 #define PDFR_LINEGOUPER
 
-#include "whitespace.h"
+#include "text_element.h"
+
 
 //---------------------------------------------------------------------------//
 /* The LineGrouper class takes the output of the whitespace class, which is
@@ -52,7 +53,7 @@ class LineGrouper
   LineGrouper(PageBox page_box_from_whitespace);
 
   // The output is also a vector of TextBoxes
-  inline TextBox Output() { return text_boxes_.CastToTextBox(); }
+  inline TextBox Output() { return text_boxes_.CastToTextBox();}
 
  private:
   void FindBreaks_(TextBox&);   // Identifies paragraph breaks
