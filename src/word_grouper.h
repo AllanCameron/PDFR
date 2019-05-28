@@ -41,7 +41,7 @@
  * aligned text is intolerant of left or right joins.
  */
 
-#include "text_element.h"
+#include "textbox.h"
 
 //---------------------------------------------------------------------------//
 // The word grouper class takes a pointer to a letter grouper object in its

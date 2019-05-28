@@ -54,7 +54,7 @@
 #include<unordered_map>
 #include<functional>
 #include<utility>
-#include "text_element.h"
+#include "textbox.h"
 
 class Page;
 

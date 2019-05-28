@@ -52,7 +52,7 @@
  * on size, shape, position and order on the page.
  */
 
-#include "text_element.h"
+#include "textbox.h"
 
 //---------------------------------------------------------------------------//
 // The whitespace class takes a word grouper as an argument in its constructor

@@ -15,7 +15,7 @@
 
 #define PDFR_LINEGOUPER
 
-#include "text_element.h"
+#include "textbox.h"
 
 
 //---------------------------------------------------------------------------//

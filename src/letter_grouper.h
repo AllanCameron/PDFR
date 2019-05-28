@@ -27,7 +27,7 @@
  * as paragraphs, headers and tables.
  */
 
-#include "text_element.h"
+#include "textbox.h"
 
 //----------------------------------------------------------------------------//
 // The LetterGrouper class contains a constructor, an output map of results,
