@@ -41,6 +41,7 @@
 class LetterGrouper
 {
  public:
+  using TextPointer = std::shared_ptr<TextElement>;
   // constructor.
   LetterGrouper(std::unique_ptr<TextBox>);
 

@@ -62,6 +62,7 @@
 class Whitespace
 {
  public:
+  using TextPointer = std::shared_ptr<TextElement>;
   // constructor
   Whitespace(std::unique_ptr<TextBox> ouput_from_wordgrouper);
 
@@ -78,7 +79,7 @@ class Whitespace
   float max_line_space_;    // The average font size on the page
   std::vector<Box> boxes_;  // Used in construction AND output
   std::vector<std::shared_ptr<Vertex>> vertices_; // Used to make polygons
-  static const size_t DIVISIONS_ = 400; // number of strips used for whitespace
+  static const size_t DIVISIONS_ = 200; // number of strips used for whitespace
 
   void GetMaxLineSize_();
   void PageDimensions_();    // Gets page margins

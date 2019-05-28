@@ -67,13 +67,13 @@ class TextElement : public Box
   constexpr static float MAX_WORD_GAP = 0.5;
   constexpr static float MAX_ALIGN_IGNORE = 0.0;
 
-  inline void MakeLeftEdge()  { this->SetFlag(0x08); }
+  inline void MakeLeftEdge()  { this->SetFlag(0x04); }
   inline void MakeRightEdge() { this->SetFlag(0x02); }
-  inline void MakeCentred()   { this->SetFlag(0x04); }
+  inline void MakeCentred()   { this->SetFlag(0x06); }
   inline float GetSize() const override {return this->size_;}
-  inline bool IsLeftEdge()  const { return this->HasFlag(0x08); }
+  inline bool IsLeftEdge()  const { return this->HasFlag(0x04); }
   inline bool IsRightEdge() const { return this->HasFlag(0x02); }
-  inline bool IsCentred()   const { return this->HasFlag(0x04); }
+  inline bool IsCentred()   const { return this->HasFlag(0x06); }
 
   inline void SetJoin(TextPointer element) { this->join_ = element;}
   inline TextPointer GetJoin()             { return this->join_; }
@@ -148,10 +148,6 @@ class TextElement : public Box
 };
 
 //---------------------------------------------------------------------------//
-
-typedef std::shared_ptr<TextElement> TextPointer;
-
-//---------------------------------------------------------------------------//
 // The TextBox will be the main data repository for our output. It inherits from
 // Box and contains a vector of text_elements. To make it easy to work with, it
 // contains functions that allow us to use it as if it was just a vector of
@@ -159,6 +155,7 @@ typedef std::shared_ptr<TextElement> TextPointer;
 
 class TextBox : public Box
 {
+  using TextPointer = std::shared_ptr<TextElement>;
   using TextBoxIterator = std::vector<TextPointer>::iterator;
   using TextBoxConstIterator = std::vector<TextPointer>::const_iterator;
 
@@ -230,6 +227,10 @@ class TextBox : public Box
   }
 
   void RemoveDuplicates();
+
+  // Divides a TextBox into two
+  TextBox SplitIntoTopAndBottom(float divide_at_this_y_value);
+  TextBox SplitIntoLeftAndRight(float divide_at_this_x_value);
 
  private:
   // The data member

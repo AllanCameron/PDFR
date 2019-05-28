@@ -49,6 +49,8 @@
 class LineGrouper
 {
  public:
+  using TextPointer = std::shared_ptr<TextElement>;
+
   // Constructor takes the output of WordGrouper - a vector of TextBoxes
   LineGrouper(PageBox page_box_from_whitespace);
 
@@ -59,9 +61,6 @@ class LineGrouper
   void FindBreaks_(TextBox&);   // Identifies paragraph breaks
   void LineEndings_(TextBox&);  // Adjusts line endings to facilitate pasting
   void PasteLines_(TextBox&);   // Pastes TextElements in the TextBoxes together
-
-  // Divides a TextBox into two by a horizontal line given as a y value
-  void SplitBox_(TextBox& box_to_be_split, float divide_at_this_y_value);
 
   // Defines the reading order for elements in a text box. If an element is
   // higher than another, it comes before it. If it is at the same height but

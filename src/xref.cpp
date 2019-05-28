@@ -178,7 +178,7 @@ void XRef::ReadXRefFromString_(string& t_xref_string)
 
   // A valid XRef has >= 4 ints in it and must have an even number of ints
   auto xref_size = all_ints.size();
-  if (xref_size < 4 || xref_size % 2) throw runtime_error("Malformed XRef");
+  if (xref_size % 2) { throw runtime_error(t_xref_string); }
 
   // This loop starts on the second row of the table. Even numbers are the
   // byte offsets and odd numbers are the in_use numbers

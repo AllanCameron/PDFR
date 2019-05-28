@@ -206,3 +206,80 @@ string TextElement::GetFontName() const
 {
   return this->font_->GetFontName();
 }
+
+
+//----------------------------------------------------------------------------//
+// Divides a TextBox into two by a horizontal line given as a y value
+
+TextBox TextBox::SplitIntoTopAndBottom(float t_top_edge)
+{
+  if (this->empty()) return TextBox(); // Don't split the box if it's empty
+
+  // Lambda to find elements whose bottom edge is below the cutoff
+  auto FindLower = [&](TextPointer text_ptr) -> bool
+                   { return text_ptr->GetTop() < t_top_edge; };
+
+  // Gets an iterator to the first element below the cutoff
+  auto split_at = find_if(this->begin(), this->end(), FindLower);
+
+  // We won't split the box if all or none of the elements would be moved
+  // to a new box
+  if (split_at == this->begin() || split_at == this->end()) return TextBox();
+
+  // Create a new textbox using a vector of all elements below the cutoff
+  // and a down-cast copy of the text box
+  std::vector<TextPointer> lower_contents {split_at, this->end()};
+  auto lower = TextBox(std::move(lower_contents), (Box) *this);
+
+  // Now we can erase the lower elements we have just copied from the upper box
+  this->erase(split_at, this->end());
+
+  // We also need to readjust the margins of our bounding boxes based on their
+  // new contents
+  this->SetBottom(this->back()->GetBottom());
+  lower.SetTop(lower.front()->GetTop());
+
+  // The upper box has been changed in place,
+  return lower;
+}
+
+//----------------------------------------------------------------------------//
+// Divides a TextBox into two by a vertical line given as an x value
+
+TextBox TextBox::SplitIntoLeftAndRight(float t_left_edge)
+{
+  if (this->empty()) return TextBox(); // Don't split the box if it's empty
+
+    // This lambda defines a TextPointer sort from left to right
+  auto LeftSort = [ ](const TextPointer& a, const TextPointer& b) -> bool
+                  { return a->GetLeft() < b->GetLeft(); };
+
+  std::stable_sort(this->begin(), this->end(), LeftSort);
+
+  // Lambda to find elements whose left edge is below the cutoff
+  auto FindLeftMost = [&](TextPointer text_ptr) -> bool
+                   { return text_ptr->GetLeft() < t_left_edge; };
+
+  // Gets an iterator to the first element right of the cutoff
+  auto split_at = find_if(this->begin(), this->end(), FindLeftMost);
+
+  // We won't split the box if all or none of the elements would be moved
+  // to a new box
+  if (split_at == this->begin() || split_at == this->end()) return TextBox();
+
+  // Create a new textbox using a vector of all elements below the cutoff
+  // and a down-cast copy of the text box
+  std::vector<TextPointer> rightmost_contents {split_at, this->end()};
+  auto rightmost = TextBox(std::move(rightmost_contents), (Box) *this);
+
+  // Now we can erase the lower elements we have just copied from the upper box
+  this->erase(split_at, this->end());
+
+  // We also need to readjust the margins of our bounding boxes based on their
+  // new contents
+  this->SetRight(this->back()->GetRight());
+  rightmost.SetLeft(rightmost.front()->GetTop());
+
+  // The upper box has been changed in place,
+  return rightmost;
+}

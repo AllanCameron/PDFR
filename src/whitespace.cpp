@@ -67,26 +67,32 @@ void Whitespace::GetMaxLineSize_()
 
 void Whitespace::PageDimensions_()
 {
+  auto page_right  = text_box_->GetRight();
+  auto page_left   = text_box_->GetLeft();
+  auto page_top    = text_box_->GetTop();
+  auto page_bottom = text_box_->GetBottom();
+
   for (auto& element : *text_box_)
   {
-    if (element->GetRight() > text_box_->GetRight())
+
+    if (element->GetRight() > page_right)
     {
-      text_box_->SetRight(text_box_->GetRight() + 10.0);
+      text_box_->SetRight(page_right + 10.0);
     }
 
-    if (element->GetLeft() < text_box_->GetLeft())
+    if (element->GetLeft() < page_left)
     {
-      text_box_->SetLeft(text_box_->GetLeft() - 10.0);
+      text_box_->SetLeft(page_left - 10.0);
     }
 
-    if ((element->GetBottom() + element->GetSize()) > text_box_->GetTop())
+    if ((element->GetBottom() + element->GetSize()) > page_top)
     {
-      text_box_->SetTop(text_box_->GetTop() + 10.0);
+      text_box_->SetTop(page_top + 10.0);
     }
 
-    if (element->GetBottom() < text_box_->GetBottom())
+    if (element->GetBottom() < page_bottom)
     {
-      text_box_->SetBottom(text_box_->GetBottom() - 10.0);
+      text_box_->SetBottom(page_bottom - 10.0);
     }
   }
 }

@@ -128,6 +128,8 @@ class Box
   // Default constructor
   Box(){}
 
+  virtual ~Box() = default; //Box is a base class - make its destructor virtual
+
   // We can use the direction enum to access the edges of the box instead of
   // using getters if we need to calculate the edge we're interested in getting.
   inline float Edge(int t_side) const
@@ -147,7 +149,7 @@ class Box
   inline float GetRight()  const   { return this->right_              ;}
   inline float GetTop()    const   { return this->top_                ;}
   inline float GetBottom() const   { return this->bottom_             ;}
-  inline virtual float GetSize()   const   { return this->top_ - this->bottom_;}
+  inline virtual float GetSize() const { return this->top_ - this->bottom_;}
   inline bool  HasFlag(uint8_t t_flag) const
   {
     return (flags_ & t_flag) == t_flag;
@@ -300,7 +302,7 @@ class Box
           right_,
           top_,
           bottom_;
-  uint8_t flags_;
+  uint8_t flags_; // void-void-void-void-void- no left - no right - delete
 };
 
 
