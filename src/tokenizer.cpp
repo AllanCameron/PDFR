@@ -296,8 +296,14 @@ void Tokenizer::EscapeState_()
     PushBuffer_(HEXSTRING, STRING);
     it_--;  // Decrement to await next char
   }
+  // If a "space" i.e. linebreak comes after the backslash, this is just a
+  // pdf end-of-line marker with no semantic meaning. The backslash and the
+  // following character are therefore skipped.
+  else if (char_lookup_[*it_] == SPC)
+  {
 
-  // If not a digit, get escaped char
+  }
+  // If not a digit or space, get escaped char
   else buffer_.append(it_, it_ + 1);
 }
 
