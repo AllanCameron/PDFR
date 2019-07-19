@@ -139,6 +139,10 @@ class Encoding
   // finds CMap if any and co-ordinates parsers to create mapping
   void MapUnicode_();
 
+  // Handles type 1 fonts
+  void HandleTypeOneFont_();
+  void ParseTypeOneFont_(std::string);
+
   // Helper function for parser
   void Write_(DifferencesState& state_to_push_to_entries,
               std::string& string_to_push_to_entries);

@@ -14,6 +14,7 @@
 #include "object_class.h"
 #include "document.h"
 #include "encoding.h"
+#include <iostream>
 
 using namespace std;
 
@@ -240,6 +241,8 @@ void Encoding::ReadEncoding_()
   // Reads the encoding entry
   string encoding_name = encoding_dictionary.GetString("/Encoding");
 
+  string subtype = encoding_dictionary.GetString("/Subtype");
+
   // If an encoding dictionary exists, gets it and read the baseencoding entry
   if (font_dictionary_->ContainsReferences("/Encoding"))
   {
@@ -273,6 +276,8 @@ void Encoding::ReadEncoding_()
     {
       encoding_map_[raw_char] = (Unicode) raw_char;
     }
+
+    if(encoding_name == "" && subtype == "/Type1") HandleTypeOneFont_();
   }
   // Call Differences() if a /Differences entry is found to modify encoding
   if (encoding_dictionary.HasKey("/Differences"))
@@ -302,4 +307,45 @@ Unicode Encoding::Interpret(const RawChar& t_raw)
 shared_ptr<unordered_map<RawChar, Unicode>> Encoding::GetEncodingKeys()
 {
   return make_shared<unordered_map<RawChar, Unicode>>(encoding_map_);
+}
+
+
+/*---------------------------------------------------------------------------*/
+// Handles cases of missing /Encoding entry where this is a type1 font
+
+void Encoding::HandleTypeOneFont_()
+{
+  if(font_dictionary_->ContainsReferences("/FontDescriptor"))
+  {
+    auto descriptor_number = font_dictionary_->GetReference("/FontDescriptor");
+    auto descriptor_object_ptr = document_->GetObject(descriptor_number);
+    auto descriptor_dictionary = descriptor_object_ptr->GetDictionary();
+    auto encoding_name = descriptor_dictionary.GetString("/Encoding");
+    if(encoding_name == "")
+    {
+      if(descriptor_dictionary.ContainsReferences("/FontFile"))
+      {
+        auto fontfile_number = descriptor_dictionary.GetReference("/FontFile");
+        auto fontfile_object_ptr = document_->GetObject(fontfile_number);
+        auto fontfile_string = fontfile_object_ptr->GetStream();
+        ParseTypeOneFont_(fontfile_string);
+      }
+    }
+  }
+}
+
+/*---------------------------------------------------------------------------*/
+// Parses a type 1 font file
+
+void Encoding::ParseTypeOneFont_(std::string t_fontfile_string)
+{
+  string the_end =  "currentdict end";
+  auto fontfile_listing = CarveOut(t_fontfile_string, "/Encoding", the_end);
+  auto entries = MultiCarve(fontfile_listing, "dup ", " put");
+  for(auto entry : entries)
+  {
+    auto name_start  = entry.find("/");
+    auto adobe_name = entry.substr(name_start, entry.size() - name_start);
+    encoding_map_[stoi(entry)] = adobe_to_unicode_.at(adobe_name);
+  }
 }

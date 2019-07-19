@@ -21,7 +21,7 @@
  * obstruction (i.e. one or more glyphs) as they go from the top to the bottom
  * of the page are divided so they do not overlap the glyphs. Thus, if there
  * are n rows of text that the strip would otherwise cross, the strip is
- * divided into n + segments.
+ * divided into n + 1 segments.
  *
  * Once the strips are all calculated, they will cover all the significant empty
  * spaces (henceforth whitespace) in a document, leaving islands of text content
