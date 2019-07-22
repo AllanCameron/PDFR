@@ -31,10 +31,12 @@ typedef void (Parser::*FunctionPointer)();
 
 std::unordered_map<std::string, FunctionPointer> Parser::function_map_ =
 {
-  {"Q",   &Q_}, {"q",   &q_}, {"BT", &BT_}, {"ET", &ET_}, {"cm", &cm_},
-  {"Tm", &Tm_}, {"Tf", &Tf_}, {"Td", &Td_}, {"Th", &TH_}, {"Tw", &TW_},
-  {"Tc", &TC_}, {"TL", &TL_}, {"T*", &T__}, {"TD", &TD_}, {"'",  &Ap_},
-  {"TJ", &TJ_}, {"Tj", &TJ_}
+  {"Q",  &Parser::Q_ }, {"q",  &Parser::q_ }, {"BT", &Parser::BT_},
+  {"ET", &Parser::ET_}, {"cm", &Parser::cm_}, {"Tm", &Parser::Tm_},
+  {"Tf", &Parser::Tf_}, {"Td", &Parser::Td_}, {"Th", &Parser::TH_},
+  {"Tw", &Parser::TW_}, {"Tc", &Parser::TC_}, {"TL", &Parser::TL_},
+  {"T*", &Parser::T__}, {"TD", &Parser::TD_}, {"'",  &Parser::Ap_},
+  {"TJ", &Parser::TJ_}, {"Tj", &Parser::TJ_}
 };
 
 //---------------------------------------------------------------------------//
