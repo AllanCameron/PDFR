@@ -17,8 +17,7 @@
  */
 
 #include "streams.h"
-#include "../src/external/miniz.h"
-#include "../src/external/miniz.c"
+#include "miniz.h"
 
 using namespace std;
 
