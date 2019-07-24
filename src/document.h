@@ -118,8 +118,7 @@ class Document
   // We need to use an <int> instantiation of the TreeNode template class
   // defined in utilities.h to parse the tree structure of the /Pages entry
   // in the catalog dictionary. This function effectively builds the pages tree.
-  void ExpandKids_(const std::vector<int>& object_numbers_to_add_to_tree,
-                  std::shared_ptr<TreeNode<int>> node_to_add_them_to);
+  std::vector<int> ExpandKids_(const std::vector<int>& t_object_numbers);
 };
 
 //---------------------------------------------------------------------------//

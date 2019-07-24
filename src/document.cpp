@@ -14,6 +14,9 @@
 #include "xref.h"
 #include "object_class.h"
 #include "document.h"
+#include<iostream>
+#include<Rcpp.h>
+#include<iterator>
 
 
 //---------------------------------------------------------------------------//
@@ -54,7 +57,7 @@ void Document::BuildDocument_()
 {
   xref_ = make_shared<const XRef>(make_shared<string>(file_string_));
   ReadCatalog_();             // Gets the catalog dictionary
-  ReadPageDirectory_();             // Gets the /Pages dictionary
+  ReadPageDirectory_();       // Gets the /Pages dictionary
 }
 
 /*---------------------------------------------------------------------------*/
@@ -123,14 +126,9 @@ void Document::ReadPageDirectory_()
     throw runtime_error("No Kids entry in /Pages");
   }
 
-  // Create the page directory tree. Start with the pages object as root node
-  auto root = make_shared<TreeNode<int>>(page_object_number);
-
   // Populate the tree
-  ExpandKids_(page_directory_->GetReferences("/Kids"), root);
+  page_object_numbers_ = ExpandKids_(page_directory_->GetReferences("/Kids"));
 
-  // Get the leafs of the tree
-  page_object_numbers_ = root->GetLeafs();
 }
 
 /*---------------------------------------------------------------------------*/
@@ -153,26 +151,28 @@ void Document::ReadPageDirectory_()
 // promising, but it is likely to be complex, and it is not clear that it would
 // lead to a major speedup. Getting an object at present takes about 36us.
 
-void Document::ExpandKids_(const vector<int>& t_object_numbers,
-                          shared_ptr<TreeNode<int>> t_parent_node)
+std::vector<int> Document::ExpandKids_(const vector<int>& t_object_numbers)
 {
-  // This function is only called from a single point that is already range
-  // checked, so does not need error checked.
-
-  // Create new children tree nodes with this one as parent
-  t_parent_node->AddKids(t_object_numbers);
-
-  // Get a vector of pointers to the new nodes
-  auto kid_nodes = t_parent_node->GetKids();
-
-  // For each new node get a vector of ints for its kid nodes
-  for (auto& kid : kid_nodes)
+  std::list<int> kids_list(t_object_numbers.begin(), t_object_numbers.end());
+  auto kid = kids_list.begin();
+  while (kid != kids_list.end())
   {
-    auto refs = GetObject(kid->Get())->GetDictionary().GetReferences("/Kids");
-
-    // If it has children, use recursion to get them
-    if (!refs.empty()) ExpandKids_(refs, kid);
+    auto refs = GetObject(*kid)->GetDictionary().GetReferences("/Kids");
+    if (!refs.empty())
+    {
+      for(auto new_kid : refs) kids_list.insert(kid, new_kid);
+      auto erase_point = kid;
+      kids_list.erase(erase_point);
+      kid = std::prev(kid, refs.size());
+    }
+    else
+    {
+      ++kid;
+    }
   }
+
+  std::vector<int> result(kids_list.begin(), kids_list.end());
+  return result;
 }
 
 /*---------------------------------------------------------------------------*/
