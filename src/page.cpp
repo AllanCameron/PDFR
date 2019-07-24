@@ -15,6 +15,8 @@
 #include "document.h"
 #include "box.h"
 #include "page.h"
+#include<list>
+#include<iterator>
 
 //---------------------------------------------------------------------------//
 
@@ -195,20 +197,16 @@ void Page::ReadFonts()
 
 void Page::ReadContents()
 {
-     // get all leaf nodes of the contents tree using expandContents()
-    auto root = make_shared<TreeNode<int>>(0);
+  // use expand_contents() to get page header object numbers
+  auto contents = ExpandContents(header_->GetReferences("/Contents"));
 
-    // use expand_contents() to get page header object numbers
-    ExpandContents(header_->GetReferences("/Contents"), root);
-    auto contents = root->GetLeafs();
-
-    // Get the contents from each object stream and paste them at the bottom
-    // of the pagestring with a line break after each one
-    for (auto element : contents)
-    {
-      content_string_.append(document_->GetObject(element)->GetStream());
-      content_string_.append(string("\n"));
-    }
+  // Get the contents from each object stream and paste them at the bottom
+  // of the pagestring with a line break after each one
+  for (auto element : contents)
+  {
+    content_string_.append(document_->GetObject(element)->GetStream());
+    content_string_.append(string("\n"));
+  }
 }
 
 /*---------------------------------------------------------------------------*/
@@ -263,24 +261,29 @@ void Page::ReadXObjects()
 // but it is possible to have nested content trees. In any case we only want
 // the leaves of the content tree, which are found by this algorithm
 
-void Page::ExpandContents(vector<int> t_object_numbers_to_add, Node t_parent)
+vector<int> Page::ExpandContents(vector<int> t_object_numbers)
 {
-  // Create new children tree nodes with this one as parent
-  t_parent->AddKids(t_object_numbers_to_add);
-
-  // Get a vector of pointers to the new nodes
-  auto kid_nodes = t_parent->GetKids();
-
-  // Now for each get a vector of ints for its kid nodes
-  for (auto& kid : kid_nodes)
+  std::list<int> kids_list(t_object_numbers.begin(), t_object_numbers.end());
+  auto kid = kids_list.begin();
+  while (kid != kids_list.end())
   {
-    // Read the contents from the dictionary entry
-    auto kid_dictionary = document_->GetObject(kid->Get())->GetDictionary();
-    auto content_nodes  = kid_dictionary.GetReferences("/Contents");
-
-    // If it has kids, use recursion to get them
-    if (!content_nodes.empty()) ExpandContents(content_nodes, kid);
+    auto content_dictionary = document_->GetObject(*kid)->GetDictionary();
+    auto refs = content_dictionary.GetReferences("/Contents");
+    if (!refs.empty())
+    {
+      for(auto new_kid : refs) kids_list.insert(kid, new_kid);
+      auto erase_point = kid;
+      kids_list.erase(erase_point);
+      kid = std::prev(kid, refs.size());
+    }
+    else
+    {
+      ++kid;
+    }
   }
+
+  std::vector<int> result(kids_list.begin(), kids_list.end());
+  return result;
 }
 
 /*--------------------------------------------------------------------------*/

@@ -116,8 +116,7 @@ class Page
   void ReadContents();     // find content objects to Write contentstring
 
   // Gets the leaf nodes of a content tree
-  using Node = std::shared_ptr<TreeNode<int>>;
-  void ExpandContents(std::vector<int> object_numbers, Node node_to_append);
+  std::vector<int> ExpandContents(std::vector<int> object_numbers);
 };
 
 //---------------------------------------------------------------------------//
