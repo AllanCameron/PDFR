@@ -126,7 +126,7 @@ void Document::ReadPageDirectory_()
     throw runtime_error("No Kids entry in /Pages");
   }
 
-  // Populate the tree
+  // Populate the page object numbers by expanding the /Kids references
   page_object_numbers_ = ExpandKids_(page_directory_->GetReferences("/Kids"));
 
 }
@@ -137,40 +137,60 @@ void Document::ReadPageDirectory_()
 // of the /Pages dictionary. Unfortunately, sometimes with a large document,
 // the pointers do not point directly to page descriptors, but to further
 // /Pages dictionaries with /Kids entries that act as parent nodes for further
-// /Pages dictionaries and so on. This is a tree structure, and for our purposes
-// we only want the leaf nodes of the tree. This algorithm uses recursion to
-// populate the nodes of the tree class defined in utilities.h.
+// /Pages dictionaries and so on. This is a tree structure, but my attempt to
+// model this with a tree structure caused runtime errors on 64 bit
+// architectures, so I've created a simpler algorithm using std::list instead.
 //
 // This function takes a lot of the time needed for document creation. It is
 // not that the algorithm is particularly slow; rather, it has to create all the
 // objects it comes across, and there are at least as many of these are there
-// are pages. Options for speeding this up include getting only the objects
-// needed for a particular page's creation, which would mean a major change to
-// the way the program works depending on user input, and only getting object
-// streams for an object when they are requested. This second way is more
-// promising, but it is likely to be complex, and it is not clear that it would
-// lead to a major speedup. Getting an object at present takes about 36us.
+// are pages.
 
 std::vector<int> Document::ExpandKids_(const vector<int>& t_object_numbers)
 {
+  // We first copy the vector over to a list because we may need to do a lot
+  // of insertions depending on how big the document is, and vectors are not
+  // efficient for this purpose.
   std::list<int> kids_list(t_object_numbers.begin(), t_object_numbers.end());
+
+  // Define an iterator to erase root nodes and replace with child nodes.
   auto kid = kids_list.begin();
+
+  // We now move through the list from left to right. For each number we come
+  // across, we look up its object dictionary and find out whether it has child
+  // nodes (i.e. a /Kids entry). If it doesn't, it is a leaf node (i.e. it is
+  // a page header dictionary) and we increment our iterator. If it does have
+  // child nodes, we look them up, insert them (they are inserted before the
+  // index node where the iterator sits). Before we erase the root node, we
+  // need an iterator that points to the first of the new child nodes because
+  // we will also need to examine these for /Kids entries. We therefore copy
+  // our iterator while it is on the root node to record an "erase point", back
+  // up our main iterator by the number of new nodes we have inserted, and
+  // finally erase the root node. This leaves us ready to perform the next loop.
   while (kid != kids_list.end())
   {
+    // Look up the /Kids entry to see whether this is a root or leaf node
     auto refs = GetObject(*kid)->GetDictionary().GetReferences("/Kids");
+
+    // If refs contains at least one member, the current node is a root node.
+    // We therefore need to replace it with its child nodes.
     if (!refs.empty())
     {
-      for(auto new_kid : refs) kids_list.insert(kid, new_kid);
+      for (auto new_kid : refs)
+      {
+        kids_list.insert(kid, new_kid); // Insert is OK since this is a list
+      }
       auto erase_point = kid;
-      kids_list.erase(erase_point);
       kid = std::prev(kid, refs.size());
+      kids_list.erase(erase_point);
     }
-    else
+    else // If there are no /Kids, this is a leaf node - increment to next node
     {
       ++kid;
     }
   }
 
+  // Remember to convert the list back into a vector for return
   std::vector<int> result(kids_list.begin(), kids_list.end());
   return result;
 }

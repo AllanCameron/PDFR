@@ -346,6 +346,11 @@ void Encoding::ParseTypeOneFont_(std::string t_fontfile_string)
   {
     auto name_start  = entry.find("/");
     auto adobe_name = entry.substr(name_start, entry.size() - name_start);
+    if (adobe_to_unicode_.find(adobe_name) == adobe_to_unicode_.end())
+    {
+      string message = "Couldn't find " + adobe_name + " in adobe map";
+      throw runtime_error(message);
+    }
     encoding_map_[stoi(entry)] = adobe_to_unicode_.at(adobe_name);
   }
 }

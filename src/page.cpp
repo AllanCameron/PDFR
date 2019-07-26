@@ -17,6 +17,7 @@
 #include "page.h"
 #include<list>
 #include<iterator>
+#include<iostream>
 
 //---------------------------------------------------------------------------//
 
@@ -103,8 +104,8 @@ void Page::ReadHeader()
   if (header_->GetString("/Type") != "/Page")
   {
     // create an error message in case of missing page
-    std::string error_message("No header found for page ");
-    error_message += std::to_string(page_number_);
+    string error_message("No header found for page ");
+    error_message += to_string(page_number_);
     throw runtime_error(error_message);
   }
 }
@@ -197,7 +198,7 @@ void Page::ReadFonts()
 
 void Page::ReadContents()
 {
-  // use expand_contents() to get page header object numbers
+  // Call ExpandContents() to get page header object numbers
   auto contents = ExpandContents(header_->GetReferences("/Contents"));
 
   // Get the contents from each object stream and paste them at the bottom
@@ -222,7 +223,9 @@ void Page::ReadXObjects()
 
   // first find any xobject entries in the resource dictionary
   if (resources_->HasKey("/XObject"))
+  {
     xobject_string = resources_->GetString("/XObject");
+  }
 
   // Sanity check - the entry shouldn't be empty
   if (xobject_string.empty()) return;
@@ -244,7 +247,7 @@ void Page::ReadXObjects()
   // We now have a dictionary of {xobject name: ref} from which to get xobjects
   for (auto& entry : xobject_dictionary)
   {
-    std::vector<int> xobjects = xobject_dictionary.GetReferences(entry.first);
+    vector<int> xobjects = xobject_dictionary.GetReferences(entry.first);
 
     // map xobject strings to the xobject names
     if (!xobjects.empty())
@@ -255,34 +258,56 @@ void Page::ReadXObjects()
 }
 
 /*---------------------------------------------------------------------------*/
-// This is similar to the expandKids() method in document class, in that it
+// This is similar to the ExpandKids() method in document class, in that it
 // starts with a vector of references to objects which act as nodes of a tree
 // structure. Most of the time these point straight to the content object,
 // but it is possible to have nested content trees. In any case we only want
-// the leaves of the content tree, which are found by this algorithm
+// the leaves of the content tree, which are found by this algorithm.
 
 vector<int> Page::ExpandContents(vector<int> t_object_numbers)
 {
-  std::list<int> kids_list(t_object_numbers.begin(), t_object_numbers.end());
-  auto kid = kids_list.begin();
-  while (kid != kids_list.end())
+  // We copy our supplied vector to a list, as this is a better container for
+  // multiple in-situ inserts
+  list<int> contents_list(t_object_numbers.begin(), t_object_numbers.end());
+
+  // We need an iterator to insert / erase nodes from our list
+  auto kid = contents_list.begin();
+
+  // For each entry in the list, we look up that object to find if it has a
+  // /Contents entry. If not, this is a leaf node and the contents will be
+  // given by this object's stream. If there is a /Contents entry, we obtain
+  // its references and add them to the list, after which we erase the root node
+  // then back up to repeat the process for each of the child nodes.
+  while (kid != contents_list.end())
   {
+    // Get the dictionary of the object indicated by the node
     auto content_dictionary = document_->GetObject(*kid)->GetDictionary();
+
+    // Check whether the dictionary contains /Contents references
     auto refs = content_dictionary.GetReferences("/Contents");
+
+    // If it contains references, add them to the list and delete the root node
+    // before decrementing the iterator to the first of the new nodes, which are
+    // inserted BEFORE the root node.
     if (!refs.empty())
     {
-      for(auto new_kid : refs) kids_list.insert(kid, new_kid);
-      auto erase_point = kid;
-      kids_list.erase(erase_point);
-      kid = std::prev(kid, refs.size());
+      for(auto new_kid : refs)
+      {
+        contents_list.insert(kid, new_kid);
+      }
+      auto erase_point = kid; // Create iterator as marker for node deletion
+      kid = prev(kid, refs.size()); // Move main iterator back to new nodes
+      contents_list.erase(erase_point);  // Erase the parent node
+
     }
-    else
+    else // No child nodes so this must be a leaf node. Move to the next node.
     {
       ++kid;
     }
   }
 
-  std::vector<int> result(kids_list.begin(), kids_list.end());
+  // Remember to write the list back to a vector for return
+  vector<int> result(contents_list.begin(), contents_list.end());
   return result;
 }
 
