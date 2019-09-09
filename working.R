@@ -221,10 +221,10 @@ DeflateStream <- R6Class("DeflateStream", public = list(
 ));
 
 
-BitFlip = function(code)
+BitFlip = function(code, n_bits)
 {
   code2 = 0;
-  for(i in 1:8)
+  for(i in 1:n_bits)
   {
     code2 = bitwOr(bitwShiftL(code2, 1), bitwAnd(code, 1));
     code  = bitwShiftR(code, 1);
@@ -313,19 +313,23 @@ ReadBlock = function(stream)
 
   if (hdr == 0) # uncompressed block
   {
-    b = stream$GetByte(); if(b > 255) stop('Bad block header in stream');
+    b = as.numeric(stream$GetByte());
+    if(b > 255) stop('Bad block header in stream');
 
     blockLen = b;
 
-    b = stream$GetByte(); if(b > 255) stop('Bad block header in stream');
+    b = as.numeric(stream$GetByte());
+    if(b > 255) stop('Bad block header in stream');
 
-    blockLen = bitwOr(blocklen, bitwShiftL(b, 8));
+    blockLen = bitwOr(blockLen, bitwShiftL(b, 8));
 
-    b = stream$GetByte(); if(b > 255) stop('Bad block header in stream');
+    b = as.numeric(stream$GetByte());
+    if(b > 255) stop('Bad block header in stream');
 
     check = b;
 
-    b = stream$GetByte(); if(b > 255) stop('Bad block header in stream');
+    b = as.numeric(stream$GetByte());
+    if(b > 255) stop('Bad block header in stream');
 
     check = bitwOr(check, bitwShiftL(b, 8));
 
@@ -355,12 +359,12 @@ ReadBlock = function(stream)
     {
       for (n in bufferLength:end)
       {
-        b = stream$GetByte();
+        b = as.numeric(stream$GetByte());
         if(b > 255) return(buffer);
         buffer[n] = b;
       }
     }
-    return(buffer);
+    return(as.raw(buffer));
   }
 
   litCodeTable = list();
@@ -390,14 +394,63 @@ ReadBlock = function(stream)
     }
 
     codeLenCodeTab = Huffmanize(codeLenTab);
+    maxbits = max(codeLenCodeTab$bit_length);
+    minbits = min(codeLenCodeTab$bit_length);
+
+    remaining_buffer = 0;
+    unread_bits = 0;
+    literals = numeric();
+    distances = numeric();
+
+    for(i in 1:numLitCodes)
+    {
+      new_chunk_size = maxbits - unread_bits;
+      chunkstart = bitwShiftL(remaining_buffer, new_chunk_size);
+      chunk = BitFlip(stream$GetBits(new_chunk_size), new_chunk_size);
+      chunk = chunk + chunkstart;
+      found = FALSE;
+      n = 0;
+      cat("chunk is", intToBinChar(chunk, maxbits), "\n");
+      if(i > 1 && literals[length(literals)] > 15)
+      {
+        if(literals[length(literals)] == 17)
+        {
+          mask = bitwShiftL(7, maxbits - 3);
+          num_repeats = bitwShiftR(bitwAnd(chunk, mask), maxbits - 3) + 2;
+          literals[length(literals) + 0:num_repeats] <- 0;
+          unread_bits = maxbits - 3;
+          remaining_buffer = bitwAnd(chunk, bitwShiftL(1, unread_bits) - 1);
+        }
+        next;
+      }
+      while(!found)
+      {
+        mask = bitwShiftL(1, maxbits) - bitwShiftL(1, maxbits - minbits - n);
+        checknum = bitwShiftR(bitwAnd(chunk, mask), maxbits - minbits - n);
+        readbits = which(codeLenCodeTab$codes == checknum &
+                          codeLenCodeTab$bit_length == minbits + n);
+        if(length(readbits) == 1)
+        {
+          literals[length(literals) + 1] = codeLenCodeTab$represents[readbits];
+          found = TRUE;
+          mask = bitwShiftL(1, maxbits - minbits - n) - 1;
+          remaining_buffer = bitwAnd(chunk, mask);
+          unread_bits = maxbits - minbits - n;
+        } else {
+          n = n + 1;
+          if(n + minbits > maxbits)
+          {
+            stop("Couldn't read code")
+          }
+        }
+      }
+    }
 
     # build the literal and distance code tables
     len = 0;
     i = 1;
     codes = numLitCodes + numDistCodes;
     codeLengths = numeric(codes);
-
-    sum
 
     bitsLength = 2;
     bitsOffset = 0;
