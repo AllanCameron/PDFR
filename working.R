@@ -115,26 +115,6 @@ Huffmanize <- function(lengths)
               represents = (0:(length(lengths) - 1))[lengths != 0]));
 }
 
-Huffmanise <- function(lengths)
-{
-  all_codes = numeric(length(lengths));
-
-  current_code = 0;
-
-  for(i in 1:max(lengths))
-  {
-    need_codes = which(lengths == i);
-    if(length(need_codes) == 0) next;
-    for(j in seq_along(need_codes))
-    {
-      all_codes[need_codes[j]] = current_code;
-      current_code = current_code + 1;
-    }
-    current_code = bitwShiftL(current_code, 1);
-  }
-
-  return(bitwOr(bitwShiftL(lengths, 16), all_codes));
-}
 
 DeflateStream <- R6Class("DeflateStream", public = list(
   data = raw(),
@@ -389,6 +369,9 @@ DeflateStream <- R6Class("DeflateStream", public = list(
         chunk = bitwShiftL(chunk, 1) + self$GetBits(1);
       }
     }
+    cat(rawToChar(as.raw(self$output)), "\n")
+    print(self$dist_codes);
+    cat(IntToBinChar(chunk, current_bits), "\n")
     stop("No code match found");
   },
 
@@ -425,7 +408,7 @@ DeflateStream <- R6Class("DeflateStream", public = list(
   {
     length_value = 0;
     distance_value = 0;
-
+    extrabits = 0;
     if(code < 265)
     {
       length_value = code - 254;
@@ -442,7 +425,6 @@ DeflateStream <- R6Class("DeflateStream", public = list(
         length_value = self$GetBits(extrabits) + self$length_table[code - 264];
       }
     }
-
     distance_code = self$GetCode(self$dist_codes);
     if(distance_code < 4)
     {
@@ -454,8 +436,20 @@ DeflateStream <- R6Class("DeflateStream", public = list(
       distance_value = self$GetBits(extrabits) +
                        self$distance_table[distance_code - 3];
     }
-    piece = self$output[length(self$output) - distance_value + 1:length_value];
-    self$output[length(self$output) + 1:length_value] <- piece;
+    if(distance_value < length_value)
+    {
+      while(length_value > 0)
+      {
+        self$output[length(self$output) + 1] =
+          self$output[length(self$output) - distance_value + 1];
+        length_value = length_value - 1;
+      }
+    }
+    else
+    {
+      piece = self$output[length(self$output) - distance_value + 1:length_value];
+      self$output[length(self$output) + 1:length_value] <- piece;
+    }
   },
 
   Output = function()
