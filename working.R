@@ -124,23 +124,12 @@ DeflateStream <- R6Class("DeflateStream", public = list(
   unused_bits = 0,
   unused_value = 0,
   EOF = FALSE,
-  literal_codes = list(),
-  dist_codes = list(),
-  BufferLength = function() { return(length(self$buffer));},
-  EnsureBuffer = function(new_length)
-  {
-    if(self$BufferLength() < new_length)
-    {
-      tmp = numeric(new_length);
-      tmp[1:self$BufferLength()] <- self$buffer;
-      self$buffer <- tmp;
-    }
-  },
-
-  MarkEOF = function()
-  {
-    self$EOF = TRUE;
-  },
+  literal_codes = list(bit_length = rep(8, 255),
+                       codes = 0:255,
+                       represents = 0:255),
+  dist_codes = list(bit_length = rep(5, 32),
+                    codes = 0:31,
+                    represents = 0:31),
 
   GetByte = function()
   {
@@ -193,7 +182,10 @@ DeflateStream <- R6Class("DeflateStream", public = list(
     while(self$EOF == FALSE)
     {
       code = self$GetCode(self$literal_codes);
-      if(code < 256)self$output[length(self$output) + 1] = code;
+      if(code < 256)
+      {
+        self$output[length(self$output) + 1] = code;
+      }
       if(code > 256) self$HandlePointer(code);
       if(code == 256) self$EOF = TRUE;
     }
@@ -202,149 +194,84 @@ DeflateStream <- R6Class("DeflateStream", public = list(
 
   ReadBlock = function()
   {
-    codes = list();
-    # read block header
-    hdr = self$GetBits(3);
-    if(bitwAnd(hdr, 1) == 1) self$MarkEOF();
+    three_bit_header = self$GetBits(3);
+    if(bitwAnd(three_bit_header, 1) == 1) self$EOF = TRUE;
+    three_bit_header = bitwShiftR(three_bit_header, 1);
 
-    hdr = bitwShiftR(hdr, 1);
-
-    if (hdr == 0) # uncompressed block
+    if (three_bit_header == 1) # compressed block, fixed codes
     {
-      self$literal_codes = list(bit_length = rep(8, 255),
-                                codes = 0:255,
-                                bits = IntToBinChar(0:255, 8),
-                                represents = 0:255);
+      self$literal_codes = list(bit_length = c(rep(8, 144),
+                                               rep(9, 112),
+                                               rep(7, 24),
+                                               rep(8, 8)),
+                                codes      = c(48:191, 400:511, 0:23, 192:199),
+                                represents = 0:287);
     }
-    else if (hdr == 1) # compressed block, fixed codes
-    {
-      self$literal_codes = list(
-        bit_length = c(rep(8, 144), rep(9, 112), rep(7, 24), rep(8, 8)),
-        codes = c(48:191, 400:511, 0:23, 192:199),
-        bits = c(IntToBinChar(48:191, 8), IntToBinChar(400:511, 9),
-                 IntToBinChar(0:23, 7), IntToBinChar(192:199, 8)),
-        represents = 0:287);
-    }
-    else if (hdr == 2) # compressed block, dynamic codes
-    {
-      hlit = self$GetBits(5) + 257;
-      hdist = self$GetBits(5) + 1;
-      numcodes = hlit + hdist;
-      numCodeLenCodes = self$GetBits(4) + 4;
-
-      # build the code lengths code table
-      codeLenCodeLengths = numeric(length(self$code_length_map));
-
-      for (i in 1:numCodeLenCodes)
-      {
-        codeLenCodeLengths[i] = self$GetBits(3);
-      }
-
-      codeLenTab = numeric(length(codeLenCodeLengths));
-      codeLenTab[self$code_length_map + 1] = codeLenCodeLengths;
-
-      codeLenCodeTab = Huffmanize(codeLenTab);
-      maxbits = max(codeLenCodeTab$bit_length);
-      minbits = min(codeLenCodeTab$bit_length);
-
-      remaining_buffer = 0;
-      unread_bits = 0;
-      code_lengths = numeric();
-      distances = numeric();
-
-      while(length(code_lengths) < numcodes)
-      {
-        new_chunk_size = maxbits - unread_bits;
-        chunkstart = bitwShiftL(remaining_buffer, new_chunk_size);
-        chunk = BitFlip(self$GetBits(new_chunk_size), new_chunk_size);
-        chunk = chunk + chunkstart;
-        found = FALSE;
-        n = 0;
-
-        if(length(code_lengths) > 0 && code_lengths[length(code_lengths)] > 15)
-        {
-          if(code_lengths[length(code_lengths)] == 16)
-          {
-            unread_bits = maxbits - 2;
-            mask = bitwShiftL(3, unread_bits);
-            remaining_buffer = bitwAnd(bitwNot(mask), chunk);
-            chunk = bitwShiftR(bitwAnd(chunk, mask), unread_bits);
-            num_repeats = BitFlip(chunk, 2) + 2;
-            repeat_this = code_lengths[length(code_lengths) - 1];
-            code_lengths[length(code_lengths) + 0:num_repeats] <- repeat_this;
-          }
-          if(code_lengths[length(code_lengths)] == 17)
-          {
-            mask = bitwShiftL(7, maxbits - 3);
-            repeat_bits = bitwShiftR(bitwAnd(chunk, mask), maxbits - 3);
-            num_repeats = BitFlip(repeat_bits, 3) + 2;
-            code_lengths[length(code_lengths) + 0:num_repeats] <- 0;
-            unread_bits = maxbits - 3;
-            remaining_buffer = bitwAnd(chunk, bitwShiftL(1, unread_bits) - 1);
-          }
-          if(code_lengths[length(code_lengths)] == 18)
-          {
-            num_repeats = 0;
-            if(maxbits == 7)
-            {
-              num_repeats = BitFlip(chunk, 7) + 10;
-              unread_bits = 0;
-              remaining_buffer = 0;
-            }
-
-            if(maxbits < 7)
-            {
-              extra_bits = 7 - maxbits;
-              chunk = BitFlip(chunk, maxbits);
-              chunk = bitwShiftL(self$GetBits(extra_bits), maxbits) + chunk;
-              num_repeats = chunk + 10;
-              unread_bits = 0;
-              remaining_buffer = 0;
-            }
-
-            if(maxbits > 7)
-            {
-              unread_bits = maxbits - 7;
-              mask = bitwShiftL(127, unread_bits);
-              remaining_buffer = bitwAnd(bitwNot(mask), chunk);
-              chunk = bitwAnd(chunk, mask);
-              chunk = bitwShiftR(chunk, excess_bits);
-              chunk = BitFlip(chunk, 7);
-              num_repeats = chunk + 10;
-            }
-            code_lengths[length(code_lengths) + 0:num_repeats] <- 0;
-          }
-          next;
-        }
-        while(!found)
-        {
-          mask = bitwShiftL(1, maxbits) - bitwShiftL(1, maxbits - minbits - n);
-          checknum = bitwShiftR(bitwAnd(chunk, mask), maxbits - minbits - n);
-          readbits = which(codeLenCodeTab$codes == checknum &
-                             codeLenCodeTab$bit_length == minbits + n);
-          if(length(readbits) == 1)
-          {
-            code_lengths[length(code_lengths) + 1] =
-              codeLenCodeTab$represents[readbits];
-            found = TRUE;
-            mask = bitwShiftL(1, maxbits - minbits - n) - 1;
-            remaining_buffer = bitwAnd(chunk, mask);
-            unread_bits = maxbits - minbits - n;
-          } else {
-            n = n + 1;
-            if(n + minbits > maxbits)
-            {
-              stop("Couldn't read code")
-            }
-          }
-        }
-      }
-      self$unused_bits = unread_bits;
-      self$unused_value = remaining_buffer;
-      self$literal_codes = Huffmanize(code_lengths[1:hlit]);
-      self$dist_codes = Huffmanize(code_lengths[hlit + 1:hdist]);
-    }
+    if (three_bit_header == 2) self$BuildDynamicCodeTable();
     self$ReadCodes();
+  },
+
+  BuildDynamicCodeTable = function()
+  {
+    hlit = self$GetBits(5) + 257;
+    hdist = self$GetBits(5) + 1;
+    numcodes = hlit + hdist;
+    numCodeLenCodes = self$GetBits(4) + 4;
+
+    # build the code lengths code table
+    codeLenCodeLengths = numeric(length(self$code_length_map));
+
+    for (i in 1:numCodeLenCodes)
+    {
+      codeLenCodeLengths[i] = self$GetBits(3);
+    }
+
+    codeLenTab = numeric(length(codeLenCodeLengths));
+    codeLenTab[self$code_length_map + 1] = codeLenCodeLengths;
+
+    code_length_table = Huffmanize(codeLenTab);
+    maxbits = max(code_length_table$bit_length);
+    minbits = min(code_length_table$bit_length);
+
+    code_lengths = numeric();
+
+    while(length(code_lengths) < numcodes)
+    {
+      found = FALSE;
+      read_bits = minbits;
+      read_value = BitFlip(self$GetBits(read_bits), read_bits);
+
+      while(!found)
+      {
+        matches = which(code_length_table$bit_length == read_bits &
+                        code_length_table$codes == read_value);
+        if(length(matches) == 1)
+        {
+          code = code_length_table$represents[matches];
+          if(code > 15)
+          {
+            repeat_this = 0;
+            num_repeats = self$GetBits(3 * (code %/% 18) + code - 14);
+            num_repeats = num_repeats + 3 + (8 * (code %/% 18));
+            if (code == 16) repeat_this = code_lengths[length(code_lengths)];
+            code_lengths = c(code_lengths, rep(repeat_this, num_repeats));
+          }
+          else
+          {
+            code_lengths[length(code_lengths) + 1] = code;
+          }
+          found = TRUE;
+        }
+        else
+        {
+          read_bits = read_bits + 1;
+          read_value = bitwShiftL(read_value, 1) + self$GetBits(1);
+          if(read_bits > maxbits) stop("Couldn't read code");
+        }
+      }
+    }
+    self$literal_codes = Huffmanize(code_lengths[1:hlit]);
+    self$dist_codes = Huffmanize(code_lengths[hlit + 1:hdist]);
   },
 
   GetCode = function(huffman_table)
@@ -369,9 +296,6 @@ DeflateStream <- R6Class("DeflateStream", public = list(
         chunk = bitwShiftL(chunk, 1) + self$GetBits(1);
       }
     }
-    cat(rawToChar(as.raw(self$output)), "\n")
-    print(self$dist_codes);
-    cat(IntToBinChar(chunk, current_bits), "\n")
     stop("No code match found");
   },
 
