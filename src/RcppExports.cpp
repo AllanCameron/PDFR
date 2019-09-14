@@ -159,6 +159,15 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// Test_Stream
+void Test_Stream();
+RcppExport SEXP _PDFR_Test_Stream() {
+BEGIN_RCPP
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Test_Stream();
+    return R_NilValue;
+END_RCPP
+}
 // stopCpp
 void stopCpp();
 RcppExport SEXP _PDFR_stopCpp() {
@@ -185,8 +194,9 @@ static const R_CallMethodDef CallEntries[] = {
     {"_PDFR_get_pdf_document_from_raw", (DL_FUNC) &_PDFR_get_pdf_document_from_raw, 1},
     {"_PDFR_get_pdf_boxes_from_string", (DL_FUNC) &_PDFR_get_pdf_boxes_from_string, 2},
     {"_PDFR_get_pdf_boxes_from_raw", (DL_FUNC) &_PDFR_get_pdf_boxes_from_raw, 2},
+    {"_PDFR_Test_Stream", (DL_FUNC) &_PDFR_Test_Stream, 0},
     {"_PDFR_stopCpp", (DL_FUNC) &_PDFR_stopCpp, 0},
-    {"run_testthat_tests",                 (DL_FUNC) &run_testthat_tests,                 0},
+    {"run_testthat_tests", (DL_FUNC) &run_testthat_tests, 0},
     {NULL, NULL, 0}
 };
 

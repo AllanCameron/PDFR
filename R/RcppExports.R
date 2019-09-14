@@ -53,6 +53,10 @@
     .Call(`_PDFR_get_pdf_boxes_from_raw`, file_name, page_number)
 }
 
+TestStream <- function() {
+    invisible(.Call(`_PDFR_Test_Stream`))
+}
+
 .stopCpp <- function() {
     invisible(.Call(`_PDFR_stopCpp`))
 }

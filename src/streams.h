@@ -39,6 +39,8 @@
  * xrefstreams.
  */
 #include<string>
+#include<iostream>
+#include<stdexcept>
 
 //---------------------------------------------------------------------------//
 // Inflates the given string
@@ -46,6 +48,54 @@
 void FlateDecode(std::string& deflated_string);
 
 //---------------------------------------------------------------------------//
+
+
+class Stream
+{
+public:
+/*  Possible stream types are:
+
+    Ascii85Stream,
+    AsciiHexStream,
+    DecodeStream,
+    FlateStream,
+    NullStream,
+    PredictorStream,
+    RunLengthStream,
+    StreamsSequenceStream,
+    StringStream,
+    LZWStream,
+*/
+
+  Stream(const std::string& input_t);
+
+  std::string Output();
+  int GetByte();
+  int PeekByte();
+  void Reset();
+  int GetBits(int);
+
+  private:
+  const std::string& input_;
+  std::string output_;
+  size_t input_position_;
+  size_t output_position_;
+  uint8_t unconsumed_bits_;
+  uint8_t unconsumed_bit_value_;
+
+};
+
+class Deflate : public Stream
+{
+public:
+  Deflate();
+
+private:
+  ReadBlock();
+  ReadCodes();
+  ReadCode();
+  Huffmanize();
+};
 
 #endif
 

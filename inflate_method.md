@@ -4,7 +4,7 @@ We will imagine we have an array of bytes called `data` containing the deflate s
 
 Since the algorithm described below is implemented in C++, we will describe it using zero-indexed notation. This means the first byte will be denoted `data[0]`, the second byte `data[1]` etc.
 
-Although bytes are read left to right, the bits within the bytes are read right to left, which can be confusing. This means if I talk about the first 4 bits of a byte, I mean the 4 low order bytes. For example, the first 4 bits of the first byte would be obtained by `data[0] & 0x0f` in C++ or `bitwAnd(data[1], 0x0f)` in R. The bits themselves are **not** reversed though, so if the first byte was made of the bits `00001010` then the first 4 bits should be interpreted as `1010` or 10, not as `0101` or 5.
+Although bytes are read left to right, the bits within the bytes are read right to left, which can be confusing. This means if I talk about the first 4 bits of a byte, I mean the 4 low order bytes. For example, the first 4 bits of the first byte would be obtained by `data[0] & 0x0f` in C++ or `bitwAnd(data[1], 0x0f)` in R. The bits themselves are *not* reversed though, so if the first byte was made of the bits `00001010` then the first 4 bits should be interpreted as `1010` or 10, not as `0101` or 5.
 
 ## The first byte
 
@@ -20,5 +20,10 @@ The first 5 bits of the second byte are known as FCHECK and are used as a checks
 
 The 6th bit is a single-bit flag indicating whether a preset dictionary is in use (i.e. whether the flag is set is tested by `(data[1] & 0x10) >> 5 == 1`).
 
-The remaining 2 highest order bits (`(data[1] & 0xc0) >> 6`) in the second byte denote the level of compression used, from 0 (fastest) to 3 (best compression). The default is 2.
+The remaining 2 highest order bits (`(data[1] & 0xc0) >> 6`) in the second byte denote the level of compression used, from 0 (fastest) to 3 (best compression). The default is `10` i.e. 2.
 
+## Third and fourth bytes
+
+We now enter a *block*. Each block is self-contained. It starts with a 3 bit header. The lowest order bit of this header flags whether this is the final block in the stream, i.e. `data[2] & 0x01 == 1` answers "is this the final block?"
+
+The next two bits (`data[2] & 0x06`) tell us the type of compression. A value of 0 means no compression is used.

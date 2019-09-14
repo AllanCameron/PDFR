@@ -506,6 +506,20 @@ DataFrame get_pdf_boxes_from_raw(const vector<uint8_t>& raw_data,
 
 //---------------------------------------------------------------------------//
 
+void Test_Stream()
+{
+  std::string sentence = "Hello world";
+  Stream test_stream(sentence);
+  std::cout << test_stream.GetByte() << std::endl;
+  std::cout << test_stream.GetBits(3) << std::endl;
+  std::cout << test_stream.GetBits(5) << std::endl;
+  std::cout << test_stream.GetBits(8) << std::endl;
+  std::cout << test_stream.GetBits(8) << std::endl;
+  std::cout << test_stream.GetByte() << std::endl;
+  std::cout << test_stream.GetBits(9) << std::endl;
+  std::cout << test_stream.GetBits(9) << std::endl;
+}
+
 #ifdef PROFILER_PDFR
 void stopCpp(){TheNodeList::Instance().endprofiler(); }
 #endif

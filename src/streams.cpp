@@ -77,3 +77,52 @@ void FlateDecode(string& t_message)
 
 /*---------------------------------------------------------------------------*/
 
+Stream::Stream(const std::string& input_t) :  input_(input_t),
+                                              input_position_(0),
+                                              output_position_(0),
+                                              unconsumed_bits_(0),
+                                              unconsumed_bit_value_(0) {}
+
+std::string Stream::Output() {return output_;}
+
+int Stream::GetByte()
+{
+  if (input_.size() > input_position_) return input_[input_position_++];
+  return -1;
+}
+
+int Stream::PeekByte()
+{
+  ++input_position_;
+  int result = GetByte();
+  --input_position_;
+  return result;
+}
+
+void Stream::Reset()
+{
+  input_position_ = 0;
+  output_position_ = 0;
+  unconsumed_bit_value_ = 0;
+  unconsumed_bits_ = 0;
+  output_.clear();
+}
+
+int Stream::GetBits(int n_bits_t)
+{
+  int value_read = unconsumed_bit_value_;
+  int bits_read = unconsumed_bits_;
+
+  while (bits_read < n_bits_t)
+  {
+    int new_byte = GetByte();
+    if (new_byte == -1) throw std::runtime_error("Unexpected end of stream");
+    value_read |= new_byte << bits_read;
+    bits_read += 8;
+  }
+  int result = value_read & ((1 << n_bits_t) - 1);
+  unconsumed_bit_value_ = value_read >> n_bits_t;
+  bits_read -= n_bits_t;
+  unconsumed_bits_ = bits_read;
+  return result;
+}

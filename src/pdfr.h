@@ -57,6 +57,7 @@
  */
 
 #include<Rcpp.h>
+#include "streams.h"
 #include "line_grouper.h"
 
 //---------------------------------------------------------------------------//
@@ -156,6 +157,8 @@ get_pdf_boxes_from_string(const std::string& file_name, int page_number);
 Rcpp::DataFrame
 get_pdf_boxes_from_raw(const std::vector<uint8_t>& file_name, int page_number);
 
+// [[Rcpp::export(TestStream)]]
+void Test_Stream();
 
 //---------------------------------------------------------------------------//
 // This function can be called from R to stop the underlying C++ code. This can
