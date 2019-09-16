@@ -72,10 +72,12 @@ public:
   Stream(const std::vector<uint8_t>&);
 
   std::string Output();
-  int GetByte();
-  int PeekByte();
+  uint32_t GetByte();
+  uint32_t PeekByte();
   void Reset();
-  int GetBits(int);
+  uint32_t GetBits(uint32_t);
+  inline size_t GetPosition() {return this->input_position_;}
+  inline void ShowBits() {std::cout << "Remaining bits " << (int) unconsumed_bits_ << std::endl;}
 
   private:
   std::string input_;
@@ -83,7 +85,7 @@ public:
   size_t input_position_;
   size_t output_position_;
   uint8_t unconsumed_bits_;
-  uint8_t unconsumed_bit_value_;
+  uint32_t unconsumed_bit_value_;
 
 };
 
@@ -95,8 +97,8 @@ public:
   void ReadBlock();
   void BuildDynamicCodeTable();
   void ReadCodes();
-  int ReadCode(const std::vector<uint32_t>&);
-  std::vector<uint32_t> Huffmanize(const std::vector<int>&);
+  uint32_t ReadCode(const std::vector<uint32_t>&);
+  std::vector<uint32_t> Huffmanize(const std::vector<uint32_t>&);
 
 private:
   void CheckHeader();

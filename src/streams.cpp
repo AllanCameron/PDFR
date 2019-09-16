@@ -148,18 +148,20 @@ std::string Stream::Output() {return output_;}
 
 /*---------------------------------------------------------------------------*/
 
-int Stream::GetByte()
+uint32_t Stream::GetByte()
 {
-  if (input_.size() > input_position_) return input_[input_position_++];
-  return -1;
+  if (input_position_ >= input_.size()) return 256;
+  uint8_t next_byte = input_[input_position_++];
+  return next_byte;
+  ;
 }
 
 /*---------------------------------------------------------------------------*/
 
-int Stream::PeekByte()
+uint32_t Stream::PeekByte()
 {
   ++input_position_;
-  int result = GetByte();
+  uint32_t result = GetByte();
   --input_position_;
   return result;
 }
@@ -177,19 +179,19 @@ void Stream::Reset()
 
 /*---------------------------------------------------------------------------*/
 
-int Stream::GetBits(int n_bits_t)
+uint32_t Stream::GetBits(uint32_t n_bits_t)
 {
-  int value_read = unconsumed_bit_value_;
-  int bits_read = unconsumed_bits_;
+  uint32_t value_read = unconsumed_bit_value_;
+  uint8_t bits_read = unconsumed_bits_;
 
   while (bits_read < n_bits_t)
   {
-    int new_byte = GetByte();
-    if (new_byte == -1) throw std::runtime_error("Unexpected end of stream");
+    uint32_t new_byte = GetByte();
+    if (new_byte == 256) throw std::runtime_error("Unexpected end of stream");
     value_read |= new_byte << bits_read;
     bits_read += 8;
   }
-  int result = value_read & ((1 << n_bits_t) - 1);
+  uint32_t result = value_read & ((1 << n_bits_t) - 1);
   unconsumed_bit_value_ = value_read >> n_bits_t;
   bits_read -= n_bits_t;
   unconsumed_bits_ = bits_read;
@@ -204,6 +206,8 @@ Deflate::Deflate(const std::string& input_t) : Stream(input_t),
   CheckHeader();
 }
 
+/*---------------------------------------------------------------------------*/
+
 Deflate::Deflate(const std::vector<uint8_t>& input_t) : Stream(input_t),
                                                         is_last_block_(false)
 {
@@ -212,24 +216,26 @@ Deflate::Deflate(const std::vector<uint8_t>& input_t) : Stream(input_t),
 
 /*---------------------------------------------------------------------------*/
 
-std::vector<uint32_t> Deflate::Huffmanize(const std::vector<int>& lengths)
+std::vector<uint32_t> Deflate::Huffmanize(const std::vector<uint32_t>& lengths)
 {
   std::vector<uint32_t> huffman_table(lengths.size());
-  int max_length = 0;
+  uint32_t max_length = 0;
   for (auto& i : lengths) if(i > max_length) max_length = i;
 
   uint32_t current_code = 0;
 
-  for(int i = 0; i <= max_length; ++i)
+  for(uint32_t i = 0; i <= max_length; ++i)
   {
+    bool code_added = false;
     for(size_t j = 0; j < lengths.size(); ++j)
     {
-      if(lengths[j] == i)
+      if(lengths[j] == i && i != 0)
       {
+        code_added = true;
         huffman_table[j] = (lengths[j] << 16) | current_code++;
       }
     }
-    current_code <<= 1;
+    if(code_added) current_code <<= 1;
   }
   return huffman_table;
 }
@@ -252,21 +258,32 @@ void Deflate::CheckHeader()
   {
     throw std::runtime_error("FDICT bit set in stream header");
   }
-  std::cout << "Valid header" << std::endl;
 }
 
 /*---------------------------------------------------------------------------*/
 
 void Deflate::ReadBlock()
 {
-  int three_bit_header = GetBits(3);
+  uint32_t three_bit_header = GetBits(3);
   if (three_bit_header & 1) is_last_block_ = true;
   three_bit_header >>= 1;
+
+  if ( three_bit_header == 0)
+  {
+    std::vector<uint32_t> uncompressed_literal_codes(288);
+    for(uint32_t i = 0; i < uncompressed_literal_codes.size(); ++i)
+    {
+      uncompressed_literal_codes[i] = i + 0x80000;
+    }
+    literal_codes_ = uncompressed_literal_codes;
+  }
+
   if (three_bit_header == 1)
   {
     literal_codes_ = fixed_literal_codes_;
     distance_codes_ = fixed_distance_codes_;
   }
+
   if (three_bit_header == 2) BuildDynamicCodeTable();
 
   ReadCodes();
@@ -274,7 +291,24 @@ void Deflate::ReadBlock()
 
 /*---------------------------------------------------------------------------*/
 
-void Deflate::BuildDynamicCodeTable(){}
+void Deflate::BuildDynamicCodeTable()
+{
+  uint32_t number_literal_codes = GetBits(5) + 257;
+  uint32_t number_distance_codes = GetBits(5) + 1;
+  uint32_t total_number_of_codes = number_distance_codes + number_literal_codes;
+  uint32_t number_of_length_codes = GetBits(4) + 4;
+  std::vector<uint32_t> length_code_order {16, 17, 18, 0, 8,  7,  9, 6, 10, 5,
+                                           11, 4,  12, 3, 13, 2, 14, 1, 15};
+
+// build the code lengths code table
+  std::vector<uint32_t> code_length_lengths(19);
+  for (uint32_t i = 0; i < number_of_length_codes; ++i)
+  {
+    code_length_lengths[length_code_order[i]] = GetBits(3);
+    ShowBits();
+  }
+  auto huff = Huffmanize(code_length_lengths);
+}
 
 /*---------------------------------------------------------------------------*/
 
