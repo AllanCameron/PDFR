@@ -39,6 +39,7 @@
  * xrefstreams.
  */
 #include<string>
+#include<vector>
 #include<iostream>
 #include<stdexcept>
 
@@ -67,7 +68,8 @@ public:
     LZWStream,
 */
 
-  Stream(const std::string& input_t);
+  Stream(const std::string&);
+  Stream(const std::vector<uint8_t>&);
 
   std::string Output();
   int GetByte();
@@ -76,7 +78,7 @@ public:
   int GetBits(int);
 
   private:
-  const std::string& input_;
+  std::string input_;
   std::string output_;
   size_t input_position_;
   size_t output_position_;
@@ -88,13 +90,21 @@ public:
 class Deflate : public Stream
 {
 public:
-  Deflate();
+  Deflate(const std::string&);
+  Deflate(const std::vector<uint8_t>&);
+  void ReadBlock();
+  void BuildDynamicCodeTable();
+  void ReadCodes();
+  int ReadCode(const std::vector<uint32_t>&);
+  std::vector<uint32_t> Huffmanize(const std::vector<int>&);
 
 private:
-  ReadBlock();
-  ReadCodes();
-  ReadCode();
-  Huffmanize();
+  void CheckHeader();
+  bool is_last_block_;
+  static const std::vector<uint32_t> fixed_literal_codes_;
+  static const std::vector<uint32_t> fixed_distance_codes_;
+  std::vector<uint32_t> literal_codes_;
+  std::vector<uint32_t> distance_codes_;
 };
 
 #endif

@@ -77,19 +77,84 @@ void FlateDecode(string& t_message)
 
 /*---------------------------------------------------------------------------*/
 
+const std::vector<uint32_t> Deflate::fixed_literal_codes_ {
+  0x80030, 0x80031, 0x80032, 0x80033, 0x80034, 0x80035, 0x80036,
+  0x80037, 0x80038, 0x80039, 0x8003a, 0x8003b, 0x8003c, 0x8003d,
+  0x8003e, 0x8003f, 0x80040, 0x80041, 0x80042, 0x80043, 0x80044,
+  0x80045, 0x80046, 0x80047, 0x80048, 0x80049, 0x8004a, 0x8004b,
+  0x8004c, 0x8004d, 0x8004e, 0x8004f, 0x80050, 0x80051, 0x80052,
+  0x80053, 0x80054, 0x80055, 0x80056, 0x80057, 0x80058, 0x80059,
+  0x8005a, 0x8005b, 0x8005c, 0x8005d, 0x8005e, 0x8005f, 0x80060,
+  0x80061, 0x80062, 0x80063, 0x80064, 0x80065, 0x80066, 0x80067,
+  0x80068, 0x80069, 0x8006a, 0x8006b, 0x8006c, 0x8006d, 0x8006e,
+  0x8006f, 0x80070, 0x80071, 0x80072, 0x80073, 0x80074, 0x80075,
+  0x80076, 0x80077, 0x80078, 0x80079, 0x8007a, 0x8007b, 0x8007c,
+  0x8007d, 0x8007e, 0x8007f, 0x80080, 0x80081, 0x80082, 0x80083,
+  0x80084, 0x80085, 0x80086, 0x80087, 0x80088, 0x80089, 0x8008a,
+  0x8008b, 0x8008c, 0x8008d, 0x8008e, 0x8008f, 0x80090, 0x80091,
+  0x80092, 0x80093, 0x80094, 0x80095, 0x80096, 0x80097, 0x80098,
+  0x80099, 0x8009a, 0x8009b, 0x8009c, 0x8009d, 0x8009e, 0x8009f,
+  0x800a0, 0x800a1, 0x800a2, 0x800a3, 0x800a4, 0x800a5, 0x800a6,
+  0x800a7, 0x800a8, 0x800a9, 0x800aa, 0x800ab, 0x800ac, 0x800ad,
+  0x800ae, 0x800af, 0x800b0, 0x800b1, 0x800b2, 0x800b3, 0x800b4,
+  0x800b5, 0x800b6, 0x800b7, 0x800b8, 0x800b9, 0x800ba, 0x800bb,
+  0x800bc, 0x800bd, 0x800be, 0x800bf, 0x90190, 0x90191, 0x90192,
+  0x90193, 0x90194, 0x90195, 0x90196, 0x90197, 0x90198, 0x90199,
+  0x9019a, 0x9019b, 0x9019c, 0x9019d, 0x9019e, 0x9019f, 0x901a0,
+  0x901a1, 0x901a2, 0x901a3, 0x901a4, 0x901a5, 0x901a6, 0x901a7,
+  0x901a8, 0x901a9, 0x901aa, 0x901ab, 0x901ac, 0x901ad, 0x901ae,
+  0x901af, 0x901b0, 0x901b1, 0x901b2, 0x901b3, 0x901b4, 0x901b5,
+  0x901b6, 0x901b7, 0x901b8, 0x901b9, 0x901ba, 0x901bb, 0x901bc,
+  0x901bd, 0x901be, 0x901bf, 0x901c0, 0x901c1, 0x901c2, 0x901c3,
+  0x901c4, 0x901c5, 0x901c6, 0x901c7, 0x901c8, 0x901c9, 0x901ca,
+  0x901cb, 0x901cc, 0x901cd, 0x901ce, 0x901cf, 0x901d0, 0x901d1,
+  0x901d2, 0x901d3, 0x901d4, 0x901d5, 0x901d6, 0x901d7, 0x901d8,
+  0x901d9, 0x901da, 0x901db, 0x901dc, 0x901dd, 0x901de, 0x901df,
+  0x901e0, 0x901e1, 0x901e2, 0x901e3, 0x901e4, 0x901e5, 0x901e6,
+  0x901e7, 0x901e8, 0x901e9, 0x901ea, 0x901eb, 0x901ec, 0x901ed,
+  0x901ee, 0x901ef, 0x901f0, 0x901f1, 0x901f2, 0x901f3, 0x901f4,
+  0x901f5, 0x901f6, 0x901f7, 0x901f8, 0x901f9, 0x901fa, 0x901fb,
+  0x901fc, 0x901fd, 0x901fe, 0x901ff, 0x70000, 0x70001, 0x70002,
+  0x70003, 0x70004, 0x70005, 0x70006, 0x70007, 0x70008, 0x70009,
+  0x7000a, 0x7000b, 0x7000c, 0x7000d, 0x7000e, 0x7000f, 0x70010,
+  0x70011, 0x70012, 0x70013, 0x70014, 0x70015, 0x70016, 0x70017,
+  0x800c0, 0x800c1, 0x800c2, 0x800c3, 0x800c4, 0x800c5, 0x800c6,
+  0x800c7};
+
+const std::vector<uint32_t> Deflate::fixed_distance_codes_ {
+  0x50000, 0x50001, 0x50002, 0x50003, 0x50004, 0x50005, 0x50006,
+  0x50007, 0x50008, 0x50009, 0x5000a, 0x5000b, 0x5000c, 0x5000d,
+  0x5000e, 0x5000f, 0x50010, 0x50011, 0x50012, 0x50013, 0x50014,
+  0x50015, 0x50016, 0x50017, 0x50018, 0x50019, 0x5001a, 0x5001b,
+  0x5001c, 0x5001d, 0x5001e, 0x5001f};
+
+/*---------------------------------------------------------------------------*/
+
 Stream::Stream(const std::string& input_t) :  input_(input_t),
                                               input_position_(0),
                                               output_position_(0),
                                               unconsumed_bits_(0),
                                               unconsumed_bit_value_(0) {}
 
+Stream::Stream(const std::vector<uint8_t>& input_t)
+{
+  std::string raw_string(input_t.begin(), input_t.end());
+  *this = Stream(raw_string);
+}
+
+/*---------------------------------------------------------------------------*/
+
 std::string Stream::Output() {return output_;}
+
+/*---------------------------------------------------------------------------*/
 
 int Stream::GetByte()
 {
   if (input_.size() > input_position_) return input_[input_position_++];
   return -1;
 }
+
+/*---------------------------------------------------------------------------*/
 
 int Stream::PeekByte()
 {
@@ -99,6 +164,8 @@ int Stream::PeekByte()
   return result;
 }
 
+/*---------------------------------------------------------------------------*/
+
 void Stream::Reset()
 {
   input_position_ = 0;
@@ -107,6 +174,8 @@ void Stream::Reset()
   unconsumed_bits_ = 0;
   output_.clear();
 }
+
+/*---------------------------------------------------------------------------*/
 
 int Stream::GetBits(int n_bits_t)
 {
@@ -126,3 +195,87 @@ int Stream::GetBits(int n_bits_t)
   unconsumed_bits_ = bits_read;
   return result;
 }
+
+/*---------------------------------------------------------------------------*/
+
+Deflate::Deflate(const std::string& input_t) : Stream(input_t),
+                                               is_last_block_(false)
+{
+  CheckHeader();
+}
+
+Deflate::Deflate(const std::vector<uint8_t>& input_t) : Stream(input_t),
+                                                        is_last_block_(false)
+{
+  CheckHeader();
+}
+
+/*---------------------------------------------------------------------------*/
+
+std::vector<uint32_t> Deflate::Huffmanize(const std::vector<int>& lengths)
+{
+  std::vector<uint32_t> huffman_table(lengths.size());
+  int max_length = 0;
+  for (auto& i : lengths) if(i > max_length) max_length = i;
+
+  uint32_t current_code = 0;
+
+  for(int i = 0; i <= max_length; ++i)
+  {
+    for(size_t j = 0; j < lengths.size(); ++j)
+    {
+      if(lengths[j] == i)
+      {
+        huffman_table[j] = (lengths[j] << 16) | current_code++;
+      }
+    }
+    current_code <<= 1;
+  }
+  return huffman_table;
+}
+
+/*---------------------------------------------------------------------------*/
+
+void Deflate::CheckHeader()
+{
+  uint8_t cmf = GetByte();
+  uint8_t flg = GetByte();
+  if ((cmf & 0x0f) != 8)
+  {
+    throw std::runtime_error("Invalid compression method.");
+  }
+  if ((((cmf << 8) + flg) % 31) != 0)
+  {
+    throw std::runtime_error("Invalid check flag");
+  }
+  if ((flg & 32) != 0)
+  {
+    throw std::runtime_error("FDICT bit set in stream header");
+  }
+  std::cout << "Valid header" << std::endl;
+}
+
+/*---------------------------------------------------------------------------*/
+
+void Deflate::ReadBlock()
+{
+  int three_bit_header = GetBits(3);
+  if (three_bit_header & 1) is_last_block_ = true;
+  three_bit_header >>= 1;
+  if (three_bit_header == 1)
+  {
+    literal_codes_ = fixed_literal_codes_;
+    distance_codes_ = fixed_distance_codes_;
+  }
+  if (three_bit_header == 2) BuildDynamicCodeTable();
+
+  ReadCodes();
+};
+
+/*---------------------------------------------------------------------------*/
+
+void Deflate::BuildDynamicCodeTable(){}
+
+/*---------------------------------------------------------------------------*/
+
+void Deflate::ReadCodes(){}

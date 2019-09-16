@@ -202,14 +202,10 @@ DeflateStream <- R6Class("DeflateStream", public = list(
     while(self$EOF == FALSE)
     {
       code = self$GetCode(self$literal_codes);
-<<<<<<< HEAD
-      if(code < 256) self$output[length(self$output) + 1] = code;
-=======
       if(code < 256)
       {
         self$output[length(self$output) + 1] = code;
       }
->>>>>>> b4efe669fc1af6d7d21a06c929493f0129fc8c27
       if(code > 256) self$HandlePointer(code);
       if(code == 256) self$EOF = TRUE;
     }
@@ -256,14 +252,6 @@ DeflateStream <- R6Class("DeflateStream", public = list(
     code_length_table = Huffmanize(codeLenTab);
     maxbits = max(code_length_table$bit_length);
     minbits = min(code_length_table$bit_length);
-
-<<<<<<< HEAD
-      code_length_table = Huffmanize(codeLenTab);
-      maxbits = max(code_length_table$bit_length);
-      minbits = min(code_length_table$bit_length);
-
-      code_lengths = numeric();
-=======
     code_lengths = numeric();
 
     while(length(code_lengths) < numcodes)
@@ -271,49 +259,9 @@ DeflateStream <- R6Class("DeflateStream", public = list(
       found = FALSE;
       read_bits = minbits;
       read_value = BitFlip(self$GetBits(read_bits), read_bits);
->>>>>>> b4efe669fc1af6d7d21a06c929493f0129fc8c27
 
       while(!found)
       {
-<<<<<<< HEAD
-        found = FALSE;
-        read_bits = minbits;
-        read_value = BitFlip(self$GetBits(read_bits), read_bits);
-
-        while(!found)
-        {
-          matches = which(code_length_table$bit_length == read_bits &
-                            code_length_table$codes == read_value);
-          if(length(matches) == 1)
-          {
-            code = code_length_table$represents[matches];
-            if(code > 15)
-            {
-              repeat_this = 0;
-              num_repeats = self$GetBits(3 * (code %/% 18) + code - 14);
-              num_repeats = num_repeats + 3 + (8 * (code %/% 18));
-              if (code == 16) repeat_this = code_lengths[length(code_lengths)];
-              code_lengths = c(code_lengths, rep(repeat_this, num_repeats));
-            }
-            else
-            {
-              code_lengths[length(code_lengths) + 1] = code;
-            }
-            found = TRUE;
-          }
-          else
-          {
-            read_bits = read_bits + 1;
-            read_value = bitwShiftL(read_value, 1) + self$GetBits(1);
-            if(read_bits > maxbits) stop("Couldn't read code");
-          }
-        }
-      }
-      self$literal_codes = Huffmanize(code_lengths[1:hlit]);
-      self$dist_codes = Huffmanize(code_lengths[hlit + 1:hdist]);
-    }
-    #self$ReadCodes();
-=======
         matches = which(code_length_table$bit_length == read_bits &
                         code_length_table$codes == read_value);
         if(length(matches) == 1)
@@ -343,7 +291,6 @@ DeflateStream <- R6Class("DeflateStream", public = list(
     }
     self$literal_codes = Huffmanize(code_lengths[1:hlit]);
     self$dist_codes = Huffmanize(code_lengths[hlit + 1:hdist]);
->>>>>>> b4efe669fc1af6d7d21a06c929493f0129fc8c27
   },
 
   GetCode = function(huffman_table)
@@ -359,8 +306,6 @@ DeflateStream <- R6Class("DeflateStream", public = list(
                     huffman_table$codes == chunk);
       if(length(match) > 0)
       {
-        cat("Found code", huffman_table$represents[match], "which represents",
-            rawToChar(as.raw(huffman_table$represents[match])), "\n")
         return(huffman_table$represents[match]);
       }
       else
@@ -420,7 +365,6 @@ DeflateStream <- R6Class("DeflateStream", public = list(
       {
         extrabits = (code - 261) %/% 4;
         read_value = self$GetBits(extrabits);
-        cat("Read extra bits:", IntToBinChar(read_value, extrabits), "\n")
         length_value = read_value + self$length_table[code - 264];
       }
     }
@@ -433,7 +377,6 @@ DeflateStream <- R6Class("DeflateStream", public = list(
     {
       extrabits = (distance_code %/% 2) - 1;
       read_value = self$GetBits(extrabits);
-      cat("Read extra bits:", IntToBinChar(read_value, extrabits), "\n")
       distance_value = read_value + self$distance_table[distance_code - 3];
     }
     if(distance_value < length_value)
@@ -467,5 +410,8 @@ sentence <- paste0("I'm not a pheasant plucker, I'm a pheasant plucker's son, ",
                    "and I'm only plucking pheasants til the pheasant plucker comes.")
 stream_data <- memCompress(charToRaw(sentence), "gzip")
 self <- DeflateStream$new(stream_data);
+
+
+
 
 

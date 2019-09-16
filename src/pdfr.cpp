@@ -509,6 +509,7 @@ DataFrame get_pdf_boxes_from_raw(const vector<uint8_t>& raw_data,
 void Test_Stream()
 {
   std::string sentence = "Hello world";
+  std::vector<uint8_t> raw_vector {0x78, 0x9c, 0x05, 0x06, 0x9c, 0x72, 0xca};
   Stream test_stream(sentence);
   std::cout << test_stream.GetByte() << std::endl;
   std::cout << test_stream.GetBits(3) << std::endl;
@@ -518,6 +519,17 @@ void Test_Stream()
   std::cout << test_stream.GetByte() << std::endl;
   std::cout << test_stream.GetBits(9) << std::endl;
   std::cout << test_stream.GetBits(9) << std::endl;
+
+  Deflate test_raw(raw_vector);
+  std::cout << test_raw.GetByte() << std::endl;
+  std::vector<int> length_table {2, 4, 2, 0, 3, 3};
+  auto result = test_raw.Huffmanize(length_table);
+  std::cout << std::endl;
+  for(auto element:result)
+  {
+    std::cout << element << std::endl;
+  }
+
 }
 
 #ifdef PROFILER_PDFR
