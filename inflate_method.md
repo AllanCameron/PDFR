@@ -170,7 +170,11 @@ This now allows us to read the data which follows to get our literal code table.
 ```
 data[10] --> 10101111 11110010 01101101 00101100 11000100 01111011 01110000
 ```
-We have already read the first bit of byte 10. Now we want to read the remaining bits until we have a match. Remember, none of our codes are less than 2 bits long, so we start with two bits and ask whether we have a match. `11` isn't in our table, so how about three bits? `111` isn't in our table either. How about `1110`? Yes! That represents code 18. Code 18 means we read the next seven bits and add 11 to get the number of zeros we want to add to our literal array. The next seven bits are not bit reversed, so we read them as normal: `101` from byte 10, with the next 4 bits from byte 11 `0010` being placed to the right to give `0010101` or 21. Adding 11 gives us 32, which means we want to start our literal length array with 32 zeros. 
+We have already read the first bit of byte 10. We want to read the remaining bits until we have a match. Now, here's the kicker: the Huffman codes are packed into the bytes backwards. That means that when we take a chunk of bits we need to read it backwards. If we read the three low order bits of `11100110` then we need to interpret this as `011` for the purposes of looking up the Huffman code. I know, I know, this is confusing, but that's just how it is.
+
+Remember, none of our codes are less than 2 bits long, so we start reading backwards from the 7th bit in byte 10, using two bits, and ask whether we have a match. `11` isn't in our table, so how about three bits? `111` isn't in our table either. How about `1110`? Yes! That represents code 18. 
+
+Codes 16, 17 and 18 are different from the rest. They don't represent actual code lengths, but repeat sequences of actual lengths. Code 18 means we read the next seven bits and add 11 to get the number of zeros we want to add to our literal array. The next seven bits are _not_ bit reversed though (!), so we read them as "normal": `101` from the most significant 3 bits of byte 10, with the next 4 bits from the lower end of byte 11 `0010` being placed to the right to give `0010101` or 21. Adding 11 gives us 32, which means we want to start our literal length array with 32 zeros. 
 
 Now we can read another code. `11`, `111`, `1111` and `11111` don't match, but `111110` does: it's code 3, so we place a 3 in our literal length array at literal_length[32]. This means that of all the ascii characters in our final message, the lowest will be 32, or 0x20, which is the space character. It will be represented by 3 bits when we come to decoding the actual compressed data.
 
@@ -233,3 +237,40 @@ We go on like this until our literal and distance array is full. The full listin
 
 ---
 
+Now we have all of our lengths, we can generate our actual literal and distance tables by reconstructing their Huffman trees. Here are the final literal and distance codes from which we will construct our message:
+
+---
+
+Literal Codes
+
+literal code| bits
+---|----
+32 | 000
+39 | 00001
+44 | 10001
+46 | 001011
+73 | 01001
+97 | 0100
+99 | 11001
+100 | 101011
+101 | 1100
+103 | 011011
+104 | 00101
+105 | 10101
+107 | 111011
+108 | 01101
+109 | 11101
+110 | 0010
+111 | 1010
+112 | 00011
+114 | 000111
+115 | 0110
+116 | 1110
+117 | 100111
+121 | 010111
+256 | 110111
+257 | 001111
+259 | 101111
+260 | 011111
+263 | 111111
+268 | 10011
