@@ -18,6 +18,7 @@
 
 #include "streams.h"
 #include "miniz.h"
+#include<algorithm>
 
 using namespace std;
 
@@ -327,11 +328,6 @@ void Deflate::BuildDynamicCodeTable()
   }
 
   auto code_length_table = Huffmanize(code_length_lengths);
-  for(size_t i = 0; i < code_length_table.size(); ++i)
-  {
-    std::cout << "Code " << i << ": " << (code_length_table[i] & 0xff)
-              << " in " << (code_length_table[i] >> 16) << " bits" << std::endl;
-  }
   std::vector<uint32_t> code_lengths(total_number_of_codes);
   size_t write_head = 0;
   uint32_t code = 0;
@@ -363,14 +359,12 @@ void Deflate::BuildDynamicCodeTable()
         }
       }
     }
-    std::cout << "Read code " << code << std::endl;
     if(code > 15)
     {
       uint32_t repeat_this = 0;
       uint32_t num_bits = 3 * (code / 18) + code - 14;
       uint32_t num_repeats = GetBits(num_bits);
       num_repeats = num_repeats + 3 + (8 * (code / 18));
-      cout << "  Repeats : " << num_repeats << endl;
       if (code == 16) repeat_this = code_lengths[write_head - 1];
       for (size_t i = 0; i < num_repeats; ++i)
       {
@@ -382,7 +376,6 @@ void Deflate::BuildDynamicCodeTable()
     {
       code_lengths[write_head++] = code;
     }
-    cout << "Next write position is at " << write_head << endl;
   }
 
   auto literal_start = code_lengths.begin();
@@ -392,14 +385,60 @@ void Deflate::BuildDynamicCodeTable()
 
   literal_codes_ = Huffmanize(literal_lengths);
   distance_codes_ = Huffmanize(distance_lengths);
-  cout << "\n\n" << "Literal table:\n";
-  for(size_t i = 0; i < distance_codes_.size(); ++i)
-  {
-    cout << "Code " << i << ": " << (distance_codes_[i] & 0xff) << " in "
-         << (distance_codes_[i] >> 16) << " bits " << endl;
-  }
 }
 
 /*---------------------------------------------------------------------------*/
 
-void Deflate::ReadCodes(){}
+void Deflate::ReadCodes()
+{
+  uint32_t code = 0;
+
+  uint32_t min_literal = 15;
+  uint32_t max_literal = 0;
+  uint32_t min_distance = 15;
+  uint32_t max_distance = 0;
+  for (size_t i = 0; i < literal_codes_.size(); ++i)
+  {
+    uint32_t code_size = literal_codes_[i] >> 16;
+    if (code_size > max_literal) max_literal = code_size;
+    if (code_size < min_literal && code_size != 0) min_literal = code_size;
+  }
+  for (size_t i = 0; i < distance_codes_.size(); ++i)
+  {
+    uint32_t code_size = distance_codes_[i] >> 16;
+    if (code_size > max_distance) max_distance = code_size;
+    if (code_size < min_distance && code_size != 0) min_distance = code_size;
+  }
+
+  while(code != 256)
+  {
+    bool found = false;
+    uint32_t read_bits = min_literal;
+    uint32_t read_value = GetBits(read_bits);
+
+    while(!found)
+    {
+      uint32_t candidate = read_value | (read_bits << 16);
+      for(size_t it = 0; it < literal_codes_.size(); ++it)
+      {
+        if (candidate == literal_codes_[it])
+        {
+          code = it;
+          found = true;
+          continue;
+        }
+
+        if (it == literal_codes_.size() - 1 && found == false)
+        {
+          read_value = read_value + (GetBits(1) << read_bits++);
+          if (read_bits > max_literal)
+          {
+            throw runtime_error("Couldn't find code");
+          }
+        }
+      }
+    }
+    if(code < 128){ cout << (char) code;}
+  }
+  std::cout << endl;
+}

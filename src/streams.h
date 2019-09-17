@@ -76,7 +76,10 @@ public:
   uint32_t PeekByte();
   void Reset();
   uint32_t GetBits(uint32_t);
-  uint32_t BitFlip(uint32_t value, uint32_t n_bits);
+  uint32_t BitFlip(uint32_t value, uint32_t);
+  inline void WriteOutput(uint8_t byte) {output_[output_position_++] = byte;}
+  inline char GetOutput(){return output_[output_position_++];}
+  inline void MoveOutputTo(size_t t_pos){output_position_ = t_pos;}
 
   private:
   std::string input_;

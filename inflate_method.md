@@ -233,7 +233,7 @@ We go on like this until our literal and distance array is full. The full listin
 45) Read code 5 using 2 bits; Write 5 at position [268]
 46) Read code 17 using 3 bits, consume next 3 bits to get repeat length; Write 8 zeros from [269] to [276]
 47) Read code 2 using 5 bits; Write 2 at position [277]
-48) Read code 16 using 6 bits, consume next 3 bits to get repeat length; Write 3 twos from [278] to [280]
+48) Read code 16 using 6 bits, consume next 2 bits to get repeat length; Write 3 twos from [278] to [280]
 
 ---
 
@@ -246,34 +246,34 @@ Now we have all of our lengths, we can generate our actual literal and distance 
 literal code| bits
 ---|----
 32 | 000
-39 | 00001
+39 | 10000
 44 | 10001
-46 | 001011
-73 | 01001
-97 | 0100
-99 | 11001
-100 | 101011
-101 | 1100
-103 | 011011
-104 | 00101
+46 | 110100
+73 | 10010
+97 | 0010
+99 | 10011
+100 | 110101
+101 | 0011
+103 | 110110
+104 | 10100
 105 | 10101
-107 | 111011
-108 | 01101
-109 | 11101
-110 | 0010
-111 | 1010
-112 | 00011
-114 | 000111
+107 | 110111
+108 | 10110
+109 | 10111
+110 | 0100
+111 | 0101
+112 | 11000
+114 | 111000
 115 | 0110
-116 | 1110
-117 | 100111
-121 | 010111
-256 | 110111
-257 | 001111
-259 | 101111
-260 | 011111
+116 | 0111
+117 | 111001
+121 | 111010
+256 | 111011
+257 | 111100
+259 | 111101
+260 | 111110
 263 | 111111
-268 | 10011
+268 | 11001
 
 
 ---
@@ -283,23 +283,26 @@ literal code| bits
 |Distance Code | Bits  |
 |--------------|-------|
 |    8         |   00  |
-|    9         |   10  |
-|    10        |   01  |
+|    9         |   01  |
+|    10        |   10  |
 |    11        |   11  |
     
     
 ---
 
-We have read this table by consuming 180 bits, or 22 bytes + 4 bits. That takes us from the second bit of byte 10 to the 5th bit of byte 32. We now have a little less than 49 bytes left to squeeze in our compressed message:
+We have read this table by consuming 179 bits, or 22 bytes + 3 bits. That takes us from the second bit of byte 10 to the 4th bit of byte 32. We now have 48 and 1/2 bytes left to squeeze in our compressed message:
 
 ```
-               |
-               v
-data[32] --> 10010011 01000010 10000111 10101000 10000011 00110000 00001010
-data[39] --> 10010011 10010001 00111000 01000110 00111011 11110011 11001110
-data[46] --> 01000111 01000100 01111010 11011100 11001100 10000011 11000001 
-data[53] --> 01010100 00100010 01001000 11010110 10110111 01010000 01101001 
-data[60] --> 11010111 11100111 10101010 01101100 01111111 01101101 11110000 
-data[67] --> 11011010 11100000 10000101 10100111 00011111 01011001 00111011
-data[74] --> 11011011 01110010 00000011 00001000 10101100 00101011 00010011
+Starting from here
+                 |
+                 v
+data[32]  --> 10010011 01000010 10000111 10101000 10000011 00110000 00001010
+data[39]  --> 10010011 10010001 00111000 01000110 00111011 11110011 11001110
+data[46]  --> 01000111 01000100 01111010 11011100 11001100 10000011 11000001 
+data[53]  --> 01010100 00100010 01001000 11010110 10110111 01010000 01101001 
+data[60]  --> 11010111 11100111 10101010 01101100 01111111 01101101 11110000 
+data[67]  --> 11011010 11100000 10000101 10100111 00011111 01011001 00111011
+data[74]  --> 11011011 01110010 00000011 00001000 10101100 00101011 00010011
 ```
+
+Now we are in a position to read the message. Let's try. The sequence starts `10010`, which corresponds to 73. We write this to our output. Next comes `10000` which is 39, `10111` which is 109, and `000` which is a 32.
