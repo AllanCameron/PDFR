@@ -300,14 +300,83 @@ void Deflate::BuildDynamicCodeTable()
   std::vector<uint32_t> length_code_order {16, 17, 18, 0, 8,  7,  9, 6, 10, 5,
                                            11, 4,  12, 3, 13, 2, 14, 1, 15};
 
-// build the code lengths code table
+  uint8_t maxbits = 0x00;
+  uint8_t minbits = 0xff;
+
+  // build the code lengths code table
   std::vector<uint32_t> code_length_lengths(19);
   for (uint32_t i = 0; i < number_of_length_codes; ++i)
   {
-    code_length_lengths[length_code_order[i]] = GetBits(3);
-    ShowBits();
+    uint8_t triplet = GetBits(3);
+    code_length_lengths[length_code_order[i]] = triplet;
+    if(triplet > maxbits) maxbits = triplet;
+    if(triplet < minbits && triplet > 0) minbits = triplet;
   }
-  auto huff = Huffmanize(code_length_lengths);
+
+  auto code_length_table = Huffmanize(code_length_lengths);
+
+  std::vector<uint32_t> code_lengths(total_number_of_codes);
+  size_t write_head = 0;
+  uint32_t code = 0;
+
+  while(write_head < total_number_of_codes)
+  {
+    bool found = false;
+    uint32_t read_bits = minbits;
+    uint32_t read_value = GetBits(read_bits);
+
+    while(!found)
+    {
+      uint32_t candidate = read_value | (read_bits << 16);
+     for(size_t it = 0; it < code_length_table.size(); ++it)
+      {
+        if (candidate == code_length_table[it])
+        {
+          code = it;
+          found = true;
+          continue;
+        }
+
+        if (it == code_length_table.size() - 1 && found == false)
+        {
+          read_bits++;
+          read_value = (read_value << 1) + GetBits(1);
+          if (read_bits > maxbits)
+          {
+            throw runtime_error("Couldn't find code");
+          }
+        }
+      }
+    }
+
+    if(code > 15)
+    {
+      uint32_t repeat_this = 0;
+      uint32_t num_bits = 3 * (code / 18) + code - 14;
+      uint32_t num_repeats = GetBits(num_bits);
+      cout << num_repeats << endl;
+      num_repeats = num_repeats + 3 + (8 * (code / 18));
+      if (code == 16) repeat_this = code_lengths[write_head - 1];
+      for (size_t i = 0; i < num_repeats; ++i)
+      {
+        if(write_head > code_lengths.size()) break;
+        code_lengths[write_head++] = repeat_this;
+      }
+    }
+    else
+    {
+      code_lengths[write_head++] = code;
+    }
+    std::cout << "Read code " << code << std::endl;
+  }
+
+  auto literal_start = code_lengths.begin();
+  auto distance_start = literal_start + number_literal_codes;
+  vector<uint32_t> literal_lengths(literal_start, distance_start);
+  vector<uint32_t> distance_lengths(distance_start, code_lengths.end());
+
+  literal_codes_ = Huffmanize(literal_lengths);
+  distance_codes_ = Huffmanize(distance_lengths);
 }
 
 /*---------------------------------------------------------------------------*/

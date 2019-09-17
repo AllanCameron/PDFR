@@ -250,6 +250,7 @@ DeflateStream <- R6Class("DeflateStream", public = list(
     codeLenTab[self$code_length_map + 1] = codeLenCodeLengths;
 
     code_length_table = Huffmanize(codeLenTab);
+    print(code_length_table)
     maxbits = max(code_length_table$bit_length);
     minbits = min(code_length_table$bit_length);
     code_lengths = numeric();
@@ -267,11 +268,16 @@ DeflateStream <- R6Class("DeflateStream", public = list(
         if(length(matches) == 1)
         {
           code = code_length_table$represents[matches];
+          cat("read code", code, "\n")
           if(code > 15)
           {
             repeat_this = 0;
-            num_repeats = self$GetBits(3 * (code %/% 18) + code - 14);
+            num_bits = 3 * (code %/% 18) + code - 14;
+            cat("Reading", num_bits, "bits at byte", self$position, ":", self$unused_bits);
+            num_repeats = self$GetBits(num_bits);
+            cat(" with value", num_repeats, "\n");
             num_repeats = num_repeats + 3 + (8 * (code %/% 18));
+            cat("I make that", num_repeats, "repeats\n")
             if (code == 16) repeat_this = code_lengths[length(code_lengths)];
             code_lengths = c(code_lengths, rep(repeat_this, num_repeats));
           }
