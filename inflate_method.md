@@ -94,9 +94,9 @@ The next 5 bits in our sequence will indicate the number of _distance codes_ we 
 ### Populating the dictionary
 OK, so now we know how big our dictionary is going to be. But how do we populate it? Unfortunately for us, the dictionary itself is compressed. You see, it turns out that you can completely specify the code dictionary just by specifying how many bits are needed to represent each particular literal value.
 
-Since the number of bits needed for any one character will never exceed 15 (by design), you _could_ specify the code dictionary with 4-bits per literal value, giving each literal a number between 0 and 15 as the length of bits required to represent it. However, this would give you an awful lot of wasted bytes full of zeroes representing the number of bits required to specify those literal values that never occur in the message.
+Since the number of bits needed for any one character will never exceed 15 (by design), you _could_ specify the code dictionary with 4-bits per literal value, giving each literal a number between 0 and 15 as the length of bits required to represent it. However, this would give you an awful lot of wasted bytes full of zeros representing the number of bits required to specify those literal values that never occur in the message.
 
-Here's what happens instead. We use _another_ code to describe the bit-lengths of the final dictionary code table: the numbers 0 - 15 will represent an actual number of bits, and the numbers 16, 17, 18 will represent repeat sequences (mostly of zeroes). I will start building my dictionary bit-length table at literal value 0, and if I come across the numbers 0-15, I insert them as the number of bits that are going to represent that literal in my final dictionary. I then move on to the next literal. If I come across a 16, 17, or 18, I will insert a number of repeats based on a set of rules for those 3 numbers. I keep going like this until my literal and distance codes all have an associated bit-length to describe them. 
+Here's what happens instead. We use _another_ code to describe the bit-lengths of the final dictionary code table: the numbers 0 - 15 will represent an actual number of bits, and the numbers 16, 17, 18 will represent repeat sequences (mostly of zeros). I will start building my dictionary bit-length table at literal value 0, and if I come across the numbers 0-15, I insert them as the number of bits that are going to represent that literal in my final dictionary. I then move on to the next literal. If I come across a 16, 17, or 18, I will insert a number of repeats based on a set of rules for those 3 numbers. I keep going like this until my literal and distance codes all have an associated bit-length to describe them. 
 
 Once I finish this, I will have a one to one mapping between number of bits and the literal code that it represented. From this, I can completely recreate the actual code dictionary.
 
@@ -114,6 +114,8 @@ group :     2111000- 44433322 77666555 a9998887 cccbbbaa ffeeeddd -------f
 bits |->:   >|->|->  |->|->|- ->|->|-> >|->|->| |->|->|- ->|->|->        |
              1  0    4  3  2    6  5    9  8  7 c  b  a    e  d          f
 ```
+
+This now gives us our code lengths, as shown in the following table:
 
 | group | binary | decimal |
 |-------|--------|---------|
@@ -134,5 +136,100 @@ bits |->:   >|->|->  |->|->|- ->|->|-> >|->|->| |->|->|- ->|->|->        |
 |   e   |  000   |    0    |
 |   f   |  101   |    5    |
 
-In our first byte, we have already read the first low order bit, so now we read the next three bits (`110`, or 6). This is our first entry. The next three bits are `011` or 3. For the next three bits, remember we need to take the two low order bits of the next byte and put them to the right of the high order bit of our first byte. This gives us
+Note the group names 0-f don't actually signify anything here other than being used for illustration purposes. What do the decimal numbers represent? They are the lengths of the binary codes that will be used to describe the numbers 0 to 18. How? We need to fill a length-19 array with the decimal numbers in the following order, given to us by the Deflate specification:
+`{16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15};`
+This order is chosen because these are the most-to-least commonly used symbols in the literal-length encoding system. For our data then, we would have:
+
+```
+ order {16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15}
+ value {6,  3,  4,  3, 0, 0, 0, 2, 0,  2, 0,  3, 0,  6, 0,  5, 0,  0, 0 }
+```
+
+Note that we only had 16 values, so we append three zeros on the end to make it up to 19 (there are no codes of length 14, 1 or 15 in our literal table). Now rearranging the values according to the given order, we have:
+
+```
+code_lengths = {3, 0, 5, 6, 3, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 3, 4};
+```
+
+This is sufficient to recreate the actual codes we are about to read to recreate the literal table. We do this by building a _Huffman tree_. There are several good descriptions online of how to recreate a Huffman tree from a given array of lengths, but in our case, this given set of lengths gives us the following Huffman tree:
+
+| code | bits   |
+|------|--------|
+|   0  | 100    |
+|   2  | 11110  |
+|   3  | 111110 |
+|   4  | 101    |
+|   5  | 00     |
+|   6  | 01     |
+|  16  | 111111 |
+|  17  | 110    |
+|  18  | 1110   |
+
+This now allows us to read the data which follows to get our literal code table. Let's go back to our data, starting where we left off at byte 10:
+
+```
+data[10] --> 10101111 11110010 01101101 00101100 11000100 01111011 01110000
+```
+We have already read the first bit of byte 10. Now we want to read the remaining bits until we have a match. Remember, none of our codes are less than 2 bits long, so we start with two bits and ask whether we have a match. `11` isn't in our table, so how about three bits? `111` isn't in our table either. How about `1110`? Yes! That represents code 18. Code 18 means we read the next seven bits and add 11 to get the number of zeros we want to add to our literal array. The next seven bits are not bit reversed, so we read them as normal: `101` from byte 10, with the next 4 bits from byte 11 `0010` being placed to the right to give `0010101` or 21. Adding 11 gives us 32, which means we want to start our literal length array with 32 zeros. 
+
+Now we can read another code. `11`, `111`, `1111` and `11111` don't match, but `111110` does: it's code 3, so we place a 3 in our literal length array at literal_length[32]. This means that of all the ascii characters in our final message, the lowest will be 32, or 0x20, which is the space character. It will be represented by 3 bits when we come to decoding the actual compressed data.
+
+Next comes `110` which is code 17. This means we have more zero repeats. The rules for code 17 are that we take the next three bits and add 3 to get the number of repeats. Here the next three bits are `011`, or 3, so we want to add 6 zeros to our array. 
+
+Next up is `00`, which translates to length 5. We place this at position 39 and read the next code.
+
+We go on like this until our literal and distance array is full. The full listing looks like this:
+
+---
+
+1) Read code 18 using 4 bits, consume next 7 bits to get repeat length; Write 32 zeros from position [0] to position [31]
+2) Read code 3 using 6 bits; Write 3 at position [32]
+3) Read code 17 using 3 bits, consume next 3 bits to get repeat length; Write 6 zeros from [33] to [38]
+4) Read code 5 using 2 bits; Write 5 at position [39]
+5) Read code 17 using 3 bits, consume next 3 bits to get repeat length; Write 4 zeros from [40] to [43]
+6) Read code 5 using 2 bits; Write 5 at position [44]
+7) Read code 0 using 3 bits; Write 0 at position [45]
+8) Read code 6 using 2 bits; Write 6 at position [46]
+9) Read code 18 using 4 bits, consume next 7 bits to get repeat length; Write 26 zeros from [47] to [72]
+10) Read code 5 using 2 bits; Write 5 at position [73]
+11) Read code 18 using 4 bits, consume next 7 bits to get repeat length; Write 23 zeros from [74] to [96]
+12) Read code 4 using 3 bits; Write 4 at position [97]
+13) Read code 0 using 3 bits; Write 0 at position [98]
+14) Read code 5 using 2 bits; Write 5 at position [99]
+15) Read code 6 using 2 bits; Write 6 at position [100]
+16) Read code 4 using 3 bits; Write 4 at position [101]
+17) Read code 0 using 3 bits; Write 0 at position [102]
+18) Read code 6 using 2 bits; Write 6 at position [103]
+19) Read code 5 using 2 bits; Write 5 at position [104]
+20) Read code 5 using 2 bits; Write 5 at position [105]
+21) Read code 0 using 3 bits; Write 0 at position [106]
+22) Read code 6 using 2 bits; Write 6 at position [107]
+23) Read code 5 using 2 bits; Write 5 at position [108]
+24) Read code 5 using 2 bits; Write 5 at position [109]
+25) Read code 4 using 3 bits; Write 4 at position [110]
+26) Read code 4 using 3 bits; Write 4 at position [111]
+27) Read code 5 using 2 bits; Write 5 at position [112]
+28) Read code 0 using 3 bits; Write 0 at position [113]
+29) Read code 6 using 2 bits; Write 6 at position [114]
+30) Read code 4 using 3 bits; Write 4 at position [115]
+31) Read code 4 using 3 bits; Write 4 at position [116]
+32) Read code 6 using 2 bits; Write 6 at position [117]
+33) Read code 17 using 3 bits, consume next 3 bits to get repeat length; Writing 3 zeros from [118] to [120]
+34) Read code 6 using 2 bits; Write 6 at position [121]
+35) Read code 18 using 4 bits, consume next 7 bits to get repeat length; Write 134 zeros from [122] to [255]
+36) Read code 6 using 2 bits; Write 6 at position [256]
+37) Read code 6 using 2 bits; Write 6 at position [257]
+38) Read code 0 using 3 bits; Write 0 at position [258]
+39) Read code 6 using 2 bits; Write 6 at position [259]
+40) Read code 6 using 2 bits; Write 6 at position [260]
+41) Read code 0 using 3 bits; Write 3 at position [261]
+42) Read code 0 using 3 bits; Write 0 at position [262]
+43) Read code 6 using 2 bits; Write 6 at position [263]
+44) Read code 17 using 3 bits, consume next 3 bits to get repeat length; Write 4 zeros from [264] to [267]
+45) Read code 5 using 2 bits; Write 5 at position [268]
+46) Read code 17 using 3 bits, consume next 3 bits to get repeat length; Write 8 zeros from [269] to [276]
+47) Read code 2; Write 2 at position [277]
+48) Read code 16 using 6 bits, consume next 3 bits to get repeat length; Write 3 twos from [278] to [280]
+
+---
 

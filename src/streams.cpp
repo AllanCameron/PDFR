@@ -232,7 +232,8 @@ std::vector<uint32_t> Deflate::Huffmanize(const std::vector<uint32_t>& lengths)
       if(lengths[j] == i && i != 0)
       {
         code_added = true;
-        huffman_table[j] = (lengths[j] << 16) | current_code++;
+        huffman_table[j] = (lengths[j] << 16) |
+                            BitFlip(current_code++, lengths[j]);
       }
     }
     if(code_added) current_code <<= 1;
@@ -258,6 +259,18 @@ void Deflate::CheckHeader()
   {
     throw std::runtime_error("FDICT bit set in stream header");
   }
+}
+
+
+uint32_t Stream::BitFlip(uint32_t value, uint32_t n_bits)
+{
+  uint32_t result = 0;
+  for(uint32_t i = 1; i <= n_bits; ++i)
+  {
+    result = (result << 1) | (value & 1);
+    value  >>= 1;
+  }
+  return result;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -314,7 +327,11 @@ void Deflate::BuildDynamicCodeTable()
   }
 
   auto code_length_table = Huffmanize(code_length_lengths);
-
+  for(size_t i = 0; i < code_length_table.size(); ++i)
+  {
+    std::cout << "Code " << i << ": " << (code_length_table[i] & 0xff)
+              << " in " << (code_length_table[i] >> 16) << " bits" << std::endl;
+  }
   std::vector<uint32_t> code_lengths(total_number_of_codes);
   size_t write_head = 0;
   uint32_t code = 0;
@@ -324,10 +341,9 @@ void Deflate::BuildDynamicCodeTable()
     bool found = false;
     uint32_t read_bits = minbits;
     uint32_t read_value = GetBits(read_bits);
-
     while(!found)
     {
-      uint32_t candidate = read_value | (read_bits << 16);
+     uint32_t candidate = read_value | (read_bits << 16);
      for(size_t it = 0; it < code_length_table.size(); ++it)
       {
         if (candidate == code_length_table[it])
@@ -339,8 +355,7 @@ void Deflate::BuildDynamicCodeTable()
 
         if (it == code_length_table.size() - 1 && found == false)
         {
-          read_bits++;
-          read_value = (read_value << 1) + GetBits(1);
+          read_value = read_value + (GetBits(1) << read_bits++);
           if (read_bits > maxbits)
           {
             throw runtime_error("Couldn't find code");
@@ -348,14 +363,14 @@ void Deflate::BuildDynamicCodeTable()
         }
       }
     }
-
+    std::cout << "Read code " << code << std::endl;
     if(code > 15)
     {
       uint32_t repeat_this = 0;
       uint32_t num_bits = 3 * (code / 18) + code - 14;
       uint32_t num_repeats = GetBits(num_bits);
-      cout << num_repeats << endl;
       num_repeats = num_repeats + 3 + (8 * (code / 18));
+      cout << "  Repeats : " << num_repeats << endl;
       if (code == 16) repeat_this = code_lengths[write_head - 1];
       for (size_t i = 0; i < num_repeats; ++i)
       {
@@ -367,7 +382,7 @@ void Deflate::BuildDynamicCodeTable()
     {
       code_lengths[write_head++] = code;
     }
-    std::cout << "Read code " << code << std::endl;
+    cout << "Next write position is at " << write_head << endl;
   }
 
   auto literal_start = code_lengths.begin();
@@ -377,6 +392,12 @@ void Deflate::BuildDynamicCodeTable()
 
   literal_codes_ = Huffmanize(literal_lengths);
   distance_codes_ = Huffmanize(distance_lengths);
+  cout << "\n\n" << "Literal table:\n";
+  for(size_t i = 0; i < literal_codes_.size(); ++i)
+  {
+    cout << "Code " << i << ": " << (literal_codes_[i] & 0xff) << " in "
+         << (literal_codes_[i] >> 16) << " bits " << endl;
+  }
 }
 
 /*---------------------------------------------------------------------------*/

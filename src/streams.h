@@ -76,8 +76,7 @@ public:
   uint32_t PeekByte();
   void Reset();
   uint32_t GetBits(uint32_t);
-  inline size_t GetPosition() {return this->input_position_;}
-  inline void ShowBits() {std::cout << "Remaining bits " << (int) unconsumed_bits_ << std::endl;}
+  uint32_t BitFlip(uint32_t value, uint32_t n_bits);
 
   private:
   std::string input_;
