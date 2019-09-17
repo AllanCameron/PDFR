@@ -393,10 +393,10 @@ void Deflate::BuildDynamicCodeTable()
   literal_codes_ = Huffmanize(literal_lengths);
   distance_codes_ = Huffmanize(distance_lengths);
   cout << "\n\n" << "Literal table:\n";
-  for(size_t i = 0; i < literal_codes_.size(); ++i)
+  for(size_t i = 0; i < distance_codes_.size(); ++i)
   {
-    cout << "Code " << i << ": " << (literal_codes_[i] & 0xff) << " in "
-         << (literal_codes_[i] >> 16) << " bits " << endl;
+    cout << "Code " << i << ": " << (distance_codes_[i] & 0xff) << " in "
+         << (distance_codes_[i] >> 16) << " bits " << endl;
   }
 }
 

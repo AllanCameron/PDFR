@@ -241,7 +241,7 @@ Now we have all of our lengths, we can generate our actual literal and distance 
 
 ---
 
-Literal Codes
+###Literal Codes
 
 literal code| bits
 ---|----
@@ -274,3 +274,18 @@ literal code| bits
 260 | 011111
 263 | 111111
 268 | 10011
+
+
+---
+
+###Distance codes
+
+Distance Code | Bits
+--------------|-------
+    8         |   00 
+    9         |   10
+    10        |   01 
+    11        |   11 
+    
+    
+---
