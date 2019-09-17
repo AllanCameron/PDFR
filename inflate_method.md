@@ -232,7 +232,7 @@ We go on like this until our literal and distance array is full. The full listin
 44) Read code 17 using 3 bits, consume next 3 bits to get repeat length; Write 4 zeros from [264] to [267]
 45) Read code 5 using 2 bits; Write 5 at position [268]
 46) Read code 17 using 3 bits, consume next 3 bits to get repeat length; Write 8 zeros from [269] to [276]
-47) Read code 2; Write 2 at position [277]
+47) Read code 2 using 5 bits; Write 2 at position [277]
 48) Read code 16 using 6 bits, consume next 3 bits to get repeat length; Write 3 twos from [278] to [280]
 
 ---
@@ -289,3 +289,17 @@ literal code| bits
     
     
 ---
+
+We have read this table by consuming 180 bits, or 22 bytes + 4 bits. That takes us from the second bit of byte 10 to the 5th bit of byte 32. We now have a little less than 49 bytes left to squeeze in our compressed message:
+
+```
+               |
+               v
+data[32] --> 10010011 01000010 10000111 10101000 10000011 00110000 00001010
+data[39] --> 10010011 10010001 00111000 01000110 00111011 11110011 11001110
+data[46] --> 01000111 01000100 01111010 11011100 11001100 10000011 11000001 
+data[53] --> 01010100 00100010 01001000 11010110 10110111 01010000 01101001 
+data[60] --> 11010111 11100111 10101010 01101100 01111111 01101101 11110000 
+data[67] --> 11011010 11100000 10000101 10100111 00011111 01011001 00111011
+data[74] --> 11011011 01110010 00000011 00001000 10101100 00101011 00010011
+```
