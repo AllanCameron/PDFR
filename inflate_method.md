@@ -115,24 +115,24 @@ bits |->:   >|->|->  |->|->|- ->|->|-> >|->|->| |->|->|- ->|->|->        |
              1  0    4  3  2    6  5    9  8  7 c  b  a    e  d          f
 ```
 
- group | binary | decimal
--------+--------+---------
-   0   |  110   |   6
-   1   |  011   |   3
-   2   |  100   |   4
-   3   |  011   |   3
-   4   |  000   |   0
-   5   |  000   |   0
-   6   |  000   |   0
-   7   |  010   |   2
-   8   |  000   |   0
-   9   |  010   |   2
-   a   |  000   |   0
-   b   |  011   |   3
-   c   |  000   |   0
-   d   |  110   |   6
-   e   |  000   |   0
-   f   |  101   |   5
+| group | binary | decimal |
+|-------|--------|---------|
+|   0   |  110   |    6    |
+|   1   |  011   |    3    |
+|   2   |  100   |    4    |
+|   3   |  011   |    3    |
+|   4   |  000   |    0    |
+|   5   |  000   |    0    |
+|   6   |  000   |    0    |
+|   7   |  010   |    2    |
+|   8   |  000   |    0    |
+|   9   |  010   |    2    |
+|   a   |  000   |    0    |
+|   b   |  011   |    3    |
+|   c   |  000   |    0    |
+|   d   |  110   |    6    |
+|   e   |  000   |    0    |
+|   f   |  101   |    5    |
 
 In our first byte, we have already read the first low order bit, so now we read the next three bits (`110`, or 6). This is our first entry. The next three bits are `011` or 3. For the next three bits, remember we need to take the two low order bits of the next byte and put them to the right of the high order bit of our first byte. This gives us
 
