@@ -113,7 +113,9 @@ The next 5 bits in our sequence will indicate the number of _distance codes_ we 
 OK, so now we know how big our dictionary is going to be. It's going to have 269 literal codes and 12 distance codes. But how do we populate it? Unfortunately for us, the dictionary itself is compressed. You see, it turns out that you can completely specify the exact bit sequences representing a dictionary just by specifying the lengths of those sequences. How? By building a Huffman tree.
 
 ### Huffman trees
-Huffman trees are a deceptively simple concept. They allow a group of distinct elements to be labelled in the most compact way possible. The problem a Huffman tree addresses is this: suppose I wanted to represent the letters in the phrase "Hello_world!". That would normally be stored as a sequence of 12 bytes. However, what if I wanted to encode it as a minimal stream of bits? Well, I could take advantage of the fact that I only have 9 different symbols to encode (since "l" appears 3 times and "o" appears twice). I could therefore store them as a stream of fixed 4-bit sequences; one symbol for each letter, and as long as I have a dictionary to interpret those 4-bit numbers, I can reconstitute the message.
+Huffman trees are a deceptively simple concept. They allow a group of distinct elements to be labelled in the most compact way possible. The problem a Huffman tree addresses is this: suppose I wanted to represent a known, fixed set of symbols in as few bits as possible.
+
+Take the phrase "Hello_world!". That would normally be stored as a sequence of 12 bytes. However, what if I wanted to encode it as a minimal stream of bits, allowing each letter to be represented as a chunk of bits? Well, I could take advantage of the fact that I only have 9 different symbols to encode (since "l" appears 3 times and "o" appears twice). I need 9 different numbers to describe them, so I could do this in 4 bits (0000 - 1000). I could therefore store them as a stream of fixed 4-bit sequences; one symbol for each letter, and as long as I have a dictionary to interpret those 4-bit numbers, I can reconstitute the message.
 
 A Huffman tree allows us to do even better than that by using fewer bits for the most frequently used symbols and more bits for the less frequently used symbols, but using fewer bits overall. We would construct it like this: first, take all the unique symbols we have in our message: `"H" "e" "l" "o" "_" "w" "r" "d" "!"`. Now, sort them by their frequency in the message. If their are ties, sort the ties by ascii value:
 ```
@@ -121,57 +123,68 @@ A Huffman tree allows us to do even better than that by using fewer bits for the
  count    3     2     1     1     1     1     1     1     1
  ascii   108   111   33    72    95    100   101   114   119
 ```
-Now we start at the left and move right until we find our first instance of the lowest frequency (1). We join that to the lowest-value node as determined by count, then number of symbols, then lexicographically. This creates a new node with summed values of the two joined nodes.
+Now we start at the right and join the two values together. This creates a new node with summed values of the two joined nodes.
 
 ```
- symbol   l     o   (! or  H)    _     d     e     r     w  
- count    3     2       2        1     1     1     1     1
+ symbol   l     o     !     H     _     d     e     r or w  
+ count    3     2     1     1     1     1     1       2
 ```
 Repeat this for the next lowest frequencies.
 
 ```
- symbol   l     o   (! or  H)   (_ or d)     e     r     w  
- count    3     2       2           2        1     1     1
+ symbol   l     o     !     H     _     d or e    r or w  
+ count    3     2     1     1     1       2         2
  
- symbol   l     o   (! or  H)   (_ or d)     (e or r)    w  
- count    3     2       2           2            2       1
+ symbol   l     o     !     H or _     d or e    r or w  
+ count    3     2     1       2          2         2
  
- symbol   l   (o or w)   (! or  H)   (_ or d)     (e or r)  
- count    3       3          2           2            2       
+ symbol   l     o or !     H or _     d or e    r or w  
+ count    3       3          2          2         2   
  
- symbol   l   (o or w)  ((! or  H) or (_ or d))   (e or r)  
- count    3       3                4                  2     
+```
+We are now looking to create a new node from adjacent members that will have the lowest combined count. If it's a tie, start on the right. 
 
- symbol   (l or (e or r))  (o or w)  ((! or  H) or (_ or d))  
- count        5                3                 4   
- 
- symbol   (l or (e or r))  ((o or w) or ((! or  H) or (_ or d)))
- count        5                      7
+```
+ symbol   l     o or !     H or _   (d or e) or (r or w)  
+ count    3       3          2               4
+```
 
- symbol   (l or (e or r)) or ((o or w) or ((! or  H) or (_ or d)))
- count                    12          
+
+Now we can combine our remaining 4 nodes as 2 pairs:
+
+```
+ symbol   l  or (o or ! )    (H or _)  or ((d or e) or (r or w))
+ count       6                         6
+
+```
+Now we can combine this to a single root node:
+
+```
+ symbol   (l  or (o or ! )) or ((H or _)  or ((d or e) or (r or w)))
+ count                      12
+ 
 ```
 
 The nested "or" clauses represent a tree structure, where each "or" represents a branching point:
 
 ```
-    (l or (e or r)) or ((o or w) or ((! or  H) or (_ or d)))
-                                  |
+    (l  or (o or ! )) or ((H or _)  or ((d or e) or (r or w)))
+                      |
        -----------------------------------------------
        |                                             |
-    l or (e or r)                          (o or w) or ((! or  H) or (_ or d)))
+    l or (o or !)                          (H or _) or ((d or e) or (r or w))
        |                                             |
 ---------------------                      ---------------------
 |                   |                      |                   |
-l                 e or r                o or w       (! or  H) or (_ or d)
+l                 o or !                 H or _       (d or e) or (r or w)
                     |                      |                   |
                ------------              -----            ------------
                |          |              |   |            |          |
-               e          r              o   w            ! or H     _ or d
+               o          !              H   _          d or e     r or w
                                                           |          |
                                                         ------     -----
                                                         |     |    |   |
-                                                        !     H    _   d
+                                                        d     e    r   w
                      
 ```
 
@@ -192,45 +205,49 @@ l              ------------              -----            ------------
                |          |              |   |            |          |
                0          1              0   1            0          1
                |          |              |   |            |          |
-               e          r              o   w          -------    -----
+               o          !              H   -          -------    -----
                                                         |     |    |   |
                                                         0     1    0   1
                                                         |     |    |   |
-                                                        !     H    _   d
+                                                        d     e    r   w
 ```
-This allows us to specify the unique digits for each letter:
+This allows us to specify the unique digits for each letter, sorted by frequency then by ascii value:
 
 | letter | binary code |
 |--------|-------------|
-|   !    |    1100     |
-|   H    |    1101     |
-|   _    |    1110     |
-|   d    |    1111     |
-|   e    |    010      |
 |   l    |    00       |
-|   o    |    100      |
-|   r    |    011      |
-|   w    |    101      |
+|   o    |    010      |
+|   !    |    011      |
+|   H    |    100      |
+|   _    |    101      |
+|   d    |    1100     |
+|   e    |    1101     |
+|   r    |    1110     |
+|   w    |    1111     |
 
-Our message could therefore be transmitted as `1101 010 00 00 100 1110 101 100 011 00 1111 1100`. This is only 37 bits. Remember, using a fixed length code I would need 4 bits per symbol, or 48 bits for my 12 symbols.
+Our message could therefore be transmitted as `100 1101 00 00 010 101 1111 010 1110 00 1100`. This is only 34 bits. Remember, using the standard ascii encoding I would need 12 bytes, or 96 bits, and using a minimal fixed length code I would need 4 bits per symbol, or 48 bits for my 12 symbols. However, I would also need the recipient to know what the codes meant, and this means I need a way of representing the Huffman tree itself.
 
-I could represent this Huffman tree by having an array 128 bytes long, with one entry for each ascii character. I could then just put the number of bits that each used symbol is encoded with. All the symbols that don't appear in my dictionary would be "encoded" with zero bits.
+Usefully, a recipient can recreate a Huffman tree if they only know the _length_ of the bits used for each code. They start their codes at zero, with the minimum number of bits required (e.g. if the smallest length is three bits, that would give a code `000`). For any other codes of the same length, they just add one, so if they have two other codes of length 3 to recover, they would label them `001` and `010`.
 
-I can recreate a huffman tree from a given array of lengths. I start at zero, with the minimum number of bits required (three bits would give me `000`). For any other codes of the same length, I just add one, so if I had two other codes of length 3 to recover, I would label them `001` and `010`.
+To make sure there is no ambiguity when it comes to actually reading the codes from a stream of bits, the recipient needs to make sure that none of these three-bit sequences appear at the start of the longer codes. To do this, they add one to the highest three-bit code and bit-shift it to the left by one place. Therefore, since the highest 3-bit code was `010`, they add one to make it `011` but then bit shift it to `0110`. Now if they have other codes of length 4, they can increment by one safely without having any clashes: `0111, 1000`. Again, if they want to continue to five bits they would do the same. Taking off from `1000` (which is 8 in binary) they would go to `(8 + 1) << 1`, which in binary is`10010`.
 
-To make sure there is no ambiguity when it comes to actually reading the codes from a stream of bits, I need to make sure that none of these three-bit sequences appear at the start of my longer codes. To do this, I add one to my highest three-bit code and bit-shift it to the left by one place. Therefore, since my highest 3-bit code was `010`, I add one to make it `011` but then bit shift it to `0110`. Now if I have other codes of length 4, I can increment by one safely without having any clashes: `0111, 1000`. Again, if I want to continue to five bits I do the same. Taking off from `1000` I would go to `10010`.
+For example, I know my code lengths for the "Hello_world!" dictionary above are `[2, 3, 3, 3, 3, 4, 4, 4, 4]`. There is only one code length of two, so it must be `00`. Stepping up to three bits, we start at `(0 + 1) << 1` or `010`. I have another three codes of length three, so these must be `011`, `100` and `101`. Since `101` in binary is 5, I start my 4-bit sequence at `(5 + 1) << 1` which is `1100` in binary. The last three numbers will therefore be `1101`, `1110` and `1111`. This is exactly what we found with our Huffman codes.
 
-For example, if I know my code lengths for the "Hello_world!" dictionary are `[4, 4, 4, 4, 3, 2, 3, 3]` as in the above table, I can work out that the codes have to be `00, 010, 011, 100, 101, 1100, 1101, 1110, 1111` using this scheme.
+A further difficulty is knowing which symbols these codes actually represent. I could represent this Huffman tree by having an array 128 bytes long, with one entry for each ascii character. I could then just put the number of bits that each symbol in "Hello_world!" is encoded with. All the symbols that don't appear in my dictionary would be "encoded" with zero bits, and ignored when building the Huffman tree. That is in fact the method used in Deflate, but of course it has an obvious drawback: you will have a big array of mostly zeros to include in your description of the Huffman lengths. We'll see how that problem is dealt with soon.
 
-Anyway, that's what a Huffman tree is and how to reconstruct it using only lengths. Back to reconstructing our code dictionary...
+Anyway, that's what a Huffman tree is and how to reconstruct it using only bit lengths. Back to reconstructing our code dictionary...
 
 
 ## Building the code dictionary
 Now we know we only need the bit lengths for our literal codes to reconstruct the actual codes. Surely all we need now is to read off the lengths of the entries in our table? Not so fast!
 
-Since the number of bits needed for any one character will never exceed 15 (by design), you _could_ specify the code dictionary with 4-bits per literal value, giving each literal a number between 0 and 15 as the length of bits required to represent it. However, this would give you an awful lot of wasted bytes full of zeros representing the number of bits required to specify those literal values that never occur in the message.
+Since the number of bits needed for any one character will never exceed 15 (there are only 285 literal codes to represent), you _could_ specify the code dictionary with 4-bits per literal value, giving each literal a number between 0 and 15 as the length of bits required to represent it. However, this would give you an awful lot of wasted bytes full of zeros representing the number of bits required to specify those literal values that never occur in the message.
 
-Here's what happens instead. We use _another_ code to describe the bit-lengths of the final dictionary code table: the numbers 0 - 15 will represent an actual number of bits, and the numbers 16, 17, 18 will represent repeat sequences (mostly of zeros). I will start building my dictionary bit-length table at literal value 0, and if I come across the numbers 0-15, I insert them as the number of bits that are going to represent that literal in my final dictionary. I then move on to the next literal. If I come across a 16, 17, or 18, I will insert a number of repeats based on a set of rules for those 3 numbers. I keep going like this until my literal and distance codes all have an associated bit-length to describe them. 
+Here's what happens instead. We use _another_ compression method (run length encoding) to describe the bit-lengths of the final dictionary code table: the numbers 0 - 15 will represent an actual number of bits, and the numbers 16, 17, 18 will represent repeat sequences (mostly of zeros). I start building my dictionary's bit-length table at literal value 0, and if I come across the numbers 0-15, I insert them as the number of bits that are going to represent that literal in my final dictionary. I then move on to the next literal. If I come across a 16, 17, or 18, I will insert a number of repeats based on a set of rules for those 3 numbers. I keep going like this until my literal and distance codes all have an associated bit-length to describe them.
+
+The rules for 16, 17 and 18 are:
+- If it's a 16, read the next two bits from the stream to give a number between 0 and 4. Add 3 to this number. That's the number of repeats you are about to add. For example, if I come across a 16 and the hext two bits are `01` then I will have 4 repeats to add. What do I repeat though? I repeat the last number that was written before I came across the 16. So if my codes read 0, 6, 2, 16 and the hext two bits are `01`, then my entries will be 0, 6, 2, 2, 2, 2, 2.
+- If it's a 17, read the next three bits from the stream to get a number between 0 and 7.
 
 Once I finish this, I will have a one-to-one mapping between number of bits and the literal code that it represented. From this, I can completely recreate the actual code dictionary by building its Huffman tree.
 
