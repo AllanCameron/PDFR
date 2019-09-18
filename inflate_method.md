@@ -246,16 +246,19 @@ Since the number of bits needed for any one character will never exceed 15 (ther
 Here's what happens instead. We use _another_ compression method (run length encoding) to describe the bit-lengths of the final dictionary code table: the numbers 0 - 15 will represent an actual number of bits, and the numbers 16, 17, 18 will represent repeat sequences (mostly of zeros). I start building my dictionary's bit-length table at literal value 0, and if I come across the numbers 0-15, I insert them as the number of bits that are going to represent that literal in my final dictionary. I then move on to the next literal. If I come across a 16, 17, or 18, I will insert a number of repeats based on a set of rules for those 3 numbers. I keep going like this until my literal and distance codes all have an associated bit-length to describe them.
 
 The rules for 16, 17 and 18 are:
-- If it's a 16, read the next two bits from the stream to give a number between 0 and 4. Add 3 to this number. That's the number of repeats you are about to add. For example, if I come across a 16 and the hext two bits are `01` then I will have 4 repeats to add. What do I repeat though? I repeat the last number that was written before I came across the 16. So if my codes read 0, 6, 2, 16 and the hext two bits are `01`, then my entries will be 0, 6, 2, 2, 2, 2, 2.
-- If it's a 17, read the next three bits from the stream to get a number between 0 and 7.
+- If it's a 16, read the next two bits from the stream to give a number between 0 and 4. Add 3 to this number. That's the number of repeats you are about to insert into the code length table. For example, if I come across a 16 and the hext two bits are `01` then I will have 4 repeats to add. What do I repeat though? I repeat the last number that was written before I came across the 16. So if my codes read 0, 6, 2, 16 and the hext two bits are `01`, then my entries will be 0, 6, 2, 2, 2, 2, 2.
+- If it's a 17, read the next three bits from the stream to get a number between 0 and 7. Add 3 to this number to get the total number of repeats. The repeats are zeros.
+- If it's an 18, read the next seven bits from the stream to get a number 0-127. Add 11 to this to get the number of repeats and insert that many zeros into the code length table.
 
-Once I finish this, I will have a one-to-one mapping between number of bits and the literal code that it represented. From this, I can completely recreate the actual code dictionary by building its Huffman tree.
+Once I finish writing all the code lengths into my code length table, I will have a one-to-one mapping between number of bits and the literal code that it represents. From this, I can completely recreate the actual code dictionary by building its Huffman tree as described above.
 
-So, what we need to do is find out how the length codes 0 - 18 are represented in the compressed dictionary. That is what we need to do first.
+So, all we need to do now is find out how the length codes 0 - 18 are represented in the code length table descriptor.
+
 
 ### Getting the code length codes
+All this background, and we have only read 29 bits of our stream!
 
-After the 5 bits that describe the length of the literal codes and the 5 bits that describe the distance codes come 4 bits telling us how many "code length codes" are about to be described. In our example, the four bits are `1100`, made from the lowest order bit of `data[4]` and the 3 highest order bits of `data[3]`. This is equal to 12, but since we have 4 bits trying to describe a number of code lengths that may be as high as 19 (since there may be a code length for each of the numbers 0 through 18), we add 4 to this. In our case, this means we can expect 16 code lengths to follow.
+After the 5 bits that describe the length of the literal codes and the 5 bits that describe the distance codes come 4 bits telling us how many "code length codes" are about to be described. In our example, the four bits are `1100`, made from the lowest order bit of `data[4]` and the 3 highest order bits of `data[3]`. This is equal to 12, but since we only have 4 bits trying to describe a number of code lengths that may be as high as 19 (since there may be a code length for each of the numbers 0 through 18), we add 4 to this. In our case, this means we can expect 16 code lengths to follow.
 
 Each of these 16 code lengths are made up of three bits and are read as numbers. Let's do that now. I will label our 16 groups of 3 bits as 0 - f, and demonstrate the bits beloning to each group below each byte. The reading order of the bits are shown in the order |->, where "|" indicates the first bit of each group
 
@@ -289,20 +292,19 @@ This now gives us our code lengths, as shown in the following table:
 
 Note the group names 0-f don't actually signify anything here other than being used for illustration purposes. What do the decimal numbers represent? They are the lengths of the binary codes that will be used to describe the numbers 0 to 18. How? We need to fill a length-19 array with the decimal numbers in the following order, given to us by the Deflate specification:
 `{16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15};`
-This order is chosen because these are the most-to-least commonly used symbols in the literal-length encoding system. For our data then, we would have:
+This order is chosen because these are the most-to-least commonly used symbols in the literal-length encoding system. If we have less than 19 three-bit sequences, we assume the lengths at the end of the array are zeros. For our data then, we would have:
 
 ```
  order {16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15}
  value {6,  3,  4,  3, 0, 0, 0, 2, 0,  2, 0,  3, 0,  6, 0,  5, 0,  0, 0 }
 ```
-
-Note that we only had 16 values, so we append three zeros on the end to make it up to 19 (there are no codes of length 14, 1 or 15 in our literal table). Now rearranging the values according to the given order, we have:
+Now rearranging the values according to the given order, we have:
 
 ```
 code_lengths = {3, 0, 5, 6, 3, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 3, 4};
 ```
 
-This is sufficient to recreate the actual codes we are about to read to recreate the literal table. We do this by building a _Huffman tree_. There are several good descriptions online of how to recreate a Huffman tree from a given array of lengths, but in our case, this given set of lengths gives us the following Huffman tree:
+This is sufficient to recreate the actual codes we are about to read to recreate the literal table. We do this by using these codes to build a Huffman tree as detailed above to get the symbols for our code length table descriptor. In our case, the given set of lengths gives us the following Huffman tree:
 
 | code | bits   |
 |------|--------|
@@ -321,15 +323,31 @@ This now allows us to read the data which follows to get our literal code table.
 ```
 data[10] --> 10101111 11110010 01101101 00101100 11000100 01111011 01110000
 ```
-We have already read the first bit of byte 10. We want to read the remaining bits until we have a match. Now, here's the kicker: the Huffman codes are packed into the bytes backwards. That means that when we take a chunk of bits we need to read it backwards. If we read the three low order bits of `11100110` then we need to interpret this as `011` for the purposes of looking up the Huffman code. I know, I know, this is confusing, but that's just how it is.
+We have already read the first bit of byte 10. We want to read the remaining bits until we have a match. Now, here's the kicker: the Huffman codes are packed into the bytes backwards. That means that when we take a chunk of bits we need to interpret it backwards. If we read the three low order bits of `11100110` then we need to interpret this as `011` for the purposes of looking up the Huffman code. I know, I know, this is confusing, but that's just how it is.
 
-Remember, none of our codes are less than 2 bits long, so we start reading backwards from the 7th bit in byte 10, using two bits, and ask whether we have a match. `11` isn't in our table, so how about three bits? `111` isn't in our table either. How about `1110`? Yes! That represents code 18. 
+I did promise that you can keep reading the bits in the same order all the way through. This is true; but to do so, you're going to need to reverse the bit chunks when you store the Huffman-generated codes for comparison. I think this is preferable to bit-reversing the codes when you are reading the code stream.
 
-Codes 16, 17 and 18 are different from the rest. They don't represent actual code lengths, but repeat sequences of actual lengths. Code 18 means we read the next seven bits and add 11 to get the number of zeros we want to add to our literal array. The next seven bits are _not_ bit reversed though (!), so we read them as "normal": `101` from the most significant 3 bits of byte 10, with the next 4 bits from the lower end of byte 11 `0010` being placed to the right to give `0010101` or 21. Adding 11 gives us 32, which means we want to start our literal length array with 32 zeros. 
+Let's bit reverse our Huffman codes:
 
-Now we can read another code. `11`, `111`, `1111` and `11111` don't match, but `111110` does: it's code 3, so we place a 3 in our literal length array at literal_length[32]. This means that of all the ascii characters in our final message, the lowest will be 32, or 0x20, which is the space character. It will be represented by 3 bits when we come to decoding the actual compressed data.
+| code | bits   |
+|------|--------|
+|   0  | 001    |
+|   2  | 01111  |
+|   3  | 011111 |
+|   4  | 101    |
+|   5  | 00     |
+|   6  | 10     |
+|  16  | 111111 |
+|  17  | 011    |
+|  18  | 0111   |
 
-Next comes `110` which is code 17. This means we have more zero repeats. The rules for code 17 are that we take the next three bits and add 3 to get the number of repeats. Here the next three bits are `011`, or 3, so we want to add 6 zeros to our array. 
+Remember, none of our codes are less than 2 bits long, so we start reading from the 7th bit in byte 10, using two bits, and ask whether we have a match. `11` isn't in our table, so how about three bits? `111` isn't in our table either. How about `0111`? Yes! That represents code 18. 
+
+Codes 16, 17 and 18 are different from the rest. They don't represent actual code lengths, but repeat sequences of actual lengths. Code 18 means we read the next seven bits and add 11 to get the number of zeros we want to add to our literal array. We get `101` from the most significant 3 bits of byte 10, with the next 4 bits from the lower end of byte 11 `0010` being placed to the right to give `0010101` or 21. Adding 11 gives us 32, which means we want to start our literal length array with 32 zeros. 
+
+Now we can read another code. `11`, `111`, `1111` and `11111` don't match, but `011111` does: it's code 3, so we place a 3 in our literal length array at literal_length[32]. This means that of all the ascii characters in our final message, the lowest will be 32, or 0x20, which is the space character. It will be represented by 3 bits when we come to decoding the actual compressed data.
+
+Next comes `011` which is code 17. This means we have more zero repeats. The rules for code 17 are that we take the next three bits and add 3 to get the number of repeats. Here the next three bits are `011`, or 3, so we want to add 6 zeros to our array. 
 
 Next up is `00`, which translates to length 5. We place this at position 39 and read the next code.
 
@@ -388,60 +406,66 @@ We go on like this until our literal and distance array is full. The full listin
 
 ---
 
-Now we have all of our lengths, we can generate our actual literal and distance tables by reconstructing their Huffman trees. Here are the final literal and distance codes from which we will construct our message:
+Now we have all of our lengths, we can generate our actual literal and distance tables by reconstructing their Huffman trees. We need to ensure that we generate the Huffman trees seperately for the two dictionaries. The first 269 lengths will be our literal codes and the last 12 will be our distance codes.
+
+Here are the final literal and distance codes from which we will construct our message. Please note *the bit codes have been reversed so we can continue to read the stream in the standard order throughout.*
 
 ---
 
-### Literal Codes
+### Literal Code Dictionary (Note bits are reversed to allow easy look-up)
 
 literal code| bits
----|----
-32 | 000
-39 | 10000
-44 | 10001
-46 | 110100
-73 | 10010
-97 | 0010
-99 | 10011
-100 | 110101
-101 | 0011
-103 | 110110
-104 | 10100
-105 | 10101
-107 | 110111
-108 | 10110
-109 | 10111
-110 | 0100
-111 | 0101
-112 | 11000
-114 | 111000
-115 | 0110
-116 | 0111
-117 | 111001
-121 | 111010
-256 | 111011
-257 | 111100
-259 | 111101
-260 | 111110
-263 | 111111
-268 | 11001
+------------|----
+         32 | 000
+         39 | 00001
+         44 | 10001
+         46 | 001011
+         73 | 01001
+         97 | 0100
+         99 | 11001
+        100 | 101011
+        101 | 1100
+        103 | 011011
+        104 | 00101
+        105 | 10101
+        107 | 111011
+        108 | 01101
+        109 | 11101
+        110 | 0010
+        111 | 1010
+        112 | 00011
+        114 | 000111
+        115 | 0110
+        116 | 1110
+        117 | 100111
+        121 | 010111
+        256 | 110111
+        257 | 001111
+        259 | 101111
+        260 | 011111
+        263 | 111111
+        268 | 10011
+
 
 
 ---
 
-### Distance codes
+### Distance codes (with bits reversed to simplify lookup)
 
 |Distance Code | Bits  |
 |--------------|-------|
 |    8         |   00  |
-|    9         |   01  |
-|    10        |   10  |
+|    9         |   10  |
+|    10        |   01  |
 |    11        |   11  |
     
     
 ---
 
-We have read this table by consuming 179 bits, or 22 bytes + 3 bits. That takes us from the second bit of byte 10 to the 4th bit of byte 32. We now have 48 and 1/2 bytes left to squeeze in our compressed message:
+## Reading the compressed data
+We now have our literal dictionary and distance dictionary. It is time to use them to read the actual data. At last!
+
+If you have followed the example so far, we have read this table by consuming 179 bits, or 22 bytes + 3 bits. That takes us from the second bit of byte 10 to the 4th bit of byte 32. We now have 48 and 1/2 bytes left to squeeze in our compressed message:
 
 ```
 Starting from here
@@ -456,6 +480,42 @@ data[67]  --> 11011010 11100000 10000101 10100111 00011111 01011001 00111011
 data[74]  --> 11011011 01110010 00000011 00001000 10101100 00101011 00010011
 ```
 
-Now we are in a position to read the message. Let's try. The sequence starts `10010`, which corresponds to 73. We write this to our output. Next comes `10000` which is 39, `10111` which is 109, and `000` which is a 32. This spells out "I'm " in ascii, so we're clearly on the right track.
+Now we are in a position to read the message. Let's try. The sequence starts `01001`, which corresponds to 73. We write this to our output. Next comes `00001` which is 39, `11101` which is 109, and `000` which is a 32. This spells out "I'm " in ascii, so we're clearly on the right track. Let's keep going.
+
+Bits read | code | Ascii
+----------|------|-------
+01001     | 73   |   I
+00001     | 39   |   '
+11101     | 109  |   m
+000       | 32   |
+0010      | 110  |   n
+1010      | 111  |   o
+1110      | 116  |   t
+000       | 32   |
+0100      | 97   |   a
+000       | 32   |
+00011     | 112  |   p
+00101     | 104  |   h
+1100      | 101  |   e 
+0100      | 97   |   a
+0110      | 115  |   s
+0100      | 97   |   a
+0010      | 110  |   n
+1110      | 116  |   t
+000       | 32   |
+00011     | 112  |   p
+01101     | 108  |   l
+100111    | 117  |   u
+11001     | 99   |   c
+111011    | 107  |   k
+1100      | 101  |   e
+000111    | 114  |   r 
+10001     | 44   |   ,
+000       | 32   |
+01001     | 73   |   I
+001111    | 257  |   ...
+    
+Ah, but now what's happened? We have come across a non-ascii code, 257. What does that mean?
+    
 
 
