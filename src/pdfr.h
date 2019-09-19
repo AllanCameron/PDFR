@@ -158,7 +158,7 @@ Rcpp::DataFrame
 get_pdf_boxes_from_raw(const std::vector<uint8_t>& file_name, int page_number);
 
 // [[Rcpp::export(TestStream)]]
-void Test_Stream();
+std::string Test_Stream(std::vector<uint8_t> raw_vector);
 
 //---------------------------------------------------------------------------//
 // This function can be called from R to stop the underlying C++ code. This can

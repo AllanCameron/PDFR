@@ -77,7 +77,16 @@ public:
   void Reset();
   uint32_t GetBits(uint32_t);
   uint32_t BitFlip(uint32_t value, uint32_t);
-  inline void WriteOutput(uint8_t byte) {output_[output_position_++] = byte;}
+
+  inline void WriteOutput(uint8_t byte) {output_.append(1, (char) byte);
+                                         output_position_++;}
+  inline void AppendPrevious(uint32_t distance_t, uint32_t length_t)
+  {
+    for (uint32_t i = 0; i < length_t; ++i)
+    {
+      WriteOutput(output_[output_position_ - distance_t]);
+    }
+  }
   inline char GetOutput(){return output_[output_position_++];}
   inline void MoveOutputTo(size_t t_pos){output_position_ = t_pos;}
 
@@ -99,6 +108,7 @@ public:
   void ReadBlock();
   void BuildDynamicCodeTable();
   void ReadCodes();
+  void HandlePointer(uint32_t);
   uint32_t ReadCode(const std::vector<uint32_t>&);
   std::vector<uint32_t> Huffmanize(const std::vector<uint32_t>&);
 
@@ -107,6 +117,8 @@ private:
   bool is_last_block_;
   static const std::vector<uint32_t> fixed_literal_codes_;
   static const std::vector<uint32_t> fixed_distance_codes_;
+  static const std::vector<uint32_t> length_table_;
+  static const std::vector<uint32_t> distance_table_;
   std::vector<uint32_t> literal_codes_;
   std::vector<uint32_t> distance_codes_;
 };

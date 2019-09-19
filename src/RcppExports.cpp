@@ -160,12 +160,14 @@ BEGIN_RCPP
 END_RCPP
 }
 // Test_Stream
-void Test_Stream();
-RcppExport SEXP _PDFR_Test_Stream() {
+std::string Test_Stream(std::vector<uint8_t> raw_vector);
+RcppExport SEXP _PDFR_Test_Stream(SEXP raw_vectorSEXP) {
 BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Test_Stream();
-    return R_NilValue;
+    Rcpp::traits::input_parameter< std::vector<uint8_t> >::type raw_vector(raw_vectorSEXP);
+    rcpp_result_gen = Rcpp::wrap(Test_Stream(raw_vector));
+    return rcpp_result_gen;
 END_RCPP
 }
 // stopCpp
@@ -194,9 +196,9 @@ static const R_CallMethodDef CallEntries[] = {
     {"_PDFR_get_pdf_document_from_raw", (DL_FUNC) &_PDFR_get_pdf_document_from_raw, 1},
     {"_PDFR_get_pdf_boxes_from_string", (DL_FUNC) &_PDFR_get_pdf_boxes_from_string, 2},
     {"_PDFR_get_pdf_boxes_from_raw", (DL_FUNC) &_PDFR_get_pdf_boxes_from_raw, 2},
-    {"_PDFR_Test_Stream", (DL_FUNC) &_PDFR_Test_Stream, 0},
+    {"_PDFR_Test_Stream", (DL_FUNC) &_PDFR_Test_Stream, 1},
     {"_PDFR_stopCpp", (DL_FUNC) &_PDFR_stopCpp, 0},
-    {"run_testthat_tests", (DL_FUNC) &run_testthat_tests, 0},
+    {"run_testthat_tests",                 (DL_FUNC) &run_testthat_tests,                 0},
     {NULL, NULL, 0}
 };
 
