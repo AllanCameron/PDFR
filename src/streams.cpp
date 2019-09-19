@@ -187,19 +187,6 @@ void Stream::Reset()
   output_.clear();
 }
 
-std::string PrintBits(uint32_t input_)
-{
-  std::string result = "";
-  uint8_t mask = 1;
-  uint8_t n_bits = (input_ >> 16) & 0xff;
-  uint8_t value  = input_ & 0x0000ffff;
-  for (uint8_t i = 0; i < n_bits; ++i)
-  {
-    result += to_string((value & mask++) >> i);
-  }
-  return result;
-}
-
 /*---------------------------------------------------------------------------*/
 
 uint32_t Stream::GetBits(uint32_t n_bits_t)
@@ -214,6 +201,7 @@ uint32_t Stream::GetBits(uint32_t n_bits_t)
     value_read |= new_byte << bits_read;
     bits_read += 8;
   }
+
   uint32_t result = value_read & ((1 << n_bits_t) - 1);
   unconsumed_bit_value_ = value_read >> n_bits_t;
   bits_read -= n_bits_t;
@@ -227,6 +215,7 @@ Deflate::Deflate(const std::string& input_t) : Stream(input_t),
                                                is_last_block_(false)
 {
   CheckHeader();
+  ReadBlock();
 }
 
 /*---------------------------------------------------------------------------*/
@@ -235,6 +224,7 @@ Deflate::Deflate(const std::vector<uint8_t>& input_t) : Stream(input_t),
                                                         is_last_block_(false)
 {
   CheckHeader();
+  ReadBlock();
 }
 
 /*---------------------------------------------------------------------------*/
@@ -242,25 +232,21 @@ Deflate::Deflate(const std::vector<uint8_t>& input_t) : Stream(input_t),
 std::vector<uint32_t> Deflate::Huffmanize(const std::vector<uint32_t>& lengths)
 {
   std::vector<uint32_t> huffman_table(lengths.size());
-  uint32_t max_length = 0;
-  for (auto& i : lengths) if(i > max_length) max_length = i;
-
-  uint32_t current_code = 0;
+  uint32_t max_length = *max_element(lengths.begin(), lengths.end());
+  uint32_t code = 0;
 
   for(uint32_t i = 1; i <= max_length; ++i)
   {
-    bool code_added = false;
     for(size_t j = 0; j < lengths.size(); ++j)
     {
       if(lengths[j] == i)
       {
-        code_added = true;
-        huffman_table[j] = (lengths[j] << 16) |
-                            BitFlip(current_code++, lengths[j]);
+        huffman_table[j] = (lengths[j] << 16) | BitFlip(code++, lengths[j]);
       }
     }
-    if(code_added) current_code <<= 1;
+    code <<= 1;
   }
+
   return huffman_table;
 }
 
@@ -348,12 +334,7 @@ void Deflate::BuildDynamicCodeTable()
     if(triplet > maxbits) maxbits = triplet;
     if(triplet < minbits && triplet > 0) minbits = triplet;
   }
-  std::cout << "Read code table lengths:\n" << code_length_lengths[0];
-  for(unsigned i = 1; i < code_length_lengths.size(); ++i)
-  {
-    std::cout << ", " << code_length_lengths[i];
-  }
-  std::cout << endl;
+
   auto code_length_table = Huffmanize(code_length_lengths);
   std::vector<uint32_t> code_lengths(total_number_of_codes);
   size_t write_head = 0;
@@ -381,8 +362,6 @@ void Deflate::BuildDynamicCodeTable()
           read_value = read_value + (GetBits(1) << read_bits++);
           if (read_bits > maxbits)
           {
-            for(auto iter : code_length_table) cout << PrintBits(iter) << std::endl;
-            cout << "Couldn't find " << PrintBits(candidate) << " in this table" << endl;
             throw runtime_error("Couldn't find length code");
           }
         }
@@ -444,7 +423,7 @@ void Deflate::ReadCodes()
         {
           code = it;
           found = true;
-          continue;
+          break;
         }
 
         if (it == literal_codes_.size() - 1 && found == false)
@@ -452,7 +431,6 @@ void Deflate::ReadCodes()
           read_value = read_value + (GetBits(1) << read_bits++);
           if (read_bits > max_literal)
           {
-            std::cout << Output() << std::endl;
             throw runtime_error("Couldn't find literal code");
           }
         }
@@ -477,23 +455,15 @@ void Deflate::HandlePointer(uint32_t code_t)
     if (code_size < min_distance && code_size != 0) min_distance = code_size;
   }
 
-  if(code_t < 265)
-  {
-    length_value = code_t - 254;
-  }
+  if (code_t < 265) length_value = code_t - 254;
+  else if (code_t == 285) length_value = 258;
   else
   {
-    if(code_t == 285)
-    {
-      length_value = 258;
-    }
-    else
-    {
-      extrabits = (code_t - 261) / 4;
-      uint32_t read_value = GetBits(extrabits);
-      length_value = read_value + length_table_[code_t - 265];
-    }
+    extrabits = (code_t - 261) / 4;
+    uint32_t read_value = GetBits(extrabits);
+    length_value = read_value + length_table_[code_t - 265];
   }
+
   uint32_t distance_code = 0;
 
   bool found = false;
@@ -517,7 +487,6 @@ void Deflate::HandlePointer(uint32_t code_t)
         read_value = read_value + (GetBits(1) << read_bits++);
         if (read_bits > max_distance)
         {
-          std::cout << Output() << std::endl;
           throw runtime_error("Couldn't find distance code");
         }
       }
