@@ -534,34 +534,34 @@ The extra bits that you need to read are shown in the table below:
 
 If you read a... | Read this number of extra bits | The length is
 -----------------|--------------------------------|-------------
-      257        |       0                        |      3
-      258        |       0                        |      4
-      259        |       0                        |      5
-      260        |       0                        |      6
-      261        |       0                        |      7
-      262        |       0                        |      8
-      263        |       0                        |      9
-      264        |       0                        |      10
-      265        |       1                        |      11 + extra bits
-      266        |       1                        |      13 + extra bits
-      267        |       1                        |      15 + extra bits
-      268        |       1                        |      17 + extra bits
-      269        |       2                        |      19 + extra bits
-      270        |       2                        |      23 + extra bits
-      271        |       2                        |      27 + extra bits
-      272        |       2                        |      31 + extra bits
-      273        |       3                        |      35 + extra bits
-      274        |       3                        |      43 + extra bits
-      275        |       3                        |      51 + extra bits
-      276        |       3                        |      59 + extra bits
-      277        |       4                        |      67 + extra bits
-      278        |       4                        |      83 + extra bits
-      279        |       4                        |      99 + extra bits
-      280        |       4                        |      115 + extra bits
-      281        |       5                        |      131 + extra bits
-      282        |       5                        |      163 + extra bits
-      283        |       5                        |      195 + extra bits
-      284        |       5                        |      227 + extra bits
-      285        |       0                        |      258
+257        |       0                        |      3
+258        |       0                        |      4
+259        |       0                        |      5
+260        |       0                        |      6
+261        |       0                        |      7
+262        |       0                        |      8
+263        |       0                        |      9
+264        |       0                        |      10
+265        |       1                        |      11 + extra bits
+266        |       1                        |      13 + extra bits
+267        |       1                        |      15 + extra bits
+268        |       1                        |      17 + extra bits
+269        |       2                        |      19 + extra bits
+270        |       2                        |      23 + extra bits
+271        |       2                        |      27 + extra bits
+272        |       2                        |      31 + extra bits
+273        |       3                        |      35 + extra bits
+274        |       3                        |      43 + extra bits
+275        |       3                        |      51 + extra bits
+276        |       3                        |      59 + extra bits
+277        |       4                        |      67 + extra bits
+278        |       4                        |      83 + extra bits
+279        |       4                        |      99 + extra bits
+280        |       4                        |      115 + extra bits
+281        |       5                        |      131 + extra bits
+282        |       5                        |      163 + extra bits
+283        |       5                        |      195 + extra bits
+284        |       5                        |      227 + extra bits
+285        |       0                        |      258
       
 If you tot up the average number of extra bits required to encode each length, it turns out that the average number of extra bits we need for a random length between 3 and 257 will be 4. However, most repeats are short, and the actual number of extra bits required will average at considerably less than this. We can therefore enter pointer mode and get our repeat length for just the price of the literal code (257-285) plus a couple of extra bits. This will often amount to less than one byte.
