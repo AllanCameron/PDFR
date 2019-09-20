@@ -584,8 +584,42 @@ If you tot up the number of extra bits required to encode each length, it turns 
 
 Once we have our length, we know we are now looking for a distance to tell us how far back in the output stream to start copying. For this we have a separate lookup table - the distance code table. We have already created this table at the same time we created our literal code table.
 
-If we look up the distance code, we find it gives us a number between 1 and 31.
+If we look up the distance code, we find it gives us a number between 0 and 31. This is interpreted in a similar way to the length code. You read the code, then you may read some extra bits to get the exact distance back to start reading your repeat sequence.
 
+The following table shows what to do when you get each of the distance codes:
+
+Code   | Extra Bits | Represents distance of
+-------|------------|-----------------------
+0      |     0      |     1
+1      |     0      |     2
+2      |     0      |     3
+3      |     0      |     4
+4      |     1      |     5 + extra bits
+5      |     1      |     7 + extra bits
+6      |     2      |     9 + extra bits
+7      |     2      |     13 + extra bits
+8      |     3      |     17 + extra bits
+9      |     3      |     25 + extra bits
+10     |     4      |     33 + extra bits
+11     |     4      |     49 + extra bits
+12     |     5      |     65 + extra bits
+13     |     5      |     97 + extra bits
+14     |     6      |     129 + extra bits
+15     |     6      |     193 + extra bits
+16     |     7      |     257 + extra bits
+17     |     7      |     385 + extra bits
+18     |     8      |     513 + extra bits
+19     |     8      |     769 + extra bits
+20     |     9      |     1025 + extra bits
+21     |     9      |     1537 + extra bits
+22     |     10     |     2049 + extra bits
+23     |     10     |     3073 + extra bits
+24     |     11     |     4097 + extra bits
+25     |     11     |     6145 + extra bits
+26     |     12     |     8193 + extra bits
+27     |     12     |     12289 + extra bits
+28     |     13     |     16385 + extra bits
+29     |     13     |     24577 + extra bits
 
 
 ## Back to writing our stream
