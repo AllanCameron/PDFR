@@ -246,7 +246,7 @@ Since the number of bits needed for any one character will never exceed 15 (ther
 Here's what happens instead. We use _another_ compression method (run length encoding) to describe the bit-lengths of the final dictionary code table: the numbers 0 - 15 will represent an actual number of bits, and the numbers 16, 17, 18 will represent repeat sequences (mostly of zeros). I start building my dictionary's bit-length table at literal value 0, and if I come across the numbers 0-15, I insert them as the number of bits that are going to represent that literal in my final dictionary. I then move on to the next literal. If I come across a 16, 17, or 18, I will insert a number of repeats based on a set of rules for those 3 numbers. I keep going like this until my literal and distance codes all have an associated bit-length to describe them.
 
 The rules for 16, 17 and 18 are:
-- If it's a 16, read the next two bits from the stream to give a number between 0 and 4. Add 3 to this number. That's the number of repeats you are about to insert into the code length table. For example, if I come across a 16 and the hext two bits are `01` then I will have 4 repeats to add. What do I repeat though? I repeat the last number that was written before I came across the 16. So if my codes read 0, 6, 2, 16 and the hext two bits are `01`, then my entries will be 0, 6, 2, 2, 2, 2, 2.
+- If it's a 16, read the next two bits from the stream to give a number between 0 and 4. Add 3 to this number. That's the number of repeats you are about to insert into the code length table. For example, if I come across a 16 and the next two bits are `01` then I will have 4 repeats to add. What do I repeat though? I repeat the last number that was written before I came across the 16. So if my codes read 0, 6, 2, 16 and the next two bits are `01`, then my entries will be 0, 6, 2, 2, 2, 2, 2.
 - If it's a 17, read the next three bits from the stream to get a number between 0 and 7. Add 3 to this number to get the total number of repeats. The repeats are zeros.
 - If it's an 18, read the next seven bits from the stream to get a number 0-127. Add 11 to this to get the number of repeats and insert that many zeros into the code length table.
 
@@ -516,6 +516,52 @@ Bits read | code | Ascii
 001111    | 257  |   ...
     
 Ah, but now what's happened? We have come across a non-ascii code, 257. What does that mean?
-    
 
+## Length codes and distance codes
+Almost any reasonably-lengthed message you might want to compress will have repeated sequences in it. Even a short paragraph with just a couple of sentences might have repeated sequences in it.
 
+Take that last paragraph. It is made of two sentences and has 193 characters in it. However, the 31-character phrase _" have repeated sequences in it."_ appears twice. I could substantially shorten the message if I set up a system whereby I tell you the length of the repeat sequence and the distance back it starts. All I have to do is let you know I am entering "pointer mode", then give you the length of the repeated sequence (31 characters) and the distance back it starts (92 characters). I could then transmit the above paragraph as:
+
+> Almost any reasonably-lengthed message you might want to compress will have repeated sequences in it. Even a short paragraph with just a couple of sentences [31, 92]
+
+I have just chopped 31 bytes off the message length. Even assuming I need to add 3 bytes for the pointer (one to flag that we are entering pointer mode, one to give the length of the repeat, and one to say how far back the repeat is), I have saved 28 bytes.
+
+A pointer method very much like this is used in deflate compression. The clever part is that you don't need a specific marker to say you are entering pointer mode. Instead, the literal codes between 257 and 285 are also length codes. When the decompressor comes across a length code, it not only knows that it is entering pointer mode, it knows the length of the repeat sequence. It also knows that the next code it needs is a distance code, so it searches the distance code table instead of the literal code table after it has the length.
+
+Now, you may see a problem with this. There are only 29 length codes, but we might have a repeat that is much longer than that. Even the modest repeat in the above example wouldn't fit in if there were 29 length codes representing repeat lengths of 1 to 29. The way this problem is resolved is similar to the way the repeat lengths were calculated in our code length table using the numbers 16, 17 and 18: depending on the length code, you read some extra bits afterwards to give you the actual length.
+
+The extra bits that you need to read are shown in the table below:
+
+If you read a... | Read this number of extra bits | The length is
+-----------------|--------------------------------|-------------
+      257        |       0                        |      3
+      258        |       0                        |      4
+      259        |       0                        |      5
+      260        |       0                        |      6
+      261        |       0                        |      7
+      262        |       0                        |      8
+      263        |       0                        |      9
+      264        |       0                        |      10
+      265        |       1                        |      11 + extra bits
+      266        |       1                        |      13 + extra bits
+      267        |       1                        |      15 + extra bits
+      268        |       1                        |      17 + extra bits
+      269        |       2                        |      19 + extra bits
+      270        |       2                        |      23 + extra bits
+      271        |       2                        |      27 + extra bits
+      272        |       2                        |      31 + extra bits
+      273        |       3                        |      35 + extra bits
+      274        |       3                        |      43 + extra bits
+      275        |       3                        |      51 + extra bits
+      276        |       3                        |      59 + extra bits
+      277        |       4                        |      67 + extra bits
+      278        |       4                        |      83 + extra bits
+      279        |       4                        |      99 + extra bits
+      280        |       4                        |      115 + extra bits
+      281        |       5                        |      131 + extra bits
+      282        |       5                        |      163 + extra bits
+      283        |       5                        |      195 + extra bits
+      284        |       5                        |      227 + extra bits
+      285        |       0                        |      258
+      
+If you tot up the average number of extra bits required to encode each length, it turns out that the average number of extra bits we need for a random length between 3 and 257 will be 4. However, most repeats are short, and the actual number of extra bits required will average at considerably less than this. We can therefore enter pointer mode and get our repeat length for just the price of the literal code (257-285) plus a couple of extra bits. This will often amount to less than one byte.

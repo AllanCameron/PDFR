@@ -124,11 +124,13 @@ Huffmanise <- function(lengths)
   for(i in 1:max(lengths))
   {
     need_codes = which(lengths == i);
-    if(length(need_codes) == 0) next;
-    for(j in seq_along(need_codes))
+    if(length(need_codes) > 0)
     {
-      all_codes[need_codes[j]] = current_code;
+      for(j in seq_along(need_codes))
+      {
+        all_codes[need_codes[j]] = current_code;
       current_code = current_code + 1;
+      }
     }
     current_code = bitwShiftL(current_code, 1);
   }
