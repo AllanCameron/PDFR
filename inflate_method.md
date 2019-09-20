@@ -2,10 +2,26 @@
 
 This document describes the steps needed to decompress a deflate stream. Deflate streams are an extremely common way of compressing data, and are an integral part of the gzip and zip file formats. There are some excellent, fast, portable, open-source and well-tested deflate libraries available; it is almost certainly better to use one of these rather than reinventing the wheel.
 
-However, there may be some situations in which a developer wants to write a simple, dependency-free deflate decompressor. Having found myself in such a position and encountering many difficulties along the way, I thought it would be helpful to write down the steps explicitly to help anyone else in a similar position. I will make no assumptions about the programming language used, but I will assume that the reader will know enough to be able to get data in and out of their program, manipulate arrays or vectors and write loops.
+However, there may be some situations in which a developer wants to write a simple, dependency-free deflate decompressor. Having found myself in this position and encountering many difficulties along the way (probably because I'm _not_ a developer...), I thought it would be helpful to write down the steps explicitly to help anyone else in a similar position.
 
-I also need to choose a convention to describe the elements in an array. Many languages such as C, C++, Javascript and Java use zero-indexing. This means the first byte in an array will be denoted `data[0]`, the second byte `data[1]` etc. This is in contrast to R, FORTRAN, Matlab and a few others that start counting at one, so that the first element is `data[1]`, the second is `data[2]` etc. I will arbitrarily choose the former.
+I will try to describe this method without reference to any particular programming language. However, there are a couple of conventions that I need to choose so that I can consistently represent the steps I am taking.
 
+## Conventions and basics
+Firstly, I need a way of representing the data we are putting into the program and getting out of it. Although a decompressed deflate stream might represent a string of text, it can actually represent any sequence of binary information. Whether the output is a text string or some other type of information is something that the algorithm doesn't need to know. It takes in data as _numbers_ and outputs data as _numbers_. Specifically, it takes in only a sequence of integers from 0 to 255 and outputs only a sequence of integers from 0 to 255. During the decoding step, it only ever uses positive integers, and never needs to remember any numbers higher than 32768 (which is 2^15).
+
+For example, if I feed the following sequence in to a deflate decompressor:
+`120 156 243  72 205 201 201  87  40 207  47 202  73   1   0  24 171   4  61`
+then the output would be: `72 101 108 108 111  32 119 111 114 108 100`. If I know that this message was to be intended as a string of characters, then I would look up the Ascii value of each of these numbers to find the message is "Hello world". However, the decompressor itself doesn't need to know this sequence of numbers was meant to be an Ascii string.
+
+Since the numbers to be fed into the decompressor are individual, addressable, positive integers between 0 and 255, we talk about each number as being a **byte**. A byte is the smallest chunk of data that a computer can read, send or process at any one time, and is made of eight **bits** or binary digits.
+
+When I am talking about **bits** in this document, I will show all the bits in a byte as a sequence of 8 ones and zeroes like this: `00110101`. If you aren't used to reading binary, this number represents 53. Reading it in the normal direction from left to right, you are reading it from "most significant bit" to "least significant bit".
+
+We have to be careful when we are talking about the digital representation of numbers in the context of a deflate stream. If I talk about the number 53 without further qualification, then its binary representation could be `00110101`, but it could also be `110101` or `0000000000110101`. This could make a huge difference to how the data stream is interpreted. For that reason, if I am specifically talking about those 8-bit numbers that are directly addressable by a computer program (i.e. bytes), then I will follow the convention of using hexadecimal numbers from `0x00` to `0xff`. If I am talking about numbers that are not whole bytes, I will use either binary notation or natural numbers to describe them.
+
+I also need to choose conventions to describe the data we are putting into and getting out of the algorithm. I use the term "stream" loosely to mean a sequence of bytes, either being read from or written to. Since I am using a concrete example here, I will assume our input stream consists of an array (equivalently a vector) of bytes called `data`. Any single element in the array is identified using square brackets: `data[13]` means the element at position 13. 
+
+Many languages such as C, C++, Javascript and Java use zero-indexing. This means the first byte in an array will be denoted `data[0]`, the second byte `data[1]` etc. This is in contrast to R, FORTRAN, Matlab and a few others that start counting at one, so that the first element is `data[1]`, the second is `data[2]` etc. I will arbitrarily choose the former.
 
 ## Stating the problem
 We start with a vector of bytes called `data` containing the deflate stream. This contains a compressed message that in its original uncompressed state is 121 bytes long. The compressed version has 81 bytes, so it is compressed to about 2/3 of its original size.
@@ -21,13 +37,13 @@ data = [0x78, 0x9c, 0x65, 0x8b, 0x3d, 0x0e, 0x80, 0x20, 0x0c, 0x46, 0xaf, 0xf2,
         0x59, 0x3b, 0xdb, 0x72, 0x03, 0x08, 0xac, 0x2b, 0x13];
 ```
 
-Our problem is simple to state: we need to use the deflate mechanism described in RFC 1951 to reconstruct the original message.
+Now, how do we take these bytes and convert them back into the original message?
 
-First, we will have a quick refresher on some basic tools we need to help complete this problem.
+First, we will have a quick refresher on some basic programming tricks that will help us accomplish this task.
 
 
 ## Reading bytes and reading bits
-It is very easy to read a whole byte from our array. Getting the value of the first byte would be done by getting `data[0]`. This will return an integer value between 0 and 255.
+It is very easy to read a whole byte from our array. Getting the value of the first byte is as simple as `data[0]`. As long as we interpret this byte as an unsigned integer, this will return a value between 0 and 255.
 
 Unfortunately, the whole crux of the deflate algorithm is that we want symbols to be compressed into sequences of bits that are _less_ than one byte. This means that we need to be able to read chunks of bits from _within_ the bytes. Reading bits in chunks that aren't whole bytes requires a bit more care than reading whole bytes, and requires some familiarity with the bitwise operations "AND", "OR", "Left Shift" and "Right Shift", usually denoted `&`, `|`, `<<` and `>>` in various languages such as C, C++, Java, Javascript, etc.
 
@@ -515,7 +531,7 @@ Bits read | code | Ascii
 01001     | 73   |   I
 001111    | 257  |   ...
     
-Ah, but now what's happened? We have come across a non-ascii code, 257. What does that mean?
+Ah, but now what's happened? We have come across a non-ascii code, 257, starting at the 4th bit of byte 48. What does that mean?
 
 ## Length codes and distance codes
 Almost any reasonably-lengthed message you might want to compress will have repeated sequences in it. Even a short paragraph with just a couple of sentences might have repeated sequences in it.
@@ -534,34 +550,47 @@ The extra bits that you need to read are shown in the table below:
 
 If you read a... | Read this number of extra bits | The length is
 -----------------|--------------------------------|-------------
-257        |       0                        |      3
-258        |       0                        |      4
-259        |       0                        |      5
-260        |       0                        |      6
-261        |       0                        |      7
-262        |       0                        |      8
-263        |       0                        |      9
-264        |       0                        |      10
-265        |       1                        |      11 + extra bits
-266        |       1                        |      13 + extra bits
-267        |       1                        |      15 + extra bits
-268        |       1                        |      17 + extra bits
-269        |       2                        |      19 + extra bits
-270        |       2                        |      23 + extra bits
-271        |       2                        |      27 + extra bits
-272        |       2                        |      31 + extra bits
-273        |       3                        |      35 + extra bits
-274        |       3                        |      43 + extra bits
-275        |       3                        |      51 + extra bits
-276        |       3                        |      59 + extra bits
-277        |       4                        |      67 + extra bits
-278        |       4                        |      83 + extra bits
-279        |       4                        |      99 + extra bits
-280        |       4                        |      115 + extra bits
-281        |       5                        |      131 + extra bits
-282        |       5                        |      163 + extra bits
-283        |       5                        |      195 + extra bits
-284        |       5                        |      227 + extra bits
-285        |       0                        |      258
+257              |       0                        |      3
+258              |       0                        |      4
+259              |       0                        |      5
+260              |       0                        |      6
+261              |       0                        |      7
+262              |       0                        |      8
+263              |       0                        |      9
+264              |       0                        |      10
+265              |       1                        |      11 + extra bits
+266              |       1                        |      13 + extra bits
+267              |       1                        |      15 + extra bits
+268              |       1                        |      17 + extra bits
+269              |       2                        |      19 + extra bits
+270              |       2                        |      23 + extra bits
+271              |       2                        |      27 + extra bits
+272              |       2                        |      31 + extra bits
+273              |       3                        |      35 + extra bits
+274              |       3                        |      43 + extra bits
+275              |       3                        |      51 + extra bits
+276              |       3                        |      59 + extra bits
+277              |       4                        |      67 + extra bits
+278              |       4                        |      83 + extra bits
+279              |       4                        |      99 + extra bits
+280              |       4                        |      115 + extra bits
+281              |       5                        |      131 + extra bits
+282              |       5                        |      163 + extra bits
+283              |       5                        |      195 + extra bits
+284              |       5                        |      227 + extra bits
+285              |       0                        |      258
       
-If you tot up the average number of extra bits required to encode each length, it turns out that the average number of extra bits we need for a random length between 3 and 257 will be 4. However, most repeats are short, and the actual number of extra bits required will average at considerably less than this. We can therefore enter pointer mode and get our repeat length for just the price of the literal code (257-285) plus a couple of extra bits. This will often amount to less than one byte.
+If you tot up the number of extra bits required to encode each length, it turns out that the average number of extra bits we need for a random length between 3 and 257 will be 4. However, most repeats are short, and the actual number of extra bits required will average at considerably less than this. We can therefore enter pointer mode and get our repeat length for just the price of the literal code (257-285) plus a couple of extra bits. This will often amount to less than one byte.
+
+Once we have our length, we know we are now looking for a distance to tell us how far back in the output stream to start copying. For this we have a separate lookup table - the distance code table. We have already created this table at the same time we created our literal code table.
+
+If we look up the distance code, we find it gives us a number between 1 and 31.
+
+
+
+## Back to writing our stream
+We came across code number 257, which, from our table, means we only want three bytes of our earlier output copied to the end of the output string. We now read the distance code. This is `10`, which from looking up our distance table, gives us code number 9. What does code number 9 mean? Looking up what the various code numbers mean tells us that we should take the next three bits and add 25 to the number they represent. The next three bits are `011`, or 3, so we want to look back 28 places in our output and start copying three bytes. Our bytes were 39, 109, 32 or "'m ". Now we can go back to reading literals.
+
+The next code we get is `10011`. This is another distance code, and it's our biggest one - 268. Looking this up in our length interpretation table, we see that this means we read one extra bit and add 17 to its value. The next bit is `1`, so our length is 18. How far back is it? The distance code we now read is `00`, or length code 8. Looking this up, we want to read the next three bits and add 17. Our next three bits are `111` which is 7, so our repetition starts 24 places earlier than the end of the output stream. This means we want to copy "a pheasant plucker" to the end of our sequence.
+
+Our updated output is "I'm not a pheasant plucker, I'm a pheasant plucker". Weird. Next code is `00001`, or "'", then `0110` or "s", then `000` for " ", followed by `0110` for "s" again. Now we have consumed the first bit of byte 53.
