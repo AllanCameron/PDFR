@@ -42,6 +42,7 @@
 #include<vector>
 #include<iostream>
 #include<stdexcept>
+#include<map>
 
 //---------------------------------------------------------------------------//
 // Inflates the given string
@@ -110,17 +111,17 @@ public:
   void ReadCodes();
   void HandlePointer(uint32_t);
   uint32_t ReadCode(const std::vector<uint32_t>&);
-  std::vector<uint32_t> Huffmanize(const std::vector<uint32_t>&);
+  std::map<uint32_t, uint32_t> Huffmanize(const std::vector<uint32_t>&);
 
 private:
   void CheckHeader();
   bool is_last_block_;
-  static const std::vector<uint32_t> fixed_literal_codes_;
-  static const std::vector<uint32_t> fixed_distance_codes_;
+  static const std::map<uint32_t, uint32_t> fixed_literal_map_;
+  static const std::map<uint32_t, uint32_t> fixed_distance_map_;
   static const std::vector<uint32_t> length_table_;
   static const std::vector<uint32_t> distance_table_;
-  std::vector<uint32_t> literal_codes_;
-  std::vector<uint32_t> distance_codes_;
+  std::map<uint32_t, uint32_t> literal_map_;
+  std::map<uint32_t, uint32_t> distance_map_;
 };
 
 #endif
