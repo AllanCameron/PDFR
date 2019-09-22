@@ -29,15 +29,14 @@
  * The raw data in the stream is almost always compressed, so needs to be
  * decompressed before being processed. That is the purpose of the stream class.
  *
- * At present, only the flatedecode decompression algorithm is implemented. That
- * is simply because it is the most common algorithm used in pdfs. Ultimately,
- * we will need to turn "streams" into its own class, which implements stream
- * decompression for a variety of algorithms on request. I have yet to find a
- * pdf file that uses anything else for page description to allow testing
+ * At present, only the flatedecode decompression algorithm is implemented.
+ * I have yet to find a pdf file that uses anything else for page description
+ * to allow testing.
  *
  * This header is required by the xref class, as it needs to be able to deflate
  * xrefstreams.
  */
+
 #include<string>
 #include<vector>
 #include<iostream>
@@ -72,7 +71,7 @@ public:
   Stream(const std::string&);
   Stream(const std::vector<uint8_t>&);
 
-  std::string Output();
+  inline std::string Output(){return output_;}
   uint32_t GetByte();
   uint32_t PeekByte();
   void Reset();
@@ -106,22 +105,23 @@ class Deflate : public Stream
 public:
   Deflate(const std::string&);
   Deflate(const std::vector<uint8_t>&);
-  void ReadBlock();
-  void BuildDynamicCodeTable();
-  void ReadCodes();
-  void HandlePointer(uint32_t);
-  uint32_t ReadCode(const std::vector<uint32_t>&);
-  std::map<uint32_t, uint32_t> Huffmanize(const std::vector<uint32_t>&);
 
 private:
-  void CheckHeader();
   bool is_last_block_;
+  void CheckHeader();
   static const std::map<uint32_t, uint32_t> fixed_literal_map_;
   static const std::map<uint32_t, uint32_t> fixed_distance_map_;
   static const std::vector<uint32_t> length_table_;
   static const std::vector<uint32_t> distance_table_;
   std::map<uint32_t, uint32_t> literal_map_;
   std::map<uint32_t, uint32_t> distance_map_;
+
+  void ReadBlock();
+  void BuildDynamicCodeTable();
+  void ReadCodes();
+  void HandlePointer(uint32_t);
+  uint32_t ReadCode(std::map<uint32_t, uint32_t>& map_t);
+  std::map<uint32_t, uint32_t> Huffmanize(const std::vector<uint32_t>&);
 };
 
 #endif
