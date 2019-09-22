@@ -1,4 +1,4 @@
-# Inflating a deflate stream in a pdf
+# Inflating a deflate stream: a bit-by-bit account
 
 This document describes the steps needed to decompress a deflate stream. Deflate streams are an extremely common way of compressing data, and are an integral part of the gzip and zip file formats. There are some excellent, fast, portable, open-source and well-tested deflate libraries available; it is almost certainly better to use one of these rather than reinventing the wheel.
 
@@ -628,3 +628,7 @@ We came across code number 257, which, from our table, means we only want three 
 The next code we get is `10011`. This is another length code, and it's our biggest one - 268. Looking this up in our length interpretation table, we see that this means we read one extra bit and add 17 to its value. The next bit is `1`, so our length is 18. How far back is it? The distance code we now read is `00`, or length code 8. Looking this up, we want to read the next three bits and add 17. Our next three bits are `111` which is 7, so our repetition starts 24 places earlier than the end of the output stream. This means we want to copy the bytes represented in ascii by "a pheasant plucker" to the end of our sequence.
 
 Our updated output in ascii is "I'm not a pheasant plucker, I'm a pheasant plucker". Weird. Next code is `00001`, or "'", then `0110` or "s", then `000` for " ", followed by `0110` for "s" again. Now we have consumed the first bit of byte 53.
+
+We can keep going like this until we get to the literal code 256, at which point the block (and in our case, the stream) terminates. The full listing is shown below:
+
+
