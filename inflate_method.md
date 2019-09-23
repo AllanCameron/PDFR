@@ -1,30 +1,32 @@
-# Inflating a deflate stream in a pdf
+# Inflating a deflate stream: a bit-by-bit account
 
 This document describes the steps needed to decompress a deflate stream. Deflate streams are an extremely common way of compressing data, and are an integral part of the gzip and zip file formats. There are some excellent, fast, portable, open-source and well-tested deflate libraries available; it is almost certainly better to use one of these rather than reinventing the wheel.
 
 However, there may be some situations in which a developer wants to write a simple, dependency-free deflate decompressor. Having found myself in this position and encountering many difficulties along the way (probably because I'm _not_ a developer...), I thought it would be helpful to write down the steps explicitly to help anyone else in a similar position.
 
-I will try to describe this method without reference to any particular programming language. However, there are a couple of conventions that I need to choose so that I can consistently represent the steps I am taking.
+I will try to show this method without implying the use of a particular programming language. However, there are a couple of conventions that I need to choose so that I can consistently describe the steps I am taking.
 
 ## Conventions and basics
-Firstly, I need a way of representing the data we are putting into the program and getting out of it. Although a decompressed deflate stream might represent a string of text, it can actually represent any sequence of binary information. Whether the output is a text string or some other type of information is something that the algorithm doesn't need to know. It takes in data as _numbers_ and outputs data as _numbers_. Specifically, it takes in only a sequence of integers from 0 to 255 and outputs only a sequence of integers from 0 to 255. During the decoding step, it only ever uses positive integers, and never needs to remember any numbers higher than 32768 (which is 2^15).
+Firstly, I need a way of representing the data we are putting into the program and getting out of it. Although a decompressed deflate stream might end up being a text string, deflate can be used to compress _any_ type of binary information. Whether the output is a text string or some other type of information is something that the algorithm doesn't need to know. I will refer to the decompressed data (that is, the final result we are trying to get) as the _message_, and the compressed data that we start with as the _input_. 
 
-For example, if I feed the following sequence in to a deflate decompressor:
+The algorithm takes the input as _numbers_ and returns the message as _numbers_. Specifically, it takes in a sequence of integers from 0 to 255 and outputs a sequence of integers from 0 to 255. During the decoding step, the algorithm only ever needs positive integers, and never needs to store or calculate any numbers higher than 32768 (which is 2^15).
+
+For example, if I feed the following sequence of integers into a deflate decompressor:
 `120 156 243  72 205 201 201  87  40 207  47 202  73   1   0  24 171   4  61`
 then the output would be: `72 101 108 108 111  32 119 111 114 108 100`. If I know that this message was to be intended as a string of characters, then I would look up the Ascii value of each of these numbers to find the message is "Hello world". However, the decompressor itself doesn't need to know this sequence of numbers was meant to be an Ascii string.
 
 Since the numbers to be fed into the decompressor are individual, addressable, positive integers between 0 and 255, we talk about each number as being a **byte**. A byte is the smallest chunk of data that a computer can read, send or process at any one time, and is made of eight **bits** or binary digits.
 
-When I am talking about **bits** in this document, I will show all the bits in a byte as a sequence of 8 ones and zeroes like this: `00110101`. If you aren't used to reading binary, this number represents 53. Reading it in the normal direction from left to right, you are reading it from "most significant bit" to "least significant bit".
+When I am talking about **bits** in this document, I will show all the bits in a byte as a sequence of 8 ones and zeroes like this: `00110101`. If you aren't used to reading binary, this number represents 53. Reading this number as a string of bits in the "norma"l direction from left to right, you are reading it from "most significant bit" to "least significant bit".
 
-We have to be careful when we are talking about the digital representation of numbers in the context of a deflate stream. If I talk about the number 53 without further qualification, then its binary representation could be `00110101`, but it could also be `110101` or `0000000000110101`. This could make a huge difference to how the data stream is interpreted. For that reason, if I am specifically talking about those 8-bit numbers that are directly addressable by a computer program (i.e. bytes), then I will follow the convention of using hexadecimal numbers from `0x00` to `0xff`. If I am talking about numbers that are not whole bytes, I will use either binary notation or natural numbers to describe them.
+We have to be careful when we are talking about numbers in the context of a deflate stream. If I talk about the number 53 without further qualification, then its binary representation could be `00110101`, but it could also be `110101` or `0000000000110101`. This could make a huge difference to how the data stream is interpreted. For that reason, if I am specifically talking about those 8-bit numbers that are directly addressable by a computer program (i.e. bytes), then I will follow the convention of using hexadecimal numbers from `0x00` to `0xff`. If I am talking about numbers that are not whole bytes, I will use either binary notation or natural numbers to describe them.
 
-I also need to choose conventions to describe the data we are putting into and getting out of the algorithm. I use the term "stream" loosely to mean a sequence of bytes, either being read from or written to. Since I am using a concrete example here, I will assume our input stream consists of an array (equivalently a vector) of bytes called `data`. Any single element in the array is identified using square brackets: `data[13]` means the element at position 13. 
+I also need to choose conventions to describe the data we are putting into and getting out of the algorithm. I use the term "stream" loosely to mean a sequence of bytes, either being read from or written to, so our input and message could both be described as streams. Since I am using a concrete example here, I will assume our input stream consists of an array (equivalently a vector) of bytes called `data`. Any single element in the array is identified using square brackets: `data[13]` means the element at position 13. 
 
 Many languages such as C, C++, Javascript and Java use zero-indexing. This means the first byte in an array will be denoted `data[0]`, the second byte `data[1]` etc. This is in contrast to R, FORTRAN, Matlab and a few others that start counting at one, so that the first element is `data[1]`, the second is `data[2]` etc. I will arbitrarily choose the former.
 
 ## Stating the problem
-We start with a vector of bytes called `data` containing the deflate stream. This contains a compressed message that in its original uncompressed state is 121 bytes long. The compressed version has 81 bytes, so it is compressed to about 2/3 of its original size.
+Our input is an array of bytes called `data` containing the deflate stream. This contains the compressed message that, when we decompress it, is 121 bytes long. The compressed version has 81 bytes, so it is compressed to about 2/3 of its original size.
 
 
 ```
@@ -51,12 +53,14 @@ Reading particular bits of a byte usually means first creating a "mask" that, wh
 
 If I just want the high order bits, then I can mask out the low-order bits in a similar way. If I only want the three high-order bits, then I can create a mask to remove the five low-order bits by doing `0xff - ((1 << 5) - 1)`. However, I need to remember to bit-shift my answer to the right by 5 places. In our example, `((1 << 5) - 1) = 31` so the mask is `0xff - ((1 << 5) - 1) = 224` which is `11100000` in binary. Applying this to `my_byte` with `my_byte & 224` gives 192, since the three high order bits are `110`. Now, since I wanted the _value_ of the three high order bits, I want to know what `110` in binary is. To do this, I shift `110` to the right by five places using `192 >> 5` to get `00000110`, or 6.
 
+It will be important to ensure that you keep track of which bit of which byte you have reached during the running of this algorithm. You never need to backtrack though, so it is fairly straightforward to write a function that reads and "consumes" bits.
+
 ## A note on bit ordering
 Although we read individual bytes from left to right, the bits _within_ the bytes are read in chunks from right to left, which can be confusing. This means if I talk about the first 4 bits of a byte, I mean the 4 low order bytes, or the 4 bits on the right as I look at the binary number. For example, the "first" 4 bits of the first byte would be obtained by `data[0] & 0x0f` in C++ or `bitwAnd(data[1], 0x0f)` in R. The bits themselves within a "chunk" are *not* reversed though, so if the first byte was made of the bits `00001010` then the first 4 bits should be interpreted as `1010` or 10, not as `0101` or 5.
 
 Sometimes we need to read a chunk of bits from two adjacent bytes. What happens then? Well, we just take the high order (leftmost) bits from the first byte and stick the low-order bits from the next byte on to their left side. For example, if my two bytes are `0xf0 0xca` or `11110000 11001010` in binary, then reading the first 4 bits of this sequence should give me `0000` or 0. If I want to read the next _8_ bits, I have to take the `1111` high-order bits from the first byte and stick on the `1010` low order bits from the second byte to give me `10101111` or `0xaf`.
 
-Despite what is written in various online resources, it is possible to stick entirely to this bit-ordering convention when reading the deflate stream.
+Despite what is written in various online descriptions of Deflate, it is possible to stick entirely to this bit-ordering convention when reading the deflate stream.
 
 ## Our data as bits
 We now have enough information to start reading our stream. It's going to be much easier to see what's happening if we show the individual bits we are working through rather than just talking about bytes. Here is our compressed stream as bits:
@@ -84,27 +88,27 @@ The first byte of a deflate-compressed stream declares the compression method fl
 
 The second four bits give the compression info. For CM = 8, you take these 4 bits and add 8. This gives you the log (to the base 2) of the LZ77 window size that was used to create the deflate stream. For inflation purposes, you don't need to know what this means, but to illustrate, if xxxx = 0111 = 7, the window size used was 2^(7 + 8) = 32,768.
 
-In practice, since 32K is the maximum window size that can be used in CM = 8, this means the 4 high order bits are almost always `0111`, so the first byte is almost always `01111000` or `78`. This is the case in our data.
+In practice, since 32K is the maximum window size that can be used in CM = 8, this means the 4 high order bits are often (but not always) `0111`, so the first byte is often `01111000` or `78`. This is the case in our data.
 
 ### The second byte
 The first 5 bits of the second byte are known as FCHECK and are used as a checksum for the first two bytes. If you make a 16-bit integer using `256 * data[0] + data[1]`, then the resultant number should be divisible by 31 (i.e. `((data[0] << 8) | data[1]) % 31 == 0`. If it isn't, then something has gone wrong.
 
 The 6th bit is a single-bit flag indicating whether a preset dictionary is in use (i.e. whether the flag is set is tested by `(data[1] & 0x10) >> 5 == 1`). As far as I can tell, this seems not to be implemented in the varieties of deflate used in pdf streams.
 
-The remaining 2 highest order bits (`(data[1] & 0xc0) >> 6`) in the second byte denote the level of compression used, from 0 (fastest) to 3 (best compression). The default is `10` i.e. 2.
+The remaining 2 highest order bits (`(data[1] & 0xc0) >> 6`) in the second byte denote the level of compression used, from 0 (fastest) to 3 (best compression). The default is `10` i.e. 2. This doesn't appear to be useful for the decompression of a deflate stream.
 
 In our data, our second byte is `10011100`, meaning we are at default compression (`10`), no FDICT is set (`0`) and we have a valid header, since `(256 * 0x78) + 0x9c` is 30876, which is 996 * 31.
 
 ## The deflate block
-After the two header bytes, we enter the first *deflate block*. Many streams will only have a single deflate block, but some will have multiple blocks. Each block is self-contained; it contains enough information to decode its own contents. A block starts with a 3 bit header. The lowest order bit of this header flags whether this is the final block in the stream, i.e. `data[2] & 0x01 == 1` answers "is this the final block?". If there is only a single block present, this flag will be set to `1`.
+After the two header bytes, we enter the first *deflate block*. Many streams will only have a single deflate block, but some will have multiple blocks. Each block is self-contained; it has enough information to decode its own contents. A block starts with a 3 bit header. The lowest order bit of this header flags whether this is the final block in the stream, i.e. `data[2] & 0x01 == 1` answers "is this the final block?". If there is only a single block present, this flag will be set to `1`.
 
-The next two bits (`data[2] & 0x06`) tell us the _type_ of compression. A value of 0 means no compression is used. A value of 1 is compression with a default compression dictionary, and a value of 2 is compression with a dynamic dictionary. A value of three is an error.
+The next two bits (`data[2] & 0x06`) tell us the _type_ of compression. A value of 0 means no compression is used. A value of 1 is compression with a default compression dictionary, and a value of 2 is compression with a dynamic dictionary. A value of three is an error. It is important to note and act on this data straight away.
 
 ### Compression mode 0
 There seems little point in having a "no compression" mode, and I'm not sure how often mode 0 is implemented in real life. However, it is straightforward to implement. First, we ignore the last 5 bits of the first byte in the block, then read the next 2 bytes as a 16-bit unsigned number. This will give us the length of the actual uncompressed data in the block. After this, we confirm the length bytes by having another two bytes that are simply the "one's complement" of the two length bytes. For example, if my uncompressed data was 11 bytes long, then my two length bytes would be `0x00 0x0b` and they would be followed by the one's complement of these two bytes (i.e. the same bytes but with all of their zero-bits as ones and their one-bits as zeros), which in this case would be `0xff 0xf4`. After this, we would read 11 bytes of data as they come to get our output for the block.
 
 ### Compression mode 1
-The default dictionary (mode 1) is often used for very short messages with no repetition. If the compression mode is 1, you will need to have the default compression dictionary to look up the codes in the following stream. It is available online or in streams.cpp in this package. If the compression mode is 1, then the codes will come straight after the three-bit header, ready for reading and you should skip to the "Reading the compressed data" section below.
+The default dictionary (mode 1) is often used for very short messages. If the compression mode is 1, you will need to have the default compression dictionary to look up the codes in the following stream. It is available online or in streams.cpp in this package. If the compression mode is 1, then the codes will come straight after the three-bit header, ready for reading and you should skip to the "Reading the compressed data" section below.
 
 ### Compression mode 2
 Most streams will use their own code dictionary to optimally compress the contents of the message, and this is what compression mode 2 means. Constructing the custom dictionary is perhaps the most complex part of our task, so we will devote considerable space to it here.
@@ -538,7 +542,7 @@ Almost any reasonably-lengthed message you might want to compress will have repe
 
 Take that last paragraph. It is made of two sentences and has 193 characters in it. However, the 31-character phrase _" have repeated sequences in it."_ appears twice. I could substantially shorten the message if I set up a system whereby I tell you the length of the repeat sequence and the distance back it starts. All I have to do is let you know I am entering "pointer mode", then give you the length of the repeated sequence (31 characters) and the distance back it starts (92 characters). I could then transmit the above paragraph as:
 
-> Almost any reasonably-lengthed message you might want to compress will have repeated sequences in it. Even a short paragraph with just a couple of sentences [31, 92]
+> Almost any reasonably-lengthed message you might want to compress will have repeated sequences in it. Even a short paragraph with just a couple of sentences might[31, 92]
 
 I have just chopped 31 bytes off the message length. Even assuming I need to add 3 bytes for the pointer (one to flag that we are entering pointer mode, one to give the length of the repeat, and one to say how far back the repeat is), I have saved 28 bytes.
 
@@ -584,13 +588,51 @@ If you tot up the number of extra bits required to encode each length, it turns 
 
 Once we have our length, we know we are now looking for a distance to tell us how far back in the output stream to start copying. For this we have a separate lookup table - the distance code table. We have already created this table at the same time we created our literal code table.
 
-If we look up the distance code, we find it gives us a number between 1 and 31.
+If we look up the distance code, we find it gives us a number between 0 and 31. This is interpreted in a similar way to the length code. You read the code, then you may read some extra bits to get the exact distance back to start reading your repeat sequence.
 
+The following table shows what to do when you get each of the distance codes:
+
+Code   | Extra Bits | Represents distance of
+-------|------------|-----------------------
+0      |     0      |     1
+1      |     0      |     2
+2      |     0      |     3
+3      |     0      |     4
+4      |     1      |     5 + extra bits
+5      |     1      |     7 + extra bits
+6      |     2      |     9 + extra bits
+7      |     2      |     13 + extra bits
+8      |     3      |     17 + extra bits
+9      |     3      |     25 + extra bits
+10     |     4      |     33 + extra bits
+11     |     4      |     49 + extra bits
+12     |     5      |     65 + extra bits
+13     |     5      |     97 + extra bits
+14     |     6      |     129 + extra bits
+15     |     6      |     193 + extra bits
+16     |     7      |     257 + extra bits
+17     |     7      |     385 + extra bits
+18     |     8      |     513 + extra bits
+19     |     8      |     769 + extra bits
+20     |     9      |     1025 + extra bits
+21     |     9      |     1537 + extra bits
+22     |     10     |     2049 + extra bits
+23     |     10     |     3073 + extra bits
+24     |     11     |     4097 + extra bits
+25     |     11     |     6145 + extra bits
+26     |     12     |     8193 + extra bits
+27     |     12     |     12289 + extra bits
+28     |     13     |     16385 + extra bits
+29     |     13     |     24577 + extra bits
 
 
 ## Back to writing our stream
-We came across code number 257, which, from our table, means we only want three bytes of our earlier output copied to the end of the output string. We now read the distance code. This is `10`, which from looking up our distance table, gives us code number 9. What does code number 9 mean? Looking up what the various code numbers mean tells us that we should take the next three bits and add 25 to the number they represent. The next three bits are `011`, or 3, so we want to look back 28 places in our output and start copying three bytes. Our bytes were 39, 109, 32 or "'m ". Now we can go back to reading literals.
+We came across code number 257, which, from our table, means we only want three bytes of our earlier output copied to the end of the output string. We now read the distance code. This is `10`, which from looking up our distance table, gives us code number 9. What does code number 9 mean? Looking up what the various code numbers mean tells us that we should take the next three bits and add 25 to the number they represent. The next three bits are `011`, or 3, so we want to look back 28 places in our output and start copying three bytes. Our bytes were 39, 109, 32 or "'", "m", and " ". Now we can go back to reading literals.
 
-The next code we get is `10011`. This is another distance code, and it's our biggest one - 268. Looking this up in our length interpretation table, we see that this means we read one extra bit and add 17 to its value. The next bit is `1`, so our length is 18. How far back is it? The distance code we now read is `00`, or length code 8. Looking this up, we want to read the next three bits and add 17. Our next three bits are `111` which is 7, so our repetition starts 24 places earlier than the end of the output stream. This means we want to copy "a pheasant plucker" to the end of our sequence.
+The next code we get is `10011`. This is another length code, and it's our biggest one - 268. Looking this up in our length interpretation table, we see that this means we read one extra bit and add 17 to its value. The next bit is `1`, so our length is 18. How far back is it? The distance code we now read is `00`, or length code 8. Looking this up, we want to read the next three bits and add 17. Our next three bits are `111` which is 7, so our repetition starts 24 places earlier than the end of the output stream. This means we want to copy the bytes represented in ascii by "a pheasant plucker" to the end of our sequence.
 
-Our updated output is "I'm not a pheasant plucker, I'm a pheasant plucker". Weird. Next code is `00001`, or "'", then `0110` or "s", then `000` for " ", followed by `0110` for "s" again. Now we have consumed the first bit of byte 53.
+Our updated output in ascii is "I'm not a pheasant plucker, I'm a pheasant plucker". Weird. Next code is `00001`, or "'", then `0110` or "s", then `000` for " ", followed by `0110` for "s" again. Now we have consumed the first bit of byte 53.
+
+We can keep going like this until we get to the literal code 256, at which point the block (and in our case, the stream) terminates. The full listing is shown below:
+
+
