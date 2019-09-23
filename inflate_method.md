@@ -635,4 +635,93 @@ Our updated output in ascii is "I'm not a pheasant plucker, I'm a pheasant pluck
 
 We can keep going like this until we get to the literal code 256, at which point the block (and in our case, the stream) terminates. The full listing is shown below:
 
+```
+Bits read   Interpretation   Bytes added to stream (as ascii)
+---------   --------------   --------------------------------
+Read 01001  as code 73        "I"
+Read 00001  as code 39        "'"
+Read 11101  as code 109       "m"
+Read 000    as code 32        " "  
+Read 0010   as code 110       "n"
+Read 1010   as code 111       "o"
+Read 1110   as code 116       "t"
+Read 000    as code 32        " "
+Read 0100   as code 97        "a"
+Read 000    as code 32        " "
+Read 00011  as code 112       "p"
+Read 00101  as code 104       "h"
+Read 1100   as code 101       "e"
+Read 0100   as code 97        "a"
+Read 0110   as code 115       "s"
+Read 0100   as code 97        "a"
+Read 0010   as code 110       "n"
+Read 1110   as code 116       "t"
+Read 000    as code 32        " "
+Read 00011  as code 112       "p"
+Read 01101  as code 108       "l"
+Read 100111 as code 117       "u"
+Read 11001  as code 99        "c"
+Read 111011 as code 107       "k"
+Read 1100   as code 101       "e"
+Read 000111 as code 114       "r"
+Read 10001  as code 44        ","
+Read 000    as code 32        " "  
+Read 01001  as code 73        "I"
+Read 001111 as code 257       [LENGTH CODE]
+> Read 10   as code 9         [DISTANCE CODE - read 3 extra bits]
+                              INSERTED: "'m " 
+Read 10011  as code 268       [LENGTH CODE - read 1 extra bit]
+> Read 00   as code 8         [DISTANCE CODE - read 3 extra bits]
+                              INSERTED: "a pheasant plucker" 
+Read 00001  as code 39        "'"
+Read 0110   as code 115       "s"
+Read 000    as code 32        " "  
+Read 0110   as code 115       "s"
+Read 1010   as code 111       "o"
+Read 0010   as code 110       "n"
+Read 10001  as code 44        ","
+Read 000    as code 32        " "
+Read 0100   as code 97        "a"
+Read 0010   as code 110       "n"
+Read 101011 as code 100       "d"
+Read 101111 as code 259       [LENGTH CODE]
+> Read 01 as code 10          [DISTANCE CODE - read 4 extra bits]
+                              INSERTED: " I'm "
+Read 1010   as code 111       "o"
+Read 0010   as code 110       "n"
+Read 01101  as code 108       "l"
+Read 010111 as code 121       "y"
+Read 011111 as code 260       [LENGTH CODE]
+> Read 10 as code 9           [DISTANCE CODE - read 3 extra bits] 
+                              INSERTED: "pluck"  
+Read 10101  as code 105       "i"
+Read 0010   as code 110       "n"
+Read 011011 as code 103       "g"
+Read 111111 as code 263       [LENGTH CODE]
+> Read 01   as code 10        [DISTANCE CODE - read 4 extra bits] 
+                              INSERTED: "pheasant"
+Read 0110   as code 115       "s"
+Read 000    as code 32        " "  
+Read 1110   as code 116       "t""
+Read 10101  as code 105       "i"
+Read 01101  as code 108       "l"
+Read 000    as code 32        " "  
+Read 1110   as code 116       "t"
+Read 00101  as code 104       "h"
+Read 1100   as code 101       "e"
+Read 10011  as code 268       [LENGTH CODE - read 1 extra bit]
+> Read 11   as code 11        [DISTANCE CODE - read 4 extra bits]
+                              INSERTED: " pheasant plucker "
+Read 000    as code 32        " " 
+Read 11001  as code 99        "c"
+Read 1010   as code 111       "o"
+Read 11101  as code 109       "m"
+Read 1100   as code 101       "e"
+Read 0110   as code 115       "s"
+Read 001011 as code 46        "."
+Read 110111 as code 256       [STOP]
+```
+
+So, our final uncompressed message is:
+> I'm not a pheasant plucker, I'm a pheasant plucker's son, and I'm only plucking pheasants til the pheasant plucker comes.
 

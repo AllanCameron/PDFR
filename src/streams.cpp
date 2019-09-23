@@ -9,11 +9,14 @@
 //                                                                           //
 //---------------------------------------------------------------------------//
 
-/* This is the only file in the program that requires external libraries other
- * than those of the standard library. It uses miniz, which is a small portable
- * library consisting of a single pair of header / implementation files. It
- * does not therefore need to be precompiled and is included in the source
- * files in the "external" directory
+/* Streams are normally compressed in PDFs, and the majority appear to be
+ * compressed in DEFLATE format. I have used inheritance here with the Stream
+ * class playing the role of base class and the various types of compression
+ * having their own dervied classes, so that the interface remains standardized
+ * and new classes for each type of compression could be added as needed.
+ *
+ * The Stream Class itself is effectively an abstract class. Its constructor
+ * is protected so it can only be called by the derived class constructors.
  */
 
 #include "streams.h"
@@ -24,7 +27,8 @@ typedef map<uint32_t, uint32_t> HuffmanMap;
 typedef vector<uint32_t> LengthArray;
 
 /*---------------------------------------------------------------------------*/
-// The flatedecode interface
+// The flatedecode interface is very simple. Provide it with a deflated string
+// and it will replace it with the uncompressed version.
 
 void FlateDecode(string& t_message)
 {
@@ -32,6 +36,32 @@ void FlateDecode(string& t_message)
 }
 
 /*---------------------------------------------------------------------------*/
+// In Deflate, some short messages are encoded with a fixed dictionary, since
+// including a dictionary would make the stream longer instead of shorter.
+// The decompressor needs to know this dictionary.
+//
+// This dictionary takes the form of a lookup table. The difficulty here is
+// representing a variable-length bit sequence with a single key. Each of the
+// 32-bit numbers making up the keys in this lookup table represent a number of
+// bits, and the actual number encoded by those bits. The number of bits is
+// stored in the 16 high order bits, and the value they represent is stored in
+// the 16 low order bits. For example, the bit sequence "1101101" is 109 in
+// binary, and is made of 7 bits. Therefore, it would be represented by
+// 109 | (7 << 16) which is 458861 or 0x7006d. If I have the key 0x800cc, then I
+// know it has 8 bits, since 0x800cc >> 16 == 8, and the value 0xcc or 204,
+// since 0x800cc & 0x0ffff == 0xcc. I can therefore determine that my bit
+// sequence has to be an 8-bit representation of 204, or 11001100. This could be
+// accomplished by having a {bits, value} pair as the key, though you would
+// have to do std::make_pair every time you wanted to look some bits up in
+// the table, and I assume this is more costly than bitwise operations.
+//
+// One final note on this table: the bit sequences in all the code lookup tables
+// in this implementation of Deflate are reversed. This allows direct reading
+// of the codes from the stream in a standard LSB->MSB fashion rather than
+// the reverse ordering employed by the packing of Huffman codes. This could
+// have been done by reversing the bits every time a code was read, but it
+// seemed more sensible to me to reverse the lookup tables, since that would
+// require fewer bit-reversals in total.
 
 const HuffmanMap Deflate::fixed_literal_map_ {
 {0x8000c,   0}, {0x8008c,   1}, {0x8004c,   2}, {0x800cc,   3}, {0x8002c,   4},
@@ -94,6 +124,11 @@ const HuffmanMap Deflate::fixed_literal_map_ {
 {0x800a3, 285}, {0x80063, 286}, {0x800e3, 287}, {0xfffff,   9}, {0x00000,   7}
 };
 
+/*---------------------------------------------------------------------------*/
+// The fixed distance table, like the fixed literal table, is only used when
+// a fixed compression dictionary is employed. It uses the same scheme as above
+// to convert from a 32-bit unsigned int to a variable-length bit sequence.
+
 const HuffmanMap Deflate::fixed_distance_map_ {
   {0x50000,  0}, {0x50010,  1}, {0x50008,  2}, {0x50018,  3}, {0x50004,  4},
   {0x50014,  5}, {0x5000c,  6}, {0x5001c,  7}, {0x50002,  8}, {0x50012,  9},
@@ -104,9 +139,15 @@ const HuffmanMap Deflate::fixed_distance_map_ {
   {0x5000f, 30}, {0x5001f, 31}, {0xfffff,  5}, {0x00000,  5}
   };
 
+/*---------------------------------------------------------------------------*/
+// Look up what actual lengths the length codes represent
+
 const vector<uint32_t> Deflate::length_table_ {
   0x0b, 0x0d, 0x0f, 0x11, 0x13, 0x17, 0x1b, 0x1f, 0x23, 0x2b,
   0x33, 0x3b, 0x43, 0x53, 0x63, 0x73, 0x83, 0xa3, 0xc3, 0xe3};
+
+/*---------------------------------------------------------------------------*/
+// Look up what actual distances the distance codes represent
 
 const vector<uint32_t> Deflate::distance_table_{
   0x0005, 0x0007, 0x0009, 0x000d, 0x0011, 0x0019, 0x0021, 0x0031, 0x0041,
@@ -228,6 +269,22 @@ HuffmanMap Deflate::Huffmanize(const LengthArray& lengths)
   return huffman_table;
 }
 
+
+std::string PrintBits(uint32_t entry)
+{
+  std::string result = "";
+  uint32_t n_bits = entry >> 16;
+  uint32_t mask = 1 << (n_bits - 1);
+  uint32_t value = entry & 0xffff;
+  while(n_bits > 0)
+  {
+    if (mask & value) result = result + '1'; else result = result + '0';
+    mask = mask >> 1;
+    n_bits--;
+  }
+  return result;
+}
+
 /*---------------------------------------------------------------------------*/
 
 uint32_t Deflate::ReadCode(HuffmanMap& map_t)
@@ -250,6 +307,7 @@ uint32_t Deflate::ReadCode(HuffmanMap& map_t)
       if (read_bits > maxbits) throw runtime_error("Couldn't find code");
     }
   }
+
   return code;
 }
 
@@ -378,7 +436,6 @@ void Deflate::ReadCodes()
 void Deflate::HandlePointer(uint32_t code_t)
 {
   uint32_t length_value = 0, distance_value = 0, extrabits = 0;
-
   if (code_t < 265) length_value = code_t - 254;
   else if (code_t == 285) length_value = 258;
   else
@@ -387,7 +444,6 @@ void Deflate::HandlePointer(uint32_t code_t)
     uint32_t read_value = GetBits(extrabits);
     length_value = read_value + length_table_[code_t - 265];
   }
-
   uint32_t distance_code = ReadCode(distance_map_);
 
   if(distance_code < 4)
