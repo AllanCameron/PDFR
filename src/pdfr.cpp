@@ -13,6 +13,7 @@
 #include "dictionary.h"
 #include "xref.h"
 #include "object_class.h"
+#include "deflate.h"
 #include "document.h"
 #include "page.h"
 #include "tokenizer.h"

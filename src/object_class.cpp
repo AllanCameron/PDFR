@@ -12,6 +12,7 @@
 #include "utilities.h"
 #include "dictionary.h"
 #include "streams.h"
+#include "deflate.h"
 #include "xref.h"
 #include "object_class.h"
 
