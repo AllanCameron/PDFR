@@ -12,6 +12,7 @@
 #include "utilities.h"
 #include "dictionary.h"
 #include "streams.h"
+#include "deflate.h"
 #include "xref.h"
 #include "object_class.h"
 
@@ -173,7 +174,7 @@ void Object::ApplyFilters_()
   string filters = header_->GetString("/Filter");
 
   // Apply filters
-  if (filters.find("/FlateDecode") != string::npos) FlateDecode(stream_);
+  if (filters.find("/FlateDecode") != string::npos) FlateDecode(&stream_);
 
 }
 

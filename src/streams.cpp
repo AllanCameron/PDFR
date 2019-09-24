@@ -31,10 +31,10 @@ using namespace std;
 
 
 Stream::Stream(const string* input_t) : input_(input_t),
-input_position_(0),
-output_position_(0),
-unconsumed_bits_(0),
-unconsumed_bit_value_(0) {}
+                                        input_position_(0),
+                                        output_position_(0),
+                                        unconsumed_bits_(0),
+                                        unconsumed_bit_value_(0) {}
 
 /*---------------------------------------------------------------------------*/
 

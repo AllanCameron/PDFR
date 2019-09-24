@@ -26,7 +26,7 @@ I also need to choose conventions to describe the data we are putting into and g
 Many languages such as C, C++, Javascript and Java use zero-indexing. This means the first byte in an array will be denoted `data[0]`, the second byte `data[1]` etc. This is in contrast to R, FORTRAN, Matlab and a few others that start counting at one, so that the first element is `data[1]`, the second is `data[2]` etc. I will arbitrarily choose the former.
 
 ## Stating the problem
-Our input is an array of bytes called `data` containing the deflate stream. This contains the compressed message that, when we decompress it, is 121 bytes long. The compressed version has 81 bytes, so it is compressed to about 2/3 of its original size.
+Our input is an array of bytes called `data` containing the deflate stream. This contains the compressed message that, when we decompress it, is 121 bytes long. The compressed version has 77 bytes, so it is compressed to about 2/3 of its original size.
 
 
 ```
@@ -36,7 +36,7 @@ data = [0x78, 0x9c, 0x65, 0x8b, 0x3d, 0x0e, 0x80, 0x20, 0x0c, 0x46, 0xaf, 0xf2,
         0x83, 0x30, 0x0a, 0x93, 0x91, 0x38, 0x46, 0x3b, 0xf3, 0xce, 0x47, 0x44,
         0x7a, 0xdc, 0xcc, 0x83, 0xc1, 0x54, 0x22, 0x48, 0xd6, 0xb7, 0x50, 0x69,
         0xd7, 0xe7, 0xaa, 0x6c, 0x7f, 0x6d, 0xf0, 0xda, 0xe0, 0x85, 0xa7, 0x1f,
-        0x59, 0x3b, 0xdb, 0x72, 0x03, 0x08, 0xac, 0x2b, 0x13];
+        0x59, 0x3b, 0xdb, 0x72, 0x03];
 ```
 
 Now, how do we take these bytes and convert them back into the original message?
@@ -77,7 +77,6 @@ data[49]---> 11011100 11001100 10000011 11000001 01010100 00100010 01001000
 data[56]---> 11010110 10110111 01010000 01101001 11010111 11100111 10101010
 data[63]---> 01101100 01111111 01101101 11110000 11011010 11100000 10000101
 data[70]---> 10100111 00011111 01011001 00111011 11011011 01110010 00000011
-data[77]---> 00001000 10101100 00101011 00010011 <--- data[80]
         
 ```
 This should make it clear which byte (and which bits in it) we are talking about at any point in the following discussion.
@@ -485,19 +484,21 @@ literal code| bits
 ## Reading the compressed data
 We now have our literal dictionary and distance dictionary. It is time to use them to read the actual data. At last!
 
-If you have followed the example so far, we have read this table by consuming 179 bits, or 22 bytes + 3 bits. That takes us from the second bit of byte 10 to the 4th bit of byte 32. We now have 48 and 1/2 bytes left to squeeze in our compressed message:
+If you have followed the example so far, we have read this table by consuming 179 bits, or 22 bytes + 3 bits. That takes us from the second bit of byte 10 to the 4th bit of byte 32. We now have 44 and 1/2 bytes left to squeeze in our compressed message:
 
 ```
 Starting from here
                  |
                  v
-data[32]  --> 10010011 01000010 10000111 10101000 10000011 00110000 00001010
-data[39]  --> 10010011 10010001 00111000 01000110 00111011 11110011 11001110
-data[46]  --> 01000111 01000100 01111010 11011100 11001100 10000011 11000001 
-data[53]  --> 01010100 00100010 01001000 11010110 10110111 01010000 01101001 
-data[60]  --> 11010111 11100111 10101010 01101100 01111111 01101101 11110000 
-data[67]  --> 11011010 11100000 10000101 10100111 00011111 01011001 00111011
-data[74]  --> 11011011 01110010 00000011 00001000 10101100 00101011 00010011
+data[32]  --> 10010011  01000010  10000111  10101000  10000011 
+data[37]  --> 00110000  00001010  10010011  10010001  00111000 
+data[42]  --> 01000110  00111011  11110011  11001110  01000111 
+data[47]  --> 01000100  01111010  11011100  11001100  10000011 
+data[52]  --> 11000001  01010100  00100010  01001000  11010110
+data[57]  --> 10110111  01010000  01101001  11010111  11100111
+data[62]  --> 10101010  01101100  01111111  01101101  11110000 
+data[67]  --> 11011010  11100000  10000101  10100111  00011111 
+data[72]  --> 01011001  00111011  11011011  01110010  00000011 
 ```
 
 Now we are in a position to read the message. Let's try. The sequence starts `01001`, which corresponds to 73. We write this to our output. Next comes `00001` which is 39, `11101` which is 109, and `000` which is a 32. This spells out "I'm " in ascii, so we're clearly on the right track. Let's keep going.
@@ -725,3 +726,6 @@ Read 110111 as code 256       [STOP]
 So, our final uncompressed message is:
 > I'm not a pheasant plucker, I'm a pheasant plucker's son, and I'm only plucking pheasants til the pheasant plucker comes.
 
+We still have six unread bits at the end of our stream which are all zeros; these are simply ignored.
+
+Note that if the deflate stream is part of a zlib stream, it will have four extra bytes tagged onto the end. These act as a checksum for the final message.

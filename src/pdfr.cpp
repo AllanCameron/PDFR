@@ -13,6 +13,7 @@
 #include "dictionary.h"
 #include "xref.h"
 #include "object_class.h"
+#include "deflate.h"
 #include "document.h"
 #include "page.h"
 #include "tokenizer.h"
@@ -508,7 +509,7 @@ DataFrame get_pdf_boxes_from_raw(const vector<uint8_t>& raw_data,
 
 std::string Test_Stream(std::vector<uint8_t> raw_vector)
 {
-  Deflate test_raw(raw_vector);
+  Deflate test_raw(&raw_vector);
   return test_raw.Output();
 }
 
