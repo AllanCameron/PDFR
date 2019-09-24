@@ -59,7 +59,7 @@
 //---------------------------------------------------------------------------//
 // Stand-alone function to inflate a deflate stream
 
-void FlateDecode(std::string& deflated_string);
+void FlateDecode(std::string* deflated_string);
 
 //---------------------------------------------------------------------------//
 // The Stream class is the base class for the different streams used in pdfs.
@@ -72,8 +72,8 @@ class Stream
 {
 // The constructors are protected to make this an abstract class.
 protected:
-  Stream(const std::string&);           // string version
-  Stream(const std::vector<uint8_t>&);  // bytes version (converts to string)
+  Stream(const std::string*);           // string version
+  Stream(const std::vector<uint8_t>*);  // bytes version (converts to string)
 
 public:
   inline std::string Output(){return output_;} // Getter for output
@@ -103,7 +103,7 @@ public:
   inline char GetOutput(){return output_[output_position_++];}
 
   private:
-  std::string input_;               // The input string
+  const std::string* input_;        // The input string
   std::string output_;              // The output string
   size_t input_position_;           // Input iterator
   size_t output_position_;          // Output iterator
@@ -121,8 +121,8 @@ class Deflate : public Stream
 {
 public:
   // String and byte-vector constructors. The latter converts to a string.
-  Deflate(const std::string&);
-  Deflate(const std::vector<uint8_t>&);
+  Deflate(const std::string*);
+  Deflate(const std::vector<uint8_t>*);
 
 private:
   bool is_last_block_;    // Flag so decompressor knows when to stop

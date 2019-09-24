@@ -443,7 +443,7 @@ void XRefStream::GetRawMatrix_()
   // Applies decompression to stream if needed
   if (dictionary_.GetString("/Filter").find("/FlateDecode", 0) != string::npos)
   {
-    FlateDecode(stream);
+    FlateDecode(&stream);
   }
 
   // Convert stream to bytes then bytes to ints

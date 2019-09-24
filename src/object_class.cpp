@@ -173,7 +173,7 @@ void Object::ApplyFilters_()
   string filters = header_->GetString("/Filter");
 
   // Apply filters
-  if (filters.find("/FlateDecode") != string::npos) FlateDecode(stream_);
+  if (filters.find("/FlateDecode") != string::npos) FlateDecode(&stream_);
 
 }
 

@@ -30,9 +30,9 @@ typedef vector<uint32_t> LengthArray;
 // The flatedecode interface is very simple. Provide it with a deflated string
 // and it will replace it with the uncompressed version.
 
-void FlateDecode(string& t_message)
+void FlateDecode(string* t_message)
 {
-  t_message = Deflate(t_message).Output();
+  *t_message = Deflate(t_message).Output();
 }
 
 /*---------------------------------------------------------------------------*/
@@ -156,7 +156,7 @@ const vector<uint32_t> Deflate::distance_table_{
 
 /*---------------------------------------------------------------------------*/
 
-Stream::Stream(const string& input_t) : input_(input_t),
+Stream::Stream(const string* input_t) : input_(input_t),
                                         input_position_(0),
                                         output_position_(0),
                                         unconsumed_bits_(0),
@@ -164,10 +164,10 @@ Stream::Stream(const string& input_t) : input_(input_t),
 
 /*---------------------------------------------------------------------------*/
 
-Stream::Stream(const vector<uint8_t>& input_t)
+Stream::Stream(const vector<uint8_t>* input_t)
 {
-  string raw_string(input_t.begin(), input_t.end());
-  *this = Stream(raw_string);
+  string raw_string(input_t->begin(), input_t->end());
+  *this = Stream(&raw_string);
 }
 
 
@@ -175,8 +175,8 @@ Stream::Stream(const vector<uint8_t>& input_t)
 
 uint32_t Stream::GetByte()
 {
-  if (input_position_ >= input_.size()) return 256;
-  uint8_t next_byte = input_[input_position_++];
+  if (input_position_ >= input_->size()) return 256;
+  uint8_t next_byte = (*input_)[input_position_++];
   return next_byte;
   ;
 }
@@ -226,7 +226,7 @@ uint32_t Stream::GetBits(uint32_t n_bits_t)
 
 /*---------------------------------------------------------------------------*/
 
-Deflate::Deflate(const string& input_t) : Stream(input_t),
+Deflate::Deflate(const string* input_t) : Stream(input_t),
                                                is_last_block_(false)
 {
   CheckHeader();
@@ -235,7 +235,7 @@ Deflate::Deflate(const string& input_t) : Stream(input_t),
 
 /*---------------------------------------------------------------------------*/
 
-Deflate::Deflate(const vector<uint8_t>& input_t) : Stream(input_t),
+Deflate::Deflate(const vector<uint8_t>* input_t) : Stream(input_t),
                                                         is_last_block_(false)
 {
   CheckHeader();
