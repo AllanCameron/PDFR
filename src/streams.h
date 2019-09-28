@@ -79,7 +79,7 @@ public:
 
   // Appends byte to output and advances iterator
   inline void WriteOutput(uint8_t byte){output_.append(1, (char) byte);
-                                        output_position_++;}
+                                        output_position_ = output_.end();}
 
   // Writes a repeat sequence from earlier in the ouput to the end of the
   // output. Used in Deflate and LZW.
@@ -89,20 +89,20 @@ public:
     // from m bytes before the end of the output stream, even if n > m;
     for (uint32_t i = 0; i < length_t; ++i)
     {
-      WriteOutput(output_[output_position_ - distance_t]);
+      WriteOutput(*(output_position_ - distance_t));
     }
   }
 
   // Gets a byte from a specific location in the output stream
-  inline char GetOutput(){return output_[output_position_++];}
+  inline char GetOutput(){return *output_position_++;}
 
   private:
-  const std::string* input_;        // The input string
-  std::string output_;              // The output string
-  size_t input_position_;           // Input iterator
-  size_t output_position_;          // Output iterator
-  uint8_t unconsumed_bits_;         // Bit iterator
-  uint32_t unconsumed_bit_value_;   // Keeps track of unused bits
+  const std::string* input_;              // The input string
+  std::string output_;                    // The output string
+  std::string::const_iterator input_position_;  // Input iterator
+  std::string::iterator output_position_; // Output iterator
+  uint8_t unconsumed_bits_;               // Bit iterator
+  uint32_t unconsumed_bit_value_;         // Keeps track of unused bits
 
 };
 

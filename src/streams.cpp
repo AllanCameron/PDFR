@@ -31,8 +31,9 @@ using namespace std;
 
 
 Stream::Stream(const string* input_t) : input_(input_t),
-                                        input_position_(0),
-                                        output_position_(0),
+                                        output_(std::string()),
+                                        input_position_(input_->begin()),
+                                        output_position_(output_.begin()),
                                         unconsumed_bits_(0),
                                         unconsumed_bit_value_(0) {}
 
@@ -49,17 +50,14 @@ Stream::Stream(const vector<uint8_t>* input_t)
 
 uint32_t Stream::GetByte()
 {
-  if (input_position_ >= input_->size()) return 256;
-  uint8_t next_byte = (*input_)[input_position_++];
-  return next_byte;
-  ;
+  if (input_position_ == input_->end()) return 256;
+  return (uint8_t) *input_position_++;
 }
 
 /*---------------------------------------------------------------------------*/
 
 uint32_t Stream::PeekByte()
 {
-  ++input_position_;
   uint32_t result = GetByte();
   --input_position_;
   return result;
@@ -69,11 +67,11 @@ uint32_t Stream::PeekByte()
 
 void Stream::Reset()
 {
-  input_position_ = 0;
-  output_position_ = 0;
+  input_position_ = input_->begin();
+  output_.clear();
+  output_position_ = output_.begin();
   unconsumed_bit_value_ = 0;
   unconsumed_bits_ = 0;
-  output_.clear();
 }
 
 /*---------------------------------------------------------------------------*/
