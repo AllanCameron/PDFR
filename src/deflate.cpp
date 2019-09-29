@@ -157,36 +157,63 @@ const vector<uint32_t> Deflate::distance_table_{
   0x0801, 0x0c01, 0x1001, 0x1801, 0x2001, 0x3001, 0x4001, 0x6001};
 
 /*---------------------------------------------------------------------------*/
+// The Deflate constructor calls the stream constructor and then runs the
+// decompression without further prompting.
 
 Deflate::Deflate(const string* input_t) : Stream(input_t),
                                                is_last_block_(false)
 {
+  // This will abort further reading if the two header bytes aren't right.
   CheckHeader();
+
+  // Reads each available block sequentially
   while (!is_last_block_) ReadBlock();
 }
 
 /*---------------------------------------------------------------------------*/
+// The Deflate constructor calls the stream constructor and then runs the
+// decompression without further prompting. This takes a vector<uint8_t> pointer
+// but converts to a string, so is less efficient than the string version.
 
 Deflate::Deflate(const vector<uint8_t>* input_t) : Stream(input_t),
                                                         is_last_block_(false)
 {
+  // This will abort further reading if the two header bytes aren't right.
   CheckHeader();
+
+  // Reads each available block sequentially
   while (!is_last_block_) ReadBlock();
 }
 
 /*---------------------------------------------------------------------------*/
+// The Huffmanize function reconstructs a Huffman tree from a vector of lengths.
+// It assumes that the position of each length in the vector is the number to
+// be associated with the Huffman code. This means that symbols which don't
+// need a code have to have a zero associated with them. For example, if
+// the vector (3, 0, 2, 3, 0, 4) is passed, the equivalent mapping would be
+// [ 010 -> 0 ], [ 00 -> 2], [ 011 -> 3], [ 1000 -> 5].
+//
+// Because the bit sequences are variable length, they are stored in such a way
+// as to allow both the number of bits and the bit sequence to be combined into
+// a single key. We reverse the bit sequence for easy lookup and store it in
+// the low order bits, then store the number of bits in the high order bits.
 
 HuffmanMap Deflate::Huffmanize(const LengthArray& lengths)
 {
   HuffmanMap huffman_table;
+
+  // The maximum length is stored in the main table as it is needed for reading
+  // the table later.
   uint32_t max_length = *max_element(lengths.begin(), lengths.end());
+
+  // The minimum length needs to be found in the loop.
   uint32_t min_length = 15, code = 0;
 
-  for(uint32_t i = 1; i <= max_length; ++i)
+  for(uint32_t i = 1; i <= max_length; ++i) // For each possible length
   {
-    for(size_t j = 0; j < lengths.size(); ++j)
+    for(size_t j = 0; j < lengths.size(); ++j) // check each acutal length
     {
-      if(lengths[j] == i)
+      if(lengths[j] == i) // If it matches, add it to the table.
       {
         uint32_t lookup = (lengths[j] << 16) | BitFlip(code++, lengths[j]);
         huffman_table[lookup] = j;
