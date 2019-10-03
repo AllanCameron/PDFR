@@ -9,15 +9,9 @@
 //                                                                           //
 //---------------------------------------------------------------------------//
 
-#include "utilities.h"
-#include "dictionary.h"
-#include "xref.h"
-#include "object_class.h"
-#include "document.h"
-#include<iostream>
-#include<Rcpp.h>
 #include<iterator>
-
+#include<list>
+#include "document.h"
 
 //---------------------------------------------------------------------------//
 // See the document.h file for comments regarding the rationale and use of this
@@ -100,7 +94,7 @@ shared_ptr<Object> Document::GetObject(int t_object_number)
 void Document::ReadCatalog_()
 {
   // The pointer to the catalog is given under /Root in the trailer dictionary
-  int root_number = xref_->GetTrailer().GetReference("/Root");
+  int root_number = xref_->GetTrailer().GetReference_("/Root");
 
   // With errors handled, we can now just get the pointed-to object's dictionary
   catalog_ = make_shared<Dictionary>(GetObject(root_number)->GetDictionary());
@@ -114,20 +108,20 @@ void Document::ReadCatalog_()
 void Document::ReadPageDirectory_()
 {
   // Else get the object number of the /Pages dictionary
-  int page_object_number = catalog_->GetReference("/Pages");
+  int page_object_number = catalog_->GetReference_("/Pages");
 
   // Now fetch that object and store it
   page_directory_ = make_shared<Dictionary>(
                       GetObject(page_object_number)->GetDictionary());
 
   // Ensure /Pages has /kids entry
-  if (!page_directory_->ContainsReferences("/Kids"))
+  if (!page_directory_->ContainsReferences_("/Kids"))
   {
     throw runtime_error("No Kids entry in /Pages");
   }
 
   // Populate the page object numbers by expanding the /Kids references
-  page_object_numbers_ = ExpandKids_(page_directory_->GetReferences("/Kids"));
+  page_object_numbers_ = ExpandKids_(page_directory_->GetReferences_("/Kids"));
 
 }
 
@@ -170,7 +164,7 @@ std::vector<int> Document::ExpandKids_(const vector<int>& t_object_numbers)
   while (kid != kids_list.end())
   {
     // Look up the /Kids entry to see whether this is a root or leaf node
-    auto refs = GetObject(*kid)->GetDictionary().GetReferences("/Kids");
+    auto refs = GetObject(*kid)->GetDictionary().GetReferences_("/Kids");
 
     // If refs contains at least one member, the current node is a root node.
     // We therefore need to replace it with its child nodes.

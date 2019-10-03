@@ -9,8 +9,7 @@
 //                                                                           //
 //---------------------------------------------------------------------------//
 
-#include "utilities.h"
-#include "dictionary.h"
+#include<utility>
 #include "glyphwidths.h"
 #include "encoding.h"
 #include "font.h"
@@ -27,8 +26,8 @@ using namespace std;
 Font::Font(shared_ptr<Document> t_document_ptr,
            shared_ptr<Dictionary> t_font_dictionary,
            const string& t_font_id)
-  : document_(t_document_ptr),
-    font_dictionary_(t_font_dictionary),
+  : m_document_ptr(t_document_ptr),
+    m_font_dictionary(t_font_dictionary),
     font_id_(t_font_id)
 {
   ReadFontName_();
@@ -41,7 +40,7 @@ Font::Font(shared_ptr<Document> t_document_ptr,
 void Font::ReadFontName_()
 {
   // Reads /BaseFont entry
-  string base_font(font_dictionary_->GetString("/BaseFont"));
+  string base_font(m_font_dictionary->GetString_("/BaseFont"));
 
   if (base_font.size() > 7 && base_font[7] == '+')
   {
@@ -86,10 +85,10 @@ vector<pair<Unicode, int>> Font::MapRawChar(const vector<RawChar>& t_raw_vector)
 void Font::MakeGlyphTable_()
 {
   // Create Encoding object
-  Encoding encodings(font_dictionary_, document_);
+  Encoding encodings(m_font_dictionary, m_document_ptr);
 
   // Create glyphwidth object
-  GlyphWidths widths(font_dictionary_, document_);
+  GlyphWidths widths(m_font_dictionary, m_document_ptr);
 
   // get all the mapped RawChars from the Encoding object
   auto encoding_map = encodings.GetEncodingKeys();

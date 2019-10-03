@@ -47,10 +47,8 @@
  * after its creation.
  */
 
-#include<vector>
-#include<string>
-#include<memory>
-#include<unordered_map>
+#include "utilities.h"
+#include <memory>
 
 //---------------------------------------------------------------------------//
 
@@ -66,46 +64,47 @@ class Dictionary
 
   Dictionary(std::unordered_map<std::string, std::string> dictionary_map);
 
-  Dictionary(const Dictionary& t_other): map_(t_other.map_){};
+  Dictionary(const Dictionary& t_other): m_map(t_other.m_map){};
 
-  Dictionary(Dictionary&& t_other) noexcept { std::swap(map_, t_other.map_); }
+  Dictionary(Dictionary&& t_other) noexcept { std::swap(m_map, t_other.m_map); }
 
   Dictionary() = default;
 
   Dictionary& operator=(Dictionary&& t_other) noexcept
   {
-    std::swap(map_, t_other.map_);
+    std::swap(m_map, t_other.m_map);
     return *this;
   }
 
   Dictionary& operator=(const Dictionary& t_other)
   {
-    map_ = t_other.map_;
+    m_map = t_other.m_map;
     return *this;
   }
 
   // Public member functions
-  std::string GetString(const std::string& key)              const;
-  bool HasKey(const std::string& key)                        const;
-  bool ContainsReferences(const std::string& key)            const;
-  bool ContainsInts(const std::string& key)                  const;
-  bool ContainsDictionary(const std::string& key)            const;
-  std::vector<int> GetReferences(const std::string& key)     const;
-  int GetReference(const std::string& key)                   const;
-  std::vector<int> GetInts(const std::string& key)           const;
-  std::vector<float> GetFloats(const std::string& key)       const;
-  std::vector<std::string> GetAllKeys()                      const;
-  Dictionary GetDictionary(const std::string& key)           const;
-  std::unordered_map<std::string, std::string> GetMap()      const;
+  std::string GetString_(const std::string& key)              const;
+  bool HasKey_(const std::string& key)                        const;
+  bool ContainsReferences_(const std::string& key)            const;
+  bool ContainsInts_(const std::string& key)                  const;
+  bool ContainsDictionary_(const std::string& key)            const;
+  std::vector<int> GetReferences_(const std::string& key)     const;
+  int GetReference_(const std::string& key)                   const;
+  std::vector<int> GetInts_(const std::string& key)           const;
+  std::vector<float> GetFloats_(const std::string& key)       const;
+  std::vector<std::string> GetAllKeys_()                      const;
+  Dictionary GetDictionary_(const std::string& key)           const;
+  std::unordered_map<std::string, std::string> GetMap_()      const;
 
   // Inline definition of dictionary iterators
+  // This is needed for some range based loops.
   typedef std::unordered_map<std::string, std::string>::const_iterator DictIt;
-  inline DictIt begin() const { return map_.cbegin(); }
-  inline DictIt end()   const { return map_.cend();   }
+  inline DictIt begin() const { return m_map.cbegin(); }
+  inline DictIt end()   const { return m_map.cend();   }
 
  private:
   // The single data member
-  std::unordered_map<std::string, std::string> map_;
+  std::unordered_map<std::string, std::string> m_map;
 };
 
 //---------------------------------------------------------------------------//

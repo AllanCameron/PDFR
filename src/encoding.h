@@ -66,14 +66,7 @@
  * code points or output (Unicode) characters.
  */
 
-#include<string>
-#include<vector>
-#include<unordered_map>
-#include<memory>
-#include<utility>
-
-class Dictionary;
-class Document;
+#include "document.h"
 using Unicode = uint16_t;
 using RawChar = uint16_t;
 
@@ -87,11 +80,10 @@ class Encoding
 {
  public:
   // Constructor
-  Encoding(std::shared_ptr<Dictionary> font_dictionary,
-           std::shared_ptr<Document> ptr_to_document);
+  Encoding(std::shared_ptr<Dictionary>, std::shared_ptr<Document>);
 
   // Maps given raw code point to Unicode
-  Unicode Interpret(const RawChar& code_point_to_be_interpreted);
+  Unicode Interpret(const RawChar&);
 
   // This typedef shortens the name of the RawChar to Unicode lookup maps.
   typedef std::unordered_map<RawChar, Unicode> UnicodeMap;
@@ -106,35 +98,35 @@ class Encoding
   // Data lookup tables - defined as static, which means only a single
   // instance of each is created rather than a copy for each object.
   // Note these maps are defined in adobetounicode.h and chartounicode.h
-  static const std::unordered_map<std::string, Unicode> adobe_to_unicode_;
-  static const UnicodeMap macroman_to_unicode_;
-  static const UnicodeMap winansi_to_unicode_;
-  static const UnicodeMap pdfdoc_to_unicode_;
+  static const std::unordered_map<std::string, Unicode> sm_adobe_to_unicode;
+  static const UnicodeMap sm_macroman_to_unicode;
+  static const UnicodeMap sm_winansi_to_unicode;
+  static const UnicodeMap sm_pdfdoc_to_unicode;
 
-  UnicodeMap encoding_map_;             // The main data member lookup
-  std::shared_ptr<Dictionary> font_dictionary_; // the main font dictionary
-  std::shared_ptr<Document> document_;  // pointer to the containing document
-  std::string base_encoding_;           // value of /BaseEncoding entry
+  UnicodeMap m_encoding_map;                 // The main data member lookup
+  std::shared_ptr<Dictionary> m_font_dictionary; // the main font dictionary
+  std::shared_ptr<Document> m_document_ptr;  // pointer to containing document
+  std::string base_encoding_;                // value of /BaseEncoding entry
 
   // The entries_ vector gives a pair of type : entry for each entity pushed
   // onto the stack by the lexer. We therefore know whether we are dealing with
   // a code point or a name when we parse the stack
-  std::vector<std::pair<DifferencesState, std::string>> entries_;
+  std::vector<std::pair<DifferencesState, std::string>> m_entries;
 
   // private member functions
 
   // uses lexer to parse /Differences entry
-  void ReadDifferences_(const std::string& differences_entry);
+  void ReadDifferences_(const std::string&);
 
   // finds encoding dictionary, gets /basencoding and /Differences entries
   void ReadEncoding_();           // Tokenizer
   void ReadDifferenceEntries_();  // Parser
 
   // parses CMap encoding ranges
-  void ProcessUnicodeRange_(std::vector<std::string>& bf_range_from_cmap);
+  void ProcessUnicodeRange_(std::vector<std::string>&);
 
   // parses CMap direct char-char conversion table
-  void ProcessUnicodeChars_(std::vector<std::string>& bf_char_from_cmap);
+  void ProcessUnicodeChars_(std::vector<std::string>&);
 
   // finds CMap if any and co-ordinates parsers to create mapping
   void MapUnicode_();
@@ -144,8 +136,7 @@ class Encoding
   void ParseTypeOneFont_(std::string);
 
   // Helper function for parser
-  void Write_(DifferencesState& state_to_push_to_entries,
-              std::string& string_to_push_to_entries);
+  void Write_(DifferencesState&, std::string&);
 };
 
 //---------------------------------------------------------------------------//

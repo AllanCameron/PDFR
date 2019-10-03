@@ -9,19 +9,10 @@
 //                                                                           //
 //---------------------------------------------------------------------------//
 
-#include "utilities.h"
-#include "dictionary.h"
-#include "xref.h"
-#include "object_class.h"
-#include "deflate.h"
-#include "document.h"
-#include "page.h"
-#include "tokenizer.h"
-#include "parser.h"
 #include "letter_grouper.h"
 #include "word_grouper.h"
 #include "whitespace.h"
-#include "line_grouper.h"
+#include "deflate.h"
 #include "pdfr.h"
 
 //---------------------------------------------------------------------------//
@@ -180,8 +171,9 @@ List get_object_from_string(const string& file_name, int object)
 
   // Fill an List with the requested object's elements and return
   return List::create(
-    Named("header") = document_ptr->GetObject(object)->GetDictionary().GetMap(),
-    Named("stream") = document_ptr->GetObject(object)->GetStream());
+  Named("header") = document_ptr->GetObject(object)->GetDictionary().GetMap_(),
+  Named("stream") = document_ptr->GetObject(object)->GetStream()
+  );
 }
 
 //---------------------------------------------------------------------------//
@@ -200,7 +192,7 @@ List get_object_from_raw(const vector<uint8_t>& raw_file, int object)
   // Fill an List with the requested object and return
   return List::create(
     Named("header") =
-      document_ptr->GetObject(object)->GetDictionary().GetMap(),
+      document_ptr->GetObject(object)->GetDictionary().GetMap_(),
     Named("stream") = document_ptr->GetObject(object)->GetStream());
 }
 
@@ -509,7 +501,8 @@ DataFrame get_pdf_boxes_from_raw(const vector<uint8_t>& raw_data,
 
 std::string Test_Stream(std::vector<uint8_t> raw_vector)
 {
-  Deflate test_raw(&raw_vector);
+  std::string raw_string(raw_vector.begin(), raw_vector.end());
+  Deflate test_raw(&raw_string);
   return test_raw.Output();
 }
 

@@ -50,10 +50,7 @@
  * xrefstreams.
  */
 
-//---------------------------------------------------------------------------//
-// Stand-alone function to inflate a deflate stream
-
-void FlateDecode(std::string* deflated_string);
+#include "utilities.h"
 
 //---------------------------------------------------------------------------//
 // The Stream class is the base class for the different streams used in pdfs.
@@ -66,8 +63,7 @@ class Stream
 {
 // The constructors are protected to make this an abstract class.
 protected:
-  Stream(const std::string*);           // string version
-  Stream(const std::vector<uint8_t>*);  // bytes version (converts to string)
+  Stream(const std::string*);
 
 public:
   inline std::string Output(){return output_;} // Getter for output

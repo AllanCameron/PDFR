@@ -9,9 +9,6 @@
 //                                                                           //
 //---------------------------------------------------------------------------//
 
-#include "utilities.h"
-#include "box.h"
-#include "font.h"
 #include "textbox.h"
 
 using namespace std;

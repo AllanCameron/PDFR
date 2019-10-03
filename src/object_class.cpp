@@ -9,11 +9,7 @@
 //                                                                           //
 //---------------------------------------------------------------------------//
 
-#include "utilities.h"
-#include "dictionary.h"
-#include "streams.h"
 #include "deflate.h"
-#include "xref.h"
 #include "object_class.h"
 
 //---------------------------------------------------------------------------//
@@ -52,7 +48,7 @@ Object::Object(shared_ptr<const XRef> t_xref, int t_object_number) :
     stream_location_ = xref_->GetStreamLocation(start);
 
     // The object may contain an object stream that needs unpacked
-    if (header_->GetString("/Type") == "/ObjStm")
+    if (header_->GetString_("/Type") == "/ObjStm")
     {
       // Get the object stream
       ReadStreamFromStreamLocations_();
@@ -171,7 +167,7 @@ void Object::ApplyFilters_()
   if (xref_->IsEncrypted()) xref_->Decrypt(stream_, object_number_, 0);
 
   // Read filters
-  string filters = header_->GetString("/Filter");
+  string filters = header_->GetString_("/Filter");
 
   // Apply filters
   if (filters.find("/FlateDecode") != string::npos) FlateDecode(&stream_);

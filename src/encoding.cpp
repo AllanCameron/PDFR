@@ -9,12 +9,7 @@
 //                                                                           //
 //---------------------------------------------------------------------------//
 
-#include "utilities.h"
-#include "dictionary.h"
-#include "object_class.h"
-#include "document.h"
 #include "encoding.h"
-#include <iostream>
 
 using namespace std;
 
@@ -24,9 +19,9 @@ using namespace std;
 // any /ToUnicode entry. The first three are co-ordinated by read_encoding()
 // and the last is co-ordinated by map_unicode()
 
-Encoding::Encoding(shared_ptr<Dictionary> t_font_dictionary,
-                   shared_ptr<Document> t_document_ptr)
-  : font_dictionary_(t_font_dictionary), document_(t_document_ptr)
+Encoding::Encoding(shared_ptr<Dictionary> p_font_dictionary,
+                   shared_ptr<Document> p_document_ptr)
+  : m_font_dictionary(p_font_dictionary), m_document_ptr(p_document_ptr)
 {
   ReadEncoding_();
   MapUnicode_();
@@ -34,16 +29,16 @@ Encoding::Encoding(shared_ptr<Dictionary> t_font_dictionary,
 
 /*---------------------------------------------------------------------------*/
 
-void Encoding::Write_(DifferencesState& t_state, string& t_buffer)
+void Encoding::Write_(DifferencesState& p_state, string& p_buffer)
 {
-  entries_.push_back(make_pair(t_state, t_buffer));
+  m_entries.push_back(make_pair(p_state, p_buffer));
 }
 
 /*---------------------------------------------------------------------------*/
 // Lexer for /Differences entry of encoding dictionary. Takes the
 // /Differences entry as a string and reads its ints as input code points.
 
-void Encoding::ReadDifferences_(const string& t_differences_string)
+void Encoding::ReadDifferences_(const string& p_differences_string)
 {
   DifferencesState state = NEWSYMB; // define starting state
   string buffer {};        // initialise the buffer string
@@ -54,7 +49,7 @@ void Encoding::ReadDifferences_(const string& t_differences_string)
   // parsing task, so I have kept it as a single function (albeit one with
   // nested switch - case expressions)
 
-  for (auto i : t_differences_string)
+  for (auto i : p_differences_string)
   {
     char n = GetSymbolType(i);  // determine character type
     switch (state)             // state switch
@@ -101,7 +96,7 @@ void Encoding::ReadDifferences_(const string& t_differences_string)
 // Parser for /Differences entry. Maps char points to glyph name's Unicode
 // value. If more than one name follows an int, then sequential code points are
 // mapped to each successive name's Unicode value. This requires the static
-// adobe_to_unicode_ map.
+// sm_adobe_to_unicode map.
 
 void Encoding::ReadDifferenceEntries_()
 {
@@ -109,7 +104,7 @@ void Encoding::ReadDifferenceEntries_()
   RawChar code_point = 0; // The raw code point to be mapped to Unicode
 
    // This loop writes the results vector to encoding map
-  for (auto& entry : entries_)
+  for (auto& entry : m_entries)
   {
     // If the vector entry is a number, convert to RawChar
     if (entry.first == NUM) code_point = (RawChar) stoi(entry.second);
@@ -119,10 +114,10 @@ void Encoding::ReadDifferenceEntries_()
     // entry is also a name (it will be over-written if it is an int)
     else
     {
-      auto finder = adobe_to_unicode_.find(entry.second);
-      if (finder != adobe_to_unicode_.end())
+      auto finder = sm_adobe_to_unicode.find(entry.second);
+      if (finder != sm_adobe_to_unicode.end())
       {
-        encoding_map_[code_point++] = adobe_to_unicode_.at(entry.second);
+        m_encoding_map[code_point++] = sm_adobe_to_unicode.at(entry.second);
       }
       else
       {
@@ -130,10 +125,10 @@ void Encoding::ReadDifferenceEntries_()
         {
           auto unicode_hex = entry.second.substr(4, 4);
           auto new_entry = ConvertHexToRawChar(unicode_hex);
-          if (!new_entry.empty()) encoding_map_[code_point++] = new_entry[0];
-          else encoding_map_[code_point] = code_point++;
+          if (!new_entry.empty()) m_encoding_map[code_point++] = new_entry[0];
+          else m_encoding_map[code_point] = code_point++;
         }
-        else encoding_map_[code_point] = code_point++;
+        else m_encoding_map[code_point] = code_point++;
 
       }
     }
@@ -147,13 +142,13 @@ void Encoding::ReadDifferenceEntries_()
 void Encoding::MapUnicode_()
 {
   // If no /ToUnicode entry, nothing to be done
-  if (!font_dictionary_->ContainsReferences("/ToUnicode")) return;
+  if (!m_font_dictionary->ContainsReferences_("/ToUnicode")) return;
 
   // Otherwise, get the reference and get its stream
-  int unicode_reference = font_dictionary_->GetReference("/ToUnicode");
+  int uni_reference = m_font_dictionary->GetReference_("/ToUnicode");
 
   // Get the text stream of the unicode conversion entry
-  string unicode_text(document_->GetObject(unicode_reference)->GetStream());
+  string unicode_text(m_document_ptr->GetObject(uni_reference)->GetStream());
 
   // MultiCarve gets all strings between the bookending strings. These are
   // stored in a vector and are substrates for the processing methods below
@@ -171,10 +166,10 @@ void Encoding::MapUnicode_()
 // This method parses the "bfchar" entries in the CMap and adds them to the
 // encoding map
 
-void Encoding::ProcessUnicodeChars_(vector<string>& t_bf_chars)
+void Encoding::ProcessUnicodeChars_(vector<string>& p_bf_chars)
 {
   // There may be many entries, so we process each of the given strings
-  for (auto& entry : t_bf_chars)
+  for (auto& entry : p_bf_chars)
   {
     // use MultiCarve() to get ascii-encoded byte representations
     vector<string> all_entries = MultiCarve(entry, "<", ">");
@@ -186,7 +181,7 @@ void Encoding::ProcessUnicodeChars_(vector<string>& t_bf_chars)
     for (size_t i = 0; i < (all_entries.size() - 1); i += 2)
     {
         RawChar key = ConvertHexToRawChar(all_entries[i])[0];
-        encoding_map_[key] = ConvertHexToRawChar(all_entries[i + 1])[0];
+        m_encoding_map[key] = ConvertHexToRawChar(all_entries[i + 1])[0];
     }
   }
 }
@@ -198,10 +193,10 @@ void Encoding::ProcessUnicodeChars_(vector<string>& t_bf_chars)
 // translated in the range, and the Unicode point from which to start the
 // translation - hence { 1; 4; 10 } would generate {1,10; 2,11; 3,12; 4,13}
 
-void Encoding::ProcessUnicodeRange_(vector<string>& t_bf_ranges)
+void Encoding::ProcessUnicodeRange_(vector<string>& p_bf_ranges)
 {
   // There may be many entries, so we process each of the given strings
-  for (auto& ranges : t_bf_ranges)
+  for (auto& ranges : p_bf_ranges)
   {
     // Uses MultiCarve() from utilities.h to get ascii-endoded byte strings
     auto all_entries = MultiCarve(ranges, "<", ">");
@@ -223,7 +218,7 @@ void Encoding::ProcessUnicodeRange_(vector<string>& t_bf_ranges)
       // Now we can fill the encoding map from the data in the row
       for (int increment = 0; increment <= (last - first); ++increment)
       {
-        encoding_map_[first + increment] = start + increment;
+        m_encoding_map[first + increment] = start + increment;
       }
     }
   }
@@ -236,37 +231,37 @@ void Encoding::ProcessUnicodeRange_(vector<string>& t_bf_ranges)
 void Encoding::ReadEncoding_()
 {
   // Starts with private font dictionary member
-  Dictionary encoding_dictionary = *font_dictionary_;
+  Dictionary encoding_dictionary = *m_font_dictionary;
 
   // Reads the encoding entry
-  string encoding_name = encoding_dictionary.GetString("/Encoding");
+  string encoding_name = encoding_dictionary.GetString_("/Encoding");
 
-  string subtype = encoding_dictionary.GetString("/Subtype");
+  string subtype = encoding_dictionary.GetString_("/Subtype");
 
   // If an encoding dictionary exists, gets it and read the baseencoding entry
-  if (font_dictionary_->ContainsReferences("/Encoding"))
+  if (m_font_dictionary->ContainsReferences_("/Encoding"))
   {
-    auto encoding_object_number = font_dictionary_->GetReference("/Encoding");
-    auto encoding_object_ptr = document_->GetObject(encoding_object_number);
+    auto encoding_reference = m_font_dictionary->GetReference_("/Encoding");
+    auto encoding_object_ptr = m_document_ptr->GetObject(encoding_reference);
     encoding_dictionary = encoding_object_ptr->GetDictionary();
-    if (encoding_dictionary.HasKey("/BaseEncoding"))
+    if (encoding_dictionary.HasKey_("/BaseEncoding"))
     {
-      encoding_name = encoding_dictionary.GetString("/BaseEncoding");
+      encoding_name = encoding_dictionary.GetString_("/BaseEncoding");
     }
   }
 
   // Now we should have an encoding name to specify our encoding map
   if ( encoding_name == "/WinAnsiEncoding")
   {
-    encoding_map_ = winansi_to_unicode_;
+    m_encoding_map = sm_winansi_to_unicode;
   }
   else if (encoding_name == "/MacRomanEncoding")
   {
-    encoding_map_ = macroman_to_unicode_;
+    m_encoding_map = sm_macroman_to_unicode;
   }
   else if (encoding_name == "/PDFDocEncoding")
   {
-    encoding_map_ = pdfdoc_to_unicode_;
+    m_encoding_map = sm_pdfdoc_to_unicode;
   }
 
   // If no encoding name is specified, we take a direct RawChar : Unicode map
@@ -274,15 +269,15 @@ void Encoding::ReadEncoding_()
   {
     for (RawChar raw_char = 0x0000; raw_char < 0x0100; ++raw_char)
     {
-      encoding_map_[raw_char] = (Unicode) raw_char;
+      m_encoding_map[raw_char] = (Unicode) raw_char;
     }
 
     if(encoding_name == "" && subtype == "/Type1") HandleTypeOneFont_();
   }
   // Call Differences() if a /Differences entry is found to modify encoding
-  if (encoding_dictionary.HasKey("/Differences"))
+  if (encoding_dictionary.HasKey_("/Differences"))
   {
-    base_encoding_ = encoding_dictionary.GetString("/Differences");
+    base_encoding_ = encoding_dictionary.GetString_("/Differences");
     ReadDifferences_(base_encoding_);
   }
 }
@@ -292,12 +287,12 @@ void Encoding::ReadEncoding_()
 // a range-checked lookup of a given RawChar. If it finds no Unicode entry
 // in the map it returns the original RawChar
 
-Unicode Encoding::Interpret(const RawChar& t_raw)
+Unicode Encoding::Interpret(const RawChar& p_raw)
 {
   // If no translation found, return the raw character code point
-  auto found = encoding_map_.find(t_raw);
-  if (found != encoding_map_.end()) return found->second;
-  else return t_raw;
+  auto found = m_encoding_map.find(p_raw);
+  if (found != m_encoding_map.end()) return found->second;
+  else return p_raw;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -306,7 +301,7 @@ Unicode Encoding::Interpret(const RawChar& t_raw)
 
 shared_ptr<unordered_map<RawChar, Unicode>> Encoding::GetEncodingKeys()
 {
-  return make_shared<unordered_map<RawChar, Unicode>>(encoding_map_);
+  return make_shared<unordered_map<RawChar, Unicode>>(m_encoding_map);
 }
 
 
@@ -315,18 +310,18 @@ shared_ptr<unordered_map<RawChar, Unicode>> Encoding::GetEncodingKeys()
 
 void Encoding::HandleTypeOneFont_()
 {
-  if(font_dictionary_->ContainsReferences("/FontDescriptor"))
+  if(m_font_dictionary->ContainsReferences_("/FontDescriptor"))
   {
-    auto descriptor_number = font_dictionary_->GetReference("/FontDescriptor");
-    auto descriptor_object_ptr = document_->GetObject(descriptor_number);
+    auto descript_number = m_font_dictionary->GetReference_("/FontDescriptor");
+    auto descriptor_object_ptr = m_document_ptr->GetObject(descript_number);
     auto descriptor_dictionary = descriptor_object_ptr->GetDictionary();
-    auto encoding_name = descriptor_dictionary.GetString("/Encoding");
+    auto encoding_name = descriptor_dictionary.GetString_("/Encoding");
     if(encoding_name == "")
     {
-      if(descriptor_dictionary.ContainsReferences("/FontFile"))
+      if(descriptor_dictionary.ContainsReferences_("/FontFile"))
       {
-        auto fontfile_number = descriptor_dictionary.GetReference("/FontFile");
-        auto fontfile_object_ptr = document_->GetObject(fontfile_number);
+        auto fontfile_number = descriptor_dictionary.GetReference_("/FontFile");
+        auto fontfile_object_ptr = m_document_ptr->GetObject(fontfile_number);
         auto fontfile_string = fontfile_object_ptr->GetStream();
         ParseTypeOneFont_(fontfile_string);
       }
@@ -337,20 +332,20 @@ void Encoding::HandleTypeOneFont_()
 /*---------------------------------------------------------------------------*/
 // Parses a type 1 font file
 
-void Encoding::ParseTypeOneFont_(std::string t_fontfile_string)
+void Encoding::ParseTypeOneFont_(std::string p_fontfile_string)
 {
   string the_end =  "currentdict end";
-  auto fontfile_listing = CarveOut(t_fontfile_string, "/Encoding", the_end);
+  auto fontfile_listing = CarveOut(p_fontfile_string, "/Encoding", the_end);
   auto entries = MultiCarve(fontfile_listing, "dup ", " put");
   for(auto entry : entries)
   {
     auto name_start  = entry.find("/");
     auto adobe_name = entry.substr(name_start, entry.size() - name_start);
-    if (adobe_to_unicode_.find(adobe_name) == adobe_to_unicode_.end())
+    if (sm_adobe_to_unicode.find(adobe_name) == sm_adobe_to_unicode.end())
     {
       string message = "Couldn't find " + adobe_name + " in adobe map";
       throw runtime_error(message);
     }
-    encoding_map_[stoi(entry)] = adobe_to_unicode_.at(adobe_name);
+    m_encoding_map[stoi(entry)] = sm_adobe_to_unicode.at(adobe_name);
   }
 }

@@ -48,15 +48,8 @@
  * to reduce the passing around of several parameters.
  */
 
-#include<memory>
-#include<vector>
-#include<array>
-#include<unordered_map>
-#include<functional>
-#include<utility>
 #include "textbox.h"
-
-class Page;
+#include "page.h"
 
 
 using RawChar = uint16_t;

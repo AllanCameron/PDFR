@@ -9,10 +9,6 @@
 //                                                                           //
 //---------------------------------------------------------------------------//
 
-#include "utilities.h"
-#include "dictionary.h"
-#include "object_class.h"
-#include "document.h"
 #include "glyphwidths.h"
 
 //---------------------------------------------------------------------------//
@@ -32,10 +28,11 @@ using namespace std;
 // built in static corefont tables. Otherwise find and interpret widths.
 
 GlyphWidths::GlyphWidths
-  (shared_ptr<Dictionary> t_font_dictionary, shared_ptr<Document> t_document_ptr)
-  : font_dictionary_(t_font_dictionary),
-    document_(t_document_ptr),
-    base_font_(font_dictionary_->GetString("/BaseFont"))
+  (shared_ptr<Dictionary> t_font_dictionary,
+   shared_ptr<Document> t_document_ptr)
+  : m_font_dictionary(t_font_dictionary),
+    m_document_ptr(t_document_ptr),
+    base_font_(m_font_dictionary->GetString_("/BaseFont"))
 {
   ReadCoreFont_();
   if (width_map_.empty()) ReadWidthTable_();
@@ -50,13 +47,13 @@ GlyphWidths::GlyphWidths
 void GlyphWidths::ReadWidthTable_()
 {
   // If widths entry specified, use this by calling parsewidths method
-  if (font_dictionary_->HasKey("/Widths"))
+  if (m_font_dictionary->HasKey_("/Widths"))
   {
     ParseWidths_();
   }
 
   // otherwise look in descendants using parseDescendants method
-  else if (font_dictionary_->ContainsReferences("/DescendantFonts"))
+  else if (m_font_dictionary->ContainsReferences_("/DescendantFonts"))
   {
     ParseDescendants_();
   }
@@ -79,19 +76,19 @@ void GlyphWidths::ParseWidths_()
   RawChar first_character = 0x0000;
 
   // Otherwise we read the firstchar entry
-  if (font_dictionary_->ContainsInts("/FirstChar"))
+  if (m_font_dictionary->ContainsInts_("/FirstChar"))
   {
-    first_character = font_dictionary_->GetInts("/FirstChar")[0];
+    first_character = m_font_dictionary->GetInts_("/FirstChar")[0];
   }
   // Annoyingly, widths sometimes contains a pointer to another object that
   // contains the width array, either in a stream or as a 'naked object'.
   // Note that contents of a naked object are stored as the object's 'stream'.
 
   // Handle /widths being a reference to another object
-  if (font_dictionary_->ContainsReferences("/Widths"))
+  if (m_font_dictionary->ContainsReferences_("/Widths"))
   {
-    auto width_object_number = font_dictionary_->GetReference("/Widths");
-    auto width_object_ptr = document_->GetObject(width_object_number);
+    auto width_object_number = m_font_dictionary->GetReference_("/Widths");
+    auto width_object_ptr = m_document_ptr->GetObject(width_object_number);
 
     // Get the referenced object's stream
     string width_object_stream(width_object_ptr->GetStream());
@@ -100,7 +97,7 @@ void GlyphWidths::ParseWidths_()
     width_array = ParseFloats(width_object_stream);
   }
   // If /Widths is not a reference get the widths directly
-  else  width_array = font_dictionary_->GetFloats("/Widths");
+  else  width_array = m_font_dictionary->GetFloats_("/Widths");
 
   // If a width array was found
   if (!width_array.empty())
@@ -125,8 +122,8 @@ void GlyphWidths::ParseWidths_()
 void GlyphWidths::ParseDescendants_()
 {
   // get a pointer to the /Descendantfonts object
-  auto descendant_number = font_dictionary_->GetReference("/DescendantFonts");
-  auto descendant_object = document_->GetObject(descendant_number);
+  auto descendant_number = m_font_dictionary->GetReference_("/DescendantFonts");
+  auto descendant_object = m_document_ptr->GetObject(descendant_number);
 
   // Extract its dictionary and its stream
   Dictionary descendant_dictionary = descendant_object->GetDictionary();
@@ -136,25 +133,25 @@ void GlyphWidths::ParseDescendants_()
   if (!ParseReferences(descendant_stream).empty())
   {
     descendant_number = ParseReferences(descendant_stream)[0];
-    descendant_object = document_->GetObject(descendant_number);
+    descendant_object = m_document_ptr->GetObject(descendant_number);
     descendant_dictionary = descendant_object->GetDictionary();
   }
 
   // We now look for the /W key and if it is found parse its contents
-  if (descendant_dictionary.HasKey("/W"))
+  if (descendant_dictionary.HasKey_("/W"))
   {
     // We will fill this string with width array when found
     string width_string;
 
     // sometimes the /W entry only contains a pointer to the containing object
-    if (descendant_dictionary.ContainsReferences("/W"))
+    if (descendant_dictionary.ContainsReferences_("/W"))
     {
-      auto width_object_number = descendant_dictionary.GetReference("/W");
-      width_string = document_->GetObject(width_object_number)->GetStream();
+      auto width_object_number = descendant_dictionary.GetReference_("/W");
+      width_string = m_document_ptr->GetObject(width_object_number)->GetStream();
     }
 
     // otherwise we assume /W contains the widths needed
-    else width_string = descendant_dictionary.GetString("/W");
+    else width_string = descendant_dictionary.GetString_("/W");
 
     // in either case width_string should now contain the /W array which we
     // now need to parse using our lexer method
@@ -179,18 +176,25 @@ void GlyphWidths::ReadCoreFont_()
   // that will result from the given RawChar codes. This is therefore flagged
   // by the boolean widthsFromCharCodes.
 
-  if (base_font_.find("/Courier") != string::npos) width_map_ = courier_widths_;
-  else if (base_font_ == "/Symbol") width_map_ = symbol_widths_;
-  else if (base_font_ == "/Times-Bold") width_map_ = times_bold_widths_;
-  else if (base_font_ == "/Times-Italic") width_map_ = times_italic_widths_;
-  else if (base_font_ == "/Times-Roman") width_map_ = times_roman_widths_;
-  else if (base_font_ == "/ZapfDingbats") width_map_ = dingbats_widths_;
-  else if (base_font_ == "/Helvetica-Oblique" ||
-           base_font_ == "/Helvetica") width_map_ = helvetica_widths_;
+  if (base_font_.find("/Courier") != string::npos)
+    width_map_ = sm_courier_widths;
+  else if (base_font_ == "/Symbol")
+    width_map_ = sm_symbol_widths;
+  else if (base_font_ == "/Times-Bold")
+    width_map_ = sm_times_bold_widths;
+  else if (base_font_ == "/Times-Italic")
+    width_map_ = sm_times_italic_widths;
+  else if (base_font_ == "/Times-Roman")
+    width_map_ = sm_times_roman_widths;
+  else if (base_font_ == "/ZapfDingbats")
+    width_map_ = sm_dingbats_widths;
+  else if (base_font_ == "/Helvetica-Oblique" || base_font_ == "/Helvetica")
+    width_map_ = sm_helvetica_widths;
   else if (base_font_ == "/Helvetica-Boldoblique" ||
-           base_font_ == "/Helvetica-Bold") width_map_ = helvetica_bold_widths_;
+           base_font_ == "/Helvetica-Bold")
+    width_map_ = sm_helvetica_bold_widths;
   else if (base_font_ == "/Times-BoldItalic")
-    width_map_ = times_bold_italic_widths_;
+    width_map_ = sm_times_bold_italic_widths;
 
   // No unicode -> width mapping - using RawChar
   else width_is_pre_interpretation_ = true;

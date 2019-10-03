@@ -33,7 +33,7 @@
  * at the cost of processing time for the translation step from string to enum.
  */
 
-const std::unordered_map<std::string, Unicode> Encoding::adobe_to_unicode_ =
+const std::unordered_map<std::string, Unicode> Encoding::sm_adobe_to_unicode =
 {
   {"/.notdef",    0x2022},
   {"/controlSOT", 0x0002},

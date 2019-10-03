@@ -9,7 +9,6 @@
 //                                                                           //
 //---------------------------------------------------------------------------//
 
-#include "utilities.h"
 #include "tokenizer.h"
 
 using namespace std;

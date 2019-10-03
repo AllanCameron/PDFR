@@ -51,17 +51,7 @@
  * to access the dictionary pertaining to a particular page
  */
 
-#include<string>
-#include<vector>
-#include<unordered_map>
-#include<memory>
-
-class Dictionary;
-class XRef;
-class Object;
-
-template <class T> class TreeNode;
-
+#include "object_class.h"
 
 //---------------------------------------------------------------------------//
 // The public interface of the Document class comprises constructors and two

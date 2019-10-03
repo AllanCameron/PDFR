@@ -9,6 +9,7 @@
 //                                                                           //
 //---------------------------------------------------------------------------//
 
+#include<memory>
 #include <testthat.h>
 #include "utilities.h"
 #include "dictionary.h"
@@ -71,10 +72,10 @@ trailer\r\n  <<  /Root 1 0 R\r\n      /Size 5\r\n  \
 vector<uint8_t> pdf_bytes(full_pdf_string.begin(), full_pdf_string.end());
 auto ptr_to_pdf = make_shared<string>(full_pdf_string);
 auto dict_from_pdf = Dictionary(ptr_to_pdf, 195);
-auto resources_test = dict_from_pdf.GetDictionary("/Resources");
-auto font_test = resources_test.GetDictionary("/Font");
-auto subfont_test = font_test.GetDictionary("/F1");
-auto get_font_name = subfont_test.GetString("/BaseFont");
+auto resources_test = dict_from_pdf.GetDictionary_("/Resources");
+auto font_test = resources_test.GetDictionary_("/Font");
+auto subfont_test = font_test.GetDictionary_("/F1");
+auto get_font_name = subfont_test.GetString_("/BaseFont");
 
 Dictionary test_dictionary = Dictionary(make_shared<string>(test_dict_string));
 
@@ -182,16 +183,17 @@ context("dictionary.h")
 {
   test_that("Dictionary can be created successfully.")
   {
-    expect_true(test_dictionary.GetString("/A") == "Success");
+    expect_true(test_dictionary.GetString_("/A") == "Success");
   }
 
   test_that("Dictionary entries are read correctly.")
   {
-    expect_true(test_dictionary.GetReference("/Ref") == 1);
-    expect_true(test_dictionary.GetReferences("/Ref") == test_ints);
-    expect_true(test_dictionary.GetInts("/SomeInts") == test_ints);
-    expect_true(test_dictionary.GetFloats("/SomeFloats") == test_floats);
-    expect_true(test_dictionary.GetDictionary("/Dict").GetString("/Subdict") ==
+    expect_true(test_dictionary.GetReference_("/Ref") == 1);
+    expect_true(test_dictionary.GetReferences_("/Ref") == test_ints);
+    expect_true(test_dictionary.GetInts_("/SomeInts") == test_ints);
+    expect_true(test_dictionary.GetFloats_("/SomeFloats") == test_floats);
+    expect_true(
+      test_dictionary.GetDictionary_("/Dict").GetString_("/Subdict") ==
       "Success");
     expect_true(get_font_name == string("/Times-Roman"));
   }

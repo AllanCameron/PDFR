@@ -41,13 +41,7 @@
  * rather than indirectly through byte offsets and binary streams
  */
 
-#include<string>
-#include<vector>
-#include<memory>
-#include<unordered_map>
-
-class Dictionary;
-class XRef;
+#include "xref.h"
 
 //---------------------------------------------------------------------------//
 

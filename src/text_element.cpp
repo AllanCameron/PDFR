@@ -9,8 +9,6 @@
 //                                                                           //
 //---------------------------------------------------------------------------//
 
-#include "utilities.h"
-#include "box.h"
 #include "font.h"
 #include "text_element.h"
 

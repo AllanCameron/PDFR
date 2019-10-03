@@ -9,10 +9,7 @@
 //                                                                           //
 //---------------------------------------------------------------------------//
 
-#include "utilities.h"
-#include "font.h"
-#include "text_element.h"
-#include "page.h"
+#include<functional>
 #include "parser.h"
 
 //---------------------------------------------------------------------------//

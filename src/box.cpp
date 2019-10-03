@@ -9,7 +9,6 @@
 //                                                                           //
 //---------------------------------------------------------------------------//
 
-
 #include "box.h"
 using namespace std;
 
@@ -33,7 +32,7 @@ using namespace std;
 // using this unordered map to get the implied direction based on the
 // surrounding whitespace.
 
-unordered_map<uint8_t, pair<Direction, Direction>> Vertex::arrows_ =
+unordered_map<uint8_t, pair<Direction, Direction>> Vertex::sm_arrows =
 {
   {0x00, {None, None}},   {0x01, {North, West}}, {0x02, {West, South}},
   {0x03, {West, West}},   {0x04, {South, East}}, {0x05, {None, None}},
@@ -49,14 +48,14 @@ unordered_map<uint8_t, pair<Direction, Direction>> Vertex::arrows_ =
 // Note, the given vertex is automatically flagged as being impinged at the
 // correct compass direction
 
-shared_ptr<Vertex> Box::GetVertex(int t_corner)
+shared_ptr<Vertex> Box::GetVertex(int p_corner)
 {
-  switch (t_corner)
+  switch (p_corner)
   {
-    case 0 : return std::make_shared<Vertex>(left_,  top_,    0x02);
-    case 1 : return std::make_shared<Vertex>(right_, top_,    0x01);
-    case 2 : return std::make_shared<Vertex>(left_,  bottom_, 0x04);
-    case 3 : return std::make_shared<Vertex>(right_, bottom_, 0x08);
+    case 0 : return std::make_shared<Vertex>(m_left,  m_top,    0x02);
+    case 1 : return std::make_shared<Vertex>(m_right, m_top,    0x01);
+    case 2 : return std::make_shared<Vertex>(m_left,  m_bottom, 0x04);
+    case 3 : return std::make_shared<Vertex>(m_right, m_bottom, 0x08);
     default: return std::make_shared<Vertex>(0, 0, 0);
   }
   return std::make_shared<Vertex>  (0, 0, 0);
@@ -67,10 +66,10 @@ shared_ptr<Vertex> Box::GetVertex(int t_corner)
 // an arbitrarily small distance in a given direction from the vertex will
 // place one inside the current box.
 
-void Box::RecordImpingementOn(Vertex& t_vertex)
+void Box::RecordImpingementOn(Vertex& p_vertex)
 {
-  if (IsNorthWestOf(t_vertex)) t_vertex.SetFlags(0x08);
-  if (IsNorthEastOf(t_vertex)) t_vertex.SetFlags(0x04);
-  if (IsSouthEastOf(t_vertex)) t_vertex.SetFlags(0x02);
-  if (IsSouthWestOf(t_vertex)) t_vertex.SetFlags(0x01);
+  if (IsNorthWestOf(p_vertex)) p_vertex.SetFlags(0x08);
+  if (IsNorthEastOf(p_vertex)) p_vertex.SetFlags(0x04);
+  if (IsSouthEastOf(p_vertex)) p_vertex.SetFlags(0x02);
+  if (IsSouthWestOf(p_vertex)) p_vertex.SetFlags(0x01);
 }

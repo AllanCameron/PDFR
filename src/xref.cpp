@@ -9,10 +9,7 @@
 //                                                                           //
 //---------------------------------------------------------------------------//
 
-#include "utilities.h"
-#include "dictionary.h"
-#include "streams.h"
-#include "crypto.h"
+#include "deflate.h"
 #include "xref.h"
 
 //---------------------------------------------------------------------------//
@@ -102,9 +99,9 @@ void XRef::LocateXRefs_()
 
   // Now we follow the pointers to all xrefs sequentially.
   Dictionary temp_dictionary = *trailer_dictionary_;
-  while (temp_dictionary.ContainsInts("/Prev"))
+  while (temp_dictionary.ContainsInts_("/Prev"))
   {
-    xref_locations_.emplace_back(temp_dictionary.GetInts("/Prev")[0]);
+    xref_locations_.emplace_back(temp_dictionary.GetInts_("/Prev")[0]);
     temp_dictionary = Dictionary(file_string_, xref_locations_.back());
   }
 }
@@ -251,9 +248,9 @@ vector<int> XRef::GetAllObjectNumbers() const
 
 int XRef::GetStreamLength_(const Dictionary& t_dictionary) const
 {
-  if (t_dictionary.ContainsReferences("/Length"))
+  if (t_dictionary.ContainsReferences_("/Length"))
   {
-    int length_object_number = t_dictionary.GetReference("/Length");
+    int length_object_number = t_dictionary.GetReference_("/Length");
     size_t first_position = GetObjectStartByte(length_object_number);
     size_t len = file_string_->find("endobj", first_position) - first_position;
     string object_string = file_string_->substr(first_position, len);
@@ -261,7 +258,7 @@ int XRef::GetStreamLength_(const Dictionary& t_dictionary) const
   }
 
   // Thankfully though most lengths are just direct ints
-  else return t_dictionary.GetInts("/Length")[0];
+  else return t_dictionary.GetInts_("/Length")[0];
 }
 
 /*---------------------------------------------------------------------------*/
@@ -274,10 +271,10 @@ vector<size_t> XRef::GetStreamLocation(int t_object_start) const
   Dictionary dictionary = Dictionary(file_string_, t_object_start);
 
   // If the stream exists, get its start / stop positions as a length-2 array
-  if (dictionary.HasKey("stream") && dictionary.HasKey("/Length"))
+  if (dictionary.HasKey_("stream") && dictionary.HasKey_("/Length"))
   {
     size_t stream_length = (size_t) GetStreamLength_(dictionary);
-    size_t stream_start  = (size_t) dictionary.GetInts("stream")[0];
+    size_t stream_start  = (size_t) dictionary.GetInts_("stream")[0];
     return vector<size_t>  {stream_start, stream_length};
   }
   return vector<size_t> {0,0}; // if no length, return empty length-2 array
@@ -314,9 +311,9 @@ Dictionary XRef::GetTrailer() const
 void XRef::CreateCrypto_()
 {
    // if there's no encryption dictionary, there's nothing else to do
-  if (!trailer_dictionary_->HasKey("/Encrypt")) return;
+  if (!trailer_dictionary_->HasKey_("/Encrypt")) return;
 
-  int encryption_number = trailer_dictionary_->GetReference("/Encrypt");
+  int encryption_number = trailer_dictionary_->GetReference_("/Encrypt");
 
   // No encryption dict - exception?
   if (xref_table_.find(encryption_number) == xref_table_.end()) return;
@@ -358,7 +355,7 @@ XRefStream::XRefStream(shared_ptr<XRef> t_xref, int t_starts_at)
     dictionary_(Dictionary(xref_->File(), object_start_))
 {
   // If there is no /W entry, we don't know how to interpret the stream.
-  if (!dictionary_.ContainsInts("/W")) throw runtime_error("No /W entry found.");
+  if (!dictionary_.ContainsInts_("/W")) throw runtime_error("No /W entry found.");
 
   ReadIndex_();       // Reads Index so we know which objects are in stream
   ReadParameters_();  // Reads the PNG decoding parameters
@@ -389,7 +386,7 @@ XRefStream::XRefStream(shared_ptr<XRef> t_xref, int t_starts_at)
 void XRefStream::ReadIndex_()
 {
   // Gets the numbers in the /Index entry
-  auto index_entries = dictionary_.GetInts("/Index");
+  auto index_entries = dictionary_.GetInts_("/Index");
 
   if (!index_entries.empty())
   {
@@ -412,21 +409,21 @@ void XRefStream::ReadParameters_()
 {
   string sub_dictionary_string = "<<>>";
 
-  if (dictionary_.HasKey("/DecodeParms"))
+  if (dictionary_.HasKey_("/DecodeParms"))
   {
-    sub_dictionary_string = dictionary_.GetString("/DecodeParms");
+    sub_dictionary_string = dictionary_.GetString_("/DecodeParms");
   }
 
   Dictionary sub_dictionary(make_shared<string>(sub_dictionary_string));
 
-  if (sub_dictionary.ContainsInts("/Columns"))
+  if (sub_dictionary.ContainsInts_("/Columns"))
   {
-    number_of_columns_ = sub_dictionary.GetInts("/Columns")[0];
+    number_of_columns_ = sub_dictionary.GetInts_("/Columns")[0];
   }
 
-  if (sub_dictionary.ContainsInts("/Predictor"))
+  if (sub_dictionary.ContainsInts_("/Predictor"))
   {
-    predictor_ = sub_dictionary.GetInts("/Predictor")[0];
+    predictor_ = sub_dictionary.GetInts_("/Predictor")[0];
   }
 }
 
@@ -441,7 +438,7 @@ void XRefStream::GetRawMatrix_()
   string stream = xref_->File()->substr(stream_location[0], stream_location[1]);
 
   // Applies decompression to stream if needed
-  if (dictionary_.GetString("/Filter").find("/FlateDecode", 0) != string::npos)
+  if (dictionary_.GetString_("/Filter").find("/FlateDecode", 0) != string::npos)
   {
     FlateDecode(&stream);
   }
@@ -452,7 +449,7 @@ void XRefStream::GetRawMatrix_()
 
   // Read the /W entry to get the width in bytes of each column in the table
   // check the widths for any zero values and skip them if present
-  array_widths_ = dictionary_.GetInts("/W");
+  array_widths_ = dictionary_.GetInts_("/W");
   auto new_end_marker = remove(array_widths_.begin(), array_widths_.end(), 0);
   array_widths_.erase(new_end_marker, array_widths_.end());
 

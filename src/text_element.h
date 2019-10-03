@@ -15,11 +15,8 @@
 
 #define PDFR_TEXT_ELEMENT
 
-#include<string>
 #include "box.h"
-
-class Font;
-using Unicode = uint16_t;
+#include "font.h"
 
 //---------------------------------------------------------------------------//
 // The "atom" of our output will be the TextElement. This is a class containing

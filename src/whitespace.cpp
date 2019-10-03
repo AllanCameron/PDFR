@@ -9,7 +9,6 @@
 //                                                                           //
 //---------------------------------------------------------------------------//
 
-#include<algorithm>
 #include "whitespace.h"
 
 using namespace std;

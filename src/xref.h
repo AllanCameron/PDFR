@@ -54,13 +54,8 @@
  * of XRef implementation, it has no public interface and is therefore not
  * defined in this header file, but rather within xref.cpp
 */
-#include<string>
-#include<vector>
-#include<memory>
-#include<unordered_map>
 
-class Dictionary;
-class Crypto;
+#include "crypto.h"
 
 /*---------------------------------------------------------------------------*/
 // The main XRef data member is an unordered map with the key being the object
