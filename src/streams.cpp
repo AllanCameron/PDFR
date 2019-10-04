@@ -35,34 +35,9 @@ Stream::Stream(const string* input_t) : input_(input_t),
                                         unconsumed_bits_(0),
                                         unconsumed_bit_value_(0) {}
 
-<<<<<<< HEAD
 /*----------------------------------------------------------------------------*/
 // Consume the next byte in the stream. Returned as a uint32_t as we need
 // to be able to return a 256 to signal end of stream.
-||||||| b604107... Finished commenting deflate
-/*---------------------------------------------------------------------------*/
-
-Stream::Stream(const vector<uint8_t>* input_t)
-{
-  string raw_string(input_t->begin(), input_t->end());
-  *this = Stream(&raw_string);
-}
-
-
-/*---------------------------------------------------------------------------*/
-// Consume the next byte in the stream
-=======
-/*---------------------------------------------------------------------------*/
-
-Stream::Stream(const vector<uint8_t>* input_t)
-{
-  string raw_string(input_t->begin(), input_t->end());
-  *this = Stream(&raw_string);
-}
-
-
-/*---------------------------------------------------------------------------*/
->>>>>>> parent of b604107... Finished commenting deflate
 
 uint32_t Stream::GetByte()
 {
@@ -70,15 +45,8 @@ uint32_t Stream::GetByte()
   return (uint8_t) *input_position_++;
 }
 
-<<<<<<< HEAD
 /*----------------------------------------------------------------------------*/
 // Look ahead at the next byte
-||||||| b604107... Finished commenting deflate
-/*---------------------------------------------------------------------------*/
-// Look ahead at the next byte
-=======
-/*---------------------------------------------------------------------------*/
->>>>>>> parent of b604107... Finished commenting deflate
 
 uint32_t Stream::PeekByte()
 {
@@ -87,15 +55,8 @@ uint32_t Stream::PeekByte()
   return result;
 }
 
-<<<<<<< HEAD
 /*----------------------------------------------------------------------------*/
 // Sets all the counters in the stream back to zero
-||||||| b604107... Finished commenting deflate
-/*---------------------------------------------------------------------------*/
-// Sets all the counters back to zero
-=======
-/*---------------------------------------------------------------------------*/
->>>>>>> parent of b604107... Finished commenting deflate
 
 void Stream::Reset()
 {
@@ -128,17 +89,9 @@ uint32_t Stream::GetBits(uint32_t n_bits_t)
   return result;
 }
 
-<<<<<<< HEAD
 /*----------------------------------------------------------------------------*/
 // An important little helper function to reverse Huffman codes before writing
 // to their Huffman tables.
-||||||| b604107... Finished commenting deflate
-/*---------------------------------------------------------------------------*/
-// An important little helper function to reverse Huffman codes before writing
-// to their Huffman tables
-=======
-/*---------------------------------------------------------------------------*/
->>>>>>> parent of b604107... Finished commenting deflate
 
 uint32_t Stream::BitFlip(uint32_t value, uint32_t n_bits)
 {
