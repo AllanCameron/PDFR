@@ -386,92 +386,53 @@ void Deflate::ReadBlock()
 };
 
 /*---------------------------------------------------------------------------*/
-// This function builds the Huffman table needed to look up symbols in the
-// actual compressed data stream. I think this is the most complex part of the
-// deflate algorithm.
-//
-// First, it needs to read some bits that tell it the length of the literal
-// code table, then some bits that tell it the length of the distance table,
-// and finally it reads some bits that tell it how many entries there are
-// in the code length table. The code length table is a Huffman-encoded
-// structure that allows reading of the run-length encoded AND Huffman-encoded
-// literal table and distance table. The encoded literal and distance tables
-// come right after the code length table description.
-//
 
 void Deflate::BuildDynamicCodeTable()
 {
-  // Get the length of the literal and distance tables
   uint32_t literal_code_count = GetBits(5) + 257;
   uint32_t total_code_count = GetBits(5) + 1 + literal_code_count;
-
-  // This tells us how many 3-bit codes are about to follow that will give
-  // the Huffman-encoded code length table
   uint32_t number_of_length_codes = GetBits(4) + 4;
+  vector<uint8_t> length_code_order {16, 17, 18, 0, 8,  7,  9, 6, 10, 5,
+                                      11, 4,  12, 3, 13, 2, 14, 1, 15};
 
-  // If number_of_length_codes is n, then the length codes represent the
-  // first n numbers in this vector
-  vector<uint8_t> length_code_order {16, 17, 18, 0, 8, 7, 9, 6, 10, 5,
-                                     11, 4, 12, 3, 13, 2, 14, 1, 15};
-
-  // There will be exactly 19 code length lengths. If the number of length
-  // codes was less than 19, we leave zeros at the end of this vector.
+  // build the code lengths code table
   LengthArray code_length_lengths(19);
-
-  // Reads the code lengths as triplets from the stream into code_length_lengths
   for (uint32_t i = 0; i < number_of_length_codes; ++i)
   {
     uint8_t triplet = GetBits(3);
     code_length_lengths[length_code_order[i]] = triplet;
   }
 
-  // We now feed these lengths into the Huffmanize function to get the
-  // Huffman table that we will use to construct the literal table.
   auto code_length_table = Huffmanize(code_length_lengths);
 
-  // Now we create a holder for the literal/distance table's code lengths
   LengthArray code_lengths(total_code_count);
-
-  // We need to keep an eye on how many code lengths we have read
   size_t write_head = 0;
+  uint32_t code = 0;
 
-  // Now read the encoded literal / distance table.
   while(write_head < total_code_count)
   {
-    uint32_t code = ReadCode(code_length_table);
-
-    // The numbers 16, 17 and 18 indicate a run-length encoded sequence and
-    // need to be handled seperately.
+    code = ReadCode(code_length_table);
     if(code > 15)
     {
-      // 17 and 18 represent repeated 0s. 16 represents repeats of the last
-      // written code. The number of repeats is given by a variable number of
-      // extra bits as described in RFC 1951 and achieved with simple
-      // arithmetic here.
       uint32_t repeat_this = 0;
       uint32_t num_repeats = GetBits( 3 * (code / 18) + code - 14);
       num_repeats = num_repeats + 3 + (8 * (code / 18));
       if (code == 16) repeat_this = code_lengths[write_head - 1];
-
-      // write the repeats to our length vector
       for (size_t i = 0; i < num_repeats; ++i)
       {
         if(write_head > code_lengths.size()) break;
         code_lengths[write_head++] = repeat_this;
       }
     }
-    else // if the code read is 15 or less, write it to the code length vector
+    else
     {
       code_lengths[write_head++] = code;
     }
   }
 
-  // Set a couple of iterators to define the split point between the literal
-  // and distance table
   auto&& literal_start = code_lengths.begin();
   auto&& literal_end = literal_start + literal_code_count;
 
-  // Feed these lengths to Huffmanize to get the final code tables
   literal_map_ = Huffmanize(LengthArray(literal_start, literal_end));
   distance_map_ = Huffmanize(LengthArray(literal_end, code_lengths.end()));
 }

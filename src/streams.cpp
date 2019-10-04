@@ -47,7 +47,6 @@ Stream::Stream(const vector<uint8_t>* input_t)
 
 
 /*---------------------------------------------------------------------------*/
-// Consume the next byte in the stream
 
 uint32_t Stream::GetByte()
 {
@@ -56,7 +55,6 @@ uint32_t Stream::GetByte()
 }
 
 /*---------------------------------------------------------------------------*/
-// Look ahead at the next byte
 
 uint32_t Stream::PeekByte()
 {
@@ -66,7 +64,6 @@ uint32_t Stream::PeekByte()
 }
 
 /*---------------------------------------------------------------------------*/
-// Sets all the counters back to zero
 
 void Stream::Reset()
 {
@@ -100,8 +97,6 @@ uint32_t Stream::GetBits(uint32_t n_bits_t)
 }
 
 /*---------------------------------------------------------------------------*/
-// An important little helper function to reverse Huffman codes before writing
-// to their Huffman tables
 
 uint32_t Stream::BitFlip(uint32_t value, uint32_t n_bits)
 {
