@@ -9,11 +9,15 @@
 //                                                                           //
 //---------------------------------------------------------------------------//
 
-#include<list>
-#include<iterator>
+#include "utilities.h"
+#include "dictionary.h"
+#include "object_class.h"
+#include "document.h"
 #include "box.h"
 #include "page.h"
-
+#include<list>
+#include<iterator>
+#include<iostream>
 
 //---------------------------------------------------------------------------//
 
@@ -26,7 +30,7 @@ unordered_map<string, shared_ptr<Font>> Page::fontmap_;
 // its initializer list
 
 Page::Page(shared_ptr<Document> t_document_ptr, int t_page_number) :
-  m_document_ptr(t_document_ptr), page_number_(t_page_number), rotate_(0)
+  document_(t_document_ptr), page_number_(t_page_number), rotate_(0)
 {
   ReadHeader();        // find the page header
   ReadResources();     // find the resource header
@@ -60,7 +64,7 @@ void Page::ReadBoxes()
     // For each of the box names
     for (auto& box_name : box_names)
     {
-      vector<float>&& this_box = box_header.GetFloats_(box_name);
+      vector<float>&& this_box = box_header.GetFloats(box_name);
       if (!this_box.empty()) minbox = this_box;
     }
 
@@ -68,10 +72,10 @@ void Page::ReadBoxes()
     if (minbox.empty())
     {
       // Find the parent object number and get its object dictionary
-      if (box_header.ContainsReferences_("/Parent"))
+      if (box_header.ContainsReferences("/Parent"))
       {
-        int parent = box_header.GetReference_("/Parent");
-        box_header = m_document_ptr->GetObject(parent)->GetDictionary();
+        int parent = box_header.GetReference("/Parent");
+        box_header = document_->GetObject(parent)->GetDictionary();
       }
 
       // The loop will exit if it doesn't find a parent node
@@ -84,7 +88,7 @@ void Page::ReadBoxes()
   minbox_ = make_shared<Box>(minbox);
 
   // Get the "rotate" value - will need in future feature development
-  if (header_->HasKey_("/Rotate")) rotate_ = header_->GetFloats_("/Rotate")[0];
+  if (header_->HasKey("/Rotate")) rotate_ = header_->GetFloats("/Rotate")[0];
 }
 
 /*--------------------------------------------------------------------------*/
@@ -94,10 +98,10 @@ void Page::ReadBoxes()
 void Page::ReadHeader()
 {
   // uses public member of document class to get the appropriate header
-  header_= make_shared<Dictionary>(m_document_ptr->GetPageHeader(page_number_));
+  header_ = make_shared<Dictionary>(document_->GetPageHeader(page_number_));
 
   // if the header is not of /type /Page, throw an error
-  if (header_->GetString_("/Type") != "/Page")
+  if (header_->GetString("/Type") != "/Page")
   {
     // create an error message in case of missing page
     string error_message("No header found for page ");
@@ -114,18 +118,18 @@ void Page::ReadHeader()
 void Page::ReadResources()
 {
   // If /Resources doesn't contain a dictionary it must be a reference
-  if (!header_->ContainsDictionary_("/Resources"))
+  if (!header_->ContainsDictionary("/Resources"))
   {
-    if (header_->ContainsReferences_("/Resources"))
+    if (header_->ContainsReferences("/Resources"))
     {
-      auto resource_number = header_->GetReference_("/Resources");
+      auto resource_number = header_->GetReference("/Resources");
       resources_ = make_shared<Dictionary>(
-        m_document_ptr->GetObject(resource_number)->GetDictionary());
+        document_->GetObject(resource_number)->GetDictionary());
     }
   }
   else // Resources contains a subdictionary
   {
-    resources_ = make_shared<Dictionary>(header_->GetDictionary_("/Resources"));
+    resources_ =  make_shared<Dictionary>(header_->GetDictionary("/Resources"));
   }
 }
 
@@ -137,18 +141,18 @@ void Page::ReadResources()
 void Page::ReadFonts()
 {
   // If /Font entry of resources_ isn't a dictionary
-  if (!resources_->ContainsDictionary_("/Font"))
+  if (!resources_->ContainsDictionary("/Font"))
   {
     // It must be a reference - follow this to get the dictionary
-    if (resources_->ContainsReferences_("/Font"))
+    if (resources_->ContainsReferences("/Font"))
     {
-      auto font_number =  resources_->GetReference_("/Font");
+      auto font_number =  resources_->GetReference("/Font");
       fonts_ =  make_shared<Dictionary>(
-        m_document_ptr->GetObject(font_number)->GetDictionary());
+        document_->GetObject(font_number)->GetDictionary());
     }
   }
   // Otherwise, it is a dictionary, so we get the result
-  else fonts_ =  make_shared<Dictionary>(resources_->GetDictionary_("/Font"));
+  else fonts_ =  make_shared<Dictionary>(resources_->GetDictionary("/Font"));
 
   // We can now iterate through the font dictionary, which will be a sequence
   // of key:value pairs of fontname : font descriptor, where the font descriptor
@@ -174,13 +178,13 @@ void Page::ReadFonts()
       // If it's not a direct dictionary, it must be a reference
       else
       {
-        auto font_reference = fonts_->GetReference_(font_name);
+        auto font_reference = fonts_->GetReference(font_name);
         font_dict = make_shared<Dictionary>(
-          m_document_ptr->GetObject(font_reference)->GetDictionary());
+          document_->GetObject(font_reference)->GetDictionary());
       }
 
       // We should now have a font dictionary from which to create a Font object
-      auto font_ptr = make_shared<Font>(m_document_ptr, font_dict, font_name);
+      auto font_ptr = make_shared<Font>(document_, font_dict, font_name);
       fontmap_[font_name] = font_ptr;
     }
   }
@@ -195,13 +199,13 @@ void Page::ReadFonts()
 void Page::ReadContents()
 {
   // Call ExpandContents() to get page header object numbers
-  auto contents = ExpandContents(header_->GetReferences_("/Contents"));
+  auto contents = ExpandContents(header_->GetReferences("/Contents"));
 
   // Get the contents from each object stream and paste them at the bottom
   // of the pagestring with a line break after each one
   for (auto element : contents)
   {
-    content_string_.append(m_document_ptr->GetObject(element)->GetStream());
+    content_string_.append(document_->GetObject(element)->GetStream());
     content_string_.append(string("\n"));
   }
 }
@@ -218,9 +222,9 @@ void Page::ReadXObjects()
   string xobject_string {};
 
   // first find any xobject entries in the resource dictionary
-  if (resources_->HasKey_("/XObject"))
+  if (resources_->HasKey("/XObject"))
   {
-    xobject_string = resources_->GetString_("/XObject");
+    xobject_string = resources_->GetString("/XObject");
   }
 
   // Sanity check - the entry shouldn't be empty
@@ -234,22 +238,21 @@ void Page::ReadXObjects()
   }
 
   // If the /XObject string is a reference, follow the reference to dictionary
-  else if (resources_->ContainsReferences_("/XObject"))
+  else if (resources_->ContainsReferences("/XObject"))
   {
-    auto xobj_ref = resources_->GetReference_("/XObject");
-    xobject_dictionary = m_document_ptr->GetObject(xobj_ref)->GetDictionary();
+    auto xobject_number = resources_->GetReference("/XObject");
+    xobject_dictionary = document_->GetObject(xobject_number)->GetDictionary();
   }
 
   // We now have a dictionary of {xobject name: ref} from which to get xobjects
   for (auto& entry : xobject_dictionary)
   {
-    vector<int> xobjects = xobject_dictionary.GetReferences_(entry.first);
+    vector<int> xobjects = xobject_dictionary.GetReferences(entry.first);
 
     // map xobject strings to the xobject names
     if (!xobjects.empty())
     {
-      auto&& xobject = m_document_ptr->GetObject(xobjects[0])->GetStream();
-      xobjects_[entry.first] = xobject;
+      xobjects_[entry.first] = document_->GetObject(xobjects[0])->GetStream();
     }
   }
 }
@@ -278,10 +281,10 @@ vector<int> Page::ExpandContents(vector<int> t_object_numbers)
   while (kid != contents_list.end())
   {
     // Get the dictionary of the object indicated by the node
-    auto content_dictionary = m_document_ptr->GetObject(*kid)->GetDictionary();
+    auto content_dictionary = document_->GetObject(*kid)->GetDictionary();
 
     // Check whether the dictionary contains /Contents references
-    auto refs = content_dictionary.GetReferences_("/Contents");
+    auto refs = content_dictionary.GetReferences("/Contents");
 
     // If it contains references, add them to the list and delete the root node
     // before decrementing the iterator to the first of the new nodes, which are
@@ -313,7 +316,7 @@ vector<int> Page::ExpandContents(vector<int> t_object_numbers)
 
 vector<string> Page::GetFontNames()
 {
-  return this->fonts_->GetAllKeys_();
+  return this->fonts_->GetAllKeys();
 }
 
 /*--------------------------------------------------------------------------*/
@@ -355,4 +358,3 @@ shared_ptr<Font> Page::GetFont(const string& t_font_id)
   // Otherwise we're all good and return the requested font
   return font_finder->second;
 }
-

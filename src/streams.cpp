@@ -37,13 +37,6 @@ Stream::Stream(const string* input_t) : input_(input_t),
                                         unconsumed_bits_(0),
                                         unconsumed_bit_value_(0) {}
 
-/*---------------------------------------------------------------------------*/
-
-Stream::Stream(const vector<uint8_t>* input_t)
-{
-  string raw_string(input_t->begin(), input_t->end());
-  *this = Stream(&raw_string);
-}
 
 
 /*---------------------------------------------------------------------------*/

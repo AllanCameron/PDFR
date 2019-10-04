@@ -57,7 +57,7 @@
  */
 
 #include<Rcpp.h>
-#include "tokenizer.h"
+#include "streams.h"
 #include "line_grouper.h"
 
 //---------------------------------------------------------------------------//

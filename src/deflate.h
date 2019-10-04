@@ -17,6 +17,9 @@
 
 #include<map>
 #include "streams.h"
+
+void FlateDecode(std::string* t_message);
+
 //---------------------------------------------------------------------------//
 // This class reinvents the wheel in an attempt to free the library from
 // dependencies. It is a full implementation of Deflate decompression. It uses
@@ -28,7 +31,6 @@ class Deflate : public Stream
 public:
   // String and byte-vector constructors. The latter converts to a string.
   Deflate(const std::string*);
-  Deflate(const std::vector<uint8_t>*);
 
 private:
   bool is_last_block_;    // Flag so decompressor knows when to stop

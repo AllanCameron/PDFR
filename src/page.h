@@ -42,8 +42,9 @@
  */
 
 #include "font.h"
-#include "box.h"
 
+class Box;
+template <class T> class TreeNode;
 
 //---------------------------------------------------------------------------//
 
@@ -51,22 +52,22 @@ class Page
 {
  public:
   // Constructor
-  Page(std::shared_ptr<Document>, int);
+  Page(std::shared_ptr<Document> document_ptr, int page_number);
 
   // Move constructor
-  Page(Page&& p_other_page) noexcept {*this = std::move(p_other_page);}
+  Page(Page&& t_other_page) noexcept {*this = std::move(t_other_page);}
 
   // lvalue assignment operator
-  Page& operator=(const Page& p_other_page)
+  Page& operator=(const Page& t_other_page)
   {
-    *this = p_other_page;
+    *this = t_other_page;
     return *this;
   }
 
   // rvalue assignment operator
-  Page& operator=(Page&& p_other_page) noexcept
+  Page& operator=(Page&& t_other_page) noexcept
   {
-    *this = std::move(p_other_page);
+    *this = std::move(t_other_page);
     return *this;
   }
 
@@ -91,7 +92,7 @@ class Page
 
  private:
   // private data members
-  std::shared_ptr<Document>   m_document_ptr;   // Pointer to main document
+  std::shared_ptr<Document>   document_;        // Pointer to main document
   int                         page_number_;     // [Zero-indexed] page number
   std::shared_ptr<Dictionary> header_,          // The page's header dictionary
                               resources_,       // Resource sub-dictionary
