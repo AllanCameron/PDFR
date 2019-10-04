@@ -50,9 +50,7 @@ static std::vector<float> dingbats_box               = {-1,   -143, 981,   820};
 // define the whole map for Courier and copy that map to the Courier variants
 // which are all also of the same width and map the same code points.
 
-using WidthMap = const std::unordered_map<Unicode, int>;
-
-WidthMap GlyphWidths::sm_courier_widths =
+const std::unordered_map<Unicode, int> GlyphWidths::courier_widths_ =
 {
   {0x0020, 0x0258}, {0x0021, 0x0258}, {0x0022, 0x0258}, {0x0023, 0x0258},
   {0x0024, 0x0258}, {0x0025, 0x0258}, {0x0026, 0x0258}, {0x0027, 0x0258},
@@ -104,7 +102,7 @@ WidthMap GlyphWidths::sm_courier_widths =
 // The data themselves are not really human-readable, so any problems will only
 // be found by testing the output.
 
-WidthMap GlyphWidths::sm_helvetica_widths =
+const std::unordered_map<Unicode, int> GlyphWidths::helvetica_widths_ =
 {
   {0x0020, 0x0116}, {0x0021, 0x0116}, {0x0022, 0x0163}, {0x0023, 0x022c},
   {0x0024, 0x022c}, {0x0025, 0x0379}, {0x0026, 0x029b}, {0x0027, 0x00de},
@@ -148,7 +146,7 @@ WidthMap GlyphWidths::sm_helvetica_widths =
 
 //---------------------------------------------------------------------------//
 
-WidthMap GlyphWidths::sm_helvetica_bold_widths =
+const std::unordered_map<Unicode, int> GlyphWidths::helvetica_bold_widths_ =
 {
   {0x0020, 0x0116}, {0x0021, 0x014d}, {0x0022, 0x01da}, {0x0023, 0x022c},
   {0x0024, 0x022c}, {0x0025, 0x0379}, {0x0026, 0x02d2}, {0x0027, 0x0116},
@@ -192,7 +190,7 @@ WidthMap GlyphWidths::sm_helvetica_bold_widths =
 
 //---------------------------------------------------------------------------//
 
-WidthMap GlyphWidths::sm_symbol_widths =
+const std::unordered_map<Unicode, int> GlyphWidths::symbol_widths_ =
 {
   {0x0020, 0x00fa}, {0x0021, 0x014d}, {0x0022, 0x02c9}, {0x0023, 0x01f4},
   {0x0024, 0x0225}, {0x0025, 0x0341}, {0x0026, 0x030a}, {0x0027, 0x01b7},
@@ -246,7 +244,7 @@ WidthMap GlyphWidths::sm_symbol_widths =
 
 //---------------------------------------------------------------------------//
 
-WidthMap GlyphWidths::sm_times_bold_widths =
+const std::unordered_map<Unicode, int> GlyphWidths::times_bold_widths_ =
 {
   {0x0020, 0x00fa}, {0x0021, 0x014d}, {0x0022, 0x022b}, {0x0023, 0x01f4},
   {0x0024, 0x01f4}, {0x0025, 0x03e8}, {0x0026, 0x0341}, {0x0027, 0x014d},
@@ -290,7 +288,7 @@ WidthMap GlyphWidths::sm_times_bold_widths =
 
 //---------------------------------------------------------------------------//
 
-WidthMap GlyphWidths::sm_times_bold_italic_widths =
+const std::unordered_map<Unicode, int> GlyphWidths::times_bold_italic_widths_ =
 {
   {0x0020, 0x00fa}, {0x0021, 0x0185}, {0x0022, 0x022b}, {0x0023, 0x01f4},
   {0x0024, 0x01f4}, {0x0025, 0x0341}, {0x0026, 0x030a}, {0x0027, 0x014d},
@@ -334,7 +332,7 @@ WidthMap GlyphWidths::sm_times_bold_italic_widths =
 
 //---------------------------------------------------------------------------//
 
-WidthMap GlyphWidths::sm_times_italic_widths =
+const std::unordered_map<Unicode, int> GlyphWidths::times_italic_widths_ =
 {
   {0x0020, 0x00fa}, {0x0021, 0x014d}, {0x0022, 0x01a4}, {0x0023, 0x01f4},
   {0x0024, 0x01f4}, {0x0025, 0x0341}, {0x0026, 0x030a}, {0x0027, 0x014d},
@@ -378,7 +376,7 @@ WidthMap GlyphWidths::sm_times_italic_widths =
 
 //---------------------------------------------------------------------------//
 
-WidthMap GlyphWidths::sm_times_roman_widths =
+const std::unordered_map<Unicode, int> GlyphWidths::times_roman_widths_ =
 {
   {0x0020, 0x00fa}, {0x0021, 0x014d}, {0x0022, 0x0198}, {0x0023, 0x01f4},
   {0x0024, 0x01f4}, {0x0025, 0x0341}, {0x0026, 0x030a}, {0x0027, 0x014d},
@@ -422,7 +420,7 @@ WidthMap GlyphWidths::sm_times_roman_widths =
 
 //---------------------------------------------------------------------------//
 
-WidthMap GlyphWidths::sm_dingbats_widths =
+const std::unordered_map<Unicode, int> GlyphWidths::dingbats_widths_ =
 {
   {0x0020, 0x0116}, {0x0021, 0x03ce}, {0x0022, 0x03c1}, {0x0023, 0x03ce},
   {0x0024, 0x03d4}, {0x0025, 0x02cf}, {0x0026, 0x0315}, {0x0027, 0x0316},

@@ -40,7 +40,14 @@
  *
  */
 
-#include "document.h"
+#include<utility>
+#include<string>
+#include<vector>
+#include<unordered_map>
+#include<memory>
+
+class Dictionary;
+class Document;
 using Unicode = uint16_t;
 using RawChar = uint16_t;
 
@@ -61,7 +68,8 @@ class Font
 {
  public:
   // Constructor
-  Font(std::shared_ptr<Document>, std::shared_ptr<Dictionary>,
+  Font(std::shared_ptr<Document> doc,
+       std::shared_ptr<Dictionary> font,
        const std::string& id);
 
   // Default Constructor
@@ -78,12 +86,12 @@ class Font
 
 private:
   // private data members
-  std::shared_ptr<Document> m_document_ptr;  // Pointer to containing document
-  std::shared_ptr<Dictionary> m_font_dictionary;  // The main font dictionary
-  std::string font_id_,                 // The name the font as used in PDF
-              font_name_;               // The actual name of the font
-  GlyphMap glyph_map_;                  // Main data member, mapping RawChar
-                                        //  to a {Unicode, width} pair.
+  std::shared_ptr<Document> document_;  // - Pointer to the containing document
+  std::shared_ptr<Dictionary>  font_dictionary_;  // - The main font dictionary
+  std::string font_id_,                 // - The name the font as used in PDF
+              font_name_;               // - The actual name of the font
+  GlyphMap glyph_map_;                  // - Main data member, mapping RawChar
+                                        //   to a {Unicode, width} pair.
 
   // private methods
   void ReadFontName_();                  // Finds the postscript font name

@@ -33,7 +33,7 @@
  * The map's names are self-explanatory
  */
 
-const std::unordered_map<RawChar, Unicode> Encoding::sm_macroman_to_unicode =
+const std::unordered_map<RawChar, Unicode> Encoding::macroman_to_unicode_ =
 {
   {0x0020, 0x0020}, {0x0021, 0x0021}, {0x0022, 0x0022}, {0x0023, 0x0023},
   {0x0024, 0x0024}, {0x0025, 0x0025}, {0x0026, 0x0026}, {0x0027, 0x0027},
@@ -93,7 +93,7 @@ const std::unordered_map<RawChar, Unicode> Encoding::sm_macroman_to_unicode =
   {0x00FC, 0x00B8}, {0x00FD, 0x02DD}, {0x00FE, 0x02DB}, {0x00FF, 0x02C7},
 };
 
-const std::unordered_map<RawChar, Unicode> Encoding::sm_winansi_to_unicode =
+const std::unordered_map<RawChar, Unicode> Encoding::winansi_to_unicode_ =
 {
   {0x0020, 0x0020}, {0x0021, 0x0021}, {0x0022, 0x0022}, {0x0023, 0x0023},
   {0x0024, 0x0024}, {0x0025, 0x0025}, {0x0026, 0x0026}, {0x0027, 0x0027},
@@ -153,7 +153,7 @@ const std::unordered_map<RawChar, Unicode> Encoding::sm_winansi_to_unicode =
   {0x00FC, 0x00FC}, {0x00FD, 0x00FD}, {0x00FE, 0x00FE}, {0x00FF, 0x00FF}
 };
 
-const std::unordered_map<RawChar, Unicode> Encoding::sm_pdfdoc_to_unicode =
+const std::unordered_map<RawChar, Unicode> Encoding::pdfdoc_to_unicode_ =
 {
   {0x0000, 0x0000}, {0x0009, 0x0009}, {0x000A, 0x000A}, {0x000C, 0x000C},
   {0x000D, 0x000D}, {0x0018, 0x02D8}, {0x0019, 0x02C7}, {0x001A, 0x02C6},

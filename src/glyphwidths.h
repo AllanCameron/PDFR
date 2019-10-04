@@ -67,7 +67,13 @@
 
 //---------------------------------------------------------------------------//
 
-#include "document.h"
+#include<string>
+#include<vector>
+#include<unordered_map>
+#include<memory>
+
+class Dictionary;
+class Document;
 using Unicode = uint16_t;
 using RawChar = uint16_t;
 
@@ -100,12 +106,12 @@ class GlyphWidths
   enum WidthState {NEWSYMB, INARRAY, INSUBARRAY, END};
 
   // private data
-  std::unordered_map<RawChar, int> width_map_;    // The main data member
-  std::shared_ptr<Dictionary> m_font_dictionary;  // The font dictionary
-  std::shared_ptr<Document> m_document_ptr;       // Pointer to document
-  std::string base_font_;                         // The base font (if any)
-  bool width_is_pre_interpretation_;              // Are widths for code points
-                                                  // pre- or post- translation?
+  std::unordered_map<RawChar, int> width_map_;  // The main data member
+  std::shared_ptr<Dictionary> font_dictionary_; // The font dictionary
+  std::shared_ptr<Document> document_;          // Pointer to document
+  std::string base_font_;                       // The base font (if any)
+  bool width_is_pre_interpretation_;            // Are widths for code points
+                                                // pre- or post- translation?
   // private methods
   void ParseWidthArray_(const std::string&);    // Width lexer
   void ReadCoreFont_();                         // Core font getter
@@ -115,19 +121,19 @@ class GlyphWidths
 
 //-- The core fonts as defined in corefonts.cpp ------------------------------//
                                                                               //
-  static const std::unordered_map<Unicode, int> sm_courier_widths;            //
-  static const std::unordered_map<Unicode, int> sm_helvetica_widths;          //
-  static const std::unordered_map<Unicode, int> sm_helvetica_bold_widths;     //
-  static const std::unordered_map<Unicode, int> sm_symbol_widths;             //
-  static const std::unordered_map<Unicode, int> sm_times_bold_widths;         //
-  static const std::unordered_map<Unicode, int> sm_times_bold_italic_widths;  //
-  static const std::unordered_map<Unicode, int> sm_times_italic_widths;       //
-  static const std::unordered_map<Unicode, int> sm_times_roman_widths;        //
-  static const std::unordered_map<Unicode, int> sm_dingbats_widths;           //
+  static const std::unordered_map<Unicode, int> courier_widths_;              //
+  static const std::unordered_map<Unicode, int> helvetica_widths_;            //
+  static const std::unordered_map<Unicode, int> helvetica_bold_widths_;       //
+  static const std::unordered_map<Unicode, int> symbol_widths_;               //
+  static const std::unordered_map<Unicode, int> times_bold_widths_;           //
+  static const std::unordered_map<Unicode, int> times_bold_italic_widths_;    //
+  static const std::unordered_map<Unicode, int> times_italic_widths_;         //
+  static const std::unordered_map<Unicode, int> times_roman_widths_;          //
+  static const std::unordered_map<Unicode, int> dingbats_widths_;             //
                                                                               //
 //----------------------------------------------------------------------------//
 };
 
-//----------------------------------------------------------------------------//
+//---------------------------------------------------------------------------//
 
 #endif

@@ -15,14 +15,8 @@
 
 #define PDFR_DEFLATE
 
-#include "streams.h"
 #include<map>
-
-//---------------------------------------------------------------------------//
-// Stand-alone function to inflate a deflate stream
-
-void FlateDecode(std::string* deflated_string);
-
+#include "streams.h"
 //---------------------------------------------------------------------------//
 // This class reinvents the wheel in an attempt to free the library from
 // dependencies. It is a full implementation of Deflate decompression. It uses
@@ -34,6 +28,7 @@ class Deflate : public Stream
 public:
   // String and byte-vector constructors. The latter converts to a string.
   Deflate(const std::string*);
+  Deflate(const std::vector<uint8_t>*);
 
 private:
   bool is_last_block_;    // Flag so decompressor knows when to stop

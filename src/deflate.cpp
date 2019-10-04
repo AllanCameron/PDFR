@@ -9,7 +9,15 @@
 //                                                                           //
 //---------------------------------------------------------------------------//
 
+#include<string>
+#include<vector>
+#include<iostream>
+#include<stdexcept>
+#include<map>
+#include<algorithm>
+#include "streams.h"
 #include "deflate.h"
+
 
 using namespace std;
 
@@ -154,6 +162,21 @@ const vector<uint32_t> Deflate::distance_table_{
 
 Deflate::Deflate(const string* input_t) : Stream(input_t),
                                                is_last_block_(false)
+{
+  // This will abort further reading if the two header bytes aren't right.
+  CheckHeader();
+
+  // Reads each available block sequentially
+  while (!is_last_block_) ReadBlock();
+}
+
+/*---------------------------------------------------------------------------*/
+// The Deflate constructor calls the stream constructor and then runs the
+// decompression without further prompting. This takes a vector<uint8_t> pointer
+// but converts to a string, so is less efficient than the string version.
+
+Deflate::Deflate(const vector<uint8_t>* input_t) : Stream(input_t),
+                                                        is_last_block_(false)
 {
   // This will abort further reading if the two header bytes aren't right.
   CheckHeader();

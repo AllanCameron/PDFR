@@ -52,8 +52,13 @@
  * resides.
  */
 
-#include "dictionary.h"
-#include<deque>
+#include<string>
+#include<vector>
+#include<deque>         // Needed for md5mix function
+#include<memory>
+
+class Dictionary;
+
 
 //---------------------------------------------------------------------------//
 // The md5 algorithm makes use of 4-byte numbers (unsigned long or uint32_t).
@@ -80,13 +85,13 @@ class Crypto
 
 private:
   // private data members
-  const Dictionary& m_encryption_dictionary;
-  const Dictionary& m_trailer;
-  int               m_revision;
-  std::vector<uint8_t> m_filekey;
-  static const std::vector<uint8_t> sm_default_user_password;
-  static const std::vector<FourBytes> sm_md5_table;
-  static const std::vector<std::vector<FourBytes>> sm_mixarray;
+  const Dictionary& encryption_dictionary_;
+  const Dictionary& trailer_;
+  int        revision_;
+  std::vector<uint8_t> filekey_;
+  static const std::vector<uint8_t> default_user_password_;
+  static const std::vector<FourBytes> md5_table;
+  static const std::vector<std::vector<FourBytes>> mixarray;
 
   // Chops FourBytes into 4 bytes
   std::vector<uint8_t> ChopLong_(FourBytes unsigned_32_bit_int) const;

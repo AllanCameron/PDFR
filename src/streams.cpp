@@ -1,13 +1,13 @@
-//----------------------------------------------------------------------------//
-//                                                                            //
-//  PDFR Streams implementation file                                          //
-//                                                                            //
-//  Copyright (C) 2018 - 2019 by Allan Cameron                                //
-//                                                                            //
-//  Licensed under the MIT license - see https://mit-license.org              //
-//  or the LICENSE file in the project root directory                         //
-//                                                                            //
-//----------------------------------------------------------------------------//
+//---------------------------------------------------------------------------//
+//                                                                           //
+//  PDFR Streams implementation file                                         //
+//                                                                           //
+//  Copyright (C) 2018 - 2019 by Allan Cameron                               //
+//                                                                           //
+//  Licensed under the MIT license - see https://mit-license.org             //
+//  or the LICENSE file in the project root directory                        //
+//                                                                           //
+//---------------------------------------------------------------------------//
 
 /* Streams are normally compressed in PDFs, and the majority appear to be
  * compressed in DEFLATE format. I have used inheritance here with the Stream
@@ -19,14 +19,16 @@
  * is protected so it can only be called by the derived class constructors.
  */
 
+#include<string>
+#include<vector>
+#include<iostream>
 #include<stdexcept>
+#include<map>
+#include<algorithm>
 #include "streams.h"
 
 using namespace std;
 
-//----------------------------------------------------------------------------//
-// The constructor takes a string pointer which it uses as stream input. It
-// creates a new string as output and sets iterators to the appropriate places.
 
 Stream::Stream(const string* input_t) : input_(input_t),
                                         output_(std::string()),
@@ -35,9 +37,17 @@ Stream::Stream(const string* input_t) : input_(input_t),
                                         unconsumed_bits_(0),
                                         unconsumed_bit_value_(0) {}
 
-/*----------------------------------------------------------------------------*/
-// Consume the next byte in the stream. Returned as a uint32_t as we need
-// to be able to return a 256 to signal end of stream.
+/*---------------------------------------------------------------------------*/
+
+Stream::Stream(const vector<uint8_t>* input_t)
+{
+  string raw_string(input_t->begin(), input_t->end());
+  *this = Stream(&raw_string);
+}
+
+
+/*---------------------------------------------------------------------------*/
+// Consume the next byte in the stream
 
 uint32_t Stream::GetByte()
 {
@@ -45,7 +55,7 @@ uint32_t Stream::GetByte()
   return (uint8_t) *input_position_++;
 }
 
-/*----------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------*/
 // Look ahead at the next byte
 
 uint32_t Stream::PeekByte()
@@ -55,8 +65,8 @@ uint32_t Stream::PeekByte()
   return result;
 }
 
-/*----------------------------------------------------------------------------*/
-// Sets all the counters in the stream back to zero
+/*---------------------------------------------------------------------------*/
+// Sets all the counters back to zero
 
 void Stream::Reset()
 {
@@ -67,7 +77,7 @@ void Stream::Reset()
   unconsumed_bits_ = 0;
 }
 
-/*----------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------*/
 
 uint32_t Stream::GetBits(uint32_t n_bits_t)
 {
@@ -89,16 +99,15 @@ uint32_t Stream::GetBits(uint32_t n_bits_t)
   return result;
 }
 
-/*----------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------*/
 // An important little helper function to reverse Huffman codes before writing
-// to their Huffman tables.
+// to their Huffman tables
 
 uint32_t Stream::BitFlip(uint32_t value, uint32_t n_bits)
 {
   uint32_t result = 0;
   for(uint32_t i = 1; i <= n_bits; ++i)
   {
-    // read value from LSB to MSB, write results MSB to LSB
     result = (result << 1) | (value & 1);
     value  >>= 1;
   }
