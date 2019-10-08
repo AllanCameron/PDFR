@@ -59,8 +59,8 @@ class XRefStream
 // The XRef constructor. It takes the entire file contents as a string
 // then sequentially runs the steps in creation of an XRef master map
 
-XRef::XRef(shared_ptr<const string> t_file_string_ptr)
-  : file_string_(t_file_string_ptr), encrypted_(false)
+XRef::XRef(shared_ptr<const string> p_file_string_ptr)
+  : file_string_(p_file_string_ptr), encrypted_(false)
 {
   LocateXRefs_();             // Find all xrefs
   ReadXRefStrings_();         // Get the strings containing all xrefs
@@ -142,10 +142,10 @@ void XRef::ReadXRefStrings_()
 // The output of this object is a "table" (vec<vec<int>>) which is parsed
 // and added to the main combined XRef table
 
-void XRef::ReadXRefFromStream_(int t_location)
+void XRef::ReadXRefFromStream_(int p_location)
 {
   // Calls XRefStream constructor to make the data table from the stream
-  auto xref_table = XRefStream(make_shared<XRef>(*this), t_location).Table_();
+  auto xref_table = XRefStream(make_shared<XRef>(*this), p_location).Table_();
 
   // Throws if XRefStream returns an empty table
   if (xref_table.empty()) throw runtime_error("XRef table empty");
@@ -172,13 +172,13 @@ void XRef::ReadXRefFromStream_(int t_location)
 // described, respectively. Thereafter the rows represent sequential objects
 // counted from the first.
 
-void XRef::ReadXRefFromString_(string& t_xref_string)
+void XRef::ReadXRefFromString_(string& p_xref_string)
 {
-  auto all_ints = ParseInts(t_xref_string);
+  auto all_ints = ParseInts(p_xref_string);
 
   // A valid XRef has >= 4 ints in it and must have an even number of ints
   auto xref_size = all_ints.size();
-  if (xref_size % 2) { throw runtime_error(t_xref_string); }
+  if (xref_size % 2) { throw runtime_error(p_xref_string); }
 
   // This loop starts on the second row of the table. Even numbers are the
   // byte offsets and odd numbers are the in_use numbers
@@ -199,9 +199,9 @@ void XRef::ReadXRefFromString_(string& t_xref_string)
 /*---------------------------------------------------------------------------*/
 // Returns the byte offset for a pdf object
 
-size_t XRef::GetObjectStartByte(int t_object_number) const
+size_t XRef::GetObjectStartByte(int p_object_number) const
 {
-  auto found = xref_table_.find(t_object_number);
+  auto found = xref_table_.find(p_object_number);
 
   if (found == xref_table_.end()) throw runtime_error("Object does not exist");
 
@@ -212,9 +212,9 @@ size_t XRef::GetObjectStartByte(int t_object_number) const
 // Returns the end byte of an object by finding the first example of the
 // word "endobj" after the start of the object
 
-size_t XRef::GetObjectEndByte(int t_object_number) const
+size_t XRef::GetObjectEndByte(int p_object_number) const
 {
-  auto row = xref_table_.find(t_object_number);
+  auto row = xref_table_.find(p_object_number);
 
   // throw an error if objnum isn't a valid object
   if (row == xref_table_.end()) throw runtime_error("Object doesn't exist");
@@ -230,9 +230,9 @@ size_t XRef::GetObjectEndByte(int t_object_number) const
 // If an object is part of an objectstream, this tells us which object forms
 // the objectstream.
 
-size_t XRef::GetHoldingNumberOf(int t_object_number) const
+size_t XRef::GetHoldingNumberOf(int p_object_number) const
 {
-  auto row = xref_table_.find(t_object_number);
+  auto row = xref_table_.find(p_object_number);
 
   if (row == xref_table_.end()) throw runtime_error("Object does not exist");
 
@@ -249,11 +249,11 @@ vector<int> XRef::GetAllObjectNumbers() const
 
 /*---------------------------------------------------------------------------*/
 
-int XRef::GetStreamLength_(const Dictionary& t_dictionary) const
+int XRef::GetStreamLength_(const Dictionary& p_dictionary) const
 {
-  if (t_dictionary.ContainsReferences("/Length"))
+  if (p_dictionary.ContainsReferences("/Length"))
   {
-    int length_object_number = t_dictionary.GetReference("/Length");
+    int length_object_number = p_dictionary.GetReference("/Length");
     size_t first_position = GetObjectStartByte(length_object_number);
     size_t len = file_string_->find("endobj", first_position) - first_position;
     string object_string = file_string_->substr(first_position, len);
@@ -261,17 +261,17 @@ int XRef::GetStreamLength_(const Dictionary& t_dictionary) const
   }
 
   // Thankfully though most lengths are just direct ints
-  else return t_dictionary.GetInts("/Length")[0];
+  else return p_dictionary.GetInts("/Length")[0];
 }
 
 /*---------------------------------------------------------------------------*/
 // Returns the offset of the start location relative to the file start, and the
 // length, of the stream belonging to the given object
 
-vector<size_t> XRef::GetStreamLocation(int t_object_start) const
+vector<size_t> XRef::GetStreamLocation(int p_object_start) const
 {
   // Get the object dictionary
-  Dictionary dictionary = Dictionary(file_string_, t_object_start);
+  Dictionary dictionary = Dictionary(file_string_, p_object_start);
 
   // If the stream exists, get its start / stop positions as a length-2 array
   if (dictionary.HasKey("stream") && dictionary.HasKey("/Length"))
@@ -286,9 +286,9 @@ vector<size_t> XRef::GetStreamLocation(int t_object_start) const
 /*---------------------------------------------------------------------------*/
 // Wrapper for Encryption object so that XRef is the only class that uses it
 
-void XRef::Decrypt(string& t_stream, int t_object, int t_generation) const
+void XRef::Decrypt(string& p_stream, int p_object, int p_generation) const
 {
-  encryption_->DecryptStream(t_stream, t_object, t_generation);
+  encryption_->DecryptStream(p_stream, p_object, p_generation);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -350,11 +350,11 @@ shared_ptr<const string> XRef::File() const
 // PNG decompression algorithm. They are seperated out to prevent one large
 // hairball function being created that is difficult to debug.
 
-XRefStream::XRefStream(shared_ptr<XRef> t_xref, int t_starts_at)
-  : xref_(t_xref),
+XRefStream::XRefStream(shared_ptr<XRef> p_xref, int p_starts_at)
+  : xref_(p_xref),
     number_of_columns_(0),
     predictor_(0),
-    object_start_(t_starts_at),
+    object_start_(p_starts_at),
     dictionary_(Dictionary(xref_->File(), object_start_))
 {
   // If there is no /W entry, we don't know how to interpret the stream.

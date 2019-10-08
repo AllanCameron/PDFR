@@ -56,11 +56,11 @@ std::array<Tokenizer::CharType, 256> Tokenizer::char_lookup_ = {
 // constructor of Tokenizer - initializes members and starts main
 // lexer function
 
-Tokenizer::Tokenizer(shared_ptr<string> t_input, Parser* t_interpreter)
-  : contents_(t_input),
+Tokenizer::Tokenizer(shared_ptr<string> p_input, Parser* p_interpreter)
+  : contents_(p_input),
     it_(contents_->begin()),
     state_(NEWSYMBOL),
-    interpreter_(t_interpreter)
+    interpreter_(p_interpreter)
 {
   Tokenize_();
 }
@@ -71,9 +71,9 @@ Tokenizer::Tokenizer(shared_ptr<string> t_input, Parser* t_interpreter)
 // to the instruction set, and clearing the buffer is very common in the
 // lexer. This function acts as a shorthand to prevent boilerplate
 
-void Tokenizer::PushBuffer_(const TokenState t_type, const TokenState t_state)
+void Tokenizer::PushBuffer_(const TokenState p_type, const TokenState p_state)
 {
-  if (buffer_ == "Do" && t_state == IDENTIFIER)
+  if (buffer_ == "Do" && p_state == IDENTIFIER)
   {
     string loop_name = interpreter_->GetOperand();
     if (loop_name != in_loop_)
@@ -86,8 +86,8 @@ void Tokenizer::PushBuffer_(const TokenState t_type, const TokenState t_state)
     }
   }
 
-  state_ = t_state; // switch state
-  interpreter_->Reader(buffer_, t_type); // make pair and push to result
+  state_ = p_state; // switch state
+  interpreter_->Reader(buffer_, p_type); // make pair and push to result
   buffer_.clear(); // clear buffer
 }
 

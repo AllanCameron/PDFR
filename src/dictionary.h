@@ -66,21 +66,21 @@ class Dictionary
 
   Dictionary(std::unordered_map<std::string, std::string> dictionary_map);
 
-  Dictionary(const Dictionary& t_other): map_(t_other.map_){};
+  Dictionary(const Dictionary& p_other): map_(p_other.map_){};
 
-  Dictionary(Dictionary&& t_other) noexcept { std::swap(map_, t_other.map_); }
+  Dictionary(Dictionary&& p_other) noexcept { std::swap(map_, p_other.map_); }
 
   Dictionary() = default;
 
-  Dictionary& operator=(Dictionary&& t_other) noexcept
+  Dictionary& operator=(Dictionary&& p_other) noexcept
   {
-    std::swap(map_, t_other.map_);
+    std::swap(map_, p_other.map_);
     return *this;
   }
 
-  Dictionary& operator=(const Dictionary& t_other)
+  Dictionary& operator=(const Dictionary& p_other)
   {
-    map_ = t_other.map_;
+    map_ = p_other.map_;
     return *this;
   }
 

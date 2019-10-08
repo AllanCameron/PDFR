@@ -29,15 +29,15 @@ unordered_map<string, shared_ptr<Font>> Page::fontmap_;
 // The Page constructor calls private methods to build its data members after
 // its initializer list
 
-Page::Page(shared_ptr<Document> t_document_ptr, int t_page_number) :
-  document_(t_document_ptr), page_number_(t_page_number), rotate_(0)
+Page::Page(shared_ptr<Document> p_document_ptr, int p_page_number) :
+  document_(p_document_ptr), page_number_(p_page_number), rotate_(0)
 {
-  ReadHeader();        // find the page header
-  ReadResources();     // find the resource header
-  ReadXObjects();      // identify, parse and store XObjects
-  ReadFonts();         // find the fonts dictionaries and build the fontmap
-  ReadContents();      // Find the contents entries and build the content string
-  ReadBoxes();         // Find the bouding box of the page
+  ReadHeader_();      // find the page header
+  ReadResources_();   // find the resource header
+  ReadXObjects_();    // identify, parse and store XObjects
+  ReadFonts_();       // find the fonts dictionaries and build the fontmap
+  ReadContents_();    // Find the contents entries and build the content string
+  ReadBoxes_();       // Find the bouding box of the page
 }
 
 /*---------------------------------------------------------------------------*/
@@ -47,7 +47,7 @@ Page::Page(shared_ptr<Document> t_document_ptr, int t_page_number) :
 // because this will be exported as the page's dimensions. This private method
 // finds and stores the minbox
 
-void Page::ReadBoxes()
+void Page::ReadBoxes_()
 {
   // sometimes the box dimensions are inherited from an ancestor node of the
   // page header. We therefore need to look for the boxes in the page header,
@@ -95,7 +95,7 @@ void Page::ReadBoxes()
 // Page creation starts with identifying the appropriate page header dictionary.
 // This private method is called by the constructor to do that.
 
-void Page::ReadHeader()
+void Page::ReadHeader_()
 {
   // uses public member of document class to get the appropriate header
   header_ = make_shared<Dictionary>(document_->GetPageHeader(page_number_));
@@ -115,7 +115,7 @@ void Page::ReadHeader()
 // It finds the resources dicionary whether it is located in another object or
 // as a subdictionary of the page header
 
-void Page::ReadResources()
+void Page::ReadResources_()
 {
   // If /Resources doesn't contain a dictionary it must be a reference
   if (!header_->ContainsDictionary("/Resources"))
@@ -138,7 +138,7 @@ void Page::ReadResources()
 // dictionary as the resource dictionary does to the page header. It may be
 // a subdictionary, or it may have its own dictionary in another object.
 
-void Page::ReadFonts()
+void Page::ReadFonts_()
 {
   // If /Font entry of resources_ isn't a dictionary
   if (!resources_->ContainsDictionary("/Font"))
@@ -196,10 +196,10 @@ void Page::ReadFonts()
 // that one reference contains a bunch of other references rather than the
 // content stream itself.
 
-void Page::ReadContents()
+void Page::ReadContents_()
 {
   // Call ExpandContents() to get page header object numbers
-  auto contents = ExpandContents(header_->GetReferences("/Contents"));
+  auto contents = ExpandContents_(header_->GetReferences("/Contents"));
 
   // Get the contents from each object stream and paste them at the bottom
   // of the pagestring with a line break after each one
@@ -217,7 +217,7 @@ void Page::ReadContents()
 // xobjects in the resources dictionary therefore needs to be examined for
 // textual components and its uncompressed contents stored for later use
 
-void Page::ReadXObjects()
+void Page::ReadXObjects_()
 {
   string xobject_string {};
 
@@ -264,11 +264,11 @@ void Page::ReadXObjects()
 // but it is possible to have nested content trees. In any case we only want
 // the leaves of the content tree, which are found by this algorithm.
 
-vector<int> Page::ExpandContents(vector<int> t_object_numbers)
+vector<int> Page::ExpandContents_(vector<int> p_object_numbers)
 {
   // We copy our supplied vector to a list, as this is a better container for
   // multiple in-situ inserts
-  list<int> contents_list(t_object_numbers.begin(), t_object_numbers.end());
+  list<int> contents_list(p_object_numbers.begin(), p_object_numbers.end());
 
   // We need an iterator to insert / erase nodes from our list
   auto kid = contents_list.begin();
@@ -346,13 +346,13 @@ shared_ptr<string> Page::GetXObject(const string& t_object_id)
 // The parser class needs to use fonts stored in the fontmap. This getter
 // will return a pointer to the requested font.
 
-shared_ptr<Font> Page::GetFont(const string& t_font_id)
+shared_ptr<Font> Page::GetFont(const string& p_font_id)
 {
   // If no fonts on the page, throw an error
   if (fontmap_.empty()) throw runtime_error("No fonts available for page");
 
   // If we can't find a specified font, return the first font in the map
-  auto font_finder = fontmap_.find(t_font_id);
+  auto font_finder = fontmap_.find(p_font_id);
   if (font_finder == fontmap_.end()) return fontmap_.begin()->second;
 
   // Otherwise we're all good and return the requested font

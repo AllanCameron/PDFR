@@ -24,12 +24,12 @@ using namespace std;
 // getFontName() to get the postscript font title, and then makeGlyphTable()
 // to create the main data member
 
-Font::Font(shared_ptr<Document> t_document_ptr,
-           shared_ptr<Dictionary> t_font_dictionary,
-           const string& t_font_id)
-  : document_(t_document_ptr),
-    font_dictionary_(t_font_dictionary),
-    font_id_(t_font_id)
+Font::Font(shared_ptr<Document> p_document_ptr,
+           shared_ptr<Dictionary> p_font_dictionary,
+           const string& p_font_id)
+  : document_(p_document_ptr),
+    font_dictionary_(p_font_dictionary),
+    font_id_(p_font_id)
 {
   ReadFontName_();
   MakeGlyphTable_();
@@ -61,12 +61,12 @@ void Font::ReadFontName_()
 // as the input vector, containing a pair of {Unicode glyph, width} at each
 // position
 
-vector<pair<Unicode, int>> Font::MapRawChar(const vector<RawChar>& t_raw_vector)
+vector<pair<Unicode, int>> Font::MapRawChar(const vector<RawChar>& p_raw_vector)
 {
   vector<pair<Unicode, int>> result;
-  result.reserve(t_raw_vector.size());
+  result.reserve(p_raw_vector.size());
 
-  for (const auto& raw_char : t_raw_vector)
+  for (const auto& raw_char : p_raw_vector)
   {
     auto finder = glyph_map_.find(raw_char);
     if (finder != glyph_map_.end())

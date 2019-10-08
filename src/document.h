@@ -60,9 +60,6 @@ class Dictionary;
 class XRef;
 class Object;
 
-template <class T> class TreeNode;
-
-
 //---------------------------------------------------------------------------//
 // The public interface of the Document class comprises constructors and two
 // member functions - one to return any object from the pdf and one to retrieve
@@ -72,10 +69,10 @@ class Document
 {
  public:
   // Constructor to create Document from file path (given as std::string)
-  Document(const std::string& file_path);
+  Document(const std::string& p_file_path);
 
   // Constructor to create Document from raw data (given as vector<uint8_t>)
-  Document(const std::vector<uint8_t>& raw_data);
+  Document(const std::vector<uint8_t>& p_raw_data);
 
   // Default constructor
   Document() {};
@@ -85,10 +82,10 @@ class Document
   // If it has not been accessed before, it will first create it. If the object
   // is inside an object stream, it will automatically add the holding object to
   // the cache as well.
-  std::shared_ptr<Object> GetObject(int object_number);
+  std::shared_ptr<Object> GetObject(int p_object_number);
 
   // Returns the main header dictionary for page specified by page_number
-  Dictionary GetPageHeader(size_t page_number);
+  Dictionary GetPageHeader(size_t p_page_number);
 
   // Accesses the private member containing object numbers of all page headers.
   inline std::vector<int> GetPageObjectNumbers()
@@ -115,10 +112,8 @@ class Document
   void ReadPageDirectory_();  // Finds and stores the /Pages dictionary
   void BuildDocument_();      // The constructors use this as a common pathway
 
-  // We need to use an <int> instantiation of the TreeNode template class
-  // defined in utilities.h to parse the tree structure of the /Pages entry
-  // in the catalog dictionary. This function effectively builds the pages tree.
-  std::vector<int> ExpandKids_(const std::vector<int>& t_object_numbers);
+  // This function effectively builds the pages tree.
+  std::vector<int> ExpandKids_(const std::vector<int>& p_object_numbers);
 };
 
 //---------------------------------------------------------------------------//

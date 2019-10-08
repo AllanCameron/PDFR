@@ -134,36 +134,36 @@ std::vector<Ta> SortBy(std::vector<Ta> p_sortee,
 // This can be used e.g. to find the byte position that always sits between
 // "startxref" and "%%EOF"
 
-std::string CarveOut(const std::string& string_to_be_carved,
-                     const std::string& left_delimiter,
-                     const std::string& right_delimiter);
+std::string CarveOut(const std::string& p_string_to_be_carved,
+                     const std::string& p_left_delimiter,
+                     const std::string& p_right_delimiter);
 
 //---------------------------------------------------------------------------//
 // finds all closest pairs of strings a, b and returns the substring between.
 // This is used to carve out variable substrings between fixed substrings -
 // a surprisingly common task in parsing text.
 
-std::vector<std::string> MultiCarve(const std::string& string_to_be_carved,
-                                    const std::string& left_delimiter,
-                                    const std::string& right_delimiter);
+std::vector<std::string> MultiCarve(const std::string& p_string_to_be_carved,
+                                    const std::string& p_left_delimiter,
+                                    const std::string& p_right_delimiter);
 
 //---------------------------------------------------------------------------//
 // Decent approximation of whether a string contains binary data or not
 // Uses <algorithm> from std
 
-bool IsAscii(const std::string& string_to_be_tested);
+bool IsAscii(const std::string& p_string_to_be_tested);
 
 //---------------------------------------------------------------------------//
 //Takes a string of bytes represented in ASCII and converts to actual bytes
 // eg "48656c6c6f20576f726c6421" -> "Hello World!"
 
-std::vector<uint8_t> ConvertHexToBytes(const std::string& hex_encoded_string);
+std::vector<uint8_t> ConvertHexToBytes(const std::string& p_hex_encoded_string);
 
 //---------------------------------------------------------------------------//
 //Converts an int to the relevant 2-byte ASCII hex (4 characters long)
 // eg 161 -> "00A1"
 
-std::string ConvertIntToHex(int int_to_be_converted);
+std::string ConvertIntToHex(int p_int_to_be_converted);
 
 //---------------------------------------------------------------------------//
 // Classify characters for use in lexers. This allows the use of switch
@@ -172,20 +172,20 @@ std::string ConvertIntToHex(int int_to_be_converted);
 // For cases where the lexer needs to find a specific symbol, this function
 // returns the original character if it is not a digit, a letter or whitespace
 
-char GetSymbolType(const char input_char);
+char GetSymbolType(const char p_input_char);
 
 //---------------------------------------------------------------------------//
 // Returns the data represented by an Ascii encoded hex string as a vector
 // of two-byte numbers
 
-std::vector<RawChar> ConvertHexToRawChar(std::string& hex_encoded_string);
+std::vector<RawChar> ConvertHexToRawChar(std::string& p_hex_encoded_string);
 
 //---------------------------------------------------------------------------//
 // Converts normal string to a vector of 2-byte width numbers (RawChar)
 // This requires sequential conversion from char to uint8_t to uint16_t
 // (RawChar is just a synonym for uint16_t)
 
-std::vector<RawChar> ConvertStringToRawChar(const std::string& input_string);
+std::vector<RawChar> ConvertStringToRawChar(const std::string& p_input_string);
 
 //---------------------------------------------------------------------------//
 // This is a simple lexer to find any object references in the given string,
@@ -193,14 +193,14 @@ std::vector<RawChar> ConvertStringToRawChar(const std::string& input_string);
 // even though the code is more unwieldy. It is essentially a finite state
 // machine that reads character by character and stores any matches found
 
-std::vector<int> ParseReferences(const std::string& string_to_be_parsed);
+std::vector<int> ParseReferences(const std::string& p_string_to_be_parsed);
 
 //---------------------------------------------------------------------------//
 // Another lexer. This one finds any integers in a string.
 // If there are decimal points, it ignores the fractional part.
 // It will not accurately represent hex, octal or scientific notation (eg 10e5)
 
-std::vector<int> ParseInts(const std::string& string_to_be_parsed);
+std::vector<int> ParseInts(const std::string& p_string_to_be_parsed);
 
 //---------------------------------------------------------------------------//
 // This lexer retrieves floats from a string. It searches through the entire
@@ -208,11 +208,11 @@ std::vector<int> ParseInts(const std::string& string_to_be_parsed);
 // result can be interpreted as a decimally represented number. It will also
 // consume and convert integers but not hex, octal or scientific notation
 
-std::vector<float> ParseFloats(const std::string& string_to_be_parsed);
+std::vector<float> ParseFloats(const std::string& p_string_to_be_parsed);
 
 //---------------------------------------------------------------------------//
 // Loads a file's contents into a single std::string using <fstream>
 
-std::string GetFile(const std::string& path_to_file);
+std::string GetFile(const std::string& p_path_to_file);
 
 #endif

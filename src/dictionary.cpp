@@ -100,8 +100,8 @@ class DictionaryBuilder
 // Constructor. Takes a string pointer so big strings can be passed
 // cheaply. This version starts at the beginning of the given string
 
-DictionaryBuilder::DictionaryBuilder(shared_ptr<const string> t_string_ptr)
-  : string_ptr_(t_string_ptr),
+DictionaryBuilder::DictionaryBuilder(shared_ptr<const string> p_string_ptr)
+  : string_ptr_(p_string_ptr),
     char_num_(0),
     bracket_(0),
     key_pending_(false),
@@ -119,10 +119,10 @@ DictionaryBuilder::DictionaryBuilder(shared_ptr<const string> t_string_ptr)
 // This allows dictionaries to be read starting from the object locations
 // given in the cross-reference (xref) table
 
-DictionaryBuilder::DictionaryBuilder(shared_ptr<const string> t_string_ptr,
-                                     size_t t_offset)
-  : string_ptr_(t_string_ptr),
-    char_num_(t_offset),
+DictionaryBuilder::DictionaryBuilder(shared_ptr<const string> p_string_ptr,
+                                     size_t p_offset)
+  : string_ptr_(p_string_ptr),
+    char_num_(p_offset),
     bracket_(0),
     key_pending_(false),
     state_(PREENTRY)
@@ -192,7 +192,7 @@ void DictionaryBuilder::TokenizeDictionary_()
 // flag is flipped. Although this code is short, it is efficient and used a lot
 // so needs its own function.
 
-void DictionaryBuilder::SetKey_(string t_buffer, DictionaryState t_state)
+void DictionaryBuilder::SetKey_(string p_buffer, DictionaryState p_state)
 {
   // If no key is awaiting value, store name as a key
   if (!key_pending_) pending_key_ = buffer_;
@@ -204,22 +204,22 @@ void DictionaryBuilder::SetKey_(string t_buffer, DictionaryState t_state)
   key_pending_ = !key_pending_;
 
   // Set buffer and state as needed
-  buffer_ = t_buffer;
-  state_  = t_state;
+  buffer_ = p_buffer;
+  state_  = p_state;
 }
 
 /*---------------------------------------------------------------------------*/
 // The pattern of assigning a value to a waiting key name crops up often
 // enough to warrant this function to reduce duplication and error
 
-void DictionaryBuilder::AssignValue_(string t_buffer, DictionaryState t_state)
+void DictionaryBuilder::AssignValue_(string p_buffer, DictionaryState p_state)
 {
   map_[pending_key_] = buffer_; // Contents of buffer assigned to key name
   key_pending_ = false;         // No key pending - ready for a new key
 
   // Update buffer and state with given parameters
-  buffer_ = t_buffer;
-  state_  = t_state;
+  buffer_ = p_buffer;
+  state_  = p_state;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -228,9 +228,9 @@ void DictionaryBuilder::AssignValue_(string t_buffer, DictionaryState t_state)
 // of the name value and switches to the appropriate state depending on the
 // next character
 
-void DictionaryBuilder::HandleKey_(char t_input_char)
+void DictionaryBuilder::HandleKey_(char p_input_char)
 {
-  switch (t_input_char)
+  switch (p_input_char)
   {
     case 'L': buffer_ += char_;                 break;
     case 'D': buffer_ += char_;                 break;
@@ -251,9 +251,9 @@ void DictionaryBuilder::HandleKey_(char t_input_char)
 // just come across a '<' and knows it has encountered a dictionary if the
 // next char is also a '<'. Otherwise it returns to a waiting state.
 
-void DictionaryBuilder::HandleMaybe_(char t_input_char)
+void DictionaryBuilder::HandleMaybe_(char p_input_char)
 {
-  if (t_input_char == '<')
+  if (p_input_char == '<')
   {
     state_ = START;
   }
@@ -269,9 +269,9 @@ void DictionaryBuilder::HandleMaybe_(char t_input_char)
 // indicated by a '/'. If not, it will wait until it finds one or finds the
 // end of the dictionary
 
-void DictionaryBuilder::HandleStart_(char t_input_char)
+void DictionaryBuilder::HandleStart_(char p_input_char)
 {
-  switch (t_input_char)
+  switch (p_input_char)
   {
     case '/': buffer_ += '/'; state_ = KEY; break; // should always be so
     case '>': state_ = QUERYCLOSE;          break; // empty dictionary
@@ -282,9 +282,9 @@ void DictionaryBuilder::HandleStart_(char t_input_char)
 /*---------------------------------------------------------------------------*/
 // The lexer has just read a key name and now expects a value
 
-void DictionaryBuilder::HandlePrevalue_(char t_input_char)
+void DictionaryBuilder::HandlePrevalue_(char p_input_char)
 {
-  switch (t_input_char)
+  switch (p_input_char)
   {
     case ' ': state_ = PREVALUE;                  break; // still waiting
     case '<': state_ = QUERYDICT;                 break; // probable dict value
@@ -299,9 +299,9 @@ void DictionaryBuilder::HandlePrevalue_(char t_input_char)
 // The lexer is now reading a value. It will do so until a special character
 // is reached representing a new data type
 
-void DictionaryBuilder::HandleValue_(char t_input_char)
+void DictionaryBuilder::HandleValue_(char p_input_char)
 {
-  switch (t_input_char)
+  switch (p_input_char)
   {
     case '/': AssignValue_("/", KEY);       break; // end of value; new key
     case '<': AssignValue_("", QUERYDICT);  break; // may be new subdict
@@ -315,29 +315,29 @@ void DictionaryBuilder::HandleValue_(char t_input_char)
 // The lexer is in an array. It will blindly copy the array until it gets
 // to the matching closing bracket
 
-void DictionaryBuilder::HandleArrayValue_(char t_input_char)
+void DictionaryBuilder::HandleArrayValue_(char p_input_char)
 {
   buffer_ += char_;
-  if (t_input_char == ']') AssignValue_("", START);
+  if (p_input_char == ']') AssignValue_("", START);
 }
 
 /*---------------------------------------------------------------------------*/
 // The lexer is now in a string; it blindly copies until finding a closing
 // bracket.
 
-void DictionaryBuilder::HandleString_(char t_input_char)
+void DictionaryBuilder::HandleString_(char p_input_char)
 {
   buffer_ += char_;
-  if (t_input_char == ')') AssignValue_("", START);
+  if (p_input_char == ')') AssignValue_("", START);
 }
 
 /*---------------------------------------------------------------------------*/
 // The lexer has come across an angle bracket and needs to decide whether it
 // is now in a subdictionary
 
-void DictionaryBuilder::HandleQueryDictionary_(char t_input_char)
+void DictionaryBuilder::HandleQueryDictionary_(char p_input_char)
 {
-  if (t_input_char == '<')  // Now entering a subdictionary
+  if (p_input_char == '<')  // Now entering a subdictionary
   {
     buffer_ = "<<";         // Keep the angle brackets for subdictionary
     state_ = SUBDICT;
@@ -356,9 +356,9 @@ void DictionaryBuilder::HandleQueryDictionary_(char t_input_char)
 // It does not otherwise process the subdictionary - the whole string can
 // be used as the basis for a further dictionary object if required
 
-void DictionaryBuilder::HandleSubdictionary_(char t_input_char)
+void DictionaryBuilder::HandleSubdictionary_(char p_input_char)
 {
-  switch (t_input_char)
+  switch (p_input_char)
   {
     case '<': buffer_ += char_; bracket_ ++; break; // keep track of nesting
     case '>': buffer_ += char_; bracket_ --; break; // keep track of nesting
@@ -374,9 +374,9 @@ void DictionaryBuilder::HandleSubdictionary_(char t_input_char)
 // present and if so records its position in the string used to create the
 // dictionary object
 
-void DictionaryBuilder::HandleClose_(char t_input_char)
+void DictionaryBuilder::HandleClose_(char p_input_char)
 {
-  switch (t_input_char)
+  switch (p_input_char)
   {
     // Ignore any whitespace.
     case ' ': state_ = CLOSE; break;
@@ -424,37 +424,37 @@ DictionaryBuilder::DictionaryBuilder()
 // The Dictionary constructor takes a string pointer and uses it to make its
 // data member using a temporary DictionaryBuilder
 
-Dictionary::Dictionary(shared_ptr<const string> t_string_ptr)
+Dictionary::Dictionary(shared_ptr<const string> p_string_ptr)
 {
-  map_ = move(DictionaryBuilder(t_string_ptr).Get());
+  map_ = move(DictionaryBuilder(p_string_ptr).Get());
 }
 
 /*---------------------------------------------------------------------------*/
 // This alternative Dictionary constructor uses the same method as the normal
 // constructor, but starts at a given offset in the supplied string.
 
-Dictionary::Dictionary(shared_ptr<const string> t_string_ptr, size_t t_offset)
+Dictionary::Dictionary(shared_ptr<const string> p_string_ptr, size_t p_offset)
 {
-  map_ = move(DictionaryBuilder(t_string_ptr, t_offset).Get());
+  map_ = move(DictionaryBuilder(p_string_ptr, p_offset).Get());
 }
 
 /*---------------------------------------------------------------------------*/
 // A dictionary can be created from an existing map. Not used but appears
 // in case required for future feature development
 
-Dictionary::Dictionary(std::unordered_map<string, string> t_map)
+Dictionary::Dictionary(std::unordered_map<string, string> p_map)
 {
-  map_ = t_map;
+  map_ = p_map;
 };
 
 /*---------------------------------------------------------------------------*/
 // Simple getter of dictionary contents as a string from given key name
 
-string Dictionary::GetString(const string& t_key) const
+string Dictionary::GetString(const string& p_key) const
 {
   // A simple map index lookup with square brackets adds the key to
   // map_, which we don't want. Using find(key) leaves it unaltered
-  auto finder = map_.find(t_key);
+  auto finder = map_.find(p_key);
   if (finder != map_.end()) return finder->second;
 
   // We want an empty string rather than an error if the key isn't found.
@@ -467,9 +467,9 @@ string Dictionary::GetString(const string& t_key) const
 /*---------------------------------------------------------------------------*/
 // Sometimes we just need a boolean check for the presence of a key
 
-bool Dictionary::HasKey(const string& t_key) const
+bool Dictionary::HasKey(const string& p_key) const
 {
-  return map_.find(t_key) != map_.end();
+  return map_.find(p_key) != map_.end();
 }
 
 /*---------------------------------------------------------------------------*/
@@ -477,36 +477,36 @@ bool Dictionary::HasKey(const string& t_key) const
 // This should return true if the key is present AND its value contains
 // at least one object reference, and should be false in all other cases
 
-bool Dictionary::ContainsReferences(const string& t_key) const
+bool Dictionary::ContainsReferences(const string& p_key) const
 {
-  return !this->GetReferences(t_key).empty();
+  return !this->GetReferences(p_key).empty();
 }
 
 /*---------------------------------------------------------------------------*/
 // Checks whether the key's values contains any integers. If a key is present
 // AND its value contains ints, this returns true. Otherwise false.
 
-bool Dictionary::ContainsInts(const string& t_key) const
+bool Dictionary::ContainsInts(const string& p_key) const
 {
-  return !this->GetInts(t_key).empty();
+  return !this->GetInts(p_key).empty();
 }
 
 /*---------------------------------------------------------------------------*/
 // Returns a vector of object numbers from any object references found in the
 // given key's value. Uses a global function from utilities.h
 
-vector<int> Dictionary::GetReferences(const string& t_key) const
+vector<int> Dictionary::GetReferences(const string& p_key) const
 {
-  return ParseReferences(this->GetString(t_key));
+  return ParseReferences(this->GetString(p_key));
 }
 
 /*---------------------------------------------------------------------------*/
 // Returns a single object number from any reference found in the
 // given key's value. Uses a global function from utilities.h
 
-int Dictionary::GetReference(const string& t_key) const
+int Dictionary::GetReference(const string& p_key) const
 {
-  vector<int> all_references = ParseReferences(this->GetString(t_key));
+  vector<int> all_references = ParseReferences(this->GetString(p_key));
   if (all_references.empty()) throw runtime_error("No reference found");
   return all_references[0];
 }
@@ -514,28 +514,28 @@ int Dictionary::GetReference(const string& t_key) const
 // Returns any integers present in the value string as read by the ParseInts()
 // global function defined in utilities.cpp
 
-vector<int> Dictionary::GetInts(const string& t_key) const
+vector<int> Dictionary::GetInts(const string& p_key) const
 {
-  return ParseInts(this->GetString(t_key));
+  return ParseInts(this->GetString(p_key));
 }
 
 /*---------------------------------------------------------------------------*/
 // Returns any floats present in the value string as read by the ParseFloats()
 // global function defined in utilities.cpp
 
-vector<float> Dictionary::GetFloats(const string& t_key) const
+vector<float> Dictionary::GetFloats(const string& p_key) const
 {
-  return ParseFloats(this->GetString(t_key));
+  return ParseFloats(this->GetString(p_key));
 }
 
 /*---------------------------------------------------------------------------*/
 // This creates a new dictionary object on request if the value string contains
 // a subdictionary.
 
-Dictionary Dictionary::GetDictionary(const string& t_key) const
+Dictionary Dictionary::GetDictionary(const string& p_key) const
 {
   // Gets the value string
-  string possible_sub_dictionary = this->GetString(t_key);
+  string possible_sub_dictionary = this->GetString(p_key);
 
   // Tests that it is a dictionary
   if (possible_sub_dictionary.find("<<") != string::npos)
@@ -552,9 +552,9 @@ Dictionary Dictionary::GetDictionary(const string& t_key) const
 // Checks whether a subdictionary is present in the value string by looking
 // for double angle brackets
 
-bool Dictionary::ContainsDictionary(const string& t_key) const
+bool Dictionary::ContainsDictionary(const string& p_key) const
 {
-  string dictionary = this->GetString(t_key);
+  string dictionary = this->GetString(p_key);
   return dictionary.find("<<") != string::npos;
 }
 

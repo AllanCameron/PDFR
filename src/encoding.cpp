@@ -24,9 +24,9 @@ using namespace std;
 // any /ToUnicode entry. The first three are co-ordinated by read_encoding()
 // and the last is co-ordinated by map_unicode()
 
-Encoding::Encoding(shared_ptr<Dictionary> t_font_dictionary,
-                   shared_ptr<Document> t_document_ptr)
-  : font_dictionary_(t_font_dictionary), document_(t_document_ptr)
+Encoding::Encoding(shared_ptr<Dictionary> p_font_dictionary,
+                   shared_ptr<Document> p_document_ptr)
+  : font_dictionary_(p_font_dictionary), document_(p_document_ptr)
 {
   ReadEncoding_();
   MapUnicode_();
@@ -34,16 +34,16 @@ Encoding::Encoding(shared_ptr<Dictionary> t_font_dictionary,
 
 /*---------------------------------------------------------------------------*/
 
-void Encoding::Write_(DifferencesState& t_state, string& t_buffer)
+void Encoding::Write_(DifferencesState& p_state, string& p_buffer)
 {
-  entries_.push_back(make_pair(t_state, t_buffer));
+  entries_.push_back(make_pair(p_state, p_buffer));
 }
 
 /*---------------------------------------------------------------------------*/
 // Lexer for /Differences entry of encoding dictionary. Takes the
 // /Differences entry as a string and reads its ints as input code points.
 
-void Encoding::ReadDifferences_(const string& t_differences_string)
+void Encoding::ReadDifferences_(const string& p_differences_string)
 {
   DifferencesState state = NEWSYMB; // define starting state
   string buffer {};        // initialise the buffer string
@@ -54,7 +54,7 @@ void Encoding::ReadDifferences_(const string& t_differences_string)
   // parsing task, so I have kept it as a single function (albeit one with
   // nested switch - case expressions)
 
-  for (auto i : t_differences_string)
+  for (auto i : p_differences_string)
   {
     char n = GetSymbolType(i);  // determine character type
     switch (state)             // state switch
@@ -171,10 +171,10 @@ void Encoding::MapUnicode_()
 // This method parses the "bfchar" entries in the CMap and adds them to the
 // encoding map
 
-void Encoding::ProcessUnicodeChars_(vector<string>& t_bf_chars)
+void Encoding::ProcessUnicodeChars_(vector<string>& p_bf_chars)
 {
   // There may be many entries, so we process each of the given strings
-  for (auto& entry : t_bf_chars)
+  for (auto& entry : p_bf_chars)
   {
     // use MultiCarve() to get ascii-encoded byte representations
     vector<string> all_entries = MultiCarve(entry, "<", ">");
@@ -198,10 +198,10 @@ void Encoding::ProcessUnicodeChars_(vector<string>& t_bf_chars)
 // translated in the range, and the Unicode point from which to start the
 // translation - hence { 1; 4; 10 } would generate {1,10; 2,11; 3,12; 4,13}
 
-void Encoding::ProcessUnicodeRange_(vector<string>& t_bf_ranges)
+void Encoding::ProcessUnicodeRange_(vector<string>& p_bf_ranges)
 {
   // There may be many entries, so we process each of the given strings
-  for (auto& ranges : t_bf_ranges)
+  for (auto& ranges : p_bf_ranges)
   {
     // Uses MultiCarve() from utilities.h to get ascii-endoded byte strings
     auto all_entries = MultiCarve(ranges, "<", ">");
@@ -292,12 +292,12 @@ void Encoding::ReadEncoding_()
 // a range-checked lookup of a given RawChar. If it finds no Unicode entry
 // in the map it returns the original RawChar
 
-Unicode Encoding::Interpret(const RawChar& t_raw)
+Unicode Encoding::Interpret(const RawChar& p_raw)
 {
   // If no translation found, return the raw character code point
-  auto found = encoding_map_.find(t_raw);
+  auto found = encoding_map_.find(p_raw);
   if (found != encoding_map_.end()) return found->second;
-  else return t_raw;
+  else return p_raw;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -337,10 +337,10 @@ void Encoding::HandleTypeOneFont_()
 /*---------------------------------------------------------------------------*/
 // Parses a type 1 font file
 
-void Encoding::ParseTypeOneFont_(std::string t_fontfile_string)
+void Encoding::ParseTypeOneFont_(std::string p_fontfile_string)
 {
   string the_end =  "currentdict end";
-  auto fontfile_listing = CarveOut(t_fontfile_string, "/Encoding", the_end);
+  auto fontfile_listing = CarveOut(p_fontfile_string, "/Encoding", the_end);
   auto entries = MultiCarve(fontfile_listing, "dup ", " put");
   for(auto entry : entries)
   {

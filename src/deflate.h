@@ -24,7 +24,8 @@ void FlateDecode(std::string* t_message);
 // This class reinvents the wheel in an attempt to free the library from
 // dependencies. It is a full implementation of Deflate decompression. It uses
 // std::map for storing and looking up Huffman trees and inherits from Stream
-// to give it an easy interface to the underlying stream.
+// to give it an easy interface to the underlying stream. Only the constructor
+// is public.
 
 class Deflate : public Stream
 {
@@ -34,7 +35,6 @@ public:
 
 private:
   bool is_last_block_;    // Flag so decompressor knows when to stop
-  void CheckHeader();     // Read first two bytes to ensure valid Deflate
 
   // The fixed literal and distance maps are used if compression used a
   // fixed dictionary. Usually this only happens with short messages.
@@ -51,16 +51,17 @@ private:
   std::map<uint32_t, uint32_t> literal_map_;
   std::map<uint32_t, uint32_t> distance_map_;
 
-  void ReadBlock();               // Co-ordinates reading of a single block
-  void BuildDynamicCodeTable();   // Builds lookup tables for each block
-  void ReadCodes();               // Actual reading of compressed data
-  void HandlePointer(uint32_t);   // Deals with length & distance pointers
+  void CheckHeader_();           // Read first two bytes to ensure valid Deflate
+  void ReadBlock_();               // Co-ordinates reading of a single block
+  void BuildDynamicCodeTable_();   // Builds lookup tables for each block
+  void ReadCodes_();               // Actual reading of compressed data
+  void HandlePointer_(uint32_t);   // Deals with length & distance pointers
 
   // Finds the next code in the input stream using given lookup table
-  uint32_t ReadCode(std::map<uint32_t, uint32_t>&);
+  uint32_t ReadCode_(std::map<uint32_t, uint32_t>&);
 
   // Creates a Huffman tree from a vector of bit lengths.
-  std::map<uint32_t, uint32_t> Huffmanize(const std::vector<uint32_t>&);
+  std::map<uint32_t, uint32_t> Huffmanize_(const std::vector<uint32_t>&);
 };
 
 

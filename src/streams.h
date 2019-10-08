@@ -89,6 +89,18 @@ public:
     }
   }
 
+  inline void ExpectExpansionFactor(uint8_t p_ratio)
+  {
+    output_.reserve(input_->size() * p_ratio);
+  }
+
+  inline void ShrinkToFit()
+  {
+    output_.shrink_to_fit();
+  }
+
+  uint64_t GetEightBytes();
+
   // Gets a byte from a specific location in the output stream
   inline char GetOutput(){return *output_position_++;}
 

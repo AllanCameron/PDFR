@@ -68,9 +68,9 @@ class Font
 {
  public:
   // Constructor
-  Font(std::shared_ptr<Document> doc,
-       std::shared_ptr<Dictionary> font,
-       const std::string& id);
+  Font(std::shared_ptr<Document> p_document_ptr,
+       std::shared_ptr<Dictionary> p_font_dictionary_ptr,
+       const std::string& p_id);
 
   // Default Constructor
   Font(){};
@@ -82,7 +82,7 @@ class Font
   // The most important public method is MapRawChar, which takes a vector of
   // uint16_t representing raw character codes, and returns a vector of pairs
   // containing the Unicode interpretation and its associated width
-  std::vector<GlyphData> MapRawChar(const std::vector<RawChar>& raw_chars);
+  std::vector<GlyphData> MapRawChar(const std::vector<RawChar>& p_raw_chars);
 
 private:
   // private data members

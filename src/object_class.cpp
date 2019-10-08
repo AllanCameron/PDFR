@@ -24,9 +24,9 @@ using namespace std;
 // The main object creator class. It needs a pointer to the xref and a number
 // representing the object's number as set out in the xref table.
 
-Object::Object(shared_ptr<const XRef> t_xref, int t_object_number) :
-  xref_(t_xref),
-  object_number_(t_object_number),
+Object::Object(shared_ptr<const XRef> p_xref, int p_object_number) :
+  xref_(p_xref),
+  object_number_(p_object_number),
   stream_location_({0, 0})
 {
   // Find start and end of object
@@ -102,20 +102,20 @@ void Object::IndexObjectStream_()
 // main object constructor if the main object constructor determines that the
 // requested object lies inside the stream of another object
 
-Object::Object(shared_ptr<Object> t_holder, int t_object_number):
-  xref_(t_holder->xref_),
-  object_number_(t_object_number),
+Object::Object(shared_ptr<Object> p_holder, int p_object_number):
+  xref_(p_holder->xref_),
+  object_number_(p_object_number),
   stream_location_({0, 0})
 {
-  auto finder = t_holder->object_stream_index_.find(object_number_);
-  if (finder == t_holder->object_stream_index_.end())
+  auto finder = p_holder->object_stream_index_.find(object_number_);
+  if (finder == p_holder->object_stream_index_.end())
   {
     throw runtime_error("Object not found in stream");
   }
 
   auto index_position = finder->second.first;
   auto index_length   = finder->second.second;
-  auto stream_string  = t_holder->stream_.substr(index_position, index_length);
+  auto stream_string  = p_holder->stream_.substr(index_position, index_length);
 
   // Most stream objects consist of just a dictionary
   if (stream_string[0] == '<')
@@ -137,7 +137,7 @@ Object::Object(shared_ptr<Object> t_holder, int t_object_number):
       size_t holder = xref_->GetHoldingNumberOf(new_number);
       if (holder == 0) *this = Object(xref_, new_number);
       else *this = Object(make_shared<Object>(xref_, holder), new_number);
-      this->object_number_ = t_object_number;
+      this->object_number_ = p_object_number;
     }
   }
 }

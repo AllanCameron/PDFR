@@ -32,9 +32,9 @@ typedef vector<uint32_t> LengthArray;
 // compressed string and it will replace it with a pointer to the uncompressed
 // version.
 
-void FlateDecode(string* t_message)
+void FlateDecode(string* p_message)
 {
-  *t_message = Deflate(t_message).Output();
+  *p_message = Deflate(p_message).Output();
 }
 
 /*---------------------------------------------------------------------------*/
@@ -160,14 +160,18 @@ const vector<uint32_t> Deflate::distance_table_{
 // The Deflate constructor calls the stream constructor and then runs the
 // decompression without further prompting.
 
-Deflate::Deflate(const string* input_t) : Stream(input_t),
-                                               is_last_block_(false)
+Deflate::Deflate(const string* p_input) : Stream(p_input),
+                                          is_last_block_(false)
 {
+  ExpectExpansionFactor(6);
+
   // This will abort further reading if the two header bytes aren't right.
-  CheckHeader();
+  CheckHeader_();
 
   // Reads each available block sequentially
-  while (!is_last_block_) ReadBlock();
+  while (!is_last_block_) ReadBlock_();
+
+  ShrinkToFit();
 }
 
 
@@ -184,25 +188,25 @@ Deflate::Deflate(const string* input_t) : Stream(input_t),
 // a single key. We reverse the bit sequence for easy lookup and store it in
 // the low order bits, then store the number of bits in the high order bits.
 
-HuffmanMap Deflate::Huffmanize(const LengthArray& lengths)
+HuffmanMap Deflate::Huffmanize_(const LengthArray& p_lengths)
 {
   HuffmanMap huffman_table;
 
   // The maximum length is stored in the main table as it is needed for reading
   // the table later.
-  uint32_t max_length = *max_element(lengths.begin(), lengths.end());
+  uint32_t max_length = *max_element(p_lengths.begin(), p_lengths.end());
 
   // The minimum length needs to be found in the loop.
   uint32_t min_length = 15, code = 0;
 
   for(uint32_t i = 1; i <= max_length; ++i) // For each possible length
   {
-    for(size_t j = 0; j < lengths.size(); ++j) // check each acutal length
+    for(size_t j = 0; j < p_lengths.size(); ++j) // check each acutal length
     {
-      if(lengths[j] == i) // If it matches, add it to the table.
+      if(p_lengths[j] == i) // If it matches, add it to the table.
       {
         // Creates the lookup value from the code value and number of bits
-        uint32_t&& lookup = (lengths[j] << 16) | BitFlip(code++, lengths[j]);
+        uint32_t&& lookup = (p_lengths[j] << 16)|BitFlip(code++, p_lengths[j]);
 
         // Stores the result
         huffman_table[lookup] = j;
@@ -229,12 +233,12 @@ HuffmanMap Deflate::Huffmanize(const LengthArray& lengths)
 // zeros to show the bits represented. It is a non-exported function and does
 // not appear in the header file.
 
-std::string PrintBits(uint32_t entry)
+std::string PrintBits(uint32_t p_entry)
 {
   std::string result = "";
 
   // Read the value and number of bits from the uint32
-  uint32_t n_bits = entry >> 16, value = entry & 0xffff;
+  uint32_t n_bits = p_entry >> 16, value = p_entry & 0xffff;
 
   // Set an initial mask to give only the number of bits needed for the value
   uint32_t mask = 1 << (n_bits - 1);
@@ -255,11 +259,11 @@ std::string PrintBits(uint32_t entry)
 // code, matching it against the appropriate HuffmanMap. The map is passed
 // by reference.
 
-uint32_t Deflate::ReadCode(HuffmanMap& map_t)
+uint32_t Deflate::ReadCode_(HuffmanMap& p_map)
 {
   // The maximum and minimum number of bits that may be required for a match
   // in a given Huffman table is stored in the table itself and retrieved here.
-  uint32_t read_bits = map_t[0x00000], maxbits = map_t[0xfffff];
+  uint32_t read_bits = p_map[0x00000], maxbits = p_map[0xfffff];
 
   // Start by reading in the minimum number of bits that could match
   uint32_t read_value = GetBits(read_bits);
@@ -267,10 +271,10 @@ uint32_t Deflate::ReadCode(HuffmanMap& map_t)
   while(true) // The loop will run until explicitly exited by return or throw
   {
     // Create a lookup key from the number of read bits and their value
-    auto lookup = map_t.find(read_value | (read_bits << 16));
+    auto lookup = p_map.find(read_value | (read_bits << 16));
 
     // If this isn't found, get the next bit and repeat the loop
-    if (lookup == map_t.end())
+    if (lookup == p_map.end())
     {
       read_value = read_value + (GetBits(1) << read_bits++);
 
@@ -289,7 +293,7 @@ uint32_t Deflate::ReadCode(HuffmanMap& map_t)
 // compression method DEFLATE (CMF & 0x0f == 8), it will halt if the fixed
 // dictionary flag is set, and it will also throw if the checksum fails.
 
-void Deflate::CheckHeader()
+void Deflate::CheckHeader_()
 {
   uint8_t cmf = GetByte(); // Gets first byte
   uint8_t flg = GetByte(); // Gets second byte
@@ -315,7 +319,7 @@ void Deflate::CheckHeader()
 // block, and is called recurrently by the constructor until the last block has
 // been read.
 
-void Deflate::ReadBlock()
+void Deflate::ReadBlock_()
 {
   // The first bit of any block is a flag announcing whether this is the last
   // block "1", or whether there are other blocks to be read after this one.
@@ -362,26 +366,36 @@ void Deflate::ReadBlock()
 
   // Most deflate streams will have their own dictionary. This is complex to
   // construct and requires its own long function to do so
-  if (three_bit_header == 2) BuildDynamicCodeTable();
+  if (three_bit_header == 2) BuildDynamicCodeTable_();
 
   // This safety check ensures we don't read garbage if there's an error
   if (three_bit_header == 3) throw runtime_error("Invalid dictionary type.");
 
   // Now we should be in a position to read our actual compressed data.
-  ReadCodes();
+  ReadCodes_();
 };
 
 /*---------------------------------------------------------------------------*/
 
-void Deflate::BuildDynamicCodeTable()
+void Deflate::BuildDynamicCodeTable_()
 {
+  // Read the number of literal / length codes
   uint32_t literal_code_count = GetBits(5) + 257;
-  uint32_t total_code_count = GetBits(5) + 1 + literal_code_count;
-  uint32_t number_of_length_codes = GetBits(4) + 4;
-  vector<uint8_t> length_code_order {16, 17, 18, 0, 8,  7,  9, 6, 10, 5,
-                                      11, 4,  12, 3, 13, 2, 14, 1, 15};
 
-  // build the code lengths code table
+  // Effectively reads the number of distance codes
+  uint32_t total_code_count = GetBits(5) + 1 + literal_code_count;
+
+  // Read the number of entries in the code length code length [sic] table
+  uint32_t number_of_length_codes = GetBits(4) + 4;
+
+  // The entries in the code length code lengths will represent these numbers
+  // in order. If there are less than 19 entries, the remaining numbers get
+  // an associated length of zero
+  vector<uint8_t> length_code_order {16, 17, 18, 0, 8,  7,  9, 6, 10, 5,
+                                     11, 4,  12, 3, 13, 2, 14, 1, 15};
+
+  // Read the code lengths code table using the above numbers as indices. Each
+  // code length is given as three bits (lengths can be 0 to 7)
   LengthArray code_length_lengths(19);
   for (uint32_t i = 0; i < number_of_length_codes; ++i)
   {
@@ -389,38 +403,60 @@ void Deflate::BuildDynamicCodeTable()
     code_length_lengths[length_code_order[i]] = triplet;
   }
 
-  auto code_length_table = Huffmanize(code_length_lengths);
+  // Pass these lengths to our Huffman map reconstructor
+  auto code_length_table = Huffmanize_(code_length_lengths);
 
+  // Create an empty array for our literal / distance code lengths
   LengthArray code_lengths(total_code_count);
+
+  // We need to keep track of our current position and look out for the special
+  // cases of codes 16, 17, 18, which are run-length encodings rather than
+  // individual lengths to be written to the array.
   size_t write_head = 0;
   uint32_t code = 0;
 
+  // Now we fill our length array until the write head reaches the end.
   while(write_head < total_code_count)
   {
-    code = ReadCode(code_length_table);
+    // Find the next matching code in the Huffman table
+    code = ReadCode_(code_length_table);
+
+    // Handle run-length encoding
     if(code > 15)
     {
+      // Codes 17 and 18 write a sequence of zeros - make this default
       uint32_t repeat_this = 0;
+
+      // Code 16 repeats the last written entry instead
+      if (code == 16) repeat_this = code_lengths[write_head - 1];
+
+      // The number of repeats is given by a simple formula derived from a table
+      // in RFC 1951
       uint32_t num_repeats = GetBits( 3 * (code / 18) + code - 14);
       num_repeats = num_repeats + 3 + (8 * (code / 18));
-      if (code == 16) repeat_this = code_lengths[write_head - 1];
+
+      // Now write the desired element the desired number of times
       for (size_t i = 0; i < num_repeats; ++i)
       {
-        if(write_head > code_lengths.size()) break;
+        if(write_head > code_lengths.size()) break; // This shouldn't happen
         code_lengths[write_head++] = repeat_this;
       }
     }
     else
     {
+      // If not run length encoding, write the length and move on
       code_lengths[write_head++] = code;
     }
   }
 
+  // Set iterators that divide the resultant length array into two: the literal
+  // table and the distance table
   auto&& literal_start = code_lengths.begin();
   auto&& literal_end = literal_start + literal_code_count;
 
-  literal_map_ = Huffmanize(LengthArray(literal_start, literal_end));
-  distance_map_ = Huffmanize(LengthArray(literal_end, code_lengths.end()));
+  // Now build our Huffman tree from the given length arrays
+  literal_map_ = Huffmanize_(LengthArray(literal_start, literal_end));
+  distance_map_ = Huffmanize_(LengthArray(literal_end, code_lengths.end()));
 }
 
 /*---------------------------------------------------------------------------*/
@@ -429,15 +465,15 @@ void Deflate::BuildDynamicCodeTable()
 // it reads a number higher than 256, it knows it is dealing with a length code
 // and switches to pointer mode.
 
-void Deflate::ReadCodes()
+void Deflate::ReadCodes_()
 {
   uint32_t code = 0;
 
   while(code != 256) // continues indefinitely until explicitly exited.
   {
-    code = ReadCode(literal_map_);                // Read the next code
+    code = ReadCode_(literal_map_);               // Read the next code
     if (code < 256) WriteOutput((uint8_t) code);  // If it's a literal, write it
-    if (code > 256) HandlePointer(code);          // If it's a length, handle it
+    if (code > 256) HandlePointer_(code);         // If it's a length, handle it
   }
 }
 
@@ -446,36 +482,36 @@ void Deflate::ReadCodes()
 // dealing with a length code which will in turn be followed by a distance code.
 // This single function handles that situation.
 
-void Deflate::HandlePointer(uint32_t code_t)
+void Deflate::HandlePointer_(uint32_t p_code)
 {
   // Initialize the variables we will use to store the length and distance
   uint32_t length_value = 0, distance_value = 0, extrabits = 0;
 
   // Length codes of 257 -> 264 represent lengths 1 -> 8
-  if (code_t < 265) length_value = code_t - 254;
+  if (p_code < 265) length_value = p_code - 254;
 
   // length code 285 represents the maximum length of 258
-  else if (code_t == 285) length_value = 258;
+  else if (p_code == 285) length_value = 258;
 
   // The other length codes (265 - 284) are less straightforward. Each of them
   // requires a specific number of extra bits to be read to determine the actual
-  // length. The number of bits is easily calculated by (code_t - 261) / 4,
+  // length. The number of bits is easily calculated by (p_code - 261) / 4,
   // but the actual base lengths are just looked up in a table.
   else
   {
     // How many extra bits should be looked up is dependent on the code itself
-    extrabits = (code_t - 261) / 4;
+    extrabits = (p_code - 261) / 4;
 
     // We now read these extra bits and add them to the base length value
     // looked up in the length_table_ member
     uint32_t read_value = GetBits(extrabits);
-    length_value = read_value + length_table_[code_t - 265];
+    length_value = read_value + length_table_[p_code - 265];
   }
 
   // Now we have our length, we need the distance. The distance codes are stored
   // in their own table, and we now search for a match in the next few bits in
   // the stream using the ReadCode() function
-  uint32_t distance_code = ReadCode(distance_map_);
+  uint32_t distance_code = ReadCode_(distance_map_);
 
   // The first four distance codes are 1-4.
   if(distance_code < 4) distance_value = distance_code + 1;

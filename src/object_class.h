@@ -49,10 +49,10 @@ class Object
 {
  public:
   // Get pdf object from a given object number
-  Object(std::shared_ptr<const XRef> xref_ptr, int object_number);
+  Object(std::shared_ptr<const XRef> p_xref_ptr, int p_object_number);
 
   // Get stream object from inside the holding object, given object number
-  Object(std::shared_ptr<Object> holding_object_ptr, int object_number);
+  Object(std::shared_ptr<Object> p_holding_object_ptr, int p_object_number);
 
   // Default constructor
   Object() = delete;

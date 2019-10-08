@@ -32,9 +32,9 @@ using namespace std;
 // built in static corefont tables. Otherwise find and interpret widths.
 
 GlyphWidths::GlyphWidths
-  (shared_ptr<Dictionary> t_font_dictionary, shared_ptr<Document> t_document_ptr)
-  : font_dictionary_(t_font_dictionary),
-    document_(t_document_ptr),
+  (shared_ptr<Dictionary> p_font_dictionary, shared_ptr<Document> p_document_ptr)
+  : font_dictionary_(p_font_dictionary),
+    document_(p_document_ptr),
     base_font_(font_dictionary_->GetString("/BaseFont"))
 {
   ReadCoreFont_();
@@ -200,10 +200,10 @@ void GlyphWidths::ReadCoreFont_()
 // Getter. Finds the width for a given character code. If it is not specified
 // returns the default width specified in the macro at the top of this file
 
-int GlyphWidths::GetWidth(const RawChar& raw)
+int GlyphWidths::GetWidth(const RawChar& p_raw)
 {
   // Look up the supplied rawChar
-  auto found = width_map_.find(raw);
+  auto found = width_map_.find(p_raw);
   if (found != width_map_.end()) return found->second;
 
   // No width found - return the default width
@@ -227,10 +227,10 @@ vector<RawChar> GlyphWidths::WidthKeys()
 // code point. Hence the string "[3[100 200 150] 10[250 300]]" should be
 // interpreted as mapping {{3, 100}, {4, 200}, {5, 150}, {10, 250}, {11, 300}}
 
-void GlyphWidths::ParseWidthArray_(const string& t_width_string)
+void GlyphWidths::ParseWidthArray_(const string& p_width_string)
 {
   // If the width string is empty, there's nothing to be done
-  if (t_width_string.empty()) return;
+  if (p_width_string.empty()) return;
 
   // These variables maintain state during the lexer process:
   WidthState state = NEWSYMB; // Uses enum to keep track of state of lexer
@@ -240,7 +240,7 @@ void GlyphWidths::ParseWidthArray_(const string& t_width_string)
   vector<vector<int>> result; // Each first_char has an int vector of widths
 
   // Main loop - Iterates through all the characters in t_width_string
-  for (const auto& current_char : t_width_string)
+  for (const auto& current_char : p_width_string)
   {
     // If opening of array not first character, simply wait for '['
     if (state == NEWSYMB)
@@ -285,7 +285,7 @@ void GlyphWidths::ParseWidthArray_(const string& t_width_string)
                 number_buffer.clear();
                 break;
 
-      default: throw (string("Error parsing string ") + t_width_string);
+      default: throw (string("Error parsing string ") + p_width_string);
       }
       continue;
     }
@@ -307,7 +307,7 @@ void GlyphWidths::ParseWidthArray_(const string& t_width_string)
 
       case 'D': buffer += current_char; break; // read actual width number
 
-      default: throw (string("Error parsing string ") + t_width_string);
+      default: throw (string("Error parsing string ") + p_width_string);
       }
 
       continue;

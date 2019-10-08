@@ -31,8 +31,8 @@ using namespace std;
 // then uses the GetFile() function from utilities.h to read in the filestring
 // from which buildDoc() then creates the object
 
-Document::Document(const string& t_file_path)
-  : file_path_(t_file_path), file_string_(GetFile(file_path_))
+Document::Document(const string& p_file_path)
+  : file_path_(p_file_path), file_string_(GetFile(file_path_))
 {
   BuildDocument_(); // Call constructor helper to build Document
 }
@@ -42,8 +42,8 @@ Document::Document(const string& t_file_path)
 // of bytes and converts it to the filestring before calling the helper function
 // to construct the Document object
 
-Document::Document(const vector<uint8_t>& t_byte_vector)
-  : file_string_(string(t_byte_vector.begin(), t_byte_vector.end()))
+Document::Document(const vector<uint8_t>& p_byte_vector)
+  : file_string_(string(p_byte_vector.begin(), p_byte_vector.end()))
 {
   BuildDocument_(); // Call constructor helper to build Document
 }
@@ -67,28 +67,28 @@ void Document::BuildDocument_()
 // returns it from the 'objects' vector. If not, it creates the object then
 // stores a copy in the 'objects' vector before returning the requested object.
 
-shared_ptr<Object> Document::GetObject(int t_object_number)
+shared_ptr<Object> Document::GetObject(int p_object_number)
 {
   // Check if object n is already stored
-  if (object_cache_.find(t_object_number) == object_cache_.end())
+  if (object_cache_.find(p_object_number) == object_cache_.end())
   {
     // If it is not stored, check whether it is in an object stream
-    size_t holder = xref_->GetHoldingNumberOf(t_object_number);
+    size_t holder = xref_->GetHoldingNumberOf(p_object_number);
 
     // If object is in a stream, create it recursively from the stream object.
     // Otherwise create & store it directly
     if (holder)
     {
-      auto object_ptr = make_shared<Object>(GetObject(holder), t_object_number);
-      object_cache_[t_object_number] = object_ptr;
+      auto object_ptr = make_shared<Object>(GetObject(holder), p_object_number);
+      object_cache_[p_object_number] = object_ptr;
     }
     else
     {
-      auto object_ptr = make_shared<Object>(xref_, t_object_number);
-      object_cache_[t_object_number] = object_ptr;
+      auto object_ptr = make_shared<Object>(xref_, p_object_number);
+      object_cache_[p_object_number] = object_ptr;
     }
   }
-  return object_cache_[t_object_number];
+  return object_cache_[p_object_number];
 }
 
 /*---------------------------------------------------------------------------*/
@@ -146,12 +146,12 @@ void Document::ReadPageDirectory_()
 // objects it comes across, and there are at least as many of these are there
 // are pages.
 
-std::vector<int> Document::ExpandKids_(const vector<int>& t_object_numbers)
+std::vector<int> Document::ExpandKids_(const vector<int>& p_object_numbers)
 {
   // We first copy the vector over to a list because we may need to do a lot
   // of insertions depending on how big the document is, and vectors are not
   // efficient for this purpose.
-  std::list<int> kids_list(t_object_numbers.begin(), t_object_numbers.end());
+  std::list<int> kids_list(p_object_numbers.begin(), p_object_numbers.end());
 
   // Define an iterator to erase root nodes and replace with child nodes.
   auto kid = kids_list.begin();
@@ -198,14 +198,14 @@ std::vector<int> Document::ExpandKids_(const vector<int>& t_object_numbers)
 /*---------------------------------------------------------------------------*/
 // Public function that gets a specific page header from the pageheader vector
 
-Dictionary Document::GetPageHeader(size_t t_page_number)
+Dictionary Document::GetPageHeader(size_t p_page_number)
 {
   // Ensure the pagenumber is valid
-  if (page_object_numbers_.size() < t_page_number)
+  if (page_object_numbers_.size() < p_page_number)
   {
     throw runtime_error("Invalid page number");
   }
 
   // All good - return the requested header
-  return object_cache_[page_object_numbers_[t_page_number]]->GetDictionary();
+  return object_cache_[page_object_numbers_[p_page_number]]->GetDictionary();
 }

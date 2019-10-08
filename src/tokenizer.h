@@ -52,7 +52,7 @@ class Tokenizer
  public:
   // Constructor. Takes a string pointer to the page description program
   // and a fresh Parser object
-  Tokenizer(std::shared_ptr<std::string> input_string, Parser* parser_object);
+  Tokenizer(std::shared_ptr<std::string> p_input_string, Parser* p_parser);
 
  private:
   // Enumerates the types of characters that can alter state differently
@@ -84,7 +84,7 @@ class Tokenizer
   void WaitState_();         //--------//---------------------------------------
 
   // Frequently used helper function to update buffer and state
-  void PushBuffer_(const Token::TokenState type, const Token::TokenState state);
+  void PushBuffer_(const Token::TokenState, const Token::TokenState);
 };
 
 //---------------------------------------------------------------------------//

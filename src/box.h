@@ -60,12 +60,12 @@ enum Direction {North = 3, South = 1, East = 2, West = 0, None = 4};
 class Vertex
 {
  public:
-  Vertex(float t_x, float t_y, uint8_t t_flags):
-    x_(t_x), y_(t_y), flags_(t_flags), points_to_(0), group_(0) {}
+  Vertex(float p_x, float p_y, uint8_t p_flags):
+    x_(p_x), y_(p_y), flags_(p_flags), points_to_(0), group_(0) {}
 
-  Vertex(const Vertex& t_other) = default;
-  Vertex& operator=(const Vertex& t_other) = default;
-  Vertex& operator=(Vertex&& t_other) {std::swap(t_other, *this); return *this;}
+  Vertex(const Vertex& p_other) = default;
+  Vertex& operator=(const Vertex& p_other) = default;
+  Vertex& operator=(Vertex&& p_other) {std::swap(p_other, *this); return *this;}
 
   // Getters
   inline Direction In()        const {return arrows_.at(flags_ & 0x0f).first;}
@@ -77,21 +77,21 @@ class Vertex
   inline size_t    PointsTo()  const {return points_to_;}
 
   // Setters
-  inline void SetFlags(uint8_t t_new_flag) { flags_ |= t_new_flag;}
-  inline void SetGroup(size_t t_group) { group_ = t_group;}
-  inline void PointAt(size_t t_element) { points_to_ = t_element;}
+  inline void SetFlags(uint8_t p_new_flag) { flags_ |= p_new_flag;}
+  inline void SetGroup(size_t p_group) { group_ = p_group;}
+  inline void PointAt(size_t p_element) { points_to_ = p_element;}
 
-  inline bool IsCloserThan(const Vertex& t_other, const float& edge)
+  inline bool IsCloserThan(const Vertex& p_other, const float& p_edge)
   {
     return
-    (Out() == North && t_other.x_ == x_ && t_other.In() == North &&
-    t_other.y_ > y_ && t_other.y_ < edge) ||
-    (Out() == South && t_other.x_ == x_ && t_other.In() == South &&
-    t_other.y_ < y_ && t_other.y_ > edge) ||
-    (Out() == East  && t_other.y_ == y_ && t_other.In() == East  &&
-    t_other.x_ > x_ && t_other.x_ < edge) ||
-    (Out() == West  && t_other.y_ == y_ && t_other.In() == West  &&
-    t_other.x_ < x_ && t_other.x_ > edge) ;
+    (Out() == North && p_other.x_ == x_ && p_other.In() == North &&
+    p_other.y_ > y_ && p_other.y_ < p_edge) ||
+    (Out() == South && p_other.x_ == x_ && p_other.In() == South &&
+    p_other.y_ < y_ && p_other.y_ > p_edge) ||
+    (Out() == East  && p_other.y_ == y_ && p_other.In() == East  &&
+    p_other.x_ > x_ && p_other.x_ < p_edge) ||
+    (Out() == West  && p_other.y_ == y_ && p_other.In() == West  &&
+    p_other.x_ < x_ && p_other.x_ > p_edge) ;
   }
 
 private:
@@ -112,17 +112,17 @@ class Box
 {
  public:
   // Constructor from four separate floats
-  Box(float t_left, float t_right, float t_top, float t_bottom)
-   : left_(t_left), right_(t_right), top_(t_top), bottom_(t_bottom), flags_(0){}
+  Box(float p_left, float p_right, float p_top, float p_bottom)
+   : left_(p_left), right_(p_right), top_(p_top), bottom_(p_bottom), flags_(0){}
 
   // Constructor from length-4 vector
-  Box(std::vector<float> t_vector): flags_(0)
+  Box(std::vector<float> p_vector): flags_(0)
   {
-    if (t_vector.size() < 4) throw std::runtime_error("Box needs four floats");
-    left_   = t_vector[0];
-    right_  = t_vector[2];
-    top_    = t_vector[3];
-    bottom_ = t_vector[1];
+    if (p_vector.size() < 4) throw std::runtime_error("Box needs four floats");
+    left_   = p_vector[0];
+    right_  = p_vector[2];
+    top_    = p_vector[3];
+    bottom_ = p_vector[1];
   }
 
   // Default constructor
@@ -132,9 +132,9 @@ class Box
 
   // We can use the direction enum to access the edges of the box instead of
   // using getters if we need to calculate the edge we're interested in getting.
-  inline float Edge(int t_side) const
+  inline float Edge(int p_side) const
   {
-    switch (t_side)
+    switch (p_side)
     {
       case 0: return left_;
       case 1: return bottom_;
@@ -150,66 +150,66 @@ class Box
   inline float GetTop()    const   { return this->top_                ;}
   inline float GetBottom() const   { return this->bottom_             ;}
   inline virtual float GetSize() const { return this->top_ - this->bottom_;}
-  inline bool  HasFlag(uint8_t t_flag) const
+  inline bool  HasFlag(uint8_t p_flag) const
   {
-    return (flags_ & t_flag) == t_flag;
+    return (flags_ & p_flag) == p_flag;
   }
 
   // Setters
-  inline void  SetLeft   (float   t_left)   { left_   = t_left  ;}
-  inline void  SetRight  (float   t_right)  { right_  = t_right ;}
-  inline void  SetTop    (float   t_top)    { top_    = t_top   ;}
-  inline void  SetBottom (float   t_bottom) { bottom_ = t_bottom;}
-  inline void  SetFlag   (uint8_t t_flag)   { flags_ |= t_flag  ;}
+  inline void  SetLeft   (float   p_left)   { left_   = p_left  ;}
+  inline void  SetRight  (float   p_right)  { right_  = p_right ;}
+  inline void  SetTop    (float   p_top)    { top_    = p_top   ;}
+  inline void  SetBottom (float   p_bottom) { bottom_ = p_bottom;}
+  inline void  SetFlag   (uint8_t p_flag)   { flags_ |= p_flag  ;}
 
   // Make the box dimensions equal to the smallest box that covers this box
   // AND the other box
-  inline void Merge(Box& t_other)
+  inline void Merge(Box& p_other)
   {
-    if(&t_other == this) return;
-    this->left_   = std::min(this->left_,   t_other.left_  );
-    this->right_  = std::max(this->right_,  t_other.right_ );
-    this->bottom_ = std::min(this->bottom_, t_other.bottom_);
-    this->top_    = std::max(this->top_,    t_other.top_   );
-    t_other.Consume();
+    if(&p_other == this) return;
+    this->left_   = std::min(this->left_,   p_other.left_  );
+    this->right_  = std::max(this->right_,  p_other.right_ );
+    this->bottom_ = std::min(this->bottom_, p_other.bottom_);
+    this->top_    = std::max(this->top_,    p_other.top_   );
+    p_other.Consume();
   }
 
   // Make the box dimensions equal to the smallest box that covers this box
   // and the given vertex
-  inline void ExpandBoxToIncludeVertex(const Vertex& t_corner)
+  inline void ExpandBoxToIncludeVertex(const Vertex& p_vertex)
   {
-    this->left_   = std::min(this->left_,   t_corner.GetX());
-    this->right_  = std::max(this->right_,  t_corner.GetX());
-    this->bottom_ = std::min(this->bottom_, t_corner.GetY());
-    this->top_    = std::max(this->top_,    t_corner.GetY());
+    this->left_   = std::min(this->left_,   p_vertex.GetX());
+    this->right_  = std::max(this->right_,  p_vertex.GetX());
+    this->bottom_ = std::min(this->bottom_, p_vertex.GetY());
+    this->top_    = std::max(this->top_,    p_vertex.GetY());
   }
 
   // Compare two boxes for exact equality
-  inline bool operator==(const Box& t_other) const
+  inline bool operator==(const Box& p_other) const
   {
-    if (&t_other == this) return true;
-    return left_ == t_other.left_ && right_  == t_other.right_  &&
-           top_  == t_other.top_  && bottom_ == t_other.bottom_;
+    if (&p_other == this) return true;
+    return left_ == p_other.left_ && right_  == p_other.right_  &&
+           top_  == p_other.top_  && bottom_ == p_other.bottom_;
   }
 
   // Approximate equality between floats
-  inline bool Eq(const float& t_lhs, const float& t_rhs) const
+  inline bool Eq(const float& p_lhs, const float& p_rhs) const
   {
-    if (t_lhs == t_rhs) return true;
-    return (t_lhs - t_rhs < 0.1) && (t_rhs - t_lhs < 0.1);
+    if (p_lhs == p_rhs) return true;
+    return (p_lhs - p_rhs < 0.1) && (p_rhs - p_lhs < 0.1);
   }
 
   // Test for non-strict equality
-  inline bool IsApproximatelySameAs(const Box& t_other) const
+  inline bool IsApproximatelySameAs(const Box& p_other) const
   {
-    if (&t_other == this) return true;
-    return Eq(left_, t_other.left_) && Eq(right_,  t_other.right_) &&
-           Eq(top_,  t_other.top_)  && Eq(bottom_, t_other.bottom_ );
+    if (&p_other == this) return true;
+    return Eq(left_, p_other.left_) && Eq(right_,  p_other.right_) &&
+           Eq(top_,  p_other.top_)  && Eq(bottom_, p_other.bottom_ );
   }
 
-  inline bool IsBeyond(const Box& t_other) const
+  inline bool IsBeyond(const Box& p_other) const
   {
-    return left_ > t_other.right_;
+    return left_ > p_other.right_;
   }
 
   // Mark for deletion
@@ -221,78 +221,78 @@ class Box
   inline float Height() const { return top_   - bottom_;}
 
   // Are two given boxes aligned on at least one side?
-  inline bool SharesEdge(const Box& t_other) const
+  inline bool SharesEdge(const Box& p_other) const
   {
-    return this->top_  == t_other.top_  || this->bottom_ == t_other.bottom_ ||
-           this->left_ == t_other.left_ || this->right_  == t_other.right_  ;
+    return this->top_  == p_other.top_  || this->bottom_ == p_other.bottom_ ||
+           this->left_ == p_other.left_ || this->right_  == p_other.right_  ;
   }
 
   // Is this box immediately to the right of the given box, sharing two
   // vertices? This can be used to merge boxes
-  inline bool IsAdjacent(const Box& t_other) const
+  inline bool IsAdjacent(const Box& p_other) const
   {
-    return left_   == t_other.right_  &&
-           top_    == t_other.top_    &&
-           bottom_ == t_other.bottom_  ;
+    return left_   == p_other.right_  &&
+           top_    == p_other.top_    &&
+           bottom_ == p_other.bottom_  ;
   }
 
   // Check whether one box partially covers another box
-  inline bool Encroaches(Box& t_other)
+  inline bool Encroaches(Box& p_other)
   {
-    if (&t_other == this) return true;
-    return (left_ < t_other.right_ && right_ > t_other.left_) &&
-           (bottom_ < t_other.top_ && top_ > t_other.bottom_);
+    if (&p_other == this) return true;
+    return (left_ < p_other.right_ && right_ > p_other.left_) &&
+           (bottom_ < p_other.top_ && top_ > p_other.bottom_);
   }
 
   // Is another box completely enclosed by this one?
-  inline bool Engulfs(const Box& t_other) const
+  inline bool Engulfs(const Box& p_other) const
   {
-    return  t_other.bottom_ - bottom_ > -0.1 && t_other.top_ - top_ < 0.1 &&
-            t_other.left_ - left_ > -0.1 && t_other.right_ - right_ < 0.1 &&
-            !(*this == t_other);
+    return  p_other.bottom_ - bottom_ > -0.1 && p_other.top_ - top_ < 0.1 &&
+            p_other.left_ - left_ > -0.1 && p_other.right_ - right_ < 0.1 &&
+            !(*this == p_other);
   }
 
   // The following four functions determine whether, for any given Vertex,
   // moving an arbitrarily small distance in the stated direction will put
   // us inside this box. This allows us to work out on which edges of which
   // boxes the point lies.
-  inline bool IsNorthWestOf(Vertex& t_vertex) const
+  inline bool IsNorthWestOf(Vertex& p_vertex) const
   {
-    return right_ >= t_vertex.GetX() && left_   <  t_vertex.GetX() &&
-           top_   >  t_vertex.GetY() && bottom_ <= t_vertex.GetY();
+    return right_ >= p_vertex.GetX() && left_   <  p_vertex.GetX() &&
+           top_   >  p_vertex.GetY() && bottom_ <= p_vertex.GetY();
   }
 
-  inline bool IsNorthEastOf(Vertex& t_vertex) const
+  inline bool IsNorthEastOf(Vertex& p_vertex) const
   {
-    return right_ >  t_vertex.GetX() && left_   <= t_vertex.GetX() &&
-           top_   >  t_vertex.GetY() && bottom_ <= t_vertex.GetY();
+    return right_ >  p_vertex.GetX() && left_   <= p_vertex.GetX() &&
+           top_   >  p_vertex.GetY() && bottom_ <= p_vertex.GetY();
   }
 
-  inline bool IsSouthEastOf(Vertex& t_vertex) const
+  inline bool IsSouthEastOf(Vertex& p_vertex) const
   {
-    return right_ >  t_vertex.GetX() && left_   <= t_vertex.GetX() &&
-           top_   >= t_vertex.GetY() && bottom_ <  t_vertex.GetY();
+    return right_ >  p_vertex.GetX() && left_   <= p_vertex.GetX() &&
+           top_   >= p_vertex.GetY() && bottom_ <  p_vertex.GetY();
   }
 
-  inline bool IsSouthWestOf(Vertex& t_vertex) const
+  inline bool IsSouthWestOf(Vertex& p_vertex) const
   {
-    return right_ >= t_vertex.GetX() && left_   <  t_vertex.GetX() &&
-           top_   >= t_vertex.GetY() && bottom_ <  t_vertex.GetY();
+    return right_ >= p_vertex.GetX() && left_   <  p_vertex.GetX() &&
+           top_   >= p_vertex.GetY() && bottom_ <  p_vertex.GetY();
   }
 
   // Create a vertex from a given corner of the box
   // (0 = top-left, 1 = top-right, 2 = bottom-left, 3 = bottom-right)
   // Note, the given vertex is automatically flagged as being impinged at the
   // correct compass direction
-  std::shared_ptr<Vertex> GetVertex(int corner);
+  std::shared_ptr<Vertex> GetVertex(int p_corner);
 
   // Marks a box's impingement on a given vertex. This records whether moving
   // an arbitrarily small distance in a given direction from the vertex will
   // place one inside the current box.
-  void RecordImpingementOn(Vertex& vertex);
+  void RecordImpingementOn(Vertex& p_corner);
 
   // Return box dimensions as a vector for output
-  inline std::vector<float> vector() const
+  inline std::vector<float> Vector() const
   {
     return {left_, bottom_, right_, top_};
   }

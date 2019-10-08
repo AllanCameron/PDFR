@@ -87,11 +87,11 @@ class Encoding
 {
  public:
   // Constructor
-  Encoding(std::shared_ptr<Dictionary> font_dictionary,
-           std::shared_ptr<Document> ptr_to_document);
+  Encoding(std::shared_ptr<Dictionary> p_font_dictionary,
+           std::shared_ptr<Document> p_ptr_to_document);
 
   // Maps given raw code point to Unicode
-  Unicode Interpret(const RawChar& code_point_to_be_interpreted);
+  Unicode Interpret(const RawChar& p_code_point_to_be_interpreted);
 
   // This typedef shortens the name of the RawChar to Unicode lookup maps.
   typedef std::unordered_map<RawChar, Unicode> UnicodeMap;
@@ -124,17 +124,17 @@ class Encoding
   // private member functions
 
   // uses lexer to parse /Differences entry
-  void ReadDifferences_(const std::string& differences_entry);
+  void ReadDifferences_(const std::string&);
 
   // finds encoding dictionary, gets /basencoding and /Differences entries
   void ReadEncoding_();           // Tokenizer
   void ReadDifferenceEntries_();  // Parser
 
   // parses CMap encoding ranges
-  void ProcessUnicodeRange_(std::vector<std::string>& bf_range_from_cmap);
+  void ProcessUnicodeRange_(std::vector<std::string>&);
 
   // parses CMap direct char-char conversion table
-  void ProcessUnicodeChars_(std::vector<std::string>& bf_char_from_cmap);
+  void ProcessUnicodeChars_(std::vector<std::string>&);
 
   // finds CMap if any and co-ordinates parsers to create mapping
   void MapUnicode_();
@@ -144,8 +144,8 @@ class Encoding
   void ParseTypeOneFont_(std::string);
 
   // Helper function for parser
-  void Write_(DifferencesState& state_to_push_to_entries,
-              std::string& string_to_push_to_entries);
+  void Write_(DifferencesState& p_state_to_push_to_entries,
+              std::string& p_string_to_push_to_entries);
 };
 
 //---------------------------------------------------------------------------//

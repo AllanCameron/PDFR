@@ -74,11 +74,11 @@
 
 // [[Rcpp::export(.get_xref)]]
 Rcpp::DataFrame
-get_xref_from_string(const std::string& file_name);
+GetXrefFromString(const std::string& p_file_name);
 
 // [[Rcpp::export(.get_xrefraw)]]
 Rcpp::DataFrame
-get_xref_from_raw(const std::vector<uint8_t>& raw_file);
+GetXrefFromRaw(const std::vector<uint8_t>& p_raw_file);
 
 //---------------------------------------------------------------------------//
 // Returns a specific object from the pdf file. It gives both the dictionary
@@ -89,11 +89,11 @@ get_xref_from_raw(const std::vector<uint8_t>& raw_file);
 
 // [[Rcpp::export(.get_obj)]]
 Rcpp::List
-get_object_from_string(const std::string& file_name, int object_number);
+GetObjectFromString(const std::string& p_file_name, int p_object_number);
 
 // [[Rcpp::export(.get_objraw)]]
 Rcpp::List
-get_object_from_raw(const std::vector<uint8_t>& raw_file, int object_number);
+GetObjectFromRaw(const std::vector<uint8_t>& p_raw_file, int p_object_number);
 
 //---------------------------------------------------------------------------//
 // The main output of the program is a dataframe of each glyph with its
@@ -104,14 +104,14 @@ get_object_from_raw(const std::vector<uint8_t>& raw_file, int object_number);
 // respectively, and both take a page number (one-indexed) as a second parameter
 
 // [[Rcpp::export(.pdfpage)]]
-Rcpp::List get_pdf_page_from_string(const std::string& file_name,
-                                    int page_number,
-                                    bool each_glyph);
+Rcpp::List GetPdfPageFromString(const std::string& p_file_name,
+                                int p_page_number,
+                                bool p_each_glyph);
 
 // [[Rcpp::export(.pdfpageraw)]]
-Rcpp::List get_pdf_page_from_raw(const std::vector<uint8_t>& raw_file,
-                                 int page_number,
-                                 bool atoms);
+Rcpp::List GetPdfPageFromRaw(const std::vector<uint8_t>& p_raw_file,
+                             int p_page_number,
+                             bool p_atoms);
 
 //---------------------------------------------------------------------------//
 // This function takes a file path and page number as parameters (note there is
@@ -122,7 +122,7 @@ Rcpp::List get_pdf_page_from_raw(const std::vector<uint8_t>& raw_file,
 
 // [[Rcpp::export(.getglyphmap)]]
 Rcpp::DataFrame
-get_glyph_map(const std::string& file_name, int page_number);
+GetGlyphMap(const std::string& p_file_name, int p_page_number);
 
 //---------------------------------------------------------------------------//
 // This function, used mainly for debugging, returns the uncompressed Postscript
@@ -131,11 +131,11 @@ get_glyph_map(const std::string& file_name, int page_number);
 
 // [[Rcpp::export(.pagestring)]]
 std::string
-get_page_string_from_string(const std::string& file_name, int page_number);
+GetPageStringFromString(const std::string& p_file_name, int p_page_number);
 
 // [[Rcpp::export(.pagestringraw)]]
 std::string
-get_page_string_from_raw(const std::vector<uint8_t>& raw_file, int page_number);
+GetPageStringFromRaw(const std::vector<uint8_t>& p_raw_file, int p_page_number);
 
 //---------------------------------------------------------------------------//
 // These two versions of the pdfdoc function return R dataframes with all of
@@ -143,22 +143,22 @@ get_page_string_from_raw(const std::vector<uint8_t>& raw_file, int page_number);
 
 // [[Rcpp::export(.pdfdoc)]]
 Rcpp::DataFrame
-get_pdf_document_from_string(const std::string& file_name);
+GetPdfDocumentFromString(const std::string& p_file_name);
 
 // [[Rcpp::export(.pdfdocraw)]]
 Rcpp::DataFrame
-get_pdf_document_from_raw(const std::vector<uint8_t>& file_name);
+GetPdfDocumentFromRaw(const std::vector<uint8_t>& p_file_name);
 
 // [[Rcpp::export(.pdfboxesString)]]
 Rcpp::DataFrame
-get_pdf_boxes_from_string(const std::string& file_name, int page_number);
+GetPdfBoxesFromString(const std::string& p_file_name, int p_page_number);
 
 // [[Rcpp::export(.pdfboxesRaw)]]
 Rcpp::DataFrame
-get_pdf_boxes_from_raw(const std::vector<uint8_t>& file_name, int page_number);
+GetPdfBoxesFromRaw(const std::vector<uint8_t>& p_file_name, int p_page_number);
 
 // [[Rcpp::export(TestStream)]]
-std::string Test_Stream(std::vector<uint8_t> raw_vector);
+std::string TestStream(std::vector<uint8_t> p_raw_vector);
 
 //---------------------------------------------------------------------------//
 // This function can be called from R to stop the underlying C++ code. This can

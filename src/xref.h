@@ -85,7 +85,7 @@ class XRef
 {
  public:
   // The main constructor takes a pointer to the whole file as a string
-  XRef(std::shared_ptr<const std::string>);
+  XRef(std::shared_ptr<const std::string> p_pointer_to_file_content_string);
 
   // Empty XRef constructor
   XRef(){};

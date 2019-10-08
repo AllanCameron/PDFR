@@ -24,8 +24,8 @@ constexpr int EDGECOUNT = 4;
 // and finds its column edges, then joins elligible words together as long as
 // they do not belong to different columns.
 
-WordGrouper::WordGrouper(std::unique_ptr<TextBox> t_text_box)
-  : text_box_(move(t_text_box))
+WordGrouper::WordGrouper(std::unique_ptr<TextBox> p_text_box)
+  : text_box_(move(p_text_box))
 {
   FindEdges_();
   AssignEdges_();
@@ -40,26 +40,26 @@ WordGrouper::WordGrouper(std::unique_ptr<TextBox> t_text_box)
 // return are data members of the class, we need to pass the map we wish to
 // create by reference.
 
-void WordGrouper::Tabulate_(const vector<float>& t_supplied_vector,
-                            unordered_map<int, size_t>& t_table   )
+void WordGrouper::Tabulate_(const vector<float>& p_supplied_vector,
+                            unordered_map<int, size_t>& p_table   )
 {
   // Take each member of the supplied vector
-  for (const auto& element : t_supplied_vector)
+  for (const auto& element : p_supplied_vector)
   {
     // Multiply it by 10 and use it as a key in the map with value 1
-    auto inserter = t_table.insert(pair<int, size_t>((int) 10 * element, 1));
+    auto inserter = p_table.insert(pair<int, size_t>((int) 10 * element, 1));
 
     // If the key already exists in the map, increment the value by 1
     if (!inserter.second) inserter.first->second++;
   }
 
   // Now take each key in the resulting map
-  for (auto key_value_pair = t_table.begin(); key_value_pair != t_table.end(); )
+  for (auto key_value_pair = p_table.begin(); key_value_pair != p_table.end(); )
   {
     // if value is below the number needed to declare a column, delete it
     if (key_value_pair->second < EDGECOUNT)
     {
-      t_table.erase(key_value_pair++);
+      p_table.erase(key_value_pair++);
     }
     else ++key_value_pair;
   }
@@ -159,5 +159,6 @@ void WordGrouper::FindRightMatch_()
   }
 }
 
+//---------------------------------------------------------------------------//
 
 TextTable WordGrouper::Out() const { return TextTable(*text_box_);}

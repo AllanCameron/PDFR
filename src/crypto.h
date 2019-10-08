@@ -74,47 +74,46 @@ class Crypto
 {
  public:
   // Constructors
-  Crypto(const Dictionary& encryption_dictionary, const Dictionary& trailer);
+  Crypto(const Dictionary& p_encryption_dictionary,
+         const Dictionary& p_trailer_dictionary);
 
   // This is the main decryption function which is also the public interface for
   // the class. It takes the raw stream, the object and generation numbers then
   // returns the decrypted stream.
-  void DecryptStream(std::string& stream_to_be_decoded,
-                      int object_number,
-                      int object_generation_number) const;
+  void DecryptStream(std::string& p_stream_to_be_decoded,
+                      int p_object_number,
+                      int p_object_generation_number) const;
 
 private:
   // private data members
   const Dictionary& encryption_dictionary_;
   const Dictionary& trailer_;
-  int        revision_;
+  int   revision_;
   std::vector<uint8_t> filekey_;
   static const std::vector<uint8_t> default_user_password_;
   static const std::vector<FourBytes> md5_table;
   static const std::vector<std::vector<FourBytes>> mixarray;
 
   // Chops FourBytes into 4 bytes
-  std::vector<uint8_t> ChopLong_(FourBytes unsigned_32_bit_int) const;
+  std::vector<uint8_t> ChopLong_(FourBytes) const;
 
   // Return permission flags for file
-  std::vector<uint8_t> ReadPermissions_(std::string permissions_string);
+  std::vector<uint8_t> ReadPermissions_(std::string);
 
   // Helper function for md5
-  void Md5Mix_(int iteration_of_md5,
-               std::deque<FourBytes>& mix_deque,
-               std::vector<FourBytes>& message_fingerprint) const;
+  void Md5Mix_(int, std::deque<FourBytes>&, std::vector<FourBytes>&) const;
 
   // Gives md5 hash of a vector of raw bytes
-  std::vector<uint8_t> Md5_(std::vector<uint8_t> message_as_string) const;
+  std::vector<uint8_t> Md5_(std::vector<uint8_t>) const;
 
   // Gives md5 hash of a string (as bytes)
-  std::vector<uint8_t> Md5_(std::string message_as_bytes) const;
+  std::vector<uint8_t> Md5_(std::string) const;
 
   // Gives rc4 cipher of message:key pair, given key and message
-  void Rc4_(std::vector<uint8_t>& message, std::vector<uint8_t> key) const;
+  void Rc4_(std::vector<uint8_t>&, std::vector<uint8_t>) const;
 
   // Gets /O and /U cipher
-  std::vector<uint8_t> ReadPassword_(const std::string& o_or_u);
+  std::vector<uint8_t> ReadPassword_(const std::string&);
 
   // Constructs file key
   void ReadFileKey_();

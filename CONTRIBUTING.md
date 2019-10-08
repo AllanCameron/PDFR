@@ -8,12 +8,12 @@ To keep the C++ codebase consistent, I will declare some coding conventions here
 
 ## Naming conventions
 - All variable names are written in `snake_case` with no capitals.
-- All variables passed as parameters to a function are prefixed with t_, thus 
+- All variables passed as parameters to a function are prefixed with p_, thus 
 ```cpp
 
-void PrintString(const std::string& t_print_this)
+void PrintString(const std::string& p_print_this)
 {
-  std::cout << t_print_this << std::endl;
+  std::cout << p_print_this << std::endl;
 }
 
 ```
@@ -31,19 +31,19 @@ The following code block demonstrates most of these naming conventions:
 //---------------------------------------------------------------------------//
 // Method to make things OK
 
-std::string MakeEverythingOK(std::string t_input)
+std::string MakeEverythingOK(std::string p_input)
 {
   std::string ok_suffix = " is OK";
-  t_input.append(ok_suffix);
-  return t_input;
+  p_input.append(ok_suffix);
+  return p_input;
 }
 
 //---------------------------------------------------------------------------//
 // Make the data member OK
 
-void MyClass::MakeAnOKMember_(const std::string& t_input)
+void MyClass::MakeAnOKMember_(const std::string& p_input)
 {
-  ok_data_member_ = MakeEverythingOK(t_input);
+  ok_data_member_ = MakeEverythingOK(p_input);
 }
 
 //---------------------------------------------------------------------------//
