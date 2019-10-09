@@ -12,7 +12,7 @@
 #include "utilities.h"
 #include "dictionary.h"
 #include "crypto.h"
-
+#include<iostream>
 using namespace std;
 
 /*---------------------------------------------------------------------------*/
@@ -358,6 +358,7 @@ void Crypto::DecryptStream(string& p_stream,
 
   // Store the object key's size
   uint8_t object_key_size = object_key.size();
+  if(object_key_size > 16) object_key_size = 16;
 
   // Now Md5 hash the object key
   object_key = Md5_(object_key);
@@ -389,6 +390,11 @@ vector<uint8_t> Crypto::ReadPassword_(const string& p_key)
     if (*iter == '\\')
     {
       if (*(iter + 1) == '\\') temporary_password.push_back('\\');
+      if (*(iter + 1) == ')') temporary_password.push_back(')');
+      if (*(iter + 1) == 'r') temporary_password.push_back('\r');
+      if (*(iter + 1) == 'n') temporary_password.push_back('\n');
+      if (*(iter + 1) == 't') temporary_password.push_back('\t');
+      iter++;
     }
     else temporary_password.push_back(*iter);
 

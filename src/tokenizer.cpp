@@ -304,6 +304,9 @@ void Tokenizer::EscapeState_()
 
   }
   // If not a digit or space, get escaped char
+  else if (*it_ == 'n') buffer_.append("\n");
+  else if (*it_ == 'r') buffer_.append("\r");
+  else if (*it_ == 't') buffer_.append("\t");
   else buffer_.append(it_, it_ + 1);
 }
 

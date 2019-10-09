@@ -11,6 +11,7 @@
 
 #include "utilities.h"
 #include "dictionary.h"
+#include<iostream>
 
 using namespace std;
 
@@ -328,6 +329,11 @@ void DictionaryBuilder::HandleArrayValue_(char p_input_char)
 void DictionaryBuilder::HandleString_(char p_input_char)
 {
   buffer_ += char_;
+  if (p_input_char == '\\' && (*string_ptr_)[char_num_ + 1] == ')')
+  {
+    ++char_num_;
+    buffer_ += ')';
+  }
   if (p_input_char == ')') AssignValue_("", START);
 }
 
@@ -574,4 +580,15 @@ vector<string> Dictionary::GetAllKeys() const
 std::unordered_map<string, string> Dictionary::GetMap() const
 {
   return this->map_;
+}
+
+
+void Dictionary::PrettyPrint() const
+{
+  auto key_names = GetKeys(this->GetMap());
+  for(auto key_name : key_names)
+  {
+    auto entry = this->GetString(key_name);
+    cout << key_name << " : " << entry << endl;
+  }
 }

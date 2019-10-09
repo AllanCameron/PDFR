@@ -97,6 +97,7 @@ class Dictionary
   std::vector<std::string> GetAllKeys()                      const;
   Dictionary GetDictionary(const std::string& key)           const;
   std::unordered_map<std::string, std::string> GetMap()      const;
+  void PrettyPrint () const;
 
   // Inline definition of dictionary iterators
   typedef std::unordered_map<std::string, std::string>::const_iterator DictIt;

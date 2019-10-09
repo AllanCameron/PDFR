@@ -90,6 +90,10 @@ class Page
   // of processing any particular document. Important!
   inline void ClearFontMap() { fontmap_.clear(); };
 
+  // Allows a dictionary to be returned either directly or via reference
+  std::shared_ptr<Dictionary> FollowToDictionary(std::shared_ptr<Dictionary>,
+                                                 const std::string&);
+
  private:
   // private data members
   std::shared_ptr<Document>   document_;        // Pointer to main document

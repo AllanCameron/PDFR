@@ -118,19 +118,7 @@ void Page::ReadHeader_()
 void Page::ReadResources_()
 {
   // If /Resources doesn't contain a dictionary it must be a reference
-  if (!header_->ContainsDictionary("/Resources"))
-  {
-    if (header_->ContainsReferences("/Resources"))
-    {
-      auto resource_number = header_->GetReference("/Resources");
-      resources_ = make_shared<Dictionary>(
-        document_->GetObject(resource_number)->GetDictionary());
-    }
-  }
-  else // Resources contains a subdictionary
-  {
-    resources_ =  make_shared<Dictionary>(header_->GetDictionary("/Resources"));
-  }
+  resources_ = FollowToDictionary(header_, "/Resources");
 }
 
 /*--------------------------------------------------------------------------*/
@@ -140,19 +128,7 @@ void Page::ReadResources_()
 
 void Page::ReadFonts_()
 {
-  // If /Font entry of resources_ isn't a dictionary
-  if (!resources_->ContainsDictionary("/Font"))
-  {
-    // It must be a reference - follow this to get the dictionary
-    if (resources_->ContainsReferences("/Font"))
-    {
-      auto font_number =  resources_->GetReference("/Font");
-      fonts_ =  make_shared<Dictionary>(
-        document_->GetObject(font_number)->GetDictionary());
-    }
-  }
-  // Otherwise, it is a dictionary, so we get the result
-  else fonts_ =  make_shared<Dictionary>(resources_->GetDictionary("/Font"));
+  fonts_ = FollowToDictionary(resources_, "/Font");
 
   // We can now iterate through the font dictionary, which will be a sequence
   // of key:value pairs of fontname : font descriptor, where the font descriptor
@@ -357,4 +333,27 @@ shared_ptr<Font> Page::GetFont(const string& p_font_id)
 
   // Otherwise we're all good and return the requested font
   return font_finder->second;
+}
+
+/*--------------------------------------------------------------------------*/
+// Allows a dictionary to be read whether it is direct or via a reference
+
+shared_ptr<Dictionary>
+Page::FollowToDictionary(shared_ptr<Dictionary> p_entry,
+                         const string& p_name)
+{
+  // If /Font entry of resources_ isn't a dictionary
+  if (!p_entry->ContainsDictionary(p_name))
+  {
+    // It must be a reference - follow this to get the dictionary
+    if (p_entry->ContainsReferences(p_name))
+    {
+      auto reference =  p_entry->GetReference(p_name);
+      return make_shared<Dictionary>(
+        document_->GetObject(reference)->GetDictionary());
+    }
+    else throw runtime_error("Couldn't find string in dictionary.");
+  }
+  // Otherwise, it is a dictionary, so we get the result
+  else return make_shared<Dictionary>(p_entry->GetDictionary(p_name));
 }
