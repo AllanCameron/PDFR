@@ -15,6 +15,7 @@
 #include "deflate.h"
 #include "xref.h"
 #include "object_class.h"
+#include<iostream>
 
 //---------------------------------------------------------------------------//
 
@@ -32,6 +33,11 @@ Object::Object(shared_ptr<const XRef> p_xref, int p_object_number) :
   // Find start and end of object
   size_t start = xref_->GetObjectStartByte(object_number_);
   size_t stop  = xref_->GetObjectEndByte(object_number_);
+
+  if (xref_->File()->substr(start, 20).find("%") != string::npos)
+  {
+    start = xref_->File()->substr(start, 200).find("\n") + start;
+  }
 
   // We check to see if the object has a header dictionary by finding '<<'
   if (xref_->File()->substr(start, 20).find("<<") == string::npos)
