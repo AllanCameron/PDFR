@@ -22,7 +22,7 @@ std::array<Tokenizer::CharType, 256> Tokenizer::char_lookup_ = {
   OTH, OTH, SPC, OTH, OTH, SPC, OTH, OTH,
   OTH, OTH, OTH, OTH, OTH, OTH, OTH, OTH,
   OTH, OTH, OTH, OTH, OTH, OTH, OTH, OTH,
-  SPC, OTH, QOT, OTH, OTH, OTH, SQO, OTH,
+  SPC, OTH, QOT, OTH, OTH, OTH, SQO, APO,
   LCB, RCB, AST, ADD, OTH, SUB, PER, FSL,
   DIG, DIG, DIG, DIG, DIG, DIG, DIG, DIG,
   DIG, DIG, OTH, OTH, LAB, OTH, RAB, OTH,
@@ -163,6 +163,8 @@ void Tokenizer::NewSymbolState_()
     case SUB:   buffer_.append(it_, it_ + 1); state_ = NUMBER;      break;
     case PER:   buffer_.append("0.");         state_ = NUMBER;      break;
     case SQO:   buffer_.append(it_, it_ + 1); state_ = IDENTIFIER;  break;
+    case APO:   buffer_.append("Ap");
+                PushBuffer_(IDENTIFIER, NEWSYMBOL); break;
     default : buffer_.clear();                state_ = NEWSYMBOL;   break;
   }
 }

@@ -290,6 +290,7 @@ void DictionaryBuilder::HandlePrevalue_(char p_input_char)
     case ' ': state_ = PREVALUE;                  break; // still waiting
     case '<': state_ = QUERYDICT;                 break; // probable dict value
     case '>': state_ = QUERYCLOSE;                break; // ?end of dictionary
+    case '(': SetKey_("(",   DSTRING);            break; // must be a string
     case '/': state_ = KEY;      buffer_ = '/';   break; // value is a name
     case '[': state_ = ARRAYVAL; buffer_ = '[';   break; // value is an array
     default : state_ = VALUE;    buffer_ = char_; break; // any other value
@@ -394,13 +395,14 @@ void DictionaryBuilder::HandleClose_(char p_input_char)
                 if (string_ptr_->substr(char_num_, 6) == "stream")
                 {
                   char_num_ += 6;
-
-                  // Read the whitespace characters after word "stream" using
-                  // an infix increment and empty while loop.
-                  while (GetSymbolType((*string_ptr_)[++char_num_]) == ' ') {;}
+                  if ((*string_ptr_)[char_num_] == '\r') ++char_num_;
+                  if ((*string_ptr_)[char_num_] != '\n')
+                  {
+                    throw runtime_error("Unexpected character before stream.");
+                  }
 
                   // Now store the location of the start of the stream
-                  map_["stream"] = to_string(char_num_);
+                  map_["stream"] = to_string(++char_num_);
                 }
               }
               state_ = THE_END; // stream or not, we are done
@@ -589,6 +591,12 @@ void Dictionary::PrettyPrint() const
   for(auto key_name : key_names)
   {
     auto entry = this->GetString(key_name);
-    cout << key_name << " : " << entry << endl;
+    cout << key_name << " : ";
+    if(!IsAscii(entry))
+    {
+      for(auto l : entry) cout << "\\" << (int) ((uint8_t) l);
+    }
+    else cout << entry;
+    cout << endl;
   }
 }

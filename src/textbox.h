@@ -67,9 +67,9 @@ class TextBox : public Box
 
   std::shared_ptr<TextElement> CastToElement()
   {
-    if (data_.size() != 1)
+    if (data_.size() > 1)
     {
-      throw std::runtime_error("Can only cast size one TextBox to TextElement");
+      throw std::runtime_error("Can't cast multiple TextBoxes to TextElement");
     }
     auto& element = data_[0];
     element->SetLeft(this->GetLeft());
@@ -160,7 +160,10 @@ class PageBox : public Box
   TextBox CastToTextBox()
   {
     auto result = TextBox((Box) *this);
-    for (auto box : data_) result.push_back(box.CastToElement());
+    for (auto box : data_)
+    {
+      if(!box.empty()) result.push_back(box.CastToElement());
+    }
     return result;
   }
 

@@ -58,7 +58,7 @@ class Tokenizer
   // Enumerates the types of characters that can alter state differently
   enum CharType
   {
-    LAB, LET, DIG, USC, LSB, FSL, AST, LCB, SUB,
+    LAB, LET, DIG, USC, LSB, FSL, AST, LCB, SUB, APO,
     BSL, SPC, RAB, PER, ADD, QOT, RCB, RSB, SQO, OTH
   };
 

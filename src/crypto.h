@@ -124,6 +124,9 @@ private:
   // Checks file key (revision 3)
   void CheckKeyR3_();
 
+  // Ensure the ID is read correctly whether hex or plain bytes
+  std::vector<uint8_t> ParseID_(const std::string&);
+
 };
 
 //---------------------------------------------------------------------------//

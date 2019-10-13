@@ -14,6 +14,7 @@
 #include "text_element.h"
 #include "page.h"
 #include "parser.h"
+#include<iostream>
 
 //---------------------------------------------------------------------------//
 
@@ -35,7 +36,7 @@ std::unordered_map<std::string, FunctionPointer> Parser::function_map_ =
   {"ET", &Parser::ET_}, {"cm", &Parser::cm_}, {"Tm", &Parser::Tm_},
   {"Tf", &Parser::Tf_}, {"Td", &Parser::Td_}, {"Th", &Parser::TH_},
   {"Tw", &Parser::TW_}, {"Tc", &Parser::TC_}, {"TL", &Parser::TL_},
-  {"T*", &Parser::T__}, {"TD", &Parser::TD_}, {"'",  &Parser::Ap_},
+  {"T*", &Parser::T__}, {"TD", &Parser::TD_}, {"Ap", &Parser::Ap_},
   {"TJ", &Parser::TJ_}, {"Tj", &Parser::TJ_}
 };
 
@@ -112,7 +113,6 @@ void Parser::Td_()
 void Parser::TD_()
 {
   Td_();
-
   // Set text leading to new value
   tl_ = -stof(operands_[1]);
 }

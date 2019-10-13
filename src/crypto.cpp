@@ -13,7 +13,20 @@
 #include "dictionary.h"
 #include "crypto.h"
 #include<iostream>
+#include<iomanip>
 using namespace std;
+
+void PrintBytes(vector<uint8_t> p_bytes, const string& p_message)
+{
+  cout << p_message << " : (";
+  for(auto byte = p_bytes.begin(); byte != (p_bytes.end() - 1); ++byte)
+  {
+    cout << "0x" << setfill('0') << setw(2) << hex << (int) *byte;
+    cout << ", ";
+  }
+  cout << "0x" << setfill('0') << setw(2) << hex << (int) *(p_bytes.end() - 1);
+  cout << ")" << endl;
+}
 
 /*---------------------------------------------------------------------------*/
 // Constructor for the crypto class. Its two jobs are to obtain the
@@ -394,6 +407,9 @@ vector<uint8_t> Crypto::ReadPassword_(const string& p_key)
       if (*(iter + 1) == 'r') temporary_password.push_back('\r');
       if (*(iter + 1) == 'n') temporary_password.push_back('\n');
       if (*(iter + 1) == 't') temporary_password.push_back('\t');
+      if (*(iter + 1) == 'b') temporary_password.push_back('\b');
+      if (*(iter + 1) == 'f') temporary_password.push_back('\f');
+      if (*(iter + 1) == '(') temporary_password.push_back('(');
       iter++;
     }
     else temporary_password.push_back(*iter);
@@ -406,7 +422,7 @@ vector<uint8_t> Crypto::ReadPassword_(const string& p_key)
   }
 
   // The owner password should have 32 or more characters
-  if (password.size() < 32) throw runtime_error("Corrupted password hash");
+  //if (password.size() < 32) throw runtime_error("Corrupted password hash");
 
   // Return first 32 bytes (skip the first char which is the opening bracket)
   return vector<uint8_t>(password.begin(), password.end());
@@ -420,17 +436,22 @@ void Crypto::ReadFileKey_()
 {
   // Get the generic user password
   filekey_ = default_user_password_;
+  auto owner_password = ReadPassword_("/O");
 
   // Stick the owner password on
-  Concatenate(filekey_, ReadPassword_("/O"));
+  Concatenate(filekey_, owner_password);
 
   // Stick permissions flags on
   auto permission_string = encryption_dictionary_.GetString("/P");
   Concatenate(filekey_, ReadPermissions_(permission_string));
 
+  auto id_string = trailer_.GetString("/ID");
+
   // Get first 16 bytes of file ID and stick them on too
-  vector<uint8_t> id_bytes = ConvertHexToBytes(trailer_.GetString("/ID"));
+  vector<uint8_t> id_bytes = ParseID_(id_string);
+
   id_bytes.resize(16);
+
   Concatenate(filekey_, id_bytes);
 
   // now Md5 hash the result
@@ -489,8 +510,10 @@ void Crypto::CheckKeyR3_()
   // Next get the default user password
   vector<uint8_t> user_password = default_user_password_;
 
+  auto id_bytes = ParseID_(trailer_.GetString("/ID"));
+
   // We now append the bytes from the ID entry of the trailer dictionary
-  Concatenate(user_password, ConvertHexToBytes(trailer_.GetString("/ID")));
+  Concatenate(user_password, id_bytes);
 
   // We only want the first 16 bytes from the ID so truncate to 48 bytes (32+16)
   user_password.resize(48);
@@ -524,3 +547,62 @@ void Crypto::CheckKeyR3_()
     }
   }
 }
+
+/*---------------------------------------------------------------------------*/
+// Usually the ID is given as a hex string, but it can be given as a string
+// of bytes including backslashed escapes etc. This converts either into bytes.
+vector<uint8_t> Crypto::ParseID_(const string& p_string)
+{
+  vector<uint8_t> result {};
+  if (p_string.empty()) return result;
+  auto it = p_string.begin();
+
+  // Search for openers until end of string
+  while (*it != '[')
+  {
+    if (++it == p_string.end()) throw runtime_error("Couldn't read file ID");
+  }
+
+  for (unsigned loop = 0; loop < 2; ++loop)
+  {
+    while (*it != '<' && *it != '(')
+    {
+      if (it++ == p_string.end()) throw runtime_error("Couldn't read file ID");
+    }
+
+    string temp_string {};
+
+    if (*it == '<')
+    {
+      it++;
+      while (it != p_string.end() && *it != '>') temp_string += *it++;
+      Concatenate(result, ConvertHexToBytes(temp_string));
+    }
+    else
+    {
+      it++;
+      while (it != p_string.end())
+      {
+        if (*it == '\\')
+        {
+          ++it;
+          if (*it == '\\') result.push_back('\\');
+          if (*it == 'n')  result.push_back('\n');
+          if (*it == 'r')  result.push_back('\r');
+          if (*it == 't')  result.push_back('\t');
+          if (*it == 'b')  result.push_back('\b');
+          if (*it == 'f')  result.push_back('\f');
+          if (*it == ')')  result.push_back(')');
+          if (*it == '(')  result.push_back('(');
+        }
+        else if (*it == ')') break;
+        else result.push_back(*it);
+        ++it;
+      }
+    }
+  }
+  return result;
+}
+
+
+
