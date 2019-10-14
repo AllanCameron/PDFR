@@ -16,18 +16,6 @@
 #include<iomanip>
 using namespace std;
 
-void PrintBytes(vector<uint8_t> p_bytes, const string& p_message)
-{
-  cout << p_message << " : (";
-  for(auto byte = p_bytes.begin(); byte != (p_bytes.end() - 1); ++byte)
-  {
-    cout << "0x" << setfill('0') << setw(2) << hex << (int) *byte;
-    cout << ", ";
-  }
-  cout << "0x" << setfill('0') << setw(2) << hex << (int) *(p_bytes.end() - 1);
-  cout << ")" << endl;
-}
-
 /*---------------------------------------------------------------------------*/
 // Constructor for the crypto class. Its two jobs are to obtain the
 // file key and to check it's right. The crypto object is then kept alive to

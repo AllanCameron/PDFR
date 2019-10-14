@@ -215,4 +215,9 @@ std::vector<float> ParseFloats(const std::string& p_string_to_be_parsed);
 
 std::string GetFile(const std::string& p_path_to_file);
 
+//---------------------------------------------------------------------------//
+// Prints bytes to screen for debugging
+
+void PrintBytes(std::vector<uint8_t> p_bytes, const std::string& p_message);
+
 #endif

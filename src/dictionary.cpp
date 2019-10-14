@@ -315,12 +315,27 @@ void DictionaryBuilder::HandleValue_(char p_input_char)
 
 /*---------------------------------------------------------------------------*/
 // The lexer is in an array. It will blindly copy the array until it gets
-// to the matching closing bracket
+// to the matching closing bracket unless there is a closing bracket within
+// a string to handle
 
 void DictionaryBuilder::HandleArrayValue_(char p_input_char)
 {
-  buffer_ += char_;
-  if (p_input_char == ']') AssignValue_("", START);
+  bool in_substring = false;
+  bool escape_state = false;
+  while (true)
+  {
+    char_ = (*string_ptr_)[char_num_];
+
+    if (!escape_state && char_ == '(') in_substring = true;
+    if (!escape_state && char_ == ')') in_substring = false;
+    buffer_ += char_;
+    if (!in_substring && char_ == ']') break;
+
+    if (!escape_state && char_ == '\\') escape_state = true;
+    else escape_state = false;
+    ++char_num_;
+  }
+  AssignValue_("", START);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -348,7 +363,7 @@ void DictionaryBuilder::HandleQueryDictionary_(char p_input_char)
   {
     buffer_ = "<<";         // Keep the angle brackets for subdictionary
     state_ = SUBDICT;
-    bracket_ = 2;           // Record nesting level so exiting subdictionary
+    bracket_ = 1;           // Record nesting level so exiting subdictionary
   }                         // doesn't cause early halting of parser
   else
   {
@@ -367,8 +382,12 @@ void DictionaryBuilder::HandleSubdictionary_(char p_input_char)
 {
   switch (p_input_char)
   {
-    case '<': buffer_ += char_; bracket_ ++; break; // keep track of nesting
-    case '>': buffer_ += char_; bracket_ --; break; // keep track of nesting
+    case '<': buffer_ += char_; ++char_num_;
+              char_ = (*string_ptr_)[char_num_]; buffer_ += char_;
+              if (char_ == '<') ++bracket_; break; // keep track of nesting
+    case '>': buffer_ += char_; ++char_num_;
+              char_ = (*string_ptr_)[char_num_]; buffer_ += char_;
+              if (char_ == '>' && bracket_ > 0) --bracket_; break;
     default:  buffer_ += char_;              break; // keep on writing
   }
 
@@ -592,11 +611,7 @@ void Dictionary::PrettyPrint() const
   {
     auto entry = this->GetString(key_name);
     cout << key_name << " : ";
-    if(!IsAscii(entry))
-    {
-      for(auto l : entry) cout << "\\" << (int) ((uint8_t) l);
-    }
-    else cout << entry;
+    cout << entry;
     cout << endl;
   }
 }

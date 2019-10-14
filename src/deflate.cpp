@@ -369,7 +369,14 @@ void Deflate::ReadBlock_()
   if (three_bit_header == 2) BuildDynamicCodeTable_();
 
   // This safety check ensures we don't read garbage if there's an error
-  if (three_bit_header == 3) throw runtime_error("Invalid dictionary type.");
+  if (three_bit_header == 3)
+  {
+    this->Reset();
+    vector<uint8_t> output;
+    for(unsigned i = 0; i < 10; ++i) output.push_back(GetByte() & 0xff);
+    PrintBytes(output, "First 10 bytes of decrypted stream");
+    throw runtime_error("Invalid dictionary type.");
+  }
 
   // Now we should be in a position to read our actual compressed data.
   ReadCodes_();
