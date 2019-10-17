@@ -15,6 +15,8 @@
 #include "document.h"
 #include "encoding.h"
 #include <iostream>
+#include <sstream>
+#include <iomanip>
 
 using namespace std;
 
@@ -131,6 +133,45 @@ void Encoding::ReadDifferenceEntries_()
           auto unicode_hex = entry.second.substr(4, 4);
           auto new_entry = ConvertHexToRawChar(unicode_hex);
           if (!new_entry.empty()) encoding_map_[code_point++] = new_entry[0];
+          else encoding_map_[code_point] = code_point++;
+        }
+        // Some TrueType fonts have names given as "/Gxx" where xx is the byte
+        // number. Ideally, I should read these entries from the font program
+        // as /Differences should be ignored with TrueType fonts. However,
+        // the examples I have come across have /Differences entries that
+        // replicate the "cmap" table of the ttf file.
+        else if (entry.second.substr(0, 2) == "/G")
+        {
+          string hex_string(entry.second.begin() + 2, entry.second.end());
+          RawChar value = 0;
+          int factor = 1;
+          for(int i = (int) hex_string.size() - 1; i >= 0; --i)
+          {
+            if ((uint8_t) hex_string[i] < 0x3a &&
+                (uint8_t) hex_string[i] > 0x2f)
+            {
+              value += factor * ((uint16_t)(uint8_t) hex_string[i] - 0x30);
+              factor *= 16;
+              continue;
+            }
+            if ((uint8_t) hex_string[i] < 0x47 &&
+                (uint8_t) hex_string[i] > 0x40)
+            {
+              value += factor *  ((uint16_t)(uint8_t) hex_string[i] - 0x37);
+              factor *= 16;
+              continue;
+            }
+            if ((uint8_t) hex_string[i] < 0x67 &&
+                (uint8_t) hex_string[i] > 0x60)
+            {
+              value += factor *  ((uint16_t)(uint8_t) hex_string[i] - 0x57);
+              factor *= 16;
+              continue;
+            }
+            value = 0;
+            factor = 1;
+          }
+          if(value > 0) encoding_map_[code_point++] = value;
           else encoding_map_[code_point] = code_point++;
         }
         else encoding_map_[code_point] = code_point++;

@@ -178,10 +178,19 @@ List GetObjectFromString(const string& p_file_name, int p_object)
   // Create the Document
   auto doc_ptr = make_shared<Document>(p_file_name);
 
-  // Fill an List with the requested object's elements and return
+  auto as_string = doc_ptr->GetObject(p_object)->GetStream();
+  std::vector<uint8_t> as_raw(as_string.begin(), as_string.end());
+  // Fill an List with the requested object and return
+  if(!IsAscii(as_string) && !as_raw.empty())
+  {
   return List::create(
     Named("header") = doc_ptr->GetObject(p_object)->GetDictionary().GetMap(),
-    Named("stream") = doc_ptr->GetObject(p_object)->GetStream());
+    Named("stream") = as_raw);
+  } else {
+  return List::create(
+    Named("header") = doc_ptr->GetObject(p_object)->GetDictionary().GetMap(),
+    Named("stream") = as_string);
+  }
 }
 
 //---------------------------------------------------------------------------//
@@ -196,11 +205,19 @@ List GetObjectFromRaw(const vector<uint8_t>& p_raw_file, int p_object)
 {
   // Create the Document
   auto doc_ptr = make_shared<Document>(p_raw_file);
-
+  auto as_string = doc_ptr->GetObject(p_object)->GetStream();
+  std::vector<uint8_t> as_raw(as_string.begin(), as_string.end());
   // Fill an List with the requested object and return
+  if(!IsAscii(as_string) && !as_raw.empty())
+  {
   return List::create(
     Named("header") = doc_ptr->GetObject(p_object)->GetDictionary().GetMap(),
-    Named("stream") = doc_ptr->GetObject(p_object)->GetStream());
+    Named("stream") = as_raw);
+  } else {
+  return List::create(
+    Named("header") = doc_ptr->GetObject(p_object)->GetDictionary().GetMap(),
+    Named("stream") = as_string);
+  }
 }
 
 //---------------------------------------------------------------------------//
