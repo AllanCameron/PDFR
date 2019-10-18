@@ -160,6 +160,10 @@ GetPdfBoxesFromRaw(const std::vector<uint8_t>& p_file_name, int p_page_number);
 // [[Rcpp::export(TestStream)]]
 std::string TestStream(std::vector<uint8_t> p_raw_vector);
 
+
+// [[Rcpp::export]]
+void ReadFont(std::vector<uint8_t> fontfile);
+
 //---------------------------------------------------------------------------//
 // This function can be called from R to stop the underlying C++ code. This can
 // be handy in profiling etc.

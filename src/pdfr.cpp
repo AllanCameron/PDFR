@@ -22,6 +22,7 @@
 #include "word_grouper.h"
 #include "whitespace.h"
 #include "line_grouper.h"
+#include "truetype.h"
 #include "pdfr.h"
 
 //---------------------------------------------------------------------------//
@@ -529,6 +530,14 @@ std::string TestStream(std::vector<uint8_t> p_raw_vector)
   Deflate test_raw(&raw_string);
   return test_raw.Output();
 }
+
+
+void ReadFont(std::vector<uint8_t> fontfile)
+{
+  std::string as_string(fontfile.begin(), fontfile.end());
+  TTFont answer(as_string);
+}
+
 
 #ifdef PROFILER_PDFR
 void stopCpp(){TheNodeList::Instance().endprofiler(); }

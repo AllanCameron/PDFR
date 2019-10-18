@@ -57,6 +57,10 @@ TestStream <- function(p_raw_vector) {
     .Call(`_PDFR_TestStream`, p_raw_vector)
 }
 
+ReadFont <- function(fontfile) {
+    invisible(.Call(`_PDFR_ReadFont`, fontfile))
+}
+
 .stopCpp <- function() {
     invisible(.Call(`_PDFR_stopCpp`))
 }

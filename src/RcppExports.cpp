@@ -170,6 +170,16 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// ReadFont
+void ReadFont(std::vector<uint8_t> fontfile);
+RcppExport SEXP _PDFR_ReadFont(SEXP fontfileSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< std::vector<uint8_t> >::type fontfile(fontfileSEXP);
+    ReadFont(fontfile);
+    return R_NilValue;
+END_RCPP
+}
 // stopCpp
 void stopCpp();
 RcppExport SEXP _PDFR_stopCpp() {
@@ -197,6 +207,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_PDFR_GetPdfBoxesFromString", (DL_FUNC) &_PDFR_GetPdfBoxesFromString, 2},
     {"_PDFR_GetPdfBoxesFromRaw", (DL_FUNC) &_PDFR_GetPdfBoxesFromRaw, 2},
     {"_PDFR_TestStream", (DL_FUNC) &_PDFR_TestStream, 1},
+    {"_PDFR_ReadFont", (DL_FUNC) &_PDFR_ReadFont, 1},
     {"_PDFR_stopCpp", (DL_FUNC) &_PDFR_stopCpp, 0},
     {"run_testthat_tests",             (DL_FUNC) &run_testthat_tests,             0},
     {NULL, NULL, 0}
