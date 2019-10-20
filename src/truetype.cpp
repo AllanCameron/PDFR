@@ -70,7 +70,7 @@ void TTFont::ReadTables()
   	  while (nLongs-- > 0) sum += GetUint32();
   	  if (sum != this_table.checksum_)
   	  {
-  	    throw std::runtime_error("Invalid checksum in font file.");
+  	    //throw std::runtime_error("Invalid checksum in font file.");
   	  }
     }
     it_ = it_store;
@@ -134,29 +134,118 @@ void TTFont::ReadCMap()
       throw runtime_error("Unrecognised encoding in cmap directory.");
     }
     uint16_t offset = GetUint32();
-    cmap_directory.emplace_back(CMapDirectory(platform, id, offset));
+    cmap_directory.emplace_back(CMapDirectory(platform, id, offset, encoding));
     cout << cmap_directory.back().platform_id_ << "\t\t"
          << cmap_directory.back().specific_id_ << "\t"
          << cmap_directory.back().offset_ << "\t"
-         << encoding << std::endl;
+         << cmap_directory.back().encoding_ << std::endl;
   }
-  std::cout << "\n\n" << std::endl;
+  std::cout << "\n" << std::endl;
 
   for (auto& entry : cmap_directory)
   {
     it_ = cmap_begin + entry.offset_;
-    uint16_t format = GetUint16();
-    if (format > 7)
+    entry.format_ = GetUint16();
+    if (entry.format_ > 7)
     {
       if (GetUint16() != 0) throw runtime_error("Unknown cmap table format.");
     }
-    uint16_t length = GetUint16();
+    entry.length_ = GetUint16();
     uint16_t language = GetUint16();
     std::cout << "Entry with offset " << entry.offset_
-              << " has format " << format << ", length " << length
+              << " has format " << entry.format_ << ", length "
+              << entry.length_
               << ", and language " << language << endl;
+    switch(entry.format_)
+    {
+      case 0 : HandleFormat0(entry); break;
+      case 2 :  HandleFormat2(entry); break;
+      case 4 : HandleFormat4(entry); break;
+      case 6 : HandleFormat6(entry); break;
+      case 8 : HandleFormat8(entry); break;
+      case 10 : HandleFormat10(entry); break;
+      case 12 : HandleFormat12(entry); break;
+      case 13 : HandleFormat13(entry); break;
+      case 14 : HandleFormat14(entry); break;
+      default : throw runtime_error("Unknown subtable format in cmap.");
+    }
+
   }
 }
 
+void TTFont::HandleFormat0(CMapDirectory& p_entry)
+{
+  for (uint16_t i = 0; i < 256; ++i)
+  {
+    p_entry.cmap_[i] = (uint16_t)(uint8_t) *it_++;
+  }
+}
 
+void TTFont::HandleFormat2(CMapDirectory& p_entry)
+{
+  std::vector<uint16_t> sub_header_keys;
+  for (uint16_t i = 0; i < 256; ++i)
+  {
+    uint16_t k = GetUint16()/8;
+    std::cout << k << endl;
+  }
+}
 
+void TTFont::HandleFormat4(CMapDirectory& p_entry)
+{
+  uint16_t seg_count = GetUint16() / 2;
+  // search_range, entry_selector, range_shift are all unused here and
+  // therefore we just skip on 6 bytes
+  it_ += 6;
+  std::vector<uint16_t> end_code, start_code, id_delta, range_offset;
+  for (uint16_t i = 0; i < seg_count; ++i) end_code.push_back(GetUint16());
+  if(GetUint16() != 0) throw runtime_error("Reserve pad != 0.");
+  for (uint16_t i = 0; i < seg_count; ++i) start_code.push_back(GetUint16());
+  for (uint16_t i = 0; i < seg_count; ++i) id_delta.push_back(GetUint16());
+  for (uint16_t i = 0; i < seg_count; ++i) range_offset.push_back(GetUint16());
+  for (uint16_t i = 0; i < seg_count; ++i)
+  {
+    if (end_code[i] == 0xffff) break;
+    for (uint16_t j = start_code[i]; j <= end_code[i]; ++j)
+    {
+      p_entry.cmap_[(j + id_delta[i]) % 65536] = j;
+    }
+  }
+
+}
+
+void TTFont::HandleFormat6(CMapDirectory& p_entry)
+{
+  auto first_entry = GetUint16();
+  auto num_entries = GetUint16();
+  for (uint16_t i = 0; i < num_entries; ++i )
+  {
+    p_entry.cmap_[first_entry + i] = GetUint16();
+    cout << p_entry.cmap_[first_entry + i] << " -> " << first_entry + i << endl;
+  }
+}
+
+void TTFont::HandleFormat8(CMapDirectory& p_entry)
+{
+
+}
+
+void TTFont::HandleFormat10(CMapDirectory& p_entry)
+{
+
+}
+
+void TTFont::HandleFormat12(CMapDirectory& p_entry)
+{
+
+}
+
+void TTFont::HandleFormat13(CMapDirectory& p_entry)
+{
+
+}
+
+void TTFont::HandleFormat14(CMapDirectory& p_entry)
+{
+
+}

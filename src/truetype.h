@@ -19,11 +19,21 @@ struct TTFRow
 
 struct CMapDirectory
 {
-  CMapDirectory(uint16_t platform_id, uint16_t specific_id, uint32_t offset) :
-  platform_id_(platform_id), specific_id_(specific_id), offset_(offset) {};
+  CMapDirectory(uint16_t platform_id,
+                uint16_t specific_id,
+                uint32_t offset,
+                std::string encoding) :
+    platform_id_(platform_id),
+    specific_id_(specific_id),
+    offset_(offset),
+    encoding_(encoding){};
   uint16_t platform_id_;
   uint16_t specific_id_;
   uint32_t offset_;
+  std::string encoding_;
+  uint16_t format_;
+  uint16_t length_;
+  std::map<uint16_t, uint16_t> cmap_;
 };
 
 class TTFont
@@ -39,6 +49,15 @@ public:
 private:
   void ReadTables();
   void ReadCMap();
+  void HandleFormat0(CMapDirectory&);
+  void HandleFormat2(CMapDirectory&);
+  void HandleFormat4(CMapDirectory&);
+  void HandleFormat6(CMapDirectory&);
+  void HandleFormat8(CMapDirectory&);
+  void HandleFormat10(CMapDirectory&);
+  void HandleFormat12(CMapDirectory&);
+  void HandleFormat13(CMapDirectory&);
+  void HandleFormat14(CMapDirectory&);
   std::string stream_;
   std::string::const_iterator it_;
   std::vector<TTFRow> table_of_tables_;
