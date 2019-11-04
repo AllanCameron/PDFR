@@ -22,7 +22,7 @@
 using namespace std;
 
 // I will define a HuffmanMap for brevity and clarity
-typedef map<uint32_t, uint32_t> HuffmanMap;
+typedef unordered_map<uint32_t, uint32_t> HuffmanMap;
 
 // Further typedef for brevity and clarity
 typedef vector<uint32_t> LengthArray;

@@ -28,7 +28,8 @@ using namespace std;
 Object::Object(shared_ptr<const XRef> p_xref, int p_object_number) :
   xref_(p_xref),
   object_number_(p_object_number),
-  stream_location_({0, 0})
+  stream_location_({0, 0}),
+  stream_index_(make_shared<unordered_map<int, pair<int, int>>>())
 {
   // Find start and end of object
   size_t start = xref_->GetObjectStartByte(object_number_);
@@ -99,7 +100,7 @@ void Object::IndexObjectStream_()
     if (i == (index.size() - 1)) byte_length = stream_string.size() - index[i];
     else byte_length = index[i + 2] - index[i];
     auto&& index_pair = make_pair(index[i] + startbyte, byte_length);
-    object_stream_index_[index[i - 1]] = index_pair;
+    (*stream_index_)[index[i - 1]] = index_pair;
   }
 }
 
@@ -113,8 +114,8 @@ Object::Object(shared_ptr<Object> p_holder, int p_object_number):
   object_number_(p_object_number),
   stream_location_({0, 0})
 {
-  auto finder = p_holder->object_stream_index_.find(object_number_);
-  if (finder == p_holder->object_stream_index_.end())
+  auto finder = p_holder->stream_index_->find(object_number_);
+  if (finder == p_holder->stream_index_->end())
   {
     throw runtime_error("Object not found in stream");
   }

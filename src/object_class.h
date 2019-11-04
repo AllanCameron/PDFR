@@ -71,7 +71,7 @@ class Object
   std::vector<size_t> stream_location_;   // Start position and length of stream
 
   // A lookup of start / stop positions of the objects within an object stream
-  std::unordered_map<int, std::pair<int, int>> object_stream_index_;
+  std::shared_ptr<std::unordered_map<int, std::pair<int, int>>> stream_index_;
 
   // private methods
   void IndexObjectStream_();

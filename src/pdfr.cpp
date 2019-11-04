@@ -538,6 +538,40 @@ void ReadFont(std::vector<uint8_t> fontfile)
   TTFont answer(as_string);
 }
 
+Rcpp::DataFrame ShowTypeSizes()
+{
+  std::vector<std::string> types {"XRef",
+                                  "Dictionary",
+                                  "Page",
+                                  "Font",
+                                  "Document",
+                                  "Object",
+                                  "Parser",
+                                  "Tokenizer",
+                                  "Box",
+                                  "TextBox",
+                                  "WhiteSpace",
+                                  "WordGrouper",
+                                  "LineGrouper",
+                                  "TextElement"};
+  std::vector<size_t> type_sizes {};
+  type_sizes.push_back(sizeof(XRef));
+  type_sizes.push_back(sizeof(Dictionary));
+  type_sizes.push_back(sizeof(Page));
+  type_sizes.push_back(sizeof(Font));
+  type_sizes.push_back(sizeof(Document));
+  type_sizes.push_back(sizeof(Object));
+  type_sizes.push_back(sizeof(Parser));
+  type_sizes.push_back(sizeof(Tokenizer));
+  type_sizes.push_back(sizeof(Box));
+  type_sizes.push_back(sizeof(TextBox));
+  type_sizes.push_back(sizeof(Whitespace));
+  type_sizes.push_back(sizeof(WordGrouper));
+  type_sizes.push_back(sizeof(LineGrouper));
+  type_sizes.push_back(sizeof(TextElement));
+
+  return DataFrame::create(Named("Class") = types, Named("Size") = type_sizes);
+};
 
 #ifdef PROFILER_PDFR
 void stopCpp(){TheNodeList::Instance().endprofiler(); }

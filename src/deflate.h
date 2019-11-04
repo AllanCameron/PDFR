@@ -38,8 +38,8 @@ private:
 
   // The fixed literal and distance maps are used if compression used a
   // fixed dictionary. Usually this only happens with short messages.
-  static const std::map<uint32_t, uint32_t> fixed_literal_map_;
-  static const std::map<uint32_t, uint32_t> fixed_distance_map_;
+  static const std::unordered_map<uint32_t, uint32_t> fixed_literal_map_;
+  static const std::unordered_map<uint32_t, uint32_t> fixed_distance_map_;
 
   // If we come across a length code or a distance code, we need to know
   // how many extra bytes to read. This is looked up in these tables.
@@ -48,8 +48,8 @@ private:
 
   // Whether its fixed or dynamic compression, we want to end up with a literal
   // and distance map that we can look up.
-  std::map<uint32_t, uint32_t> literal_map_;
-  std::map<uint32_t, uint32_t> distance_map_;
+  std::unordered_map<uint32_t, uint32_t> literal_map_;
+  std::unordered_map<uint32_t, uint32_t> distance_map_;
 
   void CheckHeader_();           // Read first two bytes to ensure valid Deflate
   void ReadBlock_();               // Co-ordinates reading of a single block
@@ -58,10 +58,11 @@ private:
   void HandlePointer_(uint32_t);   // Deals with length & distance pointers
 
   // Finds the next code in the input stream using given lookup table
-  uint32_t ReadCode_(std::map<uint32_t, uint32_t>&);
+  uint32_t ReadCode_(std::unordered_map<uint32_t, uint32_t>&);
 
   // Creates a Huffman tree from a vector of bit lengths.
-  std::map<uint32_t, uint32_t> Huffmanize_(const std::vector<uint32_t>&);
+  std::unordered_map<uint32_t, uint32_t>
+    Huffmanize_(const std::vector<uint32_t>&);
 };
 
 

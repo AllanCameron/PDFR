@@ -105,17 +105,22 @@ void Whitespace::PageDimensions_()
 void Whitespace::CleanAndSortBoxes_()
 {
   // Define a lambda to identify boxes flagged for deletion
-  auto del = [&](Box lambda_box){return lambda_box.IsConsumed();};
+  auto del =  [&](const Box& lambda_box) -> bool
+              {
+                return lambda_box.IsConsumed();
+              };
 
   // Define a lambda to sort boxes left to right
-  auto l = [](const Box& lambda_box_lhs, const Box& lambda_box_rhs) -> bool {
-    return lambda_box_lhs.GetLeft() < lambda_box_rhs.GetLeft();
-    };
+  auto hsort =  [](const Box& lambda_box_lhs, const Box& lambda_box_rhs) -> bool
+            {
+              return lambda_box_lhs.GetLeft() < lambda_box_rhs.GetLeft();
+            };
 
   // Define a lambda to sort boxes top to bottom
-  auto t = [](const Box& lambda_box_lhs, const Box& lambda_box_rhs) -> bool {
-    return lambda_box_rhs.GetTop() < lambda_box_lhs.GetTop();
-    };
+  auto vsort =  [](const Box& lambda_box_lhs, const Box& lambda_box_rhs) -> bool
+            {
+              return lambda_box_rhs.GetTop() < lambda_box_lhs.GetTop();
+            };
 
   // Move boxes for deletion to back of vector, starting at returned iterator
   auto junk = remove_if(boxes_.begin(), boxes_.end(), del);
@@ -124,8 +129,8 @@ void Whitespace::CleanAndSortBoxes_()
   boxes_.erase(junk, boxes_.end());
 
   // Sort the remaining boxes top to bottom then left to right
-  sort(boxes_.begin(), boxes_.end(), t);
-  stable_sort(boxes_.begin(), boxes_.end(), l);
+  sort(boxes_.begin(), boxes_.end(), vsort);
+  stable_sort(boxes_.begin(), boxes_.end(), hsort);
 }
 
 //---------------------------------------------------------------------------//

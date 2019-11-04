@@ -61,6 +61,10 @@ ReadFont <- function(fontfile) {
     invisible(.Call(`_PDFR_ReadFont`, fontfile))
 }
 
+ShowTypeSizes <- function() {
+    .Call(`_PDFR_ShowTypeSizes`)
+}
+
 .stopCpp <- function() {
     invisible(.Call(`_PDFR_stopCpp`))
 }

@@ -180,6 +180,16 @@ BEGIN_RCPP
     return R_NilValue;
 END_RCPP
 }
+// ShowTypeSizes
+Rcpp::DataFrame ShowTypeSizes();
+RcppExport SEXP _PDFR_ShowTypeSizes() {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    rcpp_result_gen = Rcpp::wrap(ShowTypeSizes());
+    return rcpp_result_gen;
+END_RCPP
+}
 // stopCpp
 void stopCpp();
 RcppExport SEXP _PDFR_stopCpp() {
@@ -208,6 +218,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_PDFR_GetPdfBoxesFromRaw", (DL_FUNC) &_PDFR_GetPdfBoxesFromRaw, 2},
     {"_PDFR_TestStream", (DL_FUNC) &_PDFR_TestStream, 1},
     {"_PDFR_ReadFont", (DL_FUNC) &_PDFR_ReadFont, 1},
+    {"_PDFR_ShowTypeSizes", (DL_FUNC) &_PDFR_ShowTypeSizes, 0},
     {"_PDFR_stopCpp", (DL_FUNC) &_PDFR_stopCpp, 0},
     {"run_testthat_tests",             (DL_FUNC) &run_testthat_tests,             0},
     {NULL, NULL, 0}

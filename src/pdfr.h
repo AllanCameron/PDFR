@@ -164,6 +164,9 @@ std::string TestStream(std::vector<uint8_t> p_raw_vector);
 // [[Rcpp::export]]
 void ReadFont(std::vector<uint8_t> fontfile);
 
+// [[Rcpp::export]]
+Rcpp::DataFrame ShowTypeSizes();
+
 //---------------------------------------------------------------------------//
 // This function can be called from R to stop the underlying C++ code. This can
 // be handy in profiling etc.
