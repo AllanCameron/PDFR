@@ -76,12 +76,10 @@ class Whitespace
   //The main output is a collection of pairs of text boxes with their elements
   std::unique_ptr<TextBox> text_box_; // A copy of word grouper's output
   std::unordered_map<size_t, std::vector<std::shared_ptr<Vertex>>> polygonmap_;
-  float max_line_space_;    // The average font size on the page
   std::vector<Box> boxes_;  // Used in construction AND output
   std::vector<std::shared_ptr<Vertex>> vertices_; // Used to make polygons
   static const size_t DIVISIONS_ = 200; // number of strips used for whitespace
 
-  void GetMaxLineSize_();
   void PageDimensions_();    // Gets page margins
   void CleanAndSortBoxes_(); // Helper to remove Boxes flagged for deletion
   void MakeStrips_();        // Cover the whitespace with tall thin strips

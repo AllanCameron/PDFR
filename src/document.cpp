@@ -32,7 +32,7 @@ using namespace std;
 // from which buildDoc() then creates the object
 
 Document::Document(const string& p_file_path)
-  : file_path_(p_file_path), file_string_(GetFile(file_path_))
+  : file_string_(GetFile(p_file_path))
 {
   BuildDocument_(); // Call constructor helper to build Document
 }
@@ -56,79 +56,25 @@ Document::Document(const vector<uint8_t>& p_byte_vector)
 void Document::BuildDocument_()
 {
   xref_ = make_shared<const XRef>(make_shared<string>(file_string_));
-  ReadCatalog_();             // Gets the catalog dictionary
-  ReadPageDirectory_();       // Gets the /Pages dictionary
-}
 
-/*---------------------------------------------------------------------------*/
-// One of two public interface functions after Document object creation. This
-// returns an object of Object class with the requested object number. It first
-// checks to see whether that object has been retrieved before. If so, it
-// returns it from the 'objects' vector. If not, it creates the object then
-// stores a copy in the 'objects' vector before returning the requested object.
-
-shared_ptr<Object> Document::GetObject(int p_object_number)
-{
-  // Check if object n is already stored
-  if (object_cache_.find(p_object_number) == object_cache_.end())
-  {
-    // If it is not stored, check whether it is in an object stream
-    size_t holder = xref_->GetHoldingNumberOf(p_object_number);
-
-    // If object is in a stream, create it recursively from the stream object.
-    // Otherwise create & store it directly
-    if (holder)
-    {
-      auto object_ptr = make_shared<Object>(GetObject(holder), p_object_number);
-      object_cache_[p_object_number] = object_ptr;
-    }
-    else
-    {
-      auto object_ptr = make_shared<Object>(xref_, p_object_number);
-      object_cache_[p_object_number] = object_ptr;
-    }
-  }
-  return object_cache_[p_object_number];
-}
-
-/*---------------------------------------------------------------------------*/
-// The catalog (never spelled 'catalogue') dictionary contains information
-// about the pdf, including which object contains the /Pages dictionary.
-// This finds the catalog object from the trailer dictionary which is read as
-// part of xref creation
-
-void Document::ReadCatalog_()
-{
   // The pointer to the catalog is given under /Root in the trailer dictionary
-  int root_number = xref_->GetTrailer().GetReference("/Root");
+  int&& root_number = xref_->GetTrailer().GetReference("/Root");
 
   // With errors handled, we can now just get the pointed-to object's dictionary
-  catalog_ = make_shared<Dictionary>(GetObject(root_number)->GetDictionary());
-}
+  auto&& catalog = Dictionary(GetObject(root_number)->GetDictionary());
 
-/*---------------------------------------------------------------------------*/
-// The /Pages dictionary contains pointers to every page represented in the pdf
-// file. There should be a pointer to it in the catalog dictionary. If its not
-// there, the pdf structure is unspecified and we throw an error
-
-void Document::ReadPageDirectory_()
-{
   // Else get the object number of the /Pages dictionary
-  int page_object_number = catalog_->GetReference("/Pages");
+  int&& page_object_number = catalog.GetReference("/Pages");
 
   // Now fetch that object and store it
-  page_directory_ = make_shared<Dictionary>(
-                      GetObject(page_object_number)->GetDictionary());
+  auto&& directory = Dictionary(GetObject(page_object_number)->GetDictionary());
 
   // Ensure /Pages has /kids entry
-  if (!page_directory_->ContainsReferences("/Kids"))
-  {
+  if (!directory.ContainsReferences("/Kids"))
     throw runtime_error("No Kids entry in /Pages");
-  }
 
   // Populate the page object numbers by expanding the /Kids references
-  page_object_numbers_ = ExpandKids_(page_directory_->GetReferences("/Kids"));
-
+  page_object_numbers_ = ExpandKids_(directory.GetReferences("/Kids"));
 }
 
 /*---------------------------------------------------------------------------*/
@@ -194,6 +140,38 @@ std::vector<int> Document::ExpandKids_(const vector<int>& p_object_numbers)
   std::vector<int> result(kids_list.begin(), kids_list.end());
   return result;
 }
+
+/*---------------------------------------------------------------------------*/
+// One of two public interface functions after Document object creation. This
+// returns an object of Object class with the requested object number. It first
+// checks to see whether that object has been retrieved before. If so, it
+// returns it from the 'objects' vector. If not, it creates the object then
+// stores a copy in the 'objects' vector before returning the requested object.
+
+shared_ptr<Object> Document::GetObject(int p_object_number)
+{
+  // Check if object n is already stored
+  if (object_cache_.find(p_object_number) == object_cache_.end())
+  {
+    // If it is not stored, check whether it is in an object stream
+    size_t holder = xref_->GetHoldingNumberOf(p_object_number);
+
+    // If object is in a stream, create it recursively from the stream object.
+    // Otherwise create & store it directly
+    if (holder)
+    {
+      auto object_ptr = make_shared<Object>(GetObject(holder), p_object_number);
+      object_cache_[p_object_number] = object_ptr;
+    }
+    else
+    {
+      auto object_ptr = make_shared<Object>(xref_, p_object_number);
+      object_cache_[p_object_number] = object_ptr;
+    }
+  }
+  return object_cache_[p_object_number];
+}
+
 
 /*---------------------------------------------------------------------------*/
 // Public function that gets a specific page header from the pageheader vector

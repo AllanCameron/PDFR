@@ -91,29 +91,27 @@ class XRef
   XRef(){};
 
   // public methods
-  bool IsEncrypted() const;                         // Returns encryption state
-  Dictionary GetTrailer() const;                    // Gets trailer dictionary
-  size_t GetObjectStartByte(int) const;             // Gets object's byte offset
-  size_t GetObjectEndByte(int) const;               // Gets object end position
-  size_t GetHoldingNumberOf(int) const;             // Gets stream object number
-  std::vector<int> GetAllObjectNumbers() const;     // Gets all object numbers
+  bool IsEncrypted()                         const; // Returns encryption state
+  Dictionary GetTrailer()                    const; // Gets trailer dictionary
+  size_t GetObjectStartByte(int)             const; // Gets object's byte offset
+  size_t GetObjectEndByte(int)               const; // Gets object end position
+  size_t GetHoldingNumberOf(int)             const; // Gets stream object number
+  std::vector<int> GetAllObjectNumbers()     const; // Gets all object numbers
   std::vector<size_t> GetStreamLocation(int) const; // Gets start/stop of stream
-  void Decrypt(std::string&, int, int) const;       // Decrypts a stream
-  std::shared_ptr<const std::string> File() const;  // Gets file string pointer
+  void Decrypt(std::string&, int, int)       const; // Decrypts a stream
+  std::shared_ptr<const std::string> File()  const; // Gets file string pointer
 
  private:
   std::shared_ptr<const std::string> file_string_;  // Pointer to file string
   std::unordered_map<int, XRefRow> xref_table_;     // Main data member
-  std::vector<int> xref_locations_;                 // vector of XRef offsets
   std::shared_ptr<Dictionary> trailer_dictionary_;  // Main trailer dictionary
-  bool encrypted_;                                  // Is encryption used?
   std::shared_ptr<Crypto> encryption_;              // Used for encrypted files
 
   // private methods
   XRef& operator=(const XRef&);
   int GetStreamLength_(const Dictionary&) const;
   void LocateXRefs_();                    // Finds XRef locations
-  void ReadXRefStrings_();                // Gets strings from XRef locations
+  void ReadXRefStrings_(int);             // Gets strings from XRef locations
   void ReadXRefFromStream_(int);          // Uses xrefstream class to get XRef
   void ReadXRefFromString_(std::string&); // parses XRef directly
   void CreateCrypto_();                   // Allows decryption of encrypted docs

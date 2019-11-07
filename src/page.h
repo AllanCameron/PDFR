@@ -55,19 +55,19 @@ class Page
   Page(std::shared_ptr<Document> document_ptr, int page_number);
 
   // Move constructor
-  Page(Page&& t_other_page) noexcept {*this = std::move(t_other_page);}
+  Page(Page&& p_other_page) noexcept {*this = std::move(p_other_page);}
 
   // lvalue assignment operator
-  Page& operator=(const Page& t_other_page)
+  Page& operator=(const Page& p_other_page)
   {
-    *this = t_other_page;
+    *this = p_other_page;
     return *this;
   }
 
   // rvalue assignment operator
-  Page& operator=(Page&& t_other_page) noexcept
+  Page& operator=(Page&& p_other_page) noexcept
   {
-    *this = std::move(t_other_page);
+    *this = std::move(p_other_page);
     return *this;
   }
 
@@ -103,7 +103,7 @@ class Page
                               fonts_;           // Font sub-dictionary
   std::shared_ptr<Box>        minbox_;          // Page bounding Box
   std::string                 content_string_;  // The page PostScript program
-  double                      rotate_;          // Page rotation in degrees
+  float                       rotate_;          // Page rotation in degrees
 
   // A map of Xobject strings, which are fragments of page description programs
   std::unordered_map<std::string, std::string> xobjects_;

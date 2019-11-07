@@ -64,7 +64,7 @@ class Dictionary
 
   Dictionary(StringPointer dictionary_string_ptr, size_t start_position);
 
-  Dictionary(std::unordered_map<std::string, std::string> dictionary_map);
+  Dictionary(std::unordered_map<std::string, std::string> p_map): map_(p_map){};
 
   Dictionary(const Dictionary& p_other): map_(p_other.map_){};
 
@@ -97,7 +97,7 @@ class Dictionary
   std::vector<std::string> GetAllKeys()                      const;
   Dictionary GetDictionary(const std::string& key)           const;
   std::unordered_map<std::string, std::string> GetMap()      const;
-  void PrettyPrint () const;
+  void PrettyPrint ()                                        const;
 
   // Inline definition of dictionary iterators
   typedef std::unordered_map<std::string, std::string>::const_iterator DictIt;

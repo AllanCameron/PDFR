@@ -105,12 +105,12 @@ public:
   inline char GetOutput(){return *output_position_++;}
 
   private:
-  const std::string* input_;              // The input string
-  std::string output_;                    // The output string
+  const std::string* input_;                    // The input string
+  std::string output_;                          // The output string
   std::string::const_iterator input_position_;  // Input iterator
-  std::string::iterator output_position_; // Output iterator
-  uint8_t unconsumed_bits_;               // Bit iterator
-  uint32_t unconsumed_bit_value_;         // Keeps track of unused bits
+  std::string::iterator output_position_;       // Output iterator
+  uint8_t unconsumed_bits_;                     // Bit iterator
+  uint32_t unconsumed_bit_value_;               // Keeps track of unused bits
 
 };
 

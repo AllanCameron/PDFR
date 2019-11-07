@@ -94,11 +94,8 @@ class Document
   };
 
  private:
-  std::string file_path_;                 // Path used to create file (if used)
   const std::string file_string_;         // Full contents of file
   std::shared_ptr<const XRef> xref_;      // Pointer to creating XRef object
-  std::shared_ptr<Dictionary> page_directory_;// dict containing pointers to pages
-  std::shared_ptr<Dictionary> catalog_;   // The pdf catalog dictionary
   std::vector<int> page_object_numbers_;  // The object numbers of page headers
 
   // This map holds Object pointers. Since some objects may be read
@@ -107,9 +104,6 @@ class Document
   // instance of the object every time it is requested.
   std::unordered_map <int, std::shared_ptr<Object>> object_cache_;
 
-  // private member functions used in construction only
-  void ReadCatalog_();        // Finds and stores the catalog dictionary
-  void ReadPageDirectory_();  // Finds and stores the /Pages dictionary
   void BuildDocument_();      // The constructors use this as a common pathway
 
   // This function effectively builds the pages tree.

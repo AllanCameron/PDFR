@@ -164,7 +164,7 @@ void Tokenizer::NewSymbolState_()
     case PER:   buffer_.append("0.");         state_ = NUMBER;      break;
     case SQO:   buffer_.append(it_, it_ + 1); state_ = IDENTIFIER;  break;
     case APO:   buffer_.append("Ap");
-                PushBuffer_(IDENTIFIER, NEWSYMBOL); break;
+                PushBuffer_(IDENTIFIER, NEWSYMBOL);                 break;
     default : buffer_.clear();                state_ = NEWSYMBOL;   break;
   }
 }
@@ -180,7 +180,8 @@ void Tokenizer::IdentifierState_()
     case LAB:   PushBuffer_(IDENTIFIER, HEXSTRING);      break;
     case LET:   buffer_.append(it_, it_ + 1);            break;
     case DIG:   buffer_.append(it_, it_ + 1);            break;
-    case SPC:   if (buffer_ == "BI") state_ = WAIT; //   BI == inline image
+                //  BI == inline image
+    case SPC:   if (buffer_ == "BI") state_ = WAIT;
                 else PushBuffer_(IDENTIFIER, NEWSYMBOL); break;
     case FSL:   PushBuffer_(IDENTIFIER, RESOURCE);
                 buffer_ = "/";                           break;

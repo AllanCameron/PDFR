@@ -18,7 +18,7 @@
 #include<map>
 #include "streams.h"
 
-void FlateDecode(std::string* t_message);
+void FlateDecode(std::string* p_message);
 
 //---------------------------------------------------------------------------//
 // This class reinvents the wheel in an attempt to free the library from

@@ -466,15 +466,6 @@ Dictionary::Dictionary(shared_ptr<const string> p_string_ptr, size_t p_offset)
 }
 
 /*---------------------------------------------------------------------------*/
-// A dictionary can be created from an existing map. Not used but appears
-// in case required for future feature development
-
-Dictionary::Dictionary(std::unordered_map<string, string> p_map)
-{
-  map_ = p_map;
-};
-
-/*---------------------------------------------------------------------------*/
 // Simple getter of dictionary contents as a string from given key name
 
 string Dictionary::GetString(const string& p_key) const

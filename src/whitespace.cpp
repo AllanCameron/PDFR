@@ -32,7 +32,6 @@ static const float MAX_LINE_FACTOR = 0.3;
 Whitespace::Whitespace(std::unique_ptr<TextBox> p_word_grouper_output):
   text_box_(move(p_word_grouper_output))
 {
-  GetMaxLineSize_();
   PageDimensions_();
   MakeStrips_();
   MergeStrips_();
@@ -46,17 +45,6 @@ Whitespace::Whitespace(std::unique_ptr<TextBox> p_word_grouper_output):
 }
 
 
-//---------------------------------------------------------------------------//
-
-void Whitespace::GetMaxLineSize_()
-{
-  std::vector<float> font_sizes;
-
-  for (auto& element : *text_box_) font_sizes.push_back(element->GetSize());
-
-  sort(font_sizes.begin(), font_sizes.end());
-  max_line_space_ = font_sizes[font_sizes.size()/2] * MAX_LINE_FACTOR;
-}
 
 //---------------------------------------------------------------------------//
 // The Whitespace class contains four floats that specify the positions of the
@@ -227,12 +215,19 @@ void Whitespace::MergeStrips_()
 
 void Whitespace::RemoveSmall_()
 {
+  std::vector<float> font_sizes;
+
+  for (auto& element : *text_box_) font_sizes.push_back(element->GetSize());
+
+  sort(font_sizes.begin(), font_sizes.end());
+  float max_line_space = font_sizes[font_sizes.size()/2] * MAX_LINE_FACTOR;
+
   for (auto& box : boxes_)
   {
     // Remove only undeleted boxes who are not at the page border and are short
     if (!box.IsConsumed()              &&
        !box.SharesEdge(*text_box_)     &&
-       box.Height() < max_line_space_  )
+       box.Height() < max_line_space  )
     {
       box.Consume();
     }

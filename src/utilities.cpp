@@ -160,6 +160,7 @@ vector<string> MultiCarve(const string& p_string,
 // Uses <algorithm> from std. e.g.
 //
 // IsAscii("I am an Ascii string.") == true;
+// IsAscii("I am an Äscii string.") == false;
 
 bool IsAscii(const string& p_string)
 {
@@ -179,7 +180,8 @@ bool IsAscii(const string& p_string)
 
 vector<uint8_t> ConvertHexToBytes(const string& p_hexstring)
 {
-   vector<uint8_t> byte_vector{};
+  vector<uint8_t> byte_vector{};
+  byte_vector.reserve(p_hexstring.size());
 
   // If hexstring is empty, return an empty vector;
   if (p_hexstring.empty()) return byte_vector;

@@ -60,12 +60,10 @@ class XRefStream
 // then sequentially runs the steps in creation of an XRef master map
 
 XRef::XRef(shared_ptr<const string> p_file_string_ptr)
-  : file_string_(p_file_string_ptr), encrypted_(false)
+  : file_string_(p_file_string_ptr)
 {
   LocateXRefs_();             // Find all xrefs
-  ReadXRefStrings_();         // Get the strings containing all xrefs
   CreateCrypto_();            // Get file key, needed for decryption of streams
-  xref_locations_.clear();    // Clear the large string vector to save memory
 }
 
 /*---------------------------------------------------------------------------*/
@@ -89,52 +87,51 @@ void XRef::LocateXRefs_()
   string&& xref_string =  CarveOut(last_50_chars, "startxref", "%%EOF");
 
   // Convert the number string to an int
-  xref_locations_.emplace_back(stoi(xref_string));
+  vector<int> xref_locations {stoi(xref_string)};
 
   // If no XRef location is found, then we're stuck. Throw an error.
-  if (xref_locations_.empty()) throw runtime_error("No XRef entry found");
+  if (xref_locations.empty()) throw runtime_error("No XRef entry found");
 
   // The first dictionary found after any XRef offset is always a trailer
   // dictionary, though sometimes it doubles as an XRefStream dictionary.
   // We make this first one found the canonical trailer dictionary
   trailer_dictionary_ = make_shared<Dictionary>(
-                          file_string_, xref_locations_[0]);
+                          file_string_, xref_locations[0]);
 
   // Now we follow the pointers to all xrefs sequentially.
   Dictionary temp_dictionary = *trailer_dictionary_;
   while (temp_dictionary.ContainsInts("/Prev"))
   {
-    xref_locations_.emplace_back(temp_dictionary.GetInts("/Prev")[0]);
-    temp_dictionary = Dictionary(file_string_, xref_locations_.back());
+    xref_locations.emplace_back(temp_dictionary.GetInts("/Prev")[0]);
+    temp_dictionary = Dictionary(file_string_, xref_locations.back());
   }
+
+  // Get a string from each XRef location or throw exception
+  for (auto& start : xref_locations) ReadXRefStrings_(start);
 }
 
 /*---------------------------------------------------------------------------*/
 // Whatever form the xrefs take (plain or XRefStream), we first get their
 // raw contents as strings from the XRef locations
 
-void XRef::ReadXRefStrings_()
+void XRef::ReadXRefStrings_(int p_start)
 {
-  // Get a string from each XRef location or throw exception
-  for (auto& start : xref_locations_)
-  {
-    // Find the length of XRef in chars
-    int length = file_string_->find("startxref", start) - start;
+  // Find the length of XRef in chars
+  int length = file_string_->find("startxref", p_start) - p_start;
 
-    // Throw error if no XRef found
-    if (length <= 0) throw runtime_error("No object found at location");
+  // Throw error if no XRef found
+  if (length <= 0) throw runtime_error("No object found at location");
 
-    // Extract the XRef string
-    string&& fullxref = file_string_->substr(start, length);
+  // Extract the XRef string
+  string&& fullxref = file_string_->substr(p_start, length);
 
-    // Carve out the actual string
-    string xref_string = CarveOut(move(fullxref), "xref", "trailer");
+  // Carve out the actual string
+  string xref_string = CarveOut(move(fullxref), "xref", "trailer");
 
-    // If it contains a dictionary, process as a stream, otherwise as a string
-    auto finder = xref_string.substr(0, 15).find("<<", 0);
-    if (finder != string::npos) ReadXRefFromStream_(start);
-    else ReadXRefFromString_(xref_string);
-  }
+  // If it contains a dictionary, process as a stream, otherwise as a string
+  auto finder = xref_string.substr(0, 15).find("<<", 0);
+  if (finder != string::npos) ReadXRefFromStream_(p_start);
+  else ReadXRefFromString_(xref_string);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -296,7 +293,7 @@ void XRef::Decrypt(string& p_stream, int p_object, int p_generation) const
 
 bool XRef::IsEncrypted() const
 {
-  return this->encrypted_;
+  if(encryption_) return true; else return false;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -322,7 +319,6 @@ void XRef::CreateCrypto_()
   if (xref_table_.find(encryption_number) == xref_table_.end()) return;
 
   // mark file as encrypted and read the encryption dictionary
-  encrypted_ = true;
   size_t starts_at = GetObjectStartByte(encryption_number);
   Dictionary&& dictionary = Dictionary(file_string_, starts_at);
   encryption_ = make_shared<Crypto>(move(dictionary), *trailer_dictionary_);
