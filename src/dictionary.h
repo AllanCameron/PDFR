@@ -52,6 +52,53 @@
 #include<memory>
 #include<unordered_map>
 
+struct Buffer
+{
+  Buffer(const std::string& p_input, int p_start, int p_length) :
+    string_(p_input.c_str()),
+    start_(p_start),
+    length_(p_length),
+    size_(p_input.size())
+  {
+    if(size_ < start_ + length_)
+      throw std::runtime_error("Invalid buffer position on creation.");
+  };
+
+  Buffer(): string_(nullptr), start_(0), length_(0), size_(0)
+  {
+    throw std::runtime_error("Invalid buffer creation to nullptr.");
+  }
+
+  void Clear(){start_ = start_ + length_; length_ = 0;}
+
+  void operator++()
+  {
+    if(size_ > start_ + length_)
+      ++length_;
+    else
+      throw std::runtime_error("Buffer exceeds string size");
+  }
+
+  void operator++(int)
+  {
+    ++(*this);
+  }
+
+  void StartAt(size_t p_new_start)
+  {
+    length_ = 1;
+    if(size_ > p_new_start) start_ = p_new_start;
+    else throw std::runtime_error("Cannot start buffer past end of string");
+  }
+
+  std::string AsString() {return std::string(string_ + start_, length_);}
+
+  const char* string_;
+  size_t start_;
+  size_t length_;
+  size_t size_;
+};
+
 //---------------------------------------------------------------------------//
 
 class Dictionary
@@ -98,6 +145,7 @@ class Dictionary
   Dictionary GetDictionary(const std::string& key)           const;
   std::unordered_map<std::string, std::string> GetMap()      const;
   void PrettyPrint ()                                        const;
+  std::string operator[](const std::string& key) const {return GetString(key);}
 
   // Inline definition of dictionary iterators
   typedef std::unordered_map<std::string, std::string>::const_iterator DictIt;

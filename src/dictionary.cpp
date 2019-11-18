@@ -52,6 +52,7 @@ using namespace std;
  */
 //---------------------------------------------------------------------------//
 
+
 class DictionaryBuilder
 {
  public:
@@ -76,15 +77,15 @@ class DictionaryBuilder
   size_t char_num_;           // The parsed string's iterator
   int bracket_;               // Stores the nesting level of angle brackets
   bool key_pending_;          // flag that indicates a key name has been read
-  std::string buffer_;        // string to hold characters in memory until used
+  Buffer buf_;
   std::string pending_key_;   // name of key waiting for a value
   DictionaryState state_;     // current state of fsm
   std::unordered_map<std::string, std::string> map_; // data holder
 
   // Private functions
   void TokenizeDictionary_(); // co-ordinates the lexer
-  void SetKey_(std::string, DictionaryState); //----//
-  void AssignValue_(std::string, DictionaryState);  //
+  void SetKey_(bool, DictionaryState);        //----//
+  void AssignValue_(bool, DictionaryState);  //
   void HandleMaybe_(char);                          //
   void HandleStart_(char);                          //
   void HandleKey_(char);                            //
@@ -106,6 +107,7 @@ DictionaryBuilder::DictionaryBuilder(shared_ptr<const string> p_string_ptr)
     char_num_(0),
     bracket_(0),
     key_pending_(false),
+    buf_(Buffer(*p_string_ptr, 0, 0)),
     state_(PREENTRY)
 {
   // Empty string -> empty dictionary
@@ -126,6 +128,7 @@ DictionaryBuilder::DictionaryBuilder(shared_ptr<const string> p_string_ptr,
     char_num_(p_offset),
     bracket_(0),
     key_pending_(false),
+    buf_(Buffer(*p_string_ptr, p_offset, 0)),
     state_(PREENTRY)
 {
   // Checks string isn't empty or smaller than the starting position
@@ -193,19 +196,20 @@ void DictionaryBuilder::TokenizeDictionary_()
 // flag is flipped. Although this code is short, it is efficient and used a lot
 // so needs its own function.
 
-void DictionaryBuilder::SetKey_(string p_buffer, DictionaryState p_state)
+void DictionaryBuilder::SetKey_(bool p_include, DictionaryState p_state)
 {
   // If no key is awaiting value, store name as a key
-  if (!key_pending_) pending_key_ = buffer_;
+  if (!key_pending_) pending_key_ = buf_.AsString();
 
   // Otherwise the name is a value so store it
-  else map_[pending_key_] = buffer_;
+  else map_[pending_key_] = buf_.AsString();
 
   // Flip the buffer flag in either case
   key_pending_ = !key_pending_;
 
   // Set buffer and state as needed
-  buffer_ = p_buffer;
+  if(p_include) buf_.StartAt(char_num_); else buf_.StartAt(char_num_ + 1);
+
   state_  = p_state;
 }
 
@@ -213,13 +217,13 @@ void DictionaryBuilder::SetKey_(string p_buffer, DictionaryState p_state)
 // The pattern of assigning a value to a waiting key name crops up often
 // enough to warrant this function to reduce duplication and error
 
-void DictionaryBuilder::AssignValue_(string p_buffer, DictionaryState p_state)
+void DictionaryBuilder::AssignValue_(bool p_include, DictionaryState p_state)
 {
-  map_[pending_key_] = buffer_; // Contents of buffer assigned to key name
-  key_pending_ = false;         // No key pending - ready for a new key
+  map_[pending_key_] = buf_.AsString(); // Contents of buffer assigned to key
+  key_pending_ = false;                 // No key pending - ready for a new key
 
   // Update buffer and state with given parameters
-  buffer_ = p_buffer;
+  if(p_include) buf_.StartAt(char_num_); else buf_.StartAt(char_num_ + 1);
   state_  = p_state;
 }
 
@@ -233,17 +237,17 @@ void DictionaryBuilder::HandleKey_(char p_input_char)
 {
   switch (p_input_char)
   {
-    case 'L': buffer_ += char_;                 break;
-    case 'D': buffer_ += char_;                 break;
-    case '+': buffer_ += char_;                 break;
-    case '-': buffer_ += char_;                 break;
-    case '_': buffer_ += char_;                 break;
-    case '/': SetKey_("/",       KEY);          break; // A new name has begun
-    case ' ': SetKey_("",   PREVALUE);          break; // await next new value
-    case '(': SetKey_("(",   DSTRING);          break; // must be a string
-    case '[': SetKey_("[",  ARRAYVAL);          break; // must be an array
-    case '<': SetKey_("",  QUERYDICT);          break; // probably a dictionary
-    case '>': SetKey_("", QUERYCLOSE);          break; // likely end of dict.
+    case 'L': ++buf_;                 break;
+    case 'D': ++buf_;                 break;
+    case '+': ++buf_;                 break;
+    case '-': ++buf_;                 break;
+    case '_': ++buf_;                 break;
+    case '/': SetKey_(true,       KEY);          break; // A new name has begun
+    case ' ': SetKey_(false,   PREVALUE);          break; // await next new value
+    case '(': SetKey_(true,   DSTRING);          break; // must be a string
+    case '[': SetKey_(true,  ARRAYVAL);          break; // must be an array
+    case '<': SetKey_(true,  QUERYDICT);          break; // probably a dictionary
+    case '>': SetKey_(true, QUERYCLOSE);          break; // likely end of dict.
   }
 }
 
@@ -260,7 +264,7 @@ void DictionaryBuilder::HandleMaybe_(char p_input_char)
   }
   else
   {
-    buffer_.clear();
+    buf_.Clear();
     state_ = PREENTRY;
   }
 }
@@ -274,7 +278,8 @@ void DictionaryBuilder::HandleStart_(char p_input_char)
 {
   switch (p_input_char)
   {
-    case '/': buffer_ += '/'; state_ = KEY; break; // should always be so
+    case '/': buf_.StartAt(char_num_);
+              state_ = KEY;                 break; // should always be so
     case '>': state_ = QUERYCLOSE;          break; // empty dictionary
     default :                               break; // linebreaks etc - wait
   }
@@ -290,10 +295,10 @@ void DictionaryBuilder::HandlePrevalue_(char p_input_char)
     case ' ': state_ = PREVALUE;                  break; // still waiting
     case '<': state_ = QUERYDICT;                 break; // probable dict value
     case '>': state_ = QUERYCLOSE;                break; // ?end of dictionary
-    case '(': SetKey_("(",   DSTRING);            break; // must be a string
-    case '/': state_ = KEY;      buffer_ = '/';   break; // value is a name
-    case '[': state_ = ARRAYVAL; buffer_ = '[';   break; // value is an array
-    default : state_ = VALUE;    buffer_ = char_; break; // any other value
+    case '(': SetKey_(true,   DSTRING);            break; // must be a string
+    case '/': state_ = KEY; buf_.StartAt(char_num_);   break; // value is a name
+    case '[': state_ = ARRAYVAL; buf_.StartAt(char_num_); break; // value is an array
+    default : state_ = VALUE;    buf_.StartAt(char_num_); break; // any other value
   }
 }
 
@@ -305,11 +310,11 @@ void DictionaryBuilder::HandleValue_(char p_input_char)
 {
   switch (p_input_char)
   {
-    case '/': AssignValue_("/", KEY);       break; // end of value; new key
-    case '<': AssignValue_("", QUERYDICT);  break; // may be new subdict
-    case '>': AssignValue_("", QUERYCLOSE); break; // probable end of dict
-    case ' ': buffer_ += ' ';               break; // whitespace in value
-    default : buffer_ += char_;             break; // keep writing value
+    case '/': AssignValue_(true, KEY);         break; // end of value; new key
+    case '<': AssignValue_(false, QUERYDICT);  break; // may be new subdict
+    case '>': AssignValue_(false, QUERYCLOSE); break; // probable end of dict
+    case ' ': ++buf_;                  break; // whitespace in value
+    default : ++buf_;                break; // keep writing value
   }
 }
 
@@ -328,14 +333,14 @@ void DictionaryBuilder::HandleArrayValue_(char p_input_char)
 
     if (!escape_state && char_ == '(') in_substring = true;
     if (!escape_state && char_ == ')') in_substring = false;
-    buffer_ += char_;
+    ++buf_;
     if (!in_substring && char_ == ']') break;
 
     if (!escape_state && char_ == '\\') escape_state = true;
     else escape_state = false;
     ++char_num_;
   }
-  AssignValue_("", START);
+  AssignValue_(false, START);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -344,13 +349,14 @@ void DictionaryBuilder::HandleArrayValue_(char p_input_char)
 
 void DictionaryBuilder::HandleString_(char p_input_char)
 {
-  buffer_ += char_;
+  ++buf_;
   if (p_input_char == '\\' && (*string_ptr_)[char_num_ + 1] == ')')
   {
     ++char_num_;
-    buffer_ += ')';
+    ++buf_;
+    ++buf_;
   }
-  if (p_input_char == ')') AssignValue_("", START);
+  if (p_input_char == ')') AssignValue_(false, START);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -361,13 +367,13 @@ void DictionaryBuilder::HandleQueryDictionary_(char p_input_char)
 {
   if (p_input_char == '<')  // Now entering a subdictionary
   {
-    buffer_ = "<<";         // Keep the angle brackets for subdictionary
+    ++buf_; ++buf_;         // Keep the angle brackets for subdictionary
     state_ = SUBDICT;
     bracket_ = 1;           // Record nesting level so exiting subdictionary
   }                         // doesn't cause early halting of parser
   else
   {
-    buffer_ = "";
+    buf_.Clear();
     state_ = START;         // Not a dictionary; start again
   }
 }
@@ -382,17 +388,17 @@ void DictionaryBuilder::HandleSubdictionary_(char p_input_char)
 {
   switch (p_input_char)
   {
-    case '<': buffer_ += char_; ++char_num_;
-              char_ = (*string_ptr_)[char_num_]; buffer_ += char_;
+    case '<': ++buf_; ++char_num_;
+              char_ = (*string_ptr_)[char_num_]; ++buf_;
               if (char_ == '<') ++bracket_; break; // keep track of nesting
-    case '>': buffer_ += char_; ++char_num_;
-              char_ = (*string_ptr_)[char_num_]; buffer_ += char_;
+    case '>': ++buf_; ++char_num_;
+              char_ = (*string_ptr_)[char_num_]; ++buf_;
               if (char_ == '>' && bracket_ > 0) --bracket_; break;
-    default:  buffer_ += char_;              break; // keep on writing
+    default:  ++buf_;              break; // keep on writing
   }
 
   // If bracket count falls to 0 we are out of the subdictionary
-  if (bracket_ == 0) AssignValue_("", START);
+  if (bracket_ == 0) AssignValue_(false, START);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -594,6 +600,9 @@ std::unordered_map<string, string> Dictionary::GetMap() const
   return this->map_;
 }
 
+
+/*---------------------------------------------------------------------------*/
+// Mainly for debugging
 
 void Dictionary::PrettyPrint() const
 {

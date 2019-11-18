@@ -74,7 +74,7 @@ auto dict_from_pdf = Dictionary(ptr_to_pdf, 195);
 auto resources_test = dict_from_pdf.GetDictionary("/Resources");
 auto font_test = resources_test.GetDictionary("/Font");
 auto subfont_test = font_test.GetDictionary("/F1");
-auto get_font_name = subfont_test.GetString("/BaseFont");
+auto get_font_name = subfont_test["/BaseFont"];
 
 Dictionary test_dictionary = Dictionary(make_shared<string>(test_dict_string));
 

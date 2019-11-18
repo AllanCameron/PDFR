@@ -167,6 +167,15 @@ void ReadFont(std::vector<uint8_t> fontfile);
 // [[Rcpp::export]]
 Rcpp::DataFrame ShowTypeSizes();
 
+// [[Rcpp::export]]
+float FloatParseStd(std::string a);
+
+// [[Rcpp::export]]
+float FloatParseMe(std::string a);
+
+// [[Rcpp::export]]
+void TestBuffer(const std::string& p_input);
+
 //---------------------------------------------------------------------------//
 // This function can be called from R to stop the underlying C++ code. This can
 // be handy in profiling etc.

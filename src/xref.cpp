@@ -193,17 +193,13 @@ void XRef::ReadXRefFromString_(string& p_xref_string)
   }
 }
 
-/*---------------------------------------------------------------------------*/
-// Returns the byte offset for a pdf object
-
-size_t XRef::GetObjectStartByte(int p_object_number) const
+const XRefRow& XRef::GetRow_(int p_object_number) const
 {
   auto found = xref_table_.find(p_object_number);
-
   if (found == xref_table_.end()) throw runtime_error("Object does not exist");
-
-  return found->second.startbyte;
+  return found->second;
 }
+
 
 /*---------------------------------------------------------------------------*/
 // Returns the end byte of an object by finding the first example of the
@@ -211,30 +207,15 @@ size_t XRef::GetObjectStartByte(int p_object_number) const
 
 size_t XRef::GetObjectEndByte(int p_object_number) const
 {
-  auto row = xref_table_.find(p_object_number);
-
-  // throw an error if objnum isn't a valid object
-  if (row == xref_table_.end()) throw runtime_error("Object doesn't exist");
+  auto&& row = GetRow_(p_object_number);
 
   // If the object is in an object stream, return 0;
-  if (row->second.in_object) return 0;
+  if (row.in_object) return 0;
 
   // else find the first match of "endobj" and return
-  return file_string_->find("endobj", row->second.startbyte);
+  return file_string_->find("endobj", row.startbyte);
 }
 
-/*---------------------------------------------------------------------------*/
-// If an object is part of an objectstream, this tells us which object forms
-// the objectstream.
-
-size_t XRef::GetHoldingNumberOf(int p_object_number) const
-{
-  auto row = xref_table_.find(p_object_number);
-
-  if (row == xref_table_.end()) throw runtime_error("Object does not exist");
-
-  return row->second.in_object;
-}
 
 /*---------------------------------------------------------------------------*/
 // Returns vector of all objects listed in the xrefs
@@ -289,14 +270,6 @@ void XRef::Decrypt(string& p_stream, int p_object, int p_generation) const
 }
 
 /*---------------------------------------------------------------------------*/
-// Getter for encryption state
-
-bool XRef::IsEncrypted() const
-{
-  if(encryption_) return true; else return false;
-}
-
-/*---------------------------------------------------------------------------*/
 // getter function to access the trailer dictionary - a private data member
 
 Dictionary XRef::GetTrailer() const
@@ -330,14 +303,6 @@ void XRef::CreateCrypto_()
 vector<vector<int>> XRefStream::Table_()
 {
   return result_;
-}
-
-/*---------------------------------------------------------------------------*/
-// get a pointer to the original document
-
-shared_ptr<const string> XRef::File() const
-{
-  return this->file_string_;
 }
 
 /*---------------------------------------------------------------------------*/

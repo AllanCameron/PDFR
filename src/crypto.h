@@ -98,19 +98,19 @@ private:
   std::vector<uint8_t> ChopLong_(FourBytes) const;
 
   // Return permission flags for file
-  std::vector<uint8_t> ReadPermissions_(std::string);
+  std::vector<uint8_t> ReadPermissions_(const std::string&);
 
   // Helper function for md5
   void Md5Mix_(int, std::deque<FourBytes>&, std::vector<FourBytes>&) const;
 
   // Gives md5 hash of a vector of raw bytes
-  std::vector<uint8_t> Md5_(std::vector<uint8_t>) const;
+  std::vector<uint8_t> Md5_(const std::vector<uint8_t>&) const;
 
   // Gives md5 hash of a string (as bytes)
-  std::vector<uint8_t> Md5_(std::string) const;
+  std::vector<uint8_t> Md5_(const std::string&) const;
 
   // Gives rc4 cipher of message:key pair, given key and message
-  void Rc4_(std::vector<uint8_t>&, std::vector<uint8_t>) const;
+  void Rc4_(std::vector<uint8_t>&, const std::vector<uint8_t>&) const;
 
   // Gets /O and /U cipher
   std::vector<uint8_t> ReadPassword_(const std::string&);

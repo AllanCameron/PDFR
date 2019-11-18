@@ -65,6 +65,18 @@ ShowTypeSizes <- function() {
     .Call(`_PDFR_ShowTypeSizes`)
 }
 
+FloatParseStd <- function(a) {
+    .Call(`_PDFR_FloatParseStd`, a)
+}
+
+FloatParseMe <- function(a) {
+    .Call(`_PDFR_FloatParseMe`, a)
+}
+
+TestBuffer <- function(p_input) {
+    invisible(.Call(`_PDFR_TestBuffer`, p_input))
+}
+
 .stopCpp <- function() {
     invisible(.Call(`_PDFR_stopCpp`))
 }

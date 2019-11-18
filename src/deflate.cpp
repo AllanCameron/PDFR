@@ -24,9 +24,6 @@ using namespace std;
 // I will define a HuffmanMap for brevity and clarity
 typedef unordered_map<uint32_t, uint32_t> HuffmanMap;
 
-// Further typedef for brevity and clarity
-typedef vector<uint32_t> LengthArray;
-
 /*---------------------------------------------------------------------------*/
 // The flatedecode interface is very simple. Provide it with a pointer to a
 // compressed string and it will replace it with a pointer to the uncompressed
@@ -65,7 +62,7 @@ void FlateDecode(string* p_message)
 // seemed more sensible to me to reverse the lookup tables, since that would
 // require fewer bit-reversals in total.
 
-const HuffmanMap Deflate::fixed_literal_map_ {
+const unordered_map<uint32_t, uint32_t> Deflate::fixed_literal_map_ {
 {0x8000c,   0}, {0x8008c,   1}, {0x8004c,   2}, {0x800cc,   3}, {0x8002c,   4},
 {0x800ac,   5}, {0x8006c,   6}, {0x800ec,   7}, {0x8001c,   8}, {0x8009c,   9},
 {0x8005c,  10}, {0x800dc,  11}, {0x8003c,  12}, {0x800bc,  13}, {0x8007c,  14},
@@ -131,7 +128,7 @@ const HuffmanMap Deflate::fixed_literal_map_ {
 // a fixed compression dictionary is employed. It uses the same scheme as above
 // to convert from a 32-bit unsigned int to a variable-length bit sequence.
 
-const HuffmanMap Deflate::fixed_distance_map_ {
+const unordered_map<uint32_t, uint32_t> Deflate::fixed_distance_map_ {
   {0x50000,  0}, {0x50010,  1}, {0x50008,  2}, {0x50018,  3}, {0x50004,  4},
   {0x50014,  5}, {0x5000c,  6}, {0x5001c,  7}, {0x50002,  8}, {0x50012,  9},
   {0x5000a, 10}, {0x5001a, 11}, {0x50006, 12}, {0x50016, 13}, {0x5000e, 14},
@@ -188,9 +185,10 @@ Deflate::Deflate(const string* p_input) : Stream(p_input),
 // a single key. We reverse the bit sequence for easy lookup and store it in
 // the low order bits, then store the number of bits in the high order bits.
 
-HuffmanMap Deflate::Huffmanize_(const LengthArray& p_lengths)
+unordered_map<uint32_t, uint32_t>
+Deflate::Huffmanize_(const vector<uint32_t>& p_lengths)
 {
-  HuffmanMap huffman_table;
+  unordered_map<uint32_t, uint32_t> huffman_table;
 
   // The maximum length is stored in the main table as it is needed for reading
   // the table later.
@@ -256,10 +254,10 @@ std::string PrintBits(uint32_t p_entry)
 
 /*---------------------------------------------------------------------------*/
 // This is the function that actually reads the bit stream to find the next
-// code, matching it against the appropriate HuffmanMap. The map is passed
+// code, matching it against the appropriate Huffman map. The map is passed
 // by reference.
 
-uint32_t Deflate::ReadCode_(HuffmanMap& p_map)
+uint32_t Deflate::ReadCode_(unordered_map<uint32_t, uint32_t>& p_map)
 {
   // The maximum and minimum number of bits that may be required for a match
   // in a given Huffman table is stored in the table itself and retrieved here.
@@ -344,7 +342,7 @@ void Deflate::ReadBlock_()
   // created for 8-bit numbers to return themselves via a Huffman Map.
   if ( three_bit_header == 0)
   {
-    HuffmanMap uncompressed_literal_codes;
+    unordered_map<uint32_t, uint32_t> uncompressed_literal_codes;
     for(uint32_t i = 0; i < 286; ++i)
     {
       auto flipped_bit = BitFlip(i, 8);
@@ -403,7 +401,7 @@ void Deflate::BuildDynamicCodeTable_()
 
   // Read the code lengths code table using the above numbers as indices. Each
   // code length is given as three bits (lengths can be 0 to 7)
-  LengthArray code_length_lengths(19);
+  vector<uint32_t> code_length_lengths(19);
   for (uint32_t i = 0; i < number_of_length_codes; ++i)
   {
     uint8_t triplet = GetBits(3);
@@ -414,7 +412,7 @@ void Deflate::BuildDynamicCodeTable_()
   auto code_length_table = Huffmanize_(code_length_lengths);
 
   // Create an empty array for our literal / distance code lengths
-  LengthArray code_lengths(total_code_count);
+  vector<uint32_t> code_lengths(total_code_count);
 
   // We need to keep track of our current position and look out for the special
   // cases of codes 16, 17, 18, which are run-length encodings rather than
@@ -462,8 +460,8 @@ void Deflate::BuildDynamicCodeTable_()
   auto&& literal_end = literal_start + literal_code_count;
 
   // Now build our Huffman tree from the given length arrays
-  literal_map_ = Huffmanize_(LengthArray(literal_start, literal_end));
-  distance_map_ = Huffmanize_(LengthArray(literal_end, code_lengths.end()));
+  literal_map_ = Huffmanize_(vector<uint32_t>(literal_start, literal_end));
+  distance_map_= Huffmanize_(vector<uint32_t>(literal_end, code_lengths.end()));
 }
 
 /*---------------------------------------------------------------------------*/

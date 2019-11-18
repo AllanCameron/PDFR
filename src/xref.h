@@ -91,15 +91,22 @@ class XRef
   XRef(){};
 
   // public methods
-  bool IsEncrypted()                         const; // Returns encryption state
   Dictionary GetTrailer()                    const; // Gets trailer dictionary
-  size_t GetObjectStartByte(int)             const; // Gets object's byte offset
   size_t GetObjectEndByte(int)               const; // Gets object end position
-  size_t GetHoldingNumberOf(int)             const; // Gets stream object number
   std::vector<int> GetAllObjectNumbers()     const; // Gets all object numbers
   std::vector<size_t> GetStreamLocation(int) const; // Gets start/stop of stream
   void Decrypt(std::string&, int, int)       const; // Decrypts a stream
-  std::shared_ptr<const std::string> File()  const; // Gets file string pointer
+
+  inline std::shared_ptr<const std::string> File() const { return file_string_;}
+
+  inline bool IsEncrypted() const
+    { if(encryption_) return true; else return false; }
+
+  inline size_t GetObjectStartByte(int p_object_number) const
+    { return GetRow_(p_object_number).startbyte; }
+
+  inline size_t GetHoldingNumberOf(int p_object_number) const
+   { return GetRow_(p_object_number).in_object; }
 
  private:
   std::shared_ptr<const std::string> file_string_;  // Pointer to file string
@@ -115,6 +122,7 @@ class XRef
   void ReadXRefFromStream_(int);          // Uses xrefstream class to get XRef
   void ReadXRefFromString_(std::string&); // parses XRef directly
   void CreateCrypto_();                   // Allows decryption of encrypted docs
+  const XRefRow& GetRow_(int) const;
 };
 
 //---------------------------------------------------------------------------//

@@ -92,12 +92,12 @@ void Document::BuildDocument_()
 // objects it comes across, and there are at least as many of these are there
 // are pages.
 
-std::vector<int> Document::ExpandKids_(const vector<int>& p_object_numbers)
+vector<int> Document::ExpandKids_(const vector<int>& p_object_numbers)
 {
   // We first copy the vector over to a list because we may need to do a lot
   // of insertions depending on how big the document is, and vectors are not
   // efficient for this purpose.
-  std::list<int> kids_list(p_object_numbers.begin(), p_object_numbers.end());
+  list<int> kids_list(p_object_numbers.begin(), p_object_numbers.end());
 
   // Define an iterator to erase root nodes and replace with child nodes.
   auto kid = kids_list.begin();
@@ -127,7 +127,7 @@ std::vector<int> Document::ExpandKids_(const vector<int>& p_object_numbers)
         kids_list.insert(kid, new_kid); // Insert is OK since this is a list
       }
       auto erase_point = kid;
-      kid = std::prev(kid, refs.size());
+      kid = prev(kid, refs.size());
       kids_list.erase(erase_point);
     }
     else // If there are no /Kids, this is a leaf node - increment to next node
@@ -137,7 +137,7 @@ std::vector<int> Document::ExpandKids_(const vector<int>& p_object_numbers)
   }
 
   // Remember to convert the list back into a vector for return
-  std::vector<int> result(kids_list.begin(), kids_list.end());
+  vector<int> result(kids_list.begin(), kids_list.end());
   return result;
 }
 

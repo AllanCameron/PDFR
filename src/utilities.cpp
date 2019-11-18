@@ -31,51 +31,6 @@ static unordered_map<char, uint8_t> s_hexmap =
 };
 
 /*---------------------------------------------------------------------------*/
-// A fixed static array to allow quick lookup of characters for use in the
-// several lexers in this program. The position of each element represents an
-// input char. The value is 'L' for any letter, 'D' for any digit, ' ' for any
-// whitespace, and otherwise just the value of the char itself. This prevents
-// having to go through a bunch of 'if' statements every time we look up a
-// character in the lexer, since this may be done hundreds of thousands of times
-// for each document.
-
-static array<uint8_t, 256> s_symbol_type =
-{
-  0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
-  0x08, 0x20, 0x20, 0x0b, 0x0c, 0x20, 0x0e, 0x0f,
-  0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
-  0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f,
-  0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27,
-  0x28, 0x29, 0x2a, 0x2b, 0x2c, 0x2d, 0x2e, 0x2f,
-  0x44, 0x44, 0x44, 0x44, 0x44, 0x44, 0x44, 0x44,
-  0x44, 0x44, 0x3a, 0x3b, 0x3c, 0x3d, 0x3e, 0x3f,
-  0x40, 0x4c, 0x4c, 0x4c, 0x4c, 0x4c, 0x4c, 0x4c,
-  0x4c, 0x4c, 0x4c, 0x4c, 0x4c, 0x4c, 0x4c, 0x4c,
-  0x4c, 0x4c, 0x4c, 0x4c, 0x4c, 0x4c, 0x4c, 0x4c,
-  0x4c, 0x4c, 0x4c, 0x5b, 0x5c, 0x5d, 0x5e, 0x5f,
-  0x60, 0x4c, 0x4c, 0x4c, 0x4c, 0x4c, 0x4c, 0x4c,
-  0x4c, 0x4c, 0x4c, 0x4c, 0x4c, 0x4c, 0x4c, 0x4c,
-  0x4c, 0x4c, 0x4c, 0x4c, 0x4c, 0x4c, 0x4c, 0x4c,
-  0x4c, 0x4c, 0x4c, 0x7b, 0x7c, 0x7d, 0x7e, 0x7f,
-  0x80, 0x81, 0x82, 0x83, 0x84, 0x85, 0x86, 0x87,
-  0x88, 0x89, 0x8a, 0x8b, 0x8c, 0x8d, 0x8e, 0x8f,
-  0x90, 0x91, 0x92, 0x93, 0x94, 0x95, 0x96, 0x97,
-  0x98, 0x99, 0x9a, 0x9b, 0x9c, 0x9d, 0x9e, 0x9f,
-  0xa0, 0xa1, 0xa2, 0xa3, 0xa4, 0xa5, 0xa6, 0xa7,
-  0xa8, 0xa9, 0xaa, 0xab, 0xac, 0xad, 0xae, 0xaf,
-  0xb0, 0xb1, 0xb2, 0xb3, 0xb4, 0xb5, 0xb6, 0xb7,
-  0xb8, 0xb9, 0xba, 0xbb, 0xbc, 0xbd, 0xbe, 0xbf,
-  0xc0, 0xc1, 0xc2, 0xc3, 0xc4, 0xc5, 0xc6, 0xc7,
-  0xc8, 0xc9, 0xca, 0xcb, 0xcc, 0xcd, 0xce, 0xcf,
-  0xd0, 0xd1, 0xd2, 0xd3, 0xd4, 0xd5, 0xd6, 0xd7,
-  0xd8, 0xd9, 0xda, 0xdb, 0xdc, 0xdd, 0xde, 0xdf,
-  0xe0, 0xe1, 0xe2, 0xe3, 0xe4, 0xe5, 0xe6, 0xe7,
-  0xe8, 0xe9, 0xea, 0xeb, 0xec, 0xed, 0xee, 0xef,
-  0xf0, 0xf1, 0xf2, 0xf3, 0xf4, 0xf5, 0xf6, 0xf7,
-  0xf8, 0xf9, 0xfa, 0xfb, 0xfc, 0xfd, 0xfe, 0xff
-};
-
-/*---------------------------------------------------------------------------*/
 // Returns the first substring of p_string that lies between two delimiters.
 // e.g.
 //
@@ -167,7 +122,7 @@ bool IsAscii(const string& p_string)
   if (p_string.empty()) return false; // Not sure if this is true or false
 
   // Use minmax to get a pair of iterators pointing to min & max char values
-  auto minmax_ptrs = minmax_element(p_string.begin(), p_string.end());
+  auto&& minmax_ptrs = minmax_element(p_string.begin(), p_string.end());
 
   // If any are outside the ascii range return false, otherwise return true
   return *(minmax_ptrs.first) > 7 && *(minmax_ptrs.second) < 127;
@@ -223,25 +178,6 @@ string ConvertIntToHex(int p_int)
   hex += hex[(p_int & 0x00f0) >>  4];  // Gets index of hex from third 4 bits
   hex += hex[(p_int & 0x000f) >>  0];  // Gets index of hex from last 4 bits
   return string {hex, 16, 4};
-}
-
-/*---------------------------------------------------------------------------*/
-// Classifies characters for use in lexers. This allows the use of switch
-// statements that depend on whether a letter is a character, digit or
-// whitespace but is indifferent to which specific instance of each it finds.
-// For cases where the lexer needs to find a specific symbol, this function
-// returns the original character if it is not a digit, a letter or whitespace.
-// e.g.
-//
-// GetSymbolType( 'a') == 'L'; // letter
-// GetSymbolType( '9') == 'D'; // digit
-// GetSymbolType('\t') == ' '; // space
-// GetSymbolType( '#') == '#'; // not a letter, digit or space. Returns itself
-
-char GetSymbolType(const char p_char)
-{
-  // if none of the above, return the char itself;
-  return s_symbol_type[(uint8_t) p_char];
 }
 
 /*--------------------------------------------------------------------------*/
@@ -399,7 +335,8 @@ vector<int> ParseInts(const string& p_string)
   };
 
   vector<int> result;       // Vector to store results
-  string buffer;            // String buffer to hold chars which may be ints
+  int buffer = 0;            // String buffer to hold chars which may be ints
+  int neg = 1;
   IntState state = WAITING; // Current state of the finite state machine.
 
   // The main loop cycles through each char in the string to write the result
@@ -410,36 +347,29 @@ vector<int> ParseInts(const string& p_string)
     {
       case WAITING: if (m == 'D')
                     {
-                      if (buffer.length() > 10)
-                      {
-                        state = IGNORE;
-                      }
-                      else
-                      {
-                        buffer += chr;
+                        buffer += (int) chr - 48;
                         state = INT;
-                      }
                     }
                     else if (chr == '-')
                     {
-                      buffer += chr;
+                      neg = -1;
                       state = NEG;
                     }
                     break;
 
       case NEG    : if (m == 'D')
                     {
-                      buffer += chr;
+                      buffer = (int) chr - 48;
                       state = INT;
                     }
-                    else { buffer.clear(); state = WAITING;}
+                    else { neg = 1; state = WAITING;}
                     break;
 
-      case INT    : if (m == 'D') buffer += chr;
+    case INT    : if (m == 'D') {buffer *= 10; buffer += (int) chr - 48;}
                     else
                     {
-                      if (buffer != "-") result.push_back(stoi(buffer));
-                      buffer.clear();
+                      result.push_back(neg * buffer);
+                      buffer = 0; neg = 1;
                       if (chr == '.') state = IGNORE;
                       else            state = WAITING;
                     }
@@ -448,7 +378,7 @@ vector<int> ParseInts(const string& p_string)
       case IGNORE : if (m != 'D') state = WAITING; break;
     }
   }
-  if (state == INT && !buffer.empty()) result.push_back(stoi(buffer));
+  if (state != WAITING) result.push_back(neg * buffer);
   return result;
 }
 
@@ -466,13 +396,15 @@ vector<float> ParseFloats(const string& p_string)
   enum FloatState  // The possible states of the finite state machine
   {
     WAITING,       // Awaiting a character that might represent a number
-    NEG,           // Found a minus sign. Could be start of negative number
     PRE,           // Reading an integer until whitespace or decimal point
     POST           // Reading fractional number after integer and point found
   };
 
   vector<float> result;        // Vector to store and return results
-  string buffer;               // A buffer to hold characters until needed
+  int pre = 0;
+  int post = 0;
+  int neg = 1;
+  int post_size = 1;
   FloatState state = WAITING;  // Current state of the finite state machine
 
   // The main loop cycles through each char in the string to write the result
@@ -481,34 +413,31 @@ vector<float> ParseFloats(const string& p_string)
     char m = GetSymbolType(chr);
     switch (state)
     {
-    case WAITING: if (m == 'D'){ buffer += chr; state = PRE;}
-                  else if (chr == '-'){ buffer += chr; state = NEG;}
-                  else if (chr == '.'){ buffer += chr; state = POST;}
+    case WAITING: if (m == 'D'){ pre = (int) chr - 48; state = PRE;}
+                  else if (chr == '-'){ neg = -1; state = PRE;}
+                  else if (chr == '.'){ state = POST;}
                   break;
 
-    case NEG:     if (m == 'D'){ buffer += chr; state = PRE;}
-                  else if (chr == '.'){ buffer = "-0."; state = POST;}
-                  else {buffer.clear(); state = WAITING;}
-                  break;
-
-    case PRE:     if (m == 'D') buffer += chr;
-                  else if (chr == '.'){ buffer += chr; state = POST;}
+    case PRE:     if (m == 'D') {pre *= 10; pre += (int) chr - 48;}
+                  else if (chr == '.'){ state = POST;}
                   else
                   {
-                    if (buffer != "-") result.push_back(stof(buffer));
-                    buffer.clear(); state = WAITING;
+                    if (chr != '-') result.push_back((float) pre);
+                    pre = 0; state = WAITING;
                   }
                   break;
 
-    case POST:    if (m == 'D') buffer += chr;
-                  else{ result.push_back(stof(buffer));
-                        state = WAITING; buffer.clear();}
+    case POST:    if (m == 'D') {post *= 10; post_size *= 10;
+                                 post += (int) chr - 48;}
+                  else{ result.push_back(neg * (pre + ((float) post / post_size)));
+                        pre = post = 0; neg = 1; post_size = 1;
+                        state = WAITING;}
                   break;
     }
   }
 
-  if (state == PRE  && !buffer.empty()) result.push_back(stof(buffer));
-  if (state == POST && buffer != "-0.") result.push_back(stof(buffer));
+  if (state != WAITING)
+    result.push_back(neg * (pre + ((float) post / post_size)));
   return result;
 }
 

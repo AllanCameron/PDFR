@@ -342,7 +342,7 @@ shared_ptr<Dictionary>
 Page::FollowToDictionary(shared_ptr<Dictionary> p_entry,
                          const string& p_name)
 {
-  // If /Font entry of resources_ isn't a dictionary
+  // If it isn't a dictionary
   if (!p_entry->ContainsDictionary(p_name))
   {
     // It must be a reference - follow this to get the dictionary

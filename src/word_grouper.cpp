@@ -72,19 +72,18 @@ void WordGrouper::Tabulate_(const vector<float>& p_supplied_vector,
 void WordGrouper::FindEdges_()
 {
   // Create vectors of left and right edges of text elements
-  vector<float> left, right;
+  vector<float> left, right, midvec;
+  left.reserve(text_box_->size());
+  right.reserve(text_box_->size());
+  midvec.reserve(text_box_->size());
+
   for (auto& element : *text_box_)
   {
     left.push_back(element->GetLeft());
     right.push_back(element->GetRight());
+    midvec.push_back((left.back() + right.back()) / 2);
   }
 
-  // Create a vector of midpoints of text elements
-  vector<float> midvec;
-  for (size_t i = 0; i < right.size(); ++i)
-  {
-    midvec.emplace_back((right[i] + left[i]) / 2);
-  }
 
   // Use Tabulate to find left and right edges as well as midpoints
   Tabulate_(left,   left_edges_);

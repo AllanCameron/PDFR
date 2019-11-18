@@ -114,7 +114,7 @@ vector<uint8_t> Crypto::ChopLong_(FourBytes p_long_int) const
 // appropriately. For the purposes of text extraction however, this is not
 // required, and we just need the permissions flag to produce the file key.
 
-vector<uint8_t> Crypto::ReadPermissions_(std::string p_string)
+vector<uint8_t> Crypto::ReadPermissions_(const std::string& p_string)
 {
   // No string == no permissions. Can't decode pdf, so throw an error
   if (p_string.empty()) throw runtime_error("No permission flags");
@@ -193,7 +193,7 @@ void Crypto::Md5Mix_(int p_cycle,
 // The main Md5 algorithm. This version of it was modified from various
 // open source online implementations.
 
-vector<uint8_t> Crypto::Md5_(vector<uint8_t> p_message) const
+vector<uint8_t> Crypto::Md5_(const vector<uint8_t>& p_message) const
 {
   // The length of the message
   int message_length = p_message.size();
@@ -279,7 +279,7 @@ vector<uint8_t> Crypto::Md5_(vector<uint8_t> p_message) const
 // conversion. It simply converts a string to bytes than puts it
 // into the "bytes" version of the function
 
-vector<uint8_t> Crypto::Md5_(std::string p_input) const
+vector<uint8_t> Crypto::Md5_(const std::string& p_input) const
 {
   return Md5_(vector<uint8_t>(p_input.begin(), p_input.end()));
 }
@@ -292,8 +292,8 @@ vector<uint8_t> Crypto::Md5_(std::string p_input) const
 // directly back into the original message using exactly the same key.
 // The algorithm is now in the public domain
 
-void Crypto::Rc4_(vector<uint8_t>& p_message, vector<uint8_t> p_key) const
-{
+void Crypto::Rc4_(vector<uint8_t>& p_message, const vector<uint8_t>& p_key)
+  const {
   int key_length = p_key.size(), message_length = p_message.size();
   uint8_t a = 0, b = 0, x = 0, y = 0;
 
@@ -381,7 +381,7 @@ void Crypto::DecryptStream(string& p_stream,
 vector<uint8_t> Crypto::ReadPassword_(const string& p_key)
 {
    // Get raw bytes of owner password hash
-  string password(encryption_dictionary_.GetString(p_key));
+  string password(encryption_dictionary_[p_key]);
   string temporary_password;
   temporary_password.reserve(32);
 
@@ -430,10 +430,10 @@ void Crypto::ReadFileKey_()
   Concatenate(filekey_, owner_password);
 
   // Stick permissions flags on
-  auto permission_string = encryption_dictionary_.GetString("/P");
+  auto permission_string = encryption_dictionary_["/P"];
   Concatenate(filekey_, ReadPermissions_(permission_string));
 
-  auto id_string = trailer_.GetString("/ID");
+  string id_string = trailer_["/ID"];
 
   // Get first 16 bytes of file ID and stick them on too
   vector<uint8_t> id_bytes = ParseID_(id_string);
@@ -498,7 +498,7 @@ void Crypto::CheckKeyR3_()
   // Next get the default user password
   vector<uint8_t> user_password = default_user_password_;
 
-  auto id_bytes = ParseID_(trailer_.GetString("/ID"));
+  auto id_bytes = ParseID_(trailer_["/ID"]);
 
   // We now append the bytes from the ID entry of the trailer dictionary
   Concatenate(user_password, id_bytes);

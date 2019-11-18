@@ -97,8 +97,8 @@ void Parser::Q_()
 void Parser::Td_()
 {
   Matrix Tds = Matrix();                 //---------------------------------
-  Tds[6] = stof(operands_[0]);           //  create 3 x 3 translation matrix
-  Tds[7] = stof(operands_[1]);           //---------------------------------
+  Tds[6] = ParseFloats(operands_[0])[0]; //  create 3 x 3 translation matrix
+  Tds[7] = ParseFloats(operands_[1])[0]; //---------------------------------
 
   // Multiply translation and text matrices
   td_state_ *= Tds;
@@ -114,7 +114,7 @@ void Parser::TD_()
 {
   Td_();
   // Set text leading to new value
-  tl_ = -stof(operands_[1]);
+  tl_ = -ParseFloats(operands_[1])[0];
 }
 
 /*---------------------------------------------------------------------------*/
@@ -148,7 +148,7 @@ void Parser::Tf_()
   {
     current_font_ = operands_[0];                  // Read fontID
     working_font_ = page_->GetFont(current_font_); // Get font from fontID
-    current_font_size_ = stof(operands_[1]);       // Get font size
+    current_font_size_ = ParseFloats(operands_[1])[0];    // Get font size
     font_size_stack_.back() = current_font_size_;  // Remember changes to state
     font_stack_.back() = current_font_;            // Remember changes to state
   }

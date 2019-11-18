@@ -573,6 +573,33 @@ Rcpp::DataFrame ShowTypeSizes()
   return DataFrame::create(Named("Class") = types, Named("Size") = type_sizes);
 };
 
+
+float FloatParseStd(std::string a)
+{return std::stof(a);}
+
+float FloatParseMe(std::string a)
+{return ParseFloats(a)[0];}
+
+
+void TestBuffer(const std::string& p_input)
+{
+  Buffer buf(p_input, 0, 0);
+  ++buf;
+  ++buf;
+  ++buf;
+  std::cout << "First three letters are " << buf.AsString() << std::endl;
+  buf.Clear();
+  ++buf;
+  ++buf;
+  ++buf;
+  std::cout << "Next three letters are " << buf.AsString() << std::endl;
+buf.StartAt(1);
+++buf;
+++buf;
+++buf;
+std::cout << "Three letters starting at second letter are " << buf.AsString() << std::endl;
+}
+
 #ifdef PROFILER_PDFR
 void stopCpp(){TheNodeList::Instance().endprofiler(); }
 #endif
