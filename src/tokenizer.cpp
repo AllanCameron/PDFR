@@ -11,13 +11,15 @@
 
 #include "utilities.h"
 #include "tokenizer.h"
+#include<iostream>
 
 using namespace std;
 using namespace Token;
 
 std::string Tokenizer::in_loop_ = "none";
 
-std::array<Tokenizer::CharType, 256> Tokenizer::char_lookup_ = {
+const std::array<CharType, 256> TokenizerBuffer::char_lookup_ =
+{
   OTH, OTH, OTH, OTH, OTH, OTH, OTH, OTH,
   OTH, OTH, SPC, OTH, OTH, SPC, OTH, OTH,
   OTH, OTH, OTH, OTH, OTH, OTH, OTH, OTH,
@@ -57,8 +59,7 @@ std::array<Tokenizer::CharType, 256> Tokenizer::char_lookup_ = {
 // lexer function
 
 Tokenizer::Tokenizer(shared_ptr<string> p_input, Parser* p_interpreter)
-  : contents_(p_input),
-    it_(contents_->begin()),
+  : it_(p_input),
     state_(NEWSYMBOL),
     interpreter_(p_interpreter)
 {
@@ -73,7 +74,7 @@ Tokenizer::Tokenizer(shared_ptr<string> p_input, Parser* p_interpreter)
 
 void Tokenizer::PushBuffer_(const TokenState p_type, const TokenState p_state)
 {
-  if (buffer_ == "Do" && p_state == IDENTIFIER)
+  if (it_ == "Do" && p_state == IDENTIFIER)
   {
     string loop_name = interpreter_->GetOperand();
     if (loop_name != in_loop_)
@@ -85,10 +86,10 @@ void Tokenizer::PushBuffer_(const TokenState p_type, const TokenState p_state)
       if (IsAscii(*xobject)) Tokenizer(xobject, interpreter_);
     }
   }
-
+  auto content = it_.Contents();
   state_ = p_state; // switch state
-  interpreter_->Reader(buffer_, p_type); // make pair and push to result
-  buffer_.clear(); // clear buffer
+  interpreter_->Reader(content, p_type); // make pair and push to result
+  it_.Clear(); // clear buffer
 }
 
 /*---------------------------------------------------------------------------*/
@@ -99,7 +100,7 @@ void Tokenizer::PushBuffer_(const TokenState p_type, const TokenState p_state)
 void Tokenizer::Tokenize_()
 {
   // Ensures the iterator doesn't exceed string length
-  while (it_ != contents_->end())
+  while (!it_.HasOverflowed())
   {
     switch (state_)
     {
@@ -115,7 +116,7 @@ void Tokenizer::Tokenize_()
       case WAIT:        WaitState_();              break;
       case OPERATOR:                               break;
     }
-    ++it_; // move to next character in the string
+    ++it_;
   }
 }
 
@@ -124,22 +125,22 @@ void Tokenizer::Tokenize_()
 
 void Tokenizer::ResourceState_()
 {
-  switch (char_lookup_[*it_])
+  switch (it_.GetCharType())
   {
-    case LAB:   PushBuffer_(RESOURCE, HEXSTRING);              break;
-    case LET:   buffer_.append(it_, it_ + 1);                  break;
-    case DIG:   buffer_.append(it_, it_ + 1);                  break;
-    case USC:   buffer_.append("_");                           break;
-    case LSB:   PushBuffer_(RESOURCE, ARRAY);                  break;
-    case FSL:   PushBuffer_(RESOURCE, RESOURCE);               break;
-    case AST:   buffer_.append("*");                           break;
-    case LCB:   PushBuffer_(RESOURCE, STRING);                 break;
-    case SUB:   buffer_.append("-");                           break;
+    case LAB:   PushBuffer_(RESOURCE, HEXSTRING); ++it_; it_.Clear(); break;
+    case LET:                                                         break;
+    case DIG:                                                         break;
+    case USC:                                                         break;
+    case LSB:   PushBuffer_(RESOURCE, ARRAY);                         break;
+    case FSL:   PushBuffer_(RESOURCE, RESOURCE);                      break;
+    case AST:                                                         break;
+    case LCB:   PushBuffer_(RESOURCE, STRING);    ++it_; it_.Clear(); break;
+    case SUB:                                                         break;
     case BSL:   throw runtime_error("illegal character");
-    case SPC:   PushBuffer_(RESOURCE, NEWSYMBOL);              break;
+    case SPC:   PushBuffer_(RESOURCE, NEWSYMBOL);                     break;
     case RAB:   throw runtime_error("illegal character");
     case PER:   throw runtime_error("illegal character");
-    case ADD:   buffer_.append("+");                           break;
+    case ADD:                                                         break;
     default:    throw runtime_error("illegal character");
   }
 }
@@ -150,22 +151,24 @@ void Tokenizer::ResourceState_()
 void Tokenizer::NewSymbolState_()
 {
   // get symbol_type of current char
-  switch (char_lookup_[*it_])
+  switch (it_.GetCharType())
   {
-    case LAB:                                 state_ = HEXSTRING;   break;
-    case LET:   buffer_.append(it_, it_ + 1); state_ = IDENTIFIER;  break;
-    case DIG:   buffer_.append(it_, it_ + 1); state_ = NUMBER;      break;
-    case USC:   buffer_.append(it_, it_ + 1); state_ = IDENTIFIER;  break;
-    case LSB:                                 state_ = ARRAY;       break;
-    case FSL:   buffer_.append(it_, it_ + 1); state_ = RESOURCE;    break;
-    case AST:   buffer_.append(it_, it_ + 1); state_ = IDENTIFIER;  break;
-    case LCB:                                 state_ = STRING;      break;
-    case SUB:   buffer_.append(it_, it_ + 1); state_ = NUMBER;      break;
-    case PER:   buffer_.append("0.");         state_ = NUMBER;      break;
-    case SQO:   buffer_.append(it_, it_ + 1); state_ = IDENTIFIER;  break;
-    case APO:   buffer_.append("Ap");
-                PushBuffer_(IDENTIFIER, NEWSYMBOL);                 break;
-    default : buffer_.clear();                state_ = NEWSYMBOL;   break;
+    case LAB: ++it_;  it_.Clear();  state_ = HEXSTRING;   break;
+    case LET:         it_.Clear();  state_ = IDENTIFIER;  break;
+    case DIG:         it_.Clear();  state_ = NUMBER;      break;
+    case USC:         it_.Clear();  state_ = IDENTIFIER;  break;
+    case LSB:         it_.Clear();  state_ = NEWSYMBOL;   break;
+    case RSB:         it_.Clear();  state_ = NEWSYMBOL;   break;
+    case FSL:         it_.Clear();  state_ = RESOURCE;    break;
+    case AST:         it_.Clear();  state_ = IDENTIFIER;  break;
+    case LCB: ++it_;  it_.Clear(); if (it_.GetCharType() == BSL)
+                                   EscapeState_();        else
+                                   state_ = STRING;       break;
+    case SUB:         it_.Clear();  state_ = NUMBER;      break;
+    case PER:         it_.Clear();  state_ = NUMBER;      break;
+    case SQO:         it_.Clear();  state_ = IDENTIFIER;  break;
+    case APO: PushBuffer_(IDENTIFIER, NEWSYMBOL);         break;
+    default :         it_.Clear();  state_ = NEWSYMBOL;   break;
   }
 }
 
@@ -175,22 +178,21 @@ void Tokenizer::NewSymbolState_()
 void Tokenizer::IdentifierState_()
 {
   // get symbol_type of current char
-  switch (char_lookup_[*it_])
+  switch (it_.GetCharType())
   {
-    case LAB:   PushBuffer_(IDENTIFIER, HEXSTRING);      break;
-    case LET:   buffer_.append(it_, it_ + 1);            break;
-    case DIG:   buffer_.append(it_, it_ + 1);            break;
+    case LAB: PushBuffer_(IDENTIFIER, HEXSTRING); ++it_; it_.Clear(); break;
+    case LET:                                                         break;
+    case DIG:                                                         break;
                 //  BI == inline image
-    case SPC:   if (buffer_ == "BI") state_ = WAIT;
-                else PushBuffer_(IDENTIFIER, NEWSYMBOL); break;
-    case FSL:   PushBuffer_(IDENTIFIER, RESOURCE);
-                buffer_ = "/";                           break;
-    case LSB:   PushBuffer_(IDENTIFIER, ARRAY);          break;
-    case LCB:   PushBuffer_(IDENTIFIER, STRING);         break;
-    case SUB:   buffer_.append(it_, it_ + 1);            break;
-    case USC:   buffer_.append(it_, it_ + 1);            break;
-    case AST:   buffer_.append(it_, it_ + 1);            break;
-    default:                                             break;
+    case SPC: if (it_ == "BI") state_ = WAIT;
+              else PushBuffer_(IDENTIFIER, NEWSYMBOL);                break;
+    case FSL: PushBuffer_(IDENTIFIER, RESOURCE); --it_;               break;
+    case LSB: PushBuffer_(IDENTIFIER, NEWSYMBOL);                     break;
+    case LCB: PushBuffer_(IDENTIFIER, STRING);++it_; it_.Clear();     break;
+    case SUB:                                                         break;
+    case USC:                                                         break;
+    case AST:                                                         break;
+    default : it_.Clear();                                            break;
   }
 }
 
@@ -200,19 +202,19 @@ void Tokenizer::IdentifierState_()
 void Tokenizer::NumberState_()
 {
   // get symbol_type of current char
-  switch (char_lookup_[*it_])
+  switch (it_.GetCharType())
   {
-    case LAB:   PushBuffer_(NUMBER, HEXSTRING);                break;
-    case DIG:   buffer_.append(it_, it_ + 1);                  break;
-    case SPC:   PushBuffer_(NUMBER, NEWSYMBOL);                break;
-    case PER:   buffer_.append(it_, it_ + 1);                  break;
-    case LCB:   PushBuffer_(NUMBER, STRING);                   break;
-    case LET:   buffer_.append(it_, it_ + 1);                  break;
-    case USC:   buffer_.append(it_, it_ + 1);                  break;
-    case SUB:   PushBuffer_(NUMBER, NUMBER); buffer_.clear();  break;
-    case AST:   PushBuffer_(NUMBER, NUMBER); buffer_.clear();  break;
-    case FSL:   PushBuffer_(NUMBER, NUMBER); buffer_.clear();  break;
-    case LSB:   PushBuffer_(NUMBER, ARRAY);                    break;
+    case LAB:   PushBuffer_(NUMBER, HEXSTRING); ++it_; it_.Clear();   break;
+    case DIG:                                                         break;
+    case SPC:   PushBuffer_(NUMBER, NEWSYMBOL);                       break;
+    case PER:                                                         break;
+    case LCB:   PushBuffer_(NUMBER, STRING); ++it_; it_.Clear();      break;
+    case LET:                                                         break;
+    case USC:                                                         break;
+    case SUB:   PushBuffer_(NUMBER, NUMBER);                          break;
+    case AST:   PushBuffer_(NUMBER, NUMBER);                          break;
+    case FSL:   PushBuffer_(NUMBER, NUMBER);                          break;
+    case LSB:   PushBuffer_(NUMBER, ARRAY);                           break;
     default:    PushBuffer_(NUMBER, NEWSYMBOL);
   }
 }
@@ -223,11 +225,11 @@ void Tokenizer::NumberState_()
 void Tokenizer::StringState_()
 {
   // get symbol_type of current char
-  switch (char_lookup_[*it_])
+  switch (it_.GetCharType())
   {
-    case RCB:   PushBuffer_(STRING, NEWSYMBOL);            break;
-    case BSL:   EscapeState_();                            break;
-    default:    buffer_.append(it_, it_ + 1);              break;
+    case RCB:   PushBuffer_(STRING, NEWSYMBOL);             break;
+    case BSL:   EscapeState_();                             break;
+    default:                                                break;
   }
 }
 
@@ -236,8 +238,8 @@ void Tokenizer::StringState_()
 
 void Tokenizer::ArrayState_()
 {
-  it_--;
   state_ = NEWSYMBOL;
+  it_.Clear();
 }
 
 /*---------------------------------------------------------------------------*/
@@ -246,14 +248,14 @@ void Tokenizer::ArrayState_()
 void Tokenizer::HexStringState_()
 {
   // get symbol_type of current char
-  switch (char_lookup_[*it_])
+  switch (it_.GetCharType())
   {
-    case RAB: if (!buffer_.empty()) PushBuffer_(HEXSTRING, NEWSYMBOL);
-               state_ = NEWSYMBOL;                                    break;
-    case LAB:  buffer_.clear(); state_ = DICT;                        break;
-    case BSL:  buffer_.append(it_, it_ + 1); ++it_;
-               buffer_.append(it_, it_ + 1);                          break;
-    default:   buffer_.append(it_, it_ + 1);                          break;
+    case RAB:  if (!it_.Empty())
+                 PushBuffer_(HEXSTRING, NEWSYMBOL);
+               state_ = NEWSYMBOL;                    break;
+    case LAB:  it_.Clear(); state_ = DICT;            break;
+    case BSL:  ++it_;                                 break;
+    default:                                          break;
   }
 }
 
@@ -264,12 +266,11 @@ void Tokenizer::HexStringState_()
 void Tokenizer::DictionaryState_()
 {
   // get symbol_type of current char
-  switch (char_lookup_[*it_])
+  switch (it_.GetCharType())
   {
-    case BSL:  buffer_.append(it_, it_ + 1); ++it_;
-               buffer_.append(it_, it_ + 1);                           break;
-    case RAB:  PushBuffer_(DICT, HEXSTRING);                           break;
-    default:   buffer_.append(it_, it_ + 1);                           break;
+    case BSL:   ++it_;                        break;
+    case RAB:  PushBuffer_(DICT, HEXSTRING);  break;
+    default:                                  break;
   }
 }
 
@@ -278,39 +279,32 @@ void Tokenizer::DictionaryState_()
 
 void Tokenizer::EscapeState_()
 {
-  ++it_;
+  if ( ! it_.Empty()) {--it_; PushBuffer_(STRING, STRING); ++it_;}
+  ++it_; it_.Clear();
 
   // Read the next char - if it's a digit it's likely an octal
-  if (char_lookup_[*it_] == DIG)
+  if (it_.GetCharType() == DIG)
   {
     int octcount = 0;
     PushBuffer_(STRING, STRING);
 
     // Add consecutive chars to octal (up to 3)
-    while (char_lookup_[*it_] == DIG && octcount < 3)
+    while (it_.GetCharType() == DIG && octcount < 3)
     {
-      buffer_.append(it_, it_ + 1); ++it_;
+       ++it_;
       octcount++;
     }
 
     // Convert octal string to int
-    int newint = stoi(buffer_, nullptr, 8);
-    buffer_ = ConvertIntToHex(newint);
-    PushBuffer_(HEXSTRING, STRING);
-    it_--;  // Decrement to await next char
+    int newint = stoi(it_.Contents(), nullptr, 8);
+    auto hexstring = ConvertIntToHex(newint);
+    state_ = STRING; // switch state
+    interpreter_->Reader(hexstring, HEXSTRING); // make pair and push to result
+    it_.Clear();
+    if(it_.GetCharType() == RCB) state_ = NEWSYMBOL; else state_ = STRING;
   }
-  // If a "space" i.e. linebreak comes after the backslash, this is just a
-  // pdf end-of-line marker with no semantic meaning. The backslash and the
-  // following character are therefore skipped.
-  else if (char_lookup_[*it_] == SPC)
-  {
 
-  }
-  // If not a digit or space, get escaped char
-  else if (*it_ == 'n') buffer_.append("\n");
-  else if (*it_ == 'r') buffer_.append("\r");
-  else if (*it_ == 't') buffer_.append("\t");
-  else buffer_.append(it_, it_ + 1);
+
 }
 
 /*---------------------------------------------------------------------------*/
@@ -319,12 +313,9 @@ void Tokenizer::EscapeState_()
 
 void Tokenizer::WaitState_()
 {
-  do
-  {
-    auto ei_position = contents_->find("EI", it_ - contents_->begin()) + 2;
-    it_ = contents_->begin() + ei_position;
-  }
-  while (char_lookup_[*it_] != SPC);
-  buffer_.clear();
+
+  while (it_.GetChar() != 'E') {++it_; it_.Clear();}
+  if(it_.GetChar() != 'I') WaitState_();
+  it_.Clear();
   state_ = NEWSYMBOL; // Only break out of wait state by finding EI (or EOF)
 }

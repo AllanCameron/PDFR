@@ -42,6 +42,56 @@
 
 #include "parser.h"
 
+enum CharType
+{
+  LAB, LET, DIG, USC, LSB, FSL, AST, LCB, SUB, APO,
+  BSL, SPC, RAB, PER, ADD, QOT, RCB, RSB, SQO, OTH
+};
+
+class TokenizerBuffer
+{
+public:
+  TokenizerBuffer(std::shared_ptr<std::string> p_input) :
+  input_(p_input),
+  start_(p_input->c_str()),
+  end_(p_input->size()),
+  head_(0),
+  tail_(0) {}
+
+
+  void operator++() {++tail_;}
+  void operator--() {if (tail_ > 0) --tail_; if(head_ > tail_) head_ = tail_;}
+  std::string Contents() {return std::string(start_ + head_, tail_ - head_);}
+  char GetChar() {return *(start_ + tail_);}
+  bool operator==(const char* p_literal)
+  {
+    auto store = head_;
+    while(*p_literal)
+    {
+      if (*p_literal++ != *(start_ + head_++))
+      {
+        head_ = store; return false;
+      }
+    }
+    head_ = store;
+    return true;
+  }
+  bool Empty() {return tail_ == head_;}
+  bool HasOverflowed() {return !(tail_ < end_);}
+  static const std::array<CharType, 256> char_lookup_;
+
+  CharType GetCharType(){ return char_lookup_[this->GetChar()];}
+
+  void Clear() {head_ = tail_;}
+
+private:
+  std::shared_ptr<std::string> input_;
+  const char* start_;
+
+  size_t end_;
+  size_t head_;
+  size_t tail_;
+};
 //---------------------------------------------------------------------------//
 // The Tokenizer class. It has a simple interface of one constructor and one
 // getter for the result. The private members allow for passing of state
@@ -56,19 +106,11 @@ class Tokenizer
 
  private:
   // Enumerates the types of characters that can alter state differently
-  enum CharType
-  {
-    LAB, LET, DIG, USC, LSB, FSL, AST, LCB, SUB, APO,
-    BSL, SPC, RAB, PER, ADD, QOT, RCB, RSB, SQO, OTH
-  };
 
-  std::shared_ptr<std::string> contents_; // Pointer to input string
-  std::string::const_iterator it_;        // Iterates through contents_
-  std::string buffer_;                    // Tokenizer's string buffer
+  TokenizerBuffer it_;
   Token::TokenState state_;               // Current Tokenizer state
   Parser* interpreter_;                   // The Parser instructions are sent to
   static std::string in_loop_;            // Prevents an infinite loop
-  static std::array<CharType, 256> char_lookup_; // Lookup table for char type
 
   // private methods
   void Tokenize_();                    // chooses subroutine based on state

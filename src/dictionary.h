@@ -93,6 +93,8 @@ struct Buffer
 
   std::string AsString() {return std::string(string_ + start_, length_);}
 
+  bool Empty() {return length_ == 0;}
+
   const char* string_;
   size_t start_;
   size_t length_;

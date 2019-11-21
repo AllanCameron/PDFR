@@ -69,6 +69,24 @@ namespace Token
   };
 };
 
+inline std::string ShowToken(const Token::TokenState& p_token)
+{
+  switch(p_token)
+  {
+    case Token::NEWSYMBOL : return "NEWSYMBOL";
+    case Token::IDENTIFIER : return "IDENTIFIER";
+    case Token::NUMBER : return "NUMBER";
+    case Token::RESOURCE : return "RESOURCE";
+    case Token::STRING : return "STRING";
+    case Token::HEXSTRING : return "HEXSTRING";
+    case Token::ARRAY : return "ARRAY";
+    case Token::DICT : return "DICT";
+    case Token::WAIT : return "WAIT";
+    case Token::OPERATOR : return "OPERATOR";
+    default : return "Unknown operator";
+  }
+}
+
 //---------------------------------------------------------------------------//
 // To define the position of text elements on a page, the pdf page description
 // program uses 3 * 3 matrices. These allow for arbitrary scaling, rotation,
