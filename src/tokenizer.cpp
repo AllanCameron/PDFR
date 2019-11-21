@@ -61,7 +61,8 @@ const std::array<CharType, 256> TokenizerBuffer::char_lookup_ =
 Tokenizer::Tokenizer(shared_ptr<string> p_input, Parser* p_interpreter)
   : it_(p_input),
     state_(NEWSYMBOL),
-    interpreter_(p_interpreter)
+    interpreter_(p_interpreter),
+    escaped_(false)
 {
   Tokenize_();
 }
@@ -127,12 +128,13 @@ void Tokenizer::ResourceState_()
 {
   switch (it_.GetCharType())
   {
-    case LAB:   PushBuffer_(RESOURCE, HEXSTRING); ++it_; it_.Clear(); break;
+    case LAB:   PushBuffer_(RESOURCE, HEXSTRING); ++it_; it_.Clear();
+                  if (it_.GetChar() == '<') state_ = DICT; break;
     case LET:                                                         break;
     case DIG:                                                         break;
     case USC:                                                         break;
     case LSB:   PushBuffer_(RESOURCE, ARRAY);                         break;
-    case FSL:   PushBuffer_(RESOURCE, RESOURCE);                      break;
+  case FSL:   PushBuffer_(RESOURCE, RESOURCE);      break;
     case AST:                                                         break;
     case LCB:   PushBuffer_(RESOURCE, STRING);    ++it_; it_.Clear(); break;
     case SUB:                                                         break;
@@ -153,7 +155,9 @@ void Tokenizer::NewSymbolState_()
   // get symbol_type of current char
   switch (it_.GetCharType())
   {
-    case LAB: ++it_;  it_.Clear();  state_ = HEXSTRING;   break;
+    case LAB: ++it_;  it_.Clear();
+            if (it_.GetChar() == '<') state_ = DICT;
+            else state_ = HEXSTRING;   break;
     case LET:         it_.Clear();  state_ = IDENTIFIER;  break;
     case DIG:         it_.Clear();  state_ = NUMBER;      break;
     case USC:         it_.Clear();  state_ = IDENTIFIER;  break;
@@ -180,13 +184,14 @@ void Tokenizer::IdentifierState_()
   // get symbol_type of current char
   switch (it_.GetCharType())
   {
-    case LAB: PushBuffer_(IDENTIFIER, HEXSTRING); ++it_; it_.Clear(); break;
+    case LAB: PushBuffer_(IDENTIFIER, HEXSTRING); ++it_; it_.Clear();
+              if (it_.GetChar() == '<') state_ = DICT; break;
     case LET:                                                         break;
     case DIG:                                                         break;
                 //  BI == inline image
     case SPC: if (it_ == "BI") state_ = WAIT;
               else PushBuffer_(IDENTIFIER, NEWSYMBOL);                break;
-    case FSL: PushBuffer_(IDENTIFIER, RESOURCE); --it_;               break;
+  case FSL: PushBuffer_(IDENTIFIER, RESOURCE); it_.Clear();               break;
     case LSB: PushBuffer_(IDENTIFIER, NEWSYMBOL);                     break;
     case LCB: PushBuffer_(IDENTIFIER, STRING);++it_; it_.Clear();     break;
     case SUB:                                                         break;
@@ -204,7 +209,8 @@ void Tokenizer::NumberState_()
   // get symbol_type of current char
   switch (it_.GetCharType())
   {
-    case LAB:   PushBuffer_(NUMBER, HEXSTRING); ++it_; it_.Clear();   break;
+    case LAB:   PushBuffer_(NUMBER, HEXSTRING); ++it_; it_.Clear();
+                  if (it_.GetChar() == '<') state_ = DICT; break;
     case DIG:                                                         break;
     case SPC:   PushBuffer_(NUMBER, NEWSYMBOL);                       break;
     case PER:                                                         break;
@@ -224,6 +230,11 @@ void Tokenizer::NumberState_()
 
 void Tokenizer::StringState_()
 {
+  if (escaped_)
+  {
+    it_.Clear(); escaped_ = false;
+  }
+
   // get symbol_type of current char
   switch (it_.GetCharType())
   {
@@ -303,8 +314,23 @@ void Tokenizer::EscapeState_()
     it_.Clear();
     if(it_.GetCharType() == RCB) state_ = NEWSYMBOL; else state_ = STRING;
   }
+  else
+  {
+    string escaped;
+    switch(it_.GetChar())
+    {
+      case ')' : escaped = ")"; break;
+      case '\\' : escaped = "\\"; break;
+      case 'n' : escaped = "\n"; break;
+      case 'r' : escaped = "\r"; break;
+      case 't' : escaped = "\t"; break;
+      default : escaped = it_.GetChar();
+    }
 
-
+    interpreter_->Reader(escaped, STRING);
+    state_ = STRING;
+    escaped_ = true;
+  }
 }
 
 /*---------------------------------------------------------------------------*/

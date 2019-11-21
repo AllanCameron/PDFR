@@ -56,7 +56,7 @@ public:
   start_(p_input->c_str()),
   end_(p_input->size()),
   head_(0),
-  tail_(0) {}
+  tail_(0){}
 
 
   void operator++() {++tail_;}
@@ -111,6 +111,7 @@ class Tokenizer
   Token::TokenState state_;               // Current Tokenizer state
   Parser* interpreter_;                   // The Parser instructions are sent to
   static std::string in_loop_;            // Prevents an infinite loop
+  bool escaped_;
 
   // private methods
   void Tokenize_();                    // chooses subroutine based on state
