@@ -36,7 +36,7 @@ std::unordered_map<std::string, FunctionPointer> Parser::function_map_ =
   {"ET", &Parser::ET_}, {"cm", &Parser::cm_}, {"Tm", &Parser::Tm_},
   {"Tf", &Parser::Tf_}, {"Td", &Parser::Td_}, {"Th", &Parser::TH_},
   {"Tw", &Parser::TW_}, {"Tc", &Parser::TC_}, {"TL", &Parser::TL_},
-  {"T*", &Parser::T__}, {"TD", &Parser::TD_}, {"Ap", &Parser::Ap_},
+  {"T*", &Parser::T__}, {"TD", &Parser::TD_}, {"'", &Parser::Ap_},
   {"TJ", &Parser::TJ_}, {"Tj", &Parser::TJ_}
 };
 
@@ -235,6 +235,7 @@ void Parser::Ap_()
 {
   // The "'" operator is the same as Tj except it moves to the next line first
   td_state_[7] -= tl_;
+  kerning_ = 0;
   TJ_();
 }
 
@@ -334,7 +335,7 @@ void Parser::ProcessRawChar_(float& p_scale, Matrix& p_text_space,
 // When an operator function is called, it takes the operands on the stack
 // as arguments.
 
-void Parser::Reader(string& p_token, TokenState p_state)
+void Parser::Reader(const string& p_token, TokenState p_state)
 {
   // if it's an identifier, call the operator
   if (p_state == IDENTIFIER)

@@ -214,7 +214,7 @@ class Parser
   Parser(Parser&& p_other) noexcept : text_box_(std::move(p_other.text_box_)){}
 
   // Public function called by tokenizer to update graphics state
-  void Reader(std::string& p_token, Token::TokenState p_token_type);
+  void Reader(const std::string& p_token, Token::TokenState p_token_type);
 
   // Access results
   inline std::unique_ptr<TextBox> Output() {return std::move(this->text_box_);}

@@ -55,8 +55,7 @@ const std::array<CharType, 256> TokenizerBuffer::char_lookup_ =
 };
 
 /*---------------------------------------------------------------------------*/
-// constructor of Tokenizer - initializes members and starts main
-// lexer function
+// constructor of Tokenizer - initializes members and starts tokenizing
 
 Tokenizer::Tokenizer(shared_ptr<string> p_input, Parser* p_interpreter)
   : it_(p_input),
@@ -64,43 +63,8 @@ Tokenizer::Tokenizer(shared_ptr<string> p_input, Parser* p_interpreter)
     interpreter_(p_interpreter),
     escaped_(false)
 {
-  Tokenize_();
-}
-
-
-/*---------------------------------------------------------------------------*/
-// This pattern, of switching state, creating a token / type pair, pushing it
-// to the instruction set, and clearing the buffer is very common in the
-// lexer. This function acts as a shorthand to prevent boilerplate
-
-void Tokenizer::PushBuffer_(const TokenState p_type, const TokenState p_state)
-{
-  if (it_ == "Do" && p_state == IDENTIFIER)
-  {
-    string loop_name = interpreter_->GetOperand();
-    if (loop_name != in_loop_)
-    {
-      in_loop_ = loop_name;
-      shared_ptr<string> xobject = interpreter_->GetXObject(in_loop_);
-
-      // Don't try to parse binary objects like images etc
-      if (IsAscii(*xobject)) Tokenizer(xobject, interpreter_);
-    }
-  }
-  auto content = it_.Contents();
-  state_ = p_state; // switch state
-  interpreter_->Reader(content, p_type); // make pair and push to result
-  it_.Clear(); // clear buffer
-}
-
-/*---------------------------------------------------------------------------*/
-// This function co-ordinates the lexer by calling a subroutine depending on
-// the state. Each subroutine handles specific characters in a different but
-// well-specified way
-
-void Tokenizer::Tokenize_()
-{
-  // Ensures the iterator doesn't exceed string length
+  // Now cycle through each character, switching state as needed and writing
+  // to the interpreter when a parsed symbol has been obtained.
   while (!it_.HasOverflowed())
   {
     switch (state_)
@@ -122,28 +86,60 @@ void Tokenizer::Tokenize_()
 }
 
 /*---------------------------------------------------------------------------*/
+// There may be an "external" xobject in the page description program.
+// (i.e in a different pdf object). This needs to be fetched and parsed by the
+// same Parser instance we are using, but we call up a new Tokenizer to read
+// the symbols into the Parser. In theory, these XObjects can be nested so we
+// need to keep track of which XObject we're in using the in_loop_ member.
+
+void Tokenizer::HandleXObject_()
+{
+  string loop_name = interpreter_->GetOperand();
+  if (loop_name != in_loop_)
+  {
+    in_loop_ = loop_name;
+    shared_ptr<string> xobject = interpreter_->GetXObject(in_loop_);
+
+    // Don't try to parse binary objects like images etc
+    if (IsAscii(*xobject)) Tokenizer(xobject, interpreter_);
+  }
+}
+
+/*---------------------------------------------------------------------------*/
+// This pattern, of switching state, creating a token / type pair, pushing it
+// to the instruction set, and clearing the buffer is very common in the
+// lexer. This function acts as a shorthand to prevent boilerplate
+
+void Tokenizer::PushBuffer_(const TokenState p_type, const TokenState p_state)
+{
+  if (it_ == "Do" && p_state == IDENTIFIER) HandleXObject_();
+  interpreter_->Reader(it_.Contents(), p_type); // make pair and push to result
+  NewToken_(p_state);
+}
+
+
+/*---------------------------------------------------------------------------*/
 // Lexer is reading a resource (a /PdfName)
 
 void Tokenizer::ResourceState_()
 {
-  switch (it_.GetCharType())
+  switch (GetCharType())
   {
-    case LAB:   PushBuffer_(RESOURCE, HEXSTRING); ++it_; it_.Clear();
-                  if (it_.GetChar() == '<') state_ = DICT; break;
-    case LET:                                                         break;
-    case DIG:                                                         break;
-    case USC:                                                         break;
-    case LSB:   PushBuffer_(RESOURCE, ARRAY);                         break;
-  case FSL:   PushBuffer_(RESOURCE, RESOURCE);      break;
-    case AST:                                                         break;
-    case LCB:   PushBuffer_(RESOURCE, STRING);    ++it_; it_.Clear(); break;
-    case SUB:                                                         break;
-    case BSL:   throw runtime_error("illegal character");
-    case SPC:   PushBuffer_(RESOURCE, NEWSYMBOL);                     break;
-    case RAB:   throw runtime_error("illegal character");
-    case PER:   throw runtime_error("illegal character");
-    case ADD:                                                         break;
-    default:    throw runtime_error("illegal character");
+    case LAB:   PushBuffer_(RESOURCE, HEXSTRING); HandleLAB_(); break;
+    case LET:                                                   break;
+    case DIG:                                                   break;
+    case USC:                                                   break;
+    case LSB:   PushBuffer_(RESOURCE, ARRAY);                   break;
+    case FSL:   PushBuffer_(RESOURCE, RESOURCE);                break;
+    case AST:                                                   break;
+    case LCB:   PushBuffer_(RESOURCE, STRING);    Skip_();      break;
+    case SUB:                                                   break;
+    case BSL:   throw runtime_error("illegal character");       break;
+    case SPC:   PushBuffer_(RESOURCE, NEWSYMBOL);               break;
+    case RAB:   throw runtime_error("illegal character");       break;
+    case PER:   throw runtime_error("illegal character");       break;
+    case ADD:                                                   break;
+    default:    throw runtime_error("illegal character");       break;
   }
 }
 
@@ -153,26 +149,25 @@ void Tokenizer::ResourceState_()
 void Tokenizer::NewSymbolState_()
 {
   // get symbol_type of current char
-  switch (it_.GetCharType())
+  switch (GetCharType())
   {
-    case LAB: ++it_;  it_.Clear();
-            if (it_.GetChar() == '<') state_ = DICT;
-            else state_ = HEXSTRING;   break;
-    case LET:         it_.Clear();  state_ = IDENTIFIER;  break;
-    case DIG:         it_.Clear();  state_ = NUMBER;      break;
-    case USC:         it_.Clear();  state_ = IDENTIFIER;  break;
-    case LSB:         it_.Clear();  state_ = NEWSYMBOL;   break;
-    case RSB:         it_.Clear();  state_ = NEWSYMBOL;   break;
-    case FSL:         it_.Clear();  state_ = RESOURCE;    break;
-    case AST:         it_.Clear();  state_ = IDENTIFIER;  break;
-    case LCB: ++it_;  it_.Clear(); if (it_.GetCharType() == BSL)
-                                   EscapeState_();        else
-                                   state_ = STRING;       break;
-    case SUB:         it_.Clear();  state_ = NUMBER;      break;
-    case PER:         it_.Clear();  state_ = NUMBER;      break;
-    case SQO:         it_.Clear();  state_ = IDENTIFIER;  break;
-    case APO: PushBuffer_(IDENTIFIER, NEWSYMBOL);         break;
-    default :         it_.Clear();  state_ = NEWSYMBOL;   break;
+    case LAB: HandleLAB_();                       break;
+    case LET: NewToken_(IDENTIFIER);              break;
+    case DIG: NewToken_(NUMBER);                  break;
+    case USC: NewToken_(IDENTIFIER);              break;
+    case LSB: NewToken_(NEWSYMBOL);               break;
+    case RSB: NewToken_(NEWSYMBOL);               break;
+    case FSL: NewToken_(RESOURCE);                break;
+    case AST: NewToken_(IDENTIFIER);              break;
+    case LCB: Skip_();
+              if(GetCharType() == BSL)
+                EscapeState_();
+              else state_ = STRING;               break;
+    case SUB: NewToken_(NUMBER);                  break;
+    case PER: NewToken_(NUMBER);                  break;
+    case SQO: NewToken_(IDENTIFIER);              break;
+    case APO: interpreter_->Reader("'", IDENTIFIER); it_.Clear(); break;
+    default : NewToken_(NEWSYMBOL);               break;
   }
 }
 
@@ -182,22 +177,20 @@ void Tokenizer::NewSymbolState_()
 void Tokenizer::IdentifierState_()
 {
   // get symbol_type of current char
-  switch (it_.GetCharType())
+  switch (GetCharType())
   {
-    case LAB: PushBuffer_(IDENTIFIER, HEXSTRING); ++it_; it_.Clear();
-              if (it_.GetChar() == '<') state_ = DICT; break;
-    case LET:                                                         break;
-    case DIG:                                                         break;
-                //  BI == inline image
+    case LAB: PushBuffer_(IDENTIFIER, HEXSTRING); HandleLAB_(); break;
+    case LET:                                                   break;
+    case DIG:                                                   break;
     case SPC: if (it_ == "BI") state_ = WAIT;
-              else PushBuffer_(IDENTIFIER, NEWSYMBOL);                break;
-  case FSL: PushBuffer_(IDENTIFIER, RESOURCE); it_.Clear();               break;
-    case LSB: PushBuffer_(IDENTIFIER, NEWSYMBOL);                     break;
-    case LCB: PushBuffer_(IDENTIFIER, STRING);++it_; it_.Clear();     break;
-    case SUB:                                                         break;
-    case USC:                                                         break;
-    case AST:                                                         break;
-    default : it_.Clear();                                            break;
+              else PushBuffer_(IDENTIFIER, NEWSYMBOL);          break;
+    case FSL: PushBuffer_(IDENTIFIER, RESOURCE); it_.Clear();   break;
+    case LSB: PushBuffer_(IDENTIFIER, NEWSYMBOL);               break;
+    case LCB: PushBuffer_(IDENTIFIER, STRING); Skip_();         break;
+    case SUB:                                                   break;
+    case USC:                                                   break;
+    case AST:                                                   break;
+    default : it_.Clear();                                      break;
   }
 }
 
@@ -207,21 +200,20 @@ void Tokenizer::IdentifierState_()
 void Tokenizer::NumberState_()
 {
   // get symbol_type of current char
-  switch (it_.GetCharType())
+  switch (GetCharType())
   {
-    case LAB:   PushBuffer_(NUMBER, HEXSTRING); ++it_; it_.Clear();
-                  if (it_.GetChar() == '<') state_ = DICT; break;
-    case DIG:                                                         break;
-    case SPC:   PushBuffer_(NUMBER, NEWSYMBOL);                       break;
-    case PER:                                                         break;
-    case LCB:   PushBuffer_(NUMBER, STRING); ++it_; it_.Clear();      break;
-    case LET:                                                         break;
-    case USC:                                                         break;
-    case SUB:   PushBuffer_(NUMBER, NUMBER);                          break;
-    case AST:   PushBuffer_(NUMBER, NUMBER);                          break;
-    case FSL:   PushBuffer_(NUMBER, NUMBER);                          break;
-    case LSB:   PushBuffer_(NUMBER, ARRAY);                           break;
-    default:    PushBuffer_(NUMBER, NEWSYMBOL);
+    case LAB:   PushBuffer_(NUMBER, HEXSTRING); HandleLAB_(); break;
+    case DIG:                                                 break;
+    case SPC:   PushBuffer_(NUMBER, NEWSYMBOL);               break;
+    case PER:                                                 break;
+    case LCB:   PushBuffer_(NUMBER, STRING); Skip_();         break;
+    case LET:                                                 break;
+    case USC:                                                 break;
+    case SUB:   PushBuffer_(NUMBER, NUMBER);                  break;
+    case AST:   PushBuffer_(NUMBER, NUMBER);                  break;
+    case FSL:   PushBuffer_(NUMBER, NUMBER);                  break;
+    case LSB:   PushBuffer_(NUMBER, ARRAY);                   break;
+    default:    PushBuffer_(NUMBER, NEWSYMBOL);               break;
   }
 }
 
@@ -230,13 +222,11 @@ void Tokenizer::NumberState_()
 
 void Tokenizer::StringState_()
 {
-  if (escaped_)
-  {
-    it_.Clear(); escaped_ = false;
-  }
+  if (escaped_) it_.Clear();
+  escaped_ = false;
 
   // get symbol_type of current char
-  switch (it_.GetCharType())
+  switch (GetCharType())
   {
     case RCB:   PushBuffer_(STRING, NEWSYMBOL);             break;
     case BSL:   EscapeState_();                             break;
@@ -247,11 +237,7 @@ void Tokenizer::StringState_()
 /*---------------------------------------------------------------------------*/
 // lexer is in an array
 
-void Tokenizer::ArrayState_()
-{
-  state_ = NEWSYMBOL;
-  it_.Clear();
-}
+void Tokenizer::ArrayState_() {NewToken_(NEWSYMBOL);}
 
 /*---------------------------------------------------------------------------*/
 // lexer is reading a hexstring of format <11FA>
@@ -259,12 +245,11 @@ void Tokenizer::ArrayState_()
 void Tokenizer::HexStringState_()
 {
   // get symbol_type of current char
-  switch (it_.GetCharType())
+  switch (GetCharType())
   {
-    case RAB:  if (!it_.Empty())
-                 PushBuffer_(HEXSTRING, NEWSYMBOL);
+    case RAB:  if (!Empty()) PushBuffer_(HEXSTRING, NEWSYMBOL);
                state_ = NEWSYMBOL;                    break;
-    case LAB:  it_.Clear(); state_ = DICT;            break;
+    case LAB:  NewToken_(DICT);                       break;
     case BSL:  ++it_;                                 break;
     default:                                          break;
   }
@@ -277,7 +262,7 @@ void Tokenizer::HexStringState_()
 void Tokenizer::DictionaryState_()
 {
   // get symbol_type of current char
-  switch (it_.GetCharType())
+  switch (GetCharType())
   {
     case BSL:   ++it_;                        break;
     case RAB:  PushBuffer_(DICT, HEXSTRING);  break;
@@ -290,41 +275,43 @@ void Tokenizer::DictionaryState_()
 
 void Tokenizer::EscapeState_()
 {
-  if ( ! it_.Empty()) {--it_; PushBuffer_(STRING, STRING); ++it_;}
-  ++it_; it_.Clear();
+  // If we're in the middle of a string, we'll need to send what we have so far
+  // to the Parser.
+  if ( ! Empty()) PushBuffer_(STRING, STRING);
 
-  // Read the next char - if it's a digit it's likely an octal
-  if (it_.GetCharType() == DIG)
+  // We know we're in an escaped state, so we skip the actual backslash
+  Skip_();
+
+  // Read the next char - if it's a digit it's probably an octal
+  if (GetCharType() == DIG)
   {
     int octcount = 0;
-    PushBuffer_(STRING, STRING);
 
     // Add consecutive chars to octal (up to 3)
-    while (it_.GetCharType() == DIG && octcount < 3)
-    {
-       ++it_;
-      octcount++;
-    }
+    while (GetCharType() == DIG && octcount < 3) { ++it_; ++octcount; }
 
     // Convert octal string to int
     int newint = stoi(it_.Contents(), nullptr, 8);
-    auto hexstring = ConvertIntToHex(newint);
-    state_ = STRING; // switch state
-    interpreter_->Reader(hexstring, HEXSTRING); // make pair and push to result
-    it_.Clear();
-    if(it_.GetCharType() == RCB) state_ = NEWSYMBOL; else state_ = STRING;
+    interpreter_->Reader(ConvertIntToHex(newint), HEXSTRING);
+
+    // Get ready fpr the rest of the string
+    NewToken_(STRING);
+
+    // However, if there is no more left of the string, we need to switch out
+    if(GetCharType() == RCB) state_ = NEWSYMBOL;
   }
   else
   {
+    // We have an escape character which needs to be interpreted the long way
     string escaped;
-    switch(it_.GetChar())
+    switch(GetChar())
     {
-      case ')' : escaped = ")"; break;
-      case '\\' : escaped = "\\"; break;
-      case 'n' : escaped = "\n"; break;
-      case 'r' : escaped = "\r"; break;
-      case 't' : escaped = "\t"; break;
-      default : escaped = it_.GetChar();
+      case ')'  : escaped = ")";    break;
+      case '\\' : escaped = "\\";   break;
+      case 'n'  : escaped = "\n";   break;
+      case 'r'  : escaped = "\r";   break;
+      case 't'  : escaped = "\t";   break;
+      default   : escaped = GetChar();
     }
 
     interpreter_->Reader(escaped, STRING);
@@ -339,9 +326,15 @@ void Tokenizer::EscapeState_()
 
 void Tokenizer::WaitState_()
 {
+  // Moves through the string until it finds an 'E'
+  while (GetChar() != 'E') Skip_();
 
-  while (it_.GetChar() != 'E') {++it_; it_.Clear();}
-  if(it_.GetChar() != 'I') WaitState_();
-  it_.Clear();
-  state_ = NEWSYMBOL; // Only break out of wait state by finding EI (or EOF)
+  ++it_;
+
+  // If the following character is not an 'I', keeps looking for an 'E'
+  if(GetChar() != 'I') WaitState_();
+
+  // After an 'EI' is found we are out of the inline image and ready for the
+  // next token
+  NewToken_(NEWSYMBOL);
 }

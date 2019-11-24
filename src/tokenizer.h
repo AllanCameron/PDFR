@@ -61,8 +61,8 @@ public:
 
   void operator++() {++tail_;}
   void operator--() {if (tail_ > 0) --tail_; if(head_ > tail_) head_ = tail_;}
-  std::string Contents() {return std::string(start_ + head_, tail_ - head_);}
-  char GetChar() {return *(start_ + tail_);}
+  std::string Contents() const {return std::string(start_+head_, tail_-head_);}
+  char GetChar() const {return *(start_ + tail_);}
   bool operator==(const char* p_literal)
   {
     auto store = head_;
@@ -76,11 +76,11 @@ public:
     head_ = store;
     return true;
   }
-  bool Empty() {return tail_ == head_;}
-  bool HasOverflowed() {return !(tail_ < end_);}
+  bool Empty() const {return tail_ == head_;}
+  bool HasOverflowed() const {return !(tail_ < end_);}
   static const std::array<CharType, 256> char_lookup_;
 
-  CharType GetCharType(){ return char_lookup_[this->GetChar()];}
+  CharType GetCharType() const { return char_lookup_[this->GetChar()];}
 
   void Clear() {head_ = tail_;}
 
@@ -111,10 +111,9 @@ class Tokenizer
   Token::TokenState state_;               // Current Tokenizer state
   Parser* interpreter_;                   // The Parser instructions are sent to
   static std::string in_loop_;            // Prevents an infinite loop
-  bool escaped_;
+  bool escaped_;                          // Allows skipping of backslashes
 
   // private methods
-  void Tokenize_();                    // chooses subroutine based on state
   void NewSymbolState_();    //--------//---------------------------------------
   void ResourceState_();               //
   void IdentifierState_();             //
@@ -126,8 +125,17 @@ class Tokenizer
   void DictionaryState_();             //
   void WaitState_();         //--------//---------------------------------------
 
-  // Frequently used helper function to update buffer and state
+  // Frequently used helper functions to update buffer and state
   void PushBuffer_(const Token::TokenState, const Token::TokenState);
+  void HandleXObject_();
+  inline void NewToken_(const Token::TokenState T) {it_.Clear(); state_ = T;}
+  inline void Skip_() { ++it_; it_.Clear(); }
+  inline char GetChar() {return it_.GetChar();}
+  inline CharType GetCharType() {return it_.GetCharType();}
+  inline void HandleLAB_() {
+    Skip_();
+    if (GetChar() == '<') state_ = Token::DICT; else state_ = Token::HEXSTRING;}
+  inline bool Empty() const {return it_.Empty();}
 };
 
 //---------------------------------------------------------------------------//
