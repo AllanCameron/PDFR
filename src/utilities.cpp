@@ -30,6 +30,42 @@ static unordered_map<char, uint8_t> s_hexmap =
   {'F', 15}
 };
 
+const std::array<CharType, 256> Reader::char_lookup_ =
+{
+  OTH, OTH, OTH, OTH, OTH, OTH, OTH, OTH,
+  OTH, OTH, SPC, OTH, OTH, SPC, OTH, OTH,
+  OTH, OTH, OTH, OTH, OTH, OTH, OTH, OTH,
+  OTH, OTH, OTH, OTH, OTH, OTH, OTH, OTH,
+  SPC, OTH, QOT, OTH, OTH, OTH, SQO, APO,
+  LCB, RCB, AST, ADD, OTH, SUB, PER, FSL,
+  DIG, DIG, DIG, DIG, DIG, DIG, DIG, DIG,
+  DIG, DIG, OTH, OTH, LAB, OTH, RAB, OTH,
+  OTH, LET, LET, LET, LET, LET, LET, LET,
+  LET, LET, LET, LET, LET, LET, LET, LET,
+  LET, LET, LET, LET, LET, LET, LET, LET,
+  LET, LET, LET, LSB, BSL, RSB, OTH, USC,
+  OTH, LET, LET, LET, LET, LET, LET, LET,
+  LET, LET, LET, LET, LET, LET, LET, LET,
+  LET, LET, LET, LET, LET, LET, LET, LET,
+  LET, LET, LET, OTH, OTH, OTH, OTH, OTH,
+  OTH, OTH, OTH, OTH, OTH, OTH, OTH, OTH,
+  OTH, OTH, OTH, OTH, OTH, OTH, OTH, OTH,
+  OTH, OTH, OTH, OTH, OTH, OTH, OTH, OTH,
+  OTH, OTH, OTH, OTH, OTH, OTH, OTH, OTH,
+  OTH, OTH, OTH, OTH, OTH, OTH, OTH, OTH,
+  OTH, OTH, OTH, OTH, OTH, OTH, OTH, OTH,
+  OTH, OTH, OTH, OTH, OTH, OTH, OTH, OTH,
+  OTH, OTH, OTH, OTH, OTH, OTH, OTH, OTH,
+  OTH, OTH, OTH, OTH, OTH, OTH, OTH, OTH,
+  OTH, OTH, OTH, OTH, OTH, OTH, OTH, OTH,
+  OTH, OTH, OTH, OTH, OTH, OTH, OTH, OTH,
+  OTH, OTH, OTH, OTH, OTH, OTH, OTH, OTH,
+  OTH, OTH, OTH, OTH, OTH, OTH, OTH, OTH,
+  OTH, OTH, OTH, OTH, OTH, OTH, OTH, OTH,
+  OTH, OTH, OTH, OTH, OTH, OTH, OTH, OTH,
+  OTH, OTH, OTH, OTH, OTH, OTH, OTH, OTH
+};
+
 /*---------------------------------------------------------------------------*/
 // Returns the first substring of p_string that lies between two delimiters.
 // e.g.

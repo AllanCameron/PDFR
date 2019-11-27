@@ -52,54 +52,6 @@
 #include<memory>
 #include<unordered_map>
 
-struct Buffer
-{
-  Buffer(const std::string& p_input, int p_start, int p_length) :
-    string_(p_input.c_str()),
-    start_(p_start),
-    length_(p_length),
-    size_(p_input.size())
-  {
-    if(size_ < start_ + length_)
-      throw std::runtime_error("Invalid buffer position on creation.");
-  };
-
-  Buffer(): string_(nullptr), start_(0), length_(0), size_(0)
-  {
-    throw std::runtime_error("Invalid buffer creation to nullptr.");
-  }
-
-  void Clear(){start_ = start_ + length_; length_ = 0;}
-
-  void operator++()
-  {
-    if(size_ > start_ + length_)
-      ++length_;
-    else
-      throw std::runtime_error("Buffer exceeds string size");
-  }
-
-  void operator++(int)
-  {
-    ++(*this);
-  }
-
-  void StartAt(size_t p_new_start)
-  {
-    length_ = 1;
-    if(size_ > p_new_start) start_ = p_new_start;
-    else throw std::runtime_error("Cannot start buffer past end of string");
-  }
-
-  std::string AsString() {return std::string(string_ + start_, length_);}
-
-  bool Empty() {return length_ == 0;}
-
-  const char* string_;
-  size_t start_;
-  size_t length_;
-  size_t size_;
-};
 
 //---------------------------------------------------------------------------//
 
@@ -160,5 +112,87 @@ class Dictionary
 };
 
 //---------------------------------------------------------------------------//
+
+/*---------------------------------------------------------------------------*/
+// Returns any integers present in the value string as read by the ParseInts()
+// global function defined in utilities.cpp
+
+inline std::vector<int> Dictionary::GetInts(const std::string& p_key) const
+{
+  return ParseInts(this->GetString(p_key));
+}
+
+/*---------------------------------------------------------------------------*/
+// Returns any floats present in the value string as read by the ParseFloats()
+// global function defined in utilities.cpp
+
+inline std::vector<float> Dictionary::GetFloats(const std::string& p_key) const
+{
+  return ParseFloats(this->GetString(p_key));
+}
+
+/*---------------------------------------------------------------------------*/
+// Checks whether a subdictionary is present in the value string by looking
+// for double angle brackets
+
+inline bool Dictionary::ContainsDictionary(const std::string& p_key) const
+{
+  std::string dictionary = this->GetString(p_key);
+  return dictionary.find("<<") != std::string::npos;
+}
+
+/*---------------------------------------------------------------------------*/
+// Returns all the keys present in the dictionary using the GetKeys() template
+// defined in utilities.h
+
+inline std::vector<std::string> Dictionary::GetAllKeys() const
+{
+  return GetKeys(this->map_);
+}
+
+/*---------------------------------------------------------------------------*/
+// Returns the entire map. This is useful for passing dictionaries out of
+// the program, for example in debugging
+
+inline std::unordered_map<std::string, std::string> Dictionary::GetMap() const
+{
+  return this->map_;
+}
+
+/*---------------------------------------------------------------------------*/
+// Sometimes we just need a boolean check for the presence of a key
+
+inline bool Dictionary::HasKey(const std::string& p_key) const
+{
+  return map_.find(p_key) != map_.end();
+}
+
+/*---------------------------------------------------------------------------*/
+// We need to be able to check whether a key's value contains references.
+// This should return true if the key is present AND its value contains
+// at least one object reference, and should be false in all other cases
+
+inline bool Dictionary::ContainsReferences(const std::string& p_key) const
+{
+  return !this->GetReferences(p_key).empty();
+}
+
+/*---------------------------------------------------------------------------*/
+// Checks whether the key's values contains any integers. If a key is present
+// AND its value contains ints, this returns true. Otherwise false.
+
+inline bool Dictionary::ContainsInts(const std::string& p_key) const
+{
+  return !this->GetInts(p_key).empty();
+}
+
+/*---------------------------------------------------------------------------*/
+// Returns a vector of object numbers from any object references found in the
+// given key's value. Uses a global function from utilities.h
+
+inline std::vector<int> Dictionary::GetReferences(const std::string& p_key) const
+{
+  return ParseReferences(this->GetString(p_key));
+}
 
 #endif

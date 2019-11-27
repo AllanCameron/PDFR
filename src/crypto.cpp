@@ -545,11 +545,12 @@ vector<uint8_t> Crypto::ParseID_(const string& p_string)
   if (p_string.empty()) return result;
   auto it = p_string.begin();
 
-  // Search for openers until end of string
+/*  // Search for openers until end of string
   while (*it != '[')
   {
     if (++it == p_string.end()) throw runtime_error("Couldn't read file ID");
   }
+ */
 
   for (unsigned loop = 0; loop < 2; ++loop)
   {

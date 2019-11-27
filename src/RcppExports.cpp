@@ -212,16 +212,6 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// TestBuffer
-void TestBuffer(const std::string& p_input);
-RcppExport SEXP _PDFR_TestBuffer(SEXP p_inputSEXP) {
-BEGIN_RCPP
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const std::string& >::type p_input(p_inputSEXP);
-    TestBuffer(p_input);
-    return R_NilValue;
-END_RCPP
-}
 // stopCpp
 void stopCpp();
 RcppExport SEXP _PDFR_stopCpp() {
@@ -253,7 +243,6 @@ static const R_CallMethodDef CallEntries[] = {
     {"_PDFR_ShowTypeSizes", (DL_FUNC) &_PDFR_ShowTypeSizes, 0},
     {"_PDFR_FloatParseStd", (DL_FUNC) &_PDFR_FloatParseStd, 1},
     {"_PDFR_FloatParseMe", (DL_FUNC) &_PDFR_FloatParseMe, 1},
-    {"_PDFR_TestBuffer", (DL_FUNC) &_PDFR_TestBuffer, 1},
     {"_PDFR_stopCpp", (DL_FUNC) &_PDFR_stopCpp, 0},
     {"run_testthat_tests",             (DL_FUNC) &run_testthat_tests,             0},
     {NULL, NULL, 0}

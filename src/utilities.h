@@ -35,6 +35,7 @@
 #include<algorithm>
 #include<memory>
 #include<array>
+#include<iostream>
 
 //---------------------------------------------------------------------------//
 /* The characters in pdf strings are most portably interpreted as uint16_t.
@@ -216,6 +217,132 @@ private:
   std::vector<std::shared_ptr<Tree<T>>> children_;
   T item_;
 };
+
+enum CharType
+{
+  LAB, LET, DIG, USC, LSB, FSL, AST, LCB, SUB, APO,
+  BSL, SPC, RAB, PER, ADD, QOT, RCB, RSB, SQO, OTH
+};
+
+
+struct CharString
+{
+  CharString(const char* p_ptr, size_t p_start, size_t p_end) :
+  begin_(p_ptr + p_start), length_(p_end - p_start) {}
+
+  CharString(const char* p_ptr, size_t p_length) :
+  begin_(p_ptr), length_(p_length) {}
+
+  CharString(const std::string& p_string) :
+  begin_(p_string.c_str()), length_(p_string.size()) {}
+
+  CharString(const std::string& p_string, size_t p_start) :
+  begin_(p_string.c_str() + p_start), length_(p_string.size() - p_start) {}
+
+  CharString() : begin_(nullptr), length_(0) {}
+
+  CharString operator=(const CharString& p_chunk) {
+  begin_ = p_chunk.begin_; length_ = p_chunk.length_ ; return *this;}
+
+  char operator[](int p_index) const {return *(begin_ + p_index);}
+  bool operator==(const CharString& p_other)
+  {
+    if (length_ != p_other.length_) return false;
+    if (begin_ == p_other.begin_) return true;
+    for (size_t i = 0; i < length_; ++i)
+    {
+      if (*(begin_ + i) != *(p_other.begin_ + i)) return false;
+    }
+    return true;
+  }
+
+  std::string AsString() {return std::string(begin_, length_);};
+  const char* begin() const {return begin_;}
+  const char* end() const {return begin_ + length_;}
+  bool empty() const {return length_ == 0;}
+  size_t size() const {return length_;}
+
+  const char* begin_;
+  size_t length_;
+
+};
+
+
+// A 'magic number' to specify the maximum length that the dictionary
+// lexer will look through to find a dictionary
+static const size_t MAX_DICT_LEN = 100000;
+
+class Reader
+{
+public:
+  Reader() : start_(nullptr), first_(0), last_(0), size_(0) {}
+
+  Reader(std::shared_ptr<const std::string> p_input, size_t p_start) :
+    start_(p_input->c_str()),
+    first_(p_start),
+    last_(p_start),
+    size_(p_input->size()) {}
+
+  Reader(std::shared_ptr<const std::string> p_ptr) {*this = Reader(p_ptr, 0);}
+
+  Reader(const std::string& p_input) :
+    start_(p_input.c_str()),
+    first_(0),
+    last_(0),
+    size_(p_input.size()) {}
+
+  Reader(const CharString& p_input) :
+    start_(p_input.begin()),
+    first_(0),
+    last_(0),
+    size_(p_input.end() - p_input.begin()) {}
+
+  void operator++() {++last_;}
+  void SkipFirstChar() { if (first_ < last_) ++first_;}
+  std::string Contents() const {return std::string(start_+first_, last_- first_);}
+
+  CharString Out() const { return CharString(start_ + first_, last_ - first_);}
+
+  char GetChar() const {return *(start_ + last_);}
+
+  bool StartsString(const std::string& p_string)
+  {
+    std::string test_string(start_ + first_, p_string.size());
+    if (p_string.size() > (size_ - last_)) return false;
+    return p_string == test_string;
+  }
+
+  bool operator==(const char* p_literal)
+  {
+    auto store = first_;
+    while(*p_literal)
+    {
+      if (*p_literal++ != *(start_ + first_++))
+      {
+        first_ = store; return false;
+      }
+    }
+    first_ = store;
+    return true;
+  }
+  bool empty() const {return last_ == first_;}
+  bool HasOverflowed() const {return !(last_ < size_);}
+  size_t first() const {return first_;}
+  size_t last() const {return last_;}
+  size_t size() const {return size_;}
+  CharType GetCharType() const { return char_lookup_[this->GetChar()];}
+
+  void Clear() {first_ = last_;}
+
+private:
+  static const std::array<CharType, 256> char_lookup_;
+  const char* start_;
+  size_t first_;
+  size_t last_;
+  size_t size_;
+};
+
+
 
 //---------------------------------------------------------------------------//
 //                                                                           //

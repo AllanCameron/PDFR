@@ -18,41 +18,6 @@ using namespace Token;
 
 std::string Tokenizer::in_loop_ = "none";
 
-const std::array<CharType, 256> TokenizerBuffer::char_lookup_ =
-{
-  OTH, OTH, OTH, OTH, OTH, OTH, OTH, OTH,
-  OTH, OTH, SPC, OTH, OTH, SPC, OTH, OTH,
-  OTH, OTH, OTH, OTH, OTH, OTH, OTH, OTH,
-  OTH, OTH, OTH, OTH, OTH, OTH, OTH, OTH,
-  SPC, OTH, QOT, OTH, OTH, OTH, SQO, APO,
-  LCB, RCB, AST, ADD, OTH, SUB, PER, FSL,
-  DIG, DIG, DIG, DIG, DIG, DIG, DIG, DIG,
-  DIG, DIG, OTH, OTH, LAB, OTH, RAB, OTH,
-  OTH, LET, LET, LET, LET, LET, LET, LET,
-  LET, LET, LET, LET, LET, LET, LET, LET,
-  LET, LET, LET, LET, LET, LET, LET, LET,
-  LET, LET, LET, LSB, BSL, RSB, OTH, USC,
-  OTH, LET, LET, LET, LET, LET, LET, LET,
-  LET, LET, LET, LET, LET, LET, LET, LET,
-  LET, LET, LET, LET, LET, LET, LET, LET,
-  LET, LET, LET, OTH, OTH, OTH, OTH, OTH,
-  OTH, OTH, OTH, OTH, OTH, OTH, OTH, OTH,
-  OTH, OTH, OTH, OTH, OTH, OTH, OTH, OTH,
-  OTH, OTH, OTH, OTH, OTH, OTH, OTH, OTH,
-  OTH, OTH, OTH, OTH, OTH, OTH, OTH, OTH,
-  OTH, OTH, OTH, OTH, OTH, OTH, OTH, OTH,
-  OTH, OTH, OTH, OTH, OTH, OTH, OTH, OTH,
-  OTH, OTH, OTH, OTH, OTH, OTH, OTH, OTH,
-  OTH, OTH, OTH, OTH, OTH, OTH, OTH, OTH,
-  OTH, OTH, OTH, OTH, OTH, OTH, OTH, OTH,
-  OTH, OTH, OTH, OTH, OTH, OTH, OTH, OTH,
-  OTH, OTH, OTH, OTH, OTH, OTH, OTH, OTH,
-  OTH, OTH, OTH, OTH, OTH, OTH, OTH, OTH,
-  OTH, OTH, OTH, OTH, OTH, OTH, OTH, OTH,
-  OTH, OTH, OTH, OTH, OTH, OTH, OTH, OTH,
-  OTH, OTH, OTH, OTH, OTH, OTH, OTH, OTH,
-  OTH, OTH, OTH, OTH, OTH, OTH, OTH, OTH
-};
 
 /*---------------------------------------------------------------------------*/
 // constructor of Tokenizer - initializes members and starts tokenizing
@@ -247,10 +212,9 @@ void Tokenizer::HexStringState_()
   // get symbol_type of current char
   switch (GetCharType())
   {
-    case RAB:  if (!Empty()) PushBuffer_(HEXSTRING, NEWSYMBOL);
+    case RAB:  if (!empty()) PushBuffer_(HEXSTRING, NEWSYMBOL);
                state_ = NEWSYMBOL;                    break;
     case LAB:  NewToken_(DICT);                       break;
-    case BSL:  ++it_;                                 break;
     default:                                          break;
   }
 }
@@ -277,7 +241,7 @@ void Tokenizer::EscapeState_()
 {
   // If we're in the middle of a string, we'll need to send what we have so far
   // to the Parser.
-  if ( ! Empty()) PushBuffer_(STRING, STRING);
+  if ( ! empty()) PushBuffer_(STRING, STRING);
 
   // We know we're in an escaped state, so we skip the actual backslash
   Skip_();

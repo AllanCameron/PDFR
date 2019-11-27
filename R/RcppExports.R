@@ -73,10 +73,6 @@ FloatParseMe <- function(a) {
     .Call(`_PDFR_FloatParseMe`, a)
 }
 
-TestBuffer <- function(p_input) {
-    invisible(.Call(`_PDFR_TestBuffer`, p_input))
-}
-
 .stopCpp <- function() {
     invisible(.Call(`_PDFR_stopCpp`))
 }
