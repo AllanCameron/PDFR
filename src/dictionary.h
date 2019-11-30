@@ -111,7 +111,6 @@ class Dictionary
   std::unordered_map<std::string, std::string> map_;
 };
 
-//---------------------------------------------------------------------------//
 
 /*---------------------------------------------------------------------------*/
 // Returns any integers present in the value string as read by the ParseInts()
@@ -190,7 +189,7 @@ inline bool Dictionary::ContainsInts(const std::string& p_key) const
 // Returns a vector of object numbers from any object references found in the
 // given key's value. Uses a global function from utilities.h
 
-inline std::vector<int> Dictionary::GetReferences(const std::string& p_key) const
+inline std::vector<int> Dictionary::GetReferences(const std::string& p_key)const
 {
   return ParseReferences(this->GetString(p_key));
 }

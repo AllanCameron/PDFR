@@ -61,7 +61,11 @@ class Tokenizer
   Token::TokenState state_;               // Current Tokenizer state
   Parser* interpreter_;                   // The Parser instructions are sent to
   static std::string in_loop_;            // Prevents an infinite loop
-  bool escaped_;                          // Allows skipping of backslashes
+
+  // const member functions
+  char GetChar()         const {return it_.GetChar();}
+  CharType GetCharType() const {return it_.GetCharType();}
+  bool empty()           const {return it_.empty();}
 
   // private methods
   void NewSymbolState_();    //--------//---------------------------------------
@@ -78,14 +82,25 @@ class Tokenizer
   // Frequently used helper functions to update buffer and state
   void PushBuffer_(const Token::TokenState, const Token::TokenState);
   void HandleXObject_();
-  inline void NewToken_(const Token::TokenState T) {it_.Clear(); state_ = T;}
-  inline void Skip_() { ++it_; it_.Clear(); }
-  inline char GetChar() {return it_.GetChar();}
-  inline CharType GetCharType() {return it_.GetCharType();}
-  inline void HandleLAB_() {
+
+  // Some simple inlined helpers
+  void NewToken_(const Token::TokenState T) {it_.Clear(); state_ = T;}
+
+  void Skip_() { ++it_; it_.Clear(); }
+
+  void HandleLAB_()
+  {
     Skip_();
-    if (GetChar() == '<') state_ = Token::DICT; else state_ = Token::HEXSTRING;}
-  inline bool empty() const {return it_.empty();}
+    if (GetChar() == '<') state_ = Token::DICT;
+    else state_ = Token::HEXSTRING;
+  }
+
+  void HandleLCB_()
+  {
+    Skip_();
+    if (GetChar() == '\\') EscapeState_();
+    else state_ = Token::STRING;
+  }
 };
 
 //---------------------------------------------------------------------------//

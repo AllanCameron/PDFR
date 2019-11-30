@@ -386,7 +386,7 @@ vector<uint8_t> Crypto::ReadPassword_(const string& p_key)
   temporary_password.reserve(32);
 
   // This loop removes backslash escapes.
-  for (auto iter = password.begin() + 1; iter != password.end(); ++iter)
+  for (auto iter = password.begin(); iter != password.end(); ++iter)
   {
     if (*iter == '\\')
     {

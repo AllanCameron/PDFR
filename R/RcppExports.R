@@ -73,6 +73,14 @@ FloatParseMe <- function(a) {
     .Call(`_PDFR_FloatParseMe`, a)
 }
 
+TestDict <- function(p_string) {
+    invisible(.Call(`_PDFR_TestDict`, p_string))
+}
+
+TestCharString <- function(p_needle, p_haystack) {
+    invisible(.Call(`_PDFR_TestCharString`, p_needle, p_haystack))
+}
+
 .stopCpp <- function() {
     invisible(.Call(`_PDFR_stopCpp`))
 }

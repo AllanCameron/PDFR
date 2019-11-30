@@ -580,6 +580,24 @@ float FloatParseStd(std::string a)
 float FloatParseMe(std::string a)
 {return ParseFloats(a)[0];}
 
+void TestDict(const std::string& p_string)
+{
+  auto newptr = std::make_shared<std::string>(p_string);
+  Dictionary(newptr).PrettyPrint();
+}
+
+
+void TestCharString(const std::string& p_needle, const std::string& p_haystack)
+{
+  CharString haystack(p_haystack);
+  CharString needle(p_needle);
+  if (needle == "needle") std::cout << "Match to const char" << std::endl;
+  if (needle == needle.AsString()) cout << "Match to string" << endl;
+  if (needle == haystack) cout << "Match to charstring" << endl;
+  if (haystack.contains(needle.AsString())) cout << "Found needle in haystack" << endl;
+  else cout << "No needle found in haystack" << endl;
+
+}
 
 #ifdef PROFILER_PDFR
 void stopCpp(){TheNodeList::Instance().endprofiler(); }

@@ -212,6 +212,27 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// TestDict
+void TestDict(const std::string& p_string);
+RcppExport SEXP _PDFR_TestDict(SEXP p_stringSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const std::string& >::type p_string(p_stringSEXP);
+    TestDict(p_string);
+    return R_NilValue;
+END_RCPP
+}
+// TestCharString
+void TestCharString(const std::string& p_needle, const std::string& p_haystack);
+RcppExport SEXP _PDFR_TestCharString(SEXP p_needleSEXP, SEXP p_haystackSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const std::string& >::type p_needle(p_needleSEXP);
+    Rcpp::traits::input_parameter< const std::string& >::type p_haystack(p_haystackSEXP);
+    TestCharString(p_needle, p_haystack);
+    return R_NilValue;
+END_RCPP
+}
 // stopCpp
 void stopCpp();
 RcppExport SEXP _PDFR_stopCpp() {
@@ -243,6 +264,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_PDFR_ShowTypeSizes", (DL_FUNC) &_PDFR_ShowTypeSizes, 0},
     {"_PDFR_FloatParseStd", (DL_FUNC) &_PDFR_FloatParseStd, 1},
     {"_PDFR_FloatParseMe", (DL_FUNC) &_PDFR_FloatParseMe, 1},
+    {"_PDFR_TestDict", (DL_FUNC) &_PDFR_TestDict, 1},
+    {"_PDFR_TestCharString", (DL_FUNC) &_PDFR_TestCharString, 2},
     {"_PDFR_stopCpp", (DL_FUNC) &_PDFR_stopCpp, 0},
     {"run_testthat_tests",             (DL_FUNC) &run_testthat_tests,             0},
     {NULL, NULL, 0}

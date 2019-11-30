@@ -86,18 +86,22 @@ class DictionaryBuilder
 
   // Private functions
   void TokenizeDictionary_(); // co-ordinates the lexer
-  void SetKey_(DictionaryState);              //----//
-  void AssignValue_(DictionaryState);               //
-  void HandleMaybe_(char);                          //
-  void HandleStart_(char);                          //
-  void HandleKey_(char);                            //
-  void HandlePrevalue_(char);                       //--> functions to
-  void HandleValue_(char);                          //    handle lexer states
-  void HandleArrayValue_(char);                     //
-  void HandleString_(char);                         //
-  void HandleQueryDictionary_(char);                //
-  void HandleSubdictionary_(char);                  //
-  void HandleClose_(char);                    //----//
+  void SetKey_(DictionaryState);          //----//
+  void AssignValue_(DictionaryState);           //
+  void HandleMaybe_();                          //
+  void HandleStart_();                          //
+  void HandleKey_();                            //
+  void HandlePrevalue_();                       //--> functions to
+  void HandleValue_();                          //    handle lexer states
+  void HandleArrayValue_();                     //
+  void HandleString_();                         //
+  void HandleQueryDictionary_();                //
+  void HandleSubdictionary_();                  //
+  void HandleClose_();                    //----//
+
+  // A couple of inlined functions to abbreviate common tasks
+  char GetChar() const {return buf_.GetChar();}
+  bool CharIs(char p_char) const {return buf_.GetChar() == p_char;}
 };
 
 /*---------------------------------------------------------------------------*/
@@ -143,25 +147,21 @@ void DictionaryBuilder::TokenizeDictionary_()
   // Main loop : read next char from string and pass to state handling function
   while (buf_.last() < maxlen)
   {
-     // Determines char type at start of each loop
-    char input_char = GetSymbolType(buf_.GetChar());
-
     // Now chooses the correct state handling function based on current state
     switch (state_)
     {
-      case PREENTRY:    if (input_char == '<') state_ = MAYBE;   break;
-      case MAYBE:       HandleMaybe_(input_char);                break;
-      case START:       HandleStart_(input_char);                break;
-      case KEY:         HandleKey_(input_char);                  break;
-      case PREVALUE:    HandlePrevalue_(input_char);             break;
-      case VALUE:       HandleValue_(input_char);                break;
-      case ARRAYVAL:    HandleArrayValue_(input_char);           break;
-      case DSTRING:     HandleString_(input_char);               break;
-      case QUERYDICT:   HandleQueryDictionary_(input_char);      break;
-      case SUBDICT:     HandleSubdictionary_(input_char);        break;
-      case QUERYCLOSE:  if (input_char == '>') state_ = CLOSE;
-                        else state_ = START;                     break;
-      case CLOSE:       HandleClose_(input_char);                break;
+      case PREENTRY:    state_ = CharIs('<')? MAYBE : state_; break;
+      case MAYBE:       HandleMaybe_();                       break;
+      case START:       HandleStart_();                       break;
+      case KEY:         HandleKey_();                         break;
+      case PREVALUE:    HandlePrevalue_();                    break;
+      case VALUE:       HandleValue_();                       break;
+      case ARRAYVAL:    HandleArrayValue_();                  break;
+      case DSTRING:     HandleString_();                      break;
+      case QUERYDICT:   HandleQueryDictionary_();             break;
+      case SUBDICT:     HandleSubdictionary_();               break;
+      case QUERYCLOSE:  state_ = CharIs('>')? CLOSE : START;  break;
+      case CLOSE:       HandleClose_();                       break;
       case THE_END:     return; // Stops the loop iff end state reached
     }
     ++buf_;  // This is a while loop - don't forget to increment.
@@ -181,7 +181,6 @@ void DictionaryBuilder::TokenizeDictionary_()
 
 void DictionaryBuilder::SetKey_(DictionaryState p_state)
 {
-
   // If no key is awaiting value, store name as a key
   if (!key_pending_) pending_key_ = buf_.Contents();
 
@@ -216,9 +215,9 @@ void DictionaryBuilder::AssignValue_(DictionaryState p_state)
 // of the name value and switches to the appropriate state depending on the
 // next character
 
-void DictionaryBuilder::HandleKey_(char p_input_char)
+void DictionaryBuilder::HandleKey_()
 {
-  switch (p_input_char)
+  switch (GetSymbolType(GetChar()))
   {
     case '/': SetKey_(KEY);         break; // A new name has begun
     case ' ': SetKey_(PREVALUE);    break; // await next new value
@@ -235,9 +234,9 @@ void DictionaryBuilder::HandleKey_(char p_input_char)
 // just come across a '<' and knows it has encountered a dictionary if the
 // next char is also a '<'. Otherwise it returns to a waiting state.
 
-void DictionaryBuilder::HandleMaybe_(char p_input_char)
+void DictionaryBuilder::HandleMaybe_()
 {
-  if (p_input_char == '<') state_ = START;
+  if (CharIs('<')) state_ = START;
   else
   {
     buf_.Clear();
@@ -250,10 +249,10 @@ void DictionaryBuilder::HandleMaybe_(char p_input_char)
 // indicated by a '/'. If not, it will wait until it finds one or finds the
 // end of the dictionary
 
-void DictionaryBuilder::HandleStart_(char p_input_char)
+void DictionaryBuilder::HandleStart_()
 {
   buf_.Clear();
-  switch (p_input_char)
+  switch (GetSymbolType(GetChar()))
   {
     case '/': state_ = KEY;                 break; // should always be so
     case '>': state_ = QUERYCLOSE;          break; // empty dictionary
@@ -264,9 +263,9 @@ void DictionaryBuilder::HandleStart_(char p_input_char)
 /*---------------------------------------------------------------------------*/
 // The lexer has just read a key name and now expects a value
 
-void DictionaryBuilder::HandlePrevalue_(char p_input_char)
+void DictionaryBuilder::HandlePrevalue_()
 {
-  switch (p_input_char)
+  switch (GetSymbolType(GetChar()))
   {
     case ' ': state_ = PREVALUE;               break; // still waiting
     case '<': state_ = QUERYDICT;              break; // probable dict value
@@ -282,14 +281,14 @@ void DictionaryBuilder::HandlePrevalue_(char p_input_char)
 // The lexer is now reading a value. It will do so until a special character
 // is reached representing a new data type
 
-void DictionaryBuilder::HandleValue_(char p_input_char)
+void DictionaryBuilder::HandleValue_()
 {
-  switch (p_input_char)
+  switch (GetSymbolType(GetChar()))
   {
-    case '/': AssignValue_(KEY);         break; // end of value; new key
+    case '/': AssignValue_(KEY);        break; // end of value; new key
     case '<': AssignValue_(QUERYDICT);  break; // may be new subdict
     case '>': AssignValue_(QUERYCLOSE); break; // probable end of dict
-    default :                                  break; // keep writing value
+    default :                           break; // keep writing value
   }
 }
 
@@ -298,40 +297,44 @@ void DictionaryBuilder::HandleValue_(char p_input_char)
 // to the matching closing bracket unless there is a closing bracket within
 // a string to handle
 
-void DictionaryBuilder::HandleArrayValue_(char p_input_char)
+void DictionaryBuilder::HandleArrayValue_()
 {
   bool in_substring = false;
   bool escape_state = false;
-  while (true)
+  int depth = 1;
+
+  while (depth)
   {
-    if (!escape_state && buf_.GetChar() == '(')   in_substring = true;
-    if (!escape_state && buf_.GetChar() == ')')   in_substring = false;
-    if (!in_substring && !escape_state && buf_.GetChar() == ']') break;
-    if (!escape_state && buf_.GetChar() == '\\')  escape_state = true;
+    if (!escape_state && CharIs('('))   in_substring = true;
+    if (!escape_state && CharIs(')'))   in_substring = false;
+    if (!in_substring && !escape_state && CharIs(']')) --depth;
+    if (!in_substring && !escape_state && CharIs('[')) ++depth;
+    if (!escape_state && CharIs('\\'))  escape_state = true;
     else escape_state = false;
     ++buf_;
   }
-  buf_.SkipFirstChar();
+
   AssignValue_(START);
+  --buf_;
 }
 
 /*---------------------------------------------------------------------------*/
 // The lexer is now in a string; it blindly copies until finding a closing
 // bracket.
 
-void DictionaryBuilder::HandleString_(char p_input_char)
+void DictionaryBuilder::HandleString_()
 {
-  if (p_input_char == '\\') ++buf_;
-  if (p_input_char == ')') {buf_.SkipFirstChar(); AssignValue_(START);}
+  if (CharIs('\\')) ++buf_;
+  if (CharIs(')')) {buf_.SkipFirstChar(); AssignValue_(START);}
 }
 
 /*---------------------------------------------------------------------------*/
 // The lexer has come across an angle bracket and needs to decide whether it
 // is now in a subdictionary
 
-void DictionaryBuilder::HandleQueryDictionary_(char p_input_char)
+void DictionaryBuilder::HandleQueryDictionary_()
 {
-  if (p_input_char == '<')  // Now entering a subdictionary
+  if (CharIs('<'))  // Now entering a subdictionary
   {
     state_ = SUBDICT;
     bracket_ += 1;           // Record nesting level so exiting subdictionary
@@ -349,15 +352,13 @@ void DictionaryBuilder::HandleQueryDictionary_(char p_input_char)
 // It does not otherwise process the subdictionary - the whole string can
 // be used as the basis for a further dictionary object if required
 
-void DictionaryBuilder::HandleSubdictionary_(char p_input_char)
+void DictionaryBuilder::HandleSubdictionary_()
 {
-  switch (p_input_char)
+  switch (GetSymbolType(GetChar()))
   {
-    case '<': ++buf_; if (buf_.GetChar() == '<') ++bracket_;
-              break;
-    case '>': ++buf_; if (buf_.GetChar() == '>' && bracket_ > 0) --bracket_;
-              break;
-    default:  break;
+    case '<': ++buf_; if (CharIs('<')) ++bracket_;                  break;
+    case '>': ++buf_; if (CharIs('>') && bracket_ > 0) --bracket_;  break;
+    default:                                                        break;
   }
 
   // If bracket count falls to 0 we are out of the subdictionary
@@ -369,10 +370,10 @@ void DictionaryBuilder::HandleSubdictionary_(char p_input_char)
 // present and if so records its position in the string used to create the
 // dictionary object
 
-void DictionaryBuilder::HandleClose_(char p_input_char)
+void DictionaryBuilder::HandleClose_()
 {
   buf_.Clear();
-  switch (p_input_char)
+  switch (GetSymbolType(GetChar()))
   {
     // Ignore any whitespace.
     case ' ': state_ = CLOSE; break;
@@ -384,8 +385,8 @@ void DictionaryBuilder::HandleClose_(char p_input_char)
                 if (buf_.StartsString("stream"))
                 {
                   for(int i = 0; i < 6; ++i) ++buf_;
-                  if (buf_.GetChar() == '\r') ++buf_;
-                  if (buf_.GetChar() != '\n')
+                  if (CharIs('\r')) ++buf_;
+                  if (!CharIs('\n'))
                   {
                     throw runtime_error("Unexpected character before stream.");
                   }
@@ -484,10 +485,8 @@ Dictionary Dictionary::GetDictionary(const string& p_key) const
   return Dictionary();
 }
 
-
-
 /*---------------------------------------------------------------------------*/
-// Mainly for debugging
+// Mainly for debugging. Prints all key:value pairs to the console
 
 void Dictionary::PrettyPrint() const
 {

@@ -245,23 +245,68 @@ struct CharString
   begin_ = p_chunk.begin_; length_ = p_chunk.length_ ; return *this;}
 
   char operator[](int p_index) const {return *(begin_ + p_index);}
-  bool operator==(const CharString& p_other)
+
+  bool operator==(const CharString& p_other) const
   {
     if (length_ != p_other.length_) return false;
     if (begin_ == p_other.begin_) return true;
     for (size_t i = 0; i < length_; ++i)
     {
-      if (*(begin_ + i) != *(p_other.begin_ + i)) return false;
+      if (*(begin_ + i) != p_other[i]) return false;
     }
     return true;
   }
 
-  std::string AsString() {return std::string(begin_, length_);};
+  bool operator==(const std::string& p_string)
+  {
+    if (length_ != p_string.size()) return false;
+    for (size_t i = 0; i < length_; ++i)
+    {
+      if (*(begin_ + i) != p_string[i]) return false;
+    }
+    return true;
+  }
+
+  bool operator==(const char* p_cstring)
+  {
+    if (length_ == 0) return false;
+    for (size_t i = 0; i < length_; ++i)
+    {
+      if (*(begin_ + i) != *(p_cstring + i)) return false;
+      if (*(p_cstring + i) == '\0') return false;
+      if (length_ - i == 1 && *(p_cstring + i + 1) != '\0') return false;
+    }
+    return true;
+  }
+
+  std::string AsString() const {return std::string(begin_, length_);};
+
   const char* begin() const {return begin_;}
+
   const char* end() const {return begin_ + length_;}
+
   bool empty() const {return length_ == 0;}
+
   size_t size() const {return length_;}
 
+  const char* find(const char* p_target) const;
+
+  const char* find(const std::string& p_target) const
+  {
+     return this->find(p_target.c_str());
+  }
+
+  bool contains(const char* p_target) const
+  {
+    return find(p_target) != this->end();
+  }
+
+  bool contains(std::string p_target) const
+  {
+    return find(p_target) != this->end();
+  }
+
+private:
   const char* begin_;
   size_t length_;
 
@@ -298,6 +343,7 @@ public:
     size_(p_input.end() - p_input.begin()) {}
 
   void operator++() {++last_;}
+  void operator--() {--last_;}
   void SkipFirstChar() { if (first_ < last_) ++first_;}
   std::string Contents() const {return std::string(start_+first_, last_- first_);}
 
@@ -305,7 +351,7 @@ public:
 
   char GetChar() const {return *(start_ + last_);}
 
-  bool StartsString(const std::string& p_string)
+  bool StartsString(const std::string& p_string) const
   {
     std::string test_string(start_ + first_, p_string.size());
     if (p_string.size() > (size_ - last_)) return false;

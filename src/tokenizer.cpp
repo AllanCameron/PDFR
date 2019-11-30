@@ -25,8 +25,7 @@ std::string Tokenizer::in_loop_ = "none";
 Tokenizer::Tokenizer(shared_ptr<string> p_input, Parser* p_interpreter)
   : it_(p_input),
     state_(NEWSYMBOL),
-    interpreter_(p_interpreter),
-    escaped_(false)
+    interpreter_(p_interpreter)
 {
   // Now cycle through each character, switching state as needed and writing
   // to the interpreter when a parsed symbol has been obtained.
@@ -124,10 +123,7 @@ void Tokenizer::NewSymbolState_()
     case RSB: NewToken_(NEWSYMBOL);               break;
     case FSL: NewToken_(RESOURCE);                break;
     case AST: NewToken_(IDENTIFIER);              break;
-    case LCB: Skip_();
-              if(GetCharType() == BSL)
-                EscapeState_();
-              else state_ = STRING;               break;
+    case LCB: HandleLCB_();                       break;
     case SUB: NewToken_(NUMBER);                  break;
     case PER: NewToken_(NUMBER);                  break;
     case SQO: NewToken_(IDENTIFIER);              break;
@@ -171,7 +167,7 @@ void Tokenizer::NumberState_()
     case DIG:                                                 break;
     case SPC:   PushBuffer_(NUMBER, NEWSYMBOL);               break;
     case PER:                                                 break;
-    case LCB:   PushBuffer_(NUMBER, STRING); Skip_();         break;
+    case LCB:   PushBuffer_(NUMBER, STRING); HandleLCB_();    break;
     case LET:                                                 break;
     case USC:                                                 break;
     case SUB:   PushBuffer_(NUMBER, NUMBER);                  break;
@@ -187,9 +183,6 @@ void Tokenizer::NumberState_()
 
 void Tokenizer::StringState_()
 {
-  if (escaped_) it_.Clear();
-  escaped_ = false;
-
   // get symbol_type of current char
   switch (GetCharType())
   {
@@ -241,11 +234,10 @@ void Tokenizer::EscapeState_()
 {
   // If we're in the middle of a string, we'll need to send what we have so far
   // to the Parser.
-  if ( ! empty()) PushBuffer_(STRING, STRING);
+  if (!empty()) PushBuffer_(STRING, STRING);
 
   // We know we're in an escaped state, so we skip the actual backslash
   Skip_();
-
   // Read the next char - if it's a digit it's probably an octal
   if (GetCharType() == DIG)
   {
@@ -277,10 +269,9 @@ void Tokenizer::EscapeState_()
       case 't'  : escaped = "\t";   break;
       default   : escaped = GetChar();
     }
-
     interpreter_->Reader(escaped, STRING);
     state_ = STRING;
-    escaped_ = true;
+    it_.Clear();
   }
 }
 

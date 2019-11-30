@@ -173,6 +173,11 @@ float FloatParseStd(std::string a);
 // [[Rcpp::export]]
 float FloatParseMe(std::string a);
 
+// [[Rcpp::export]]
+void TestDict(const std::string& p_string);
+
+// [[Rcpp::export]]
+void TestCharString(const std::string& p_needle, const std::string& p_haystack);
 
 //---------------------------------------------------------------------------//
 // This function can be called from R to stop the underlying C++ code. This can

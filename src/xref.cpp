@@ -97,7 +97,6 @@ void XRef::LocateXRefs_()
   // We make this first one found the canonical trailer dictionary
   trailer_dictionary_ = make_shared<Dictionary>(
                           file_string_, xref_locations[0]);
-
   // Now we follow the pointers to all xrefs sequentially.
   Dictionary temp_dictionary = *trailer_dictionary_;
   while (temp_dictionary.ContainsInts("/Prev"))
@@ -319,7 +318,7 @@ XRefStream::XRefStream(shared_ptr<XRef> p_xref, int p_starts_at)
     dictionary_(Dictionary(xref_->File(), object_start_))
 {
   // If there is no /W entry, we don't know how to interpret the stream.
-  if (!dictionary_.ContainsInts("/W")) throw runtime_error("No /W entry found.");
+  if (!dictionary_.ContainsInts("/W")) throw runtime_error("No /W entry found");
 
   ReadIndex_();       // Reads Index so we know which objects are in stream
   ReadParameters_();  // Reads the PNG decoding parameters
