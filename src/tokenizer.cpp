@@ -270,8 +270,13 @@ void Tokenizer::EscapeState_()
       default   : escaped = GetChar();
     }
     interpreter_->Reader(escaped, STRING);
-    state_ = STRING;
-    it_.Clear();
+    ++it_;
+    if(GetChar() == ')') {state_ = NEWSYMBOL;}
+    else
+    {
+      state_ = STRING;
+      it_.Clear();
+    }
   }
 }
 

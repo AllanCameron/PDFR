@@ -325,7 +325,7 @@ void DictionaryBuilder::HandleArrayValue_()
 void DictionaryBuilder::HandleString_()
 {
   if (CharIs('\\')) ++buf_;
-  if (CharIs(')')) {buf_.SkipFirstChar(); AssignValue_(START);}
+  else if (CharIs(')')) {++buf_; AssignValue_(START); --buf_;}
 }
 
 /*---------------------------------------------------------------------------*/
@@ -362,7 +362,7 @@ void DictionaryBuilder::HandleSubdictionary_()
   }
 
   // If bracket count falls to 0 we are out of the subdictionary
-  if (bracket_ == 0) {AssignValue_(START);}
+  if (bracket_ == 0) {++buf_; AssignValue_(START); --buf_;}
 }
 
 /*---------------------------------------------------------------------------*/

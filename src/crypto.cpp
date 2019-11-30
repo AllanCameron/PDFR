@@ -385,8 +385,11 @@ vector<uint8_t> Crypto::ReadPassword_(const string& p_key)
   string temporary_password;
   temporary_password.reserve(32);
 
+  auto iter = password.begin();
+  while (*iter != '(') ++iter;
+  ++iter;
   // This loop removes backslash escapes.
-  for (auto iter = password.begin(); iter != password.end(); ++iter)
+  while( iter != password.end())
   {
     if (*iter == '\\')
     {
@@ -407,6 +410,7 @@ vector<uint8_t> Crypto::ReadPassword_(const string& p_key)
       swap(temporary_password, password);
       break;
     }
+    ++iter;
   }
 
   // The owner password should have 32 or more characters
