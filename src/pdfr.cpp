@@ -597,6 +597,12 @@ void TestCharString(const std::string& p_needle, const std::string& p_haystack)
   if (haystack.contains(needle.AsString())) cout << "Found needle in haystack" << endl;
   else cout << "No needle found in haystack" << endl;
 
+  cout << "The first string is \"" << needle << "\", the second is \""
+       << haystack << "\"" << endl;
+  cout << "The second to fourth letters in the first string is \""
+       << needle.substr(1, 3) << "\"" << endl;
+  cout << "The last letter in the second string is '"
+       << haystack.substr(haystack.size() - 1, 1) << "'" << endl;
 }
 
 #ifdef PROFILER_PDFR

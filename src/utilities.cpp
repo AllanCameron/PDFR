@@ -9,7 +9,6 @@
 //                                                                           //
 //---------------------------------------------------------------------------//
 
-
 #include "utilities.h"
 #include<fstream>
 #include<iostream>
@@ -525,36 +524,3 @@ void PrintBytes(vector<uint8_t> p_bytes, const string& p_message)
   cout << ")" << endl;
 }
 
-
-const char* CharString::find(const char* p_target) const
-{
-  int first_char = -1;
-  size_t target_index = 0;
-
-  for (auto it = this->begin(); it != this->end(); ++it)
-  {
-      if (*it == *(p_target + target_index))
-      {
-        if (first_char == -1) first_char = it - this->begin();
-        ++target_index;
-      }
-      else
-      {
-        if (*(p_target) == *it)
-        {
-          first_char = it - this->begin();
-          target_index = 1;
-        }
-        else
-        {
-        first_char = -1;
-        target_index = 0;
-        }
-      }
-
-      if (*(p_target + target_index) == '\0')
-        return this->begin() + first_char;
-
-  }
-  return this->end();
-}

@@ -28,6 +28,7 @@
  * reduce boilerplate code in the rest of the program.
  */
 
+#include "charstring.h"
 #include<numeric>
 #include<string>
 #include<vector>
@@ -224,93 +225,6 @@ enum CharType
   BSL, SPC, RAB, PER, ADD, QOT, RCB, RSB, SQO, OTH
 };
 
-
-struct CharString
-{
-  CharString(const char* p_ptr, size_t p_start, size_t p_end) :
-  begin_(p_ptr + p_start), length_(p_end - p_start) {}
-
-  CharString(const char* p_ptr, size_t p_length) :
-  begin_(p_ptr), length_(p_length) {}
-
-  CharString(const std::string& p_string) :
-  begin_(p_string.c_str()), length_(p_string.size()) {}
-
-  CharString(const std::string& p_string, size_t p_start) :
-  begin_(p_string.c_str() + p_start), length_(p_string.size() - p_start) {}
-
-  CharString() : begin_(nullptr), length_(0) {}
-
-  CharString operator=(const CharString& p_chunk) {
-  begin_ = p_chunk.begin_; length_ = p_chunk.length_ ; return *this;}
-
-  char operator[](int p_index) const {return *(begin_ + p_index);}
-
-  bool operator==(const CharString& p_other) const
-  {
-    if (length_ != p_other.length_) return false;
-    if (begin_ == p_other.begin_) return true;
-    for (size_t i = 0; i < length_; ++i)
-    {
-      if (*(begin_ + i) != p_other[i]) return false;
-    }
-    return true;
-  }
-
-  bool operator==(const std::string& p_string)
-  {
-    if (length_ != p_string.size()) return false;
-    for (size_t i = 0; i < length_; ++i)
-    {
-      if (*(begin_ + i) != p_string[i]) return false;
-    }
-    return true;
-  }
-
-  bool operator==(const char* p_cstring)
-  {
-    if (length_ == 0) return false;
-    for (size_t i = 0; i < length_; ++i)
-    {
-      if (*(begin_ + i) != *(p_cstring + i)) return false;
-      if (*(p_cstring + i) == '\0') return false;
-      if (length_ - i == 1 && *(p_cstring + i + 1) != '\0') return false;
-    }
-    return true;
-  }
-
-  std::string AsString() const {return std::string(begin_, length_);};
-
-  const char* begin() const {return begin_;}
-
-  const char* end() const {return begin_ + length_;}
-
-  bool empty() const {return length_ == 0;}
-
-  size_t size() const {return length_;}
-
-  const char* find(const char* p_target) const;
-
-  const char* find(const std::string& p_target) const
-  {
-     return this->find(p_target.c_str());
-  }
-
-  bool contains(const char* p_target) const
-  {
-    return find(p_target) != this->end();
-  }
-
-  bool contains(std::string p_target) const
-  {
-    return find(p_target) != this->end();
-  }
-
-private:
-  const char* begin_;
-  size_t length_;
-
-};
 
 
 // A 'magic number' to specify the maximum length that the dictionary

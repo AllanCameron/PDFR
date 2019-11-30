@@ -99,6 +99,8 @@ class XRef
 
   inline std::shared_ptr<const std::string> File() const { return file_string_;}
 
+  CharString GetCharString() const { return CharString(*file_string_);}
+
   inline bool IsEncrypted() const
     { if(encryption_) return true; else return false; }
 
