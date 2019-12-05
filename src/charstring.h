@@ -36,6 +36,16 @@
 // It is used in PDFR because the entire pdf file is read into the free store as
 // an std::string and sits there for the duration of the parsing process. It
 // is therefore a safe and efficient tool for this job.
+//
+// This class is a wheel that has been reinvented many times, not least by the
+// C++17 addition of string_view. My guess is that string_view is much more
+// efficient, safe and portable than this class, but isn't available in C++11.
+// I have tried to give the member functions the same names as those in
+// string_view so that the code base can be easily upgraded in the future.
+//
+// Most of the methods are inlined, and only those that are a bit more complex
+// such as the find() and substr() methods are defined seperately in the
+// implementation file
 
 class CharString
 {
@@ -67,8 +77,7 @@ public:
   CharString& operator=(const CharString& p_chunk) = default;
 
   // And an empty CharString
-  CharString() :
-  begin_(nullptr), length_(0) {}
+  CharString() : begin_(nullptr), length_(0) {}
 
   // The comparators are seperately defined
   bool operator==(const CharString& p_other)         const;
@@ -78,6 +87,7 @@ public:
   // Find and substr also require seperate definition
   const char* find(const char* p_target)             const;
   CharString substr(size_t p_start, size_t p_length) const;
+  CharString CarveOut(const char* p_left, const char* p_right) const;
 
   // The basic reading operations are all inlined
   char operator[](int p_index) const {return *(begin_ + p_index);}
@@ -87,6 +97,8 @@ public:
   const char* begin() const {return begin_;}
 
   const char* end() const {return begin_ + length_;}
+
+  char back() const { return *(end() - 1);}
 
   bool empty() const {return length_ == 0;}
 
@@ -99,7 +111,7 @@ public:
   bool contains(std::string p_target) const {return find(p_target) != end();}
 
 private:
-  const char* const begin_;
+  const char* begin_;
   size_t length_;
 };
 

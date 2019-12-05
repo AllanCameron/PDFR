@@ -113,3 +113,14 @@ CharString CharString::substr(size_t p_start, size_t p_length) const
 
   return CharString(this->begin(), p_start, p_start + p_length);
 }
+
+CharString CharString::CarveOut(const char* p_left, const char* p_right) const
+{
+  size_t leftsize = 0;
+  while(*(leftsize + p_left)) ++leftsize;
+  const char* newstart = find(p_left);
+  if (newstart == end()) return *this; else newstart += leftsize;
+  CharString leftchunk(newstart, end() - newstart);
+  const char* newend = leftchunk.find(p_right);
+  return CharString(newstart, newend - newstart);
+}

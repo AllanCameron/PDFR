@@ -65,6 +65,8 @@ class Dictionary
 
   Dictionary(StringPointer dictionary_string_ptr, size_t start_position);
 
+  Dictionary(const CharString&);
+
   Dictionary(std::unordered_map<std::string, std::string> p_map): map_(p_map){};
 
   Dictionary(const Dictionary& p_other): map_(p_other.map_){};
@@ -86,6 +88,7 @@ class Dictionary
   }
 
   // Public member functions
+  std::string operator[](const std::string& key)             const;
   std::string GetString(const std::string& key)              const;
   bool HasKey(const std::string& key)                        const;
   bool ContainsReferences(const std::string& key)            const;
@@ -99,7 +102,6 @@ class Dictionary
   Dictionary GetDictionary(const std::string& key)           const;
   std::unordered_map<std::string, std::string> GetMap()      const;
   void PrettyPrint ()                                        const;
-  std::string operator[](const std::string& key) const {return GetString(key);}
 
   // Inline definition of dictionary iterators
   typedef std::unordered_map<std::string, std::string>::const_iterator DictIt;
@@ -111,6 +113,27 @@ class Dictionary
   std::unordered_map<std::string, std::string> map_;
 };
 
+/*---------------------------------------------------------------------------*/
+// Simple getter of dictionary contents as a string from given key name
+
+inline std::string Dictionary::GetString(const std::string& p_key) const
+{
+  // A simple map index lookup with square brackets adds the key to
+  // map_, which we don't want. Using find(key) leaves it unaltered
+  auto finder = map_.find(p_key);
+  if (finder != map_.end()) return finder->second;
+
+  // We want an empty string rather than an error if the key isn't found.
+  // This allows functions that try to return references, ints, floats etc
+  // to return an empty vector so a boolean test of their presence is
+  // possible without calling the lexer twice.
+  return std::string();
+}
+
+inline std::string Dictionary::operator[](const std::string& p_key) const
+{
+  return GetString(p_key);
+}
 
 /*---------------------------------------------------------------------------*/
 // Returns any integers present in the value string as read by the ParseInts()

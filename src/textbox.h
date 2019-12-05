@@ -65,6 +65,10 @@ class TextBox : public Box
   // Lvalue assignment constructor
   TextBox& operator=(const TextBox& p_textbox) = default;
 
+  // Rvalue assignment constructor
+  TextBox& operator=(TextBox&& p_textbox) noexcept {
+    std::swap(p_textbox, *this); return *this;}
+
   std::shared_ptr<TextElement> CastToElement()
   {
     if (data_.size() > 1)

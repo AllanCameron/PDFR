@@ -254,7 +254,7 @@ public:
     start_(p_input.begin()),
     first_(0),
     last_(0),
-    size_(p_input.end() - p_input.begin()) {}
+    size_(p_input.size()) {}
 
   void operator++() {++last_;}
   void operator--() {--last_;}
@@ -393,6 +393,8 @@ std::vector<int> ParseReferences(const std::string& p_string_to_be_parsed);
 // It will not accurately represent hex, octal or scientific notation (eg 10e5)
 
 std::vector<int> ParseInts(const std::string& p_string_to_be_parsed);
+
+std::vector<int> ParseInts(const CharString& p_string_to_be_parsed);
 
 //---------------------------------------------------------------------------//
 // This lexer retrieves floats from a string. It searches through the entire

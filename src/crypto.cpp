@@ -335,7 +335,7 @@ void Crypto::Rc4_(vector<uint8_t>& p_message, const vector<uint8_t>& p_key)
 // key length plus 5, is then used as the key with which to decrypt the
 // stream using the Rc4 algorithm.
 
-void Crypto::DecryptStream(string& p_stream,
+string Crypto::DecryptStream(const string& p_stream,
                            int p_object_number,
                            int p_object_gen) const
 {
@@ -371,9 +371,16 @@ void Crypto::DecryptStream(string& p_stream,
   Rc4_(stream_as_bytes, object_key);
 
   // finally we convert the resultant bytes back to a string
-  p_stream = string(stream_as_bytes.begin(), stream_as_bytes.end());
+  return string(stream_as_bytes.begin(), stream_as_bytes.end());
 }
 
+
+/*---------------------------------------------------------------------------*/
+string Crypto::DecryptStream(const CharString& p_input, int p_obj, int p_gen)
+const
+{
+  return DecryptStream(p_input.AsString(), p_obj, p_gen);
+}
 /*---------------------------------------------------------------------------*/
 // Gets the bytes comprising the hashed owner password from the encryption
 // dictionary

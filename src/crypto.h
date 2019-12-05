@@ -56,7 +56,7 @@
 #include<vector>
 #include<deque>         // Needed for md5mix function
 #include<memory>
-
+#include "charstring.h"
 class Dictionary;
 
 
@@ -80,9 +80,12 @@ class Crypto
   // This is the main decryption function which is also the public interface for
   // the class. It takes the raw stream, the object and generation numbers then
   // returns the decrypted stream.
-  void DecryptStream(std::string& p_stream_to_be_decoded,
+  std::string DecryptStream(const std::string& p_stream_to_be_decoded,
                       int p_object_number,
                       int p_object_generation_number) const;
+
+  std::string DecryptStream(const CharString&, int, int) const;
+
 
 private:
   // private data members

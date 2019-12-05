@@ -30,26 +30,31 @@
 using namespace std;
 
 
-Stream::Stream(const string* p_input) : input_(p_input),
+Stream::Stream(const string* p_input) : input_(*p_input),
                                         output_(std::string()),
-                                        input_position_(input_->begin()),
+                                        input_position_(input_.begin()),
                                         output_position_(output_.begin()),
                                         unconsumed_bits_(0),
                                         unconsumed_bit_value_(0) {}
 
-
+Stream::Stream(const CharString& p_input) : input_(p_input),
+                                        output_(std::string()),
+                                        input_position_(input_.begin()),
+                                        output_position_(output_.begin()),
+                                        unconsumed_bits_(0),
+                                        unconsumed_bit_value_(0) {}
 
 /*---------------------------------------------------------------------------*/
 
 uint32_t Stream::GetByte()
 {
-  if (input_position_ == input_->end()) return 256;
+  if (input_position_ == input_.end()) return 256;
   return (uint8_t) *input_position_++;
 }
 
 uint64_t Stream::GetEightBytes()
 {
-  auto distance_from_end = input_->end() - input_position_;
+  auto distance_from_end = input_.end() - input_position_;
   if (distance_from_end > 8) distance_from_end = 8;
   uint64_t result = 0;
   while(distance_from_end > 0)
@@ -72,7 +77,7 @@ uint32_t Stream::PeekByte()
 
 void Stream::Reset()
 {
-  input_position_ = input_->begin();
+  input_position_ = input_.begin();
   output_.clear();
   output_position_ = output_.begin();
   unconsumed_bit_value_ = 0;

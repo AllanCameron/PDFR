@@ -154,7 +154,7 @@ void GlyphWidths::ParseDescendants_()
     }
 
     // otherwise we assume /W contains the widths needed
-    else width_string = descendant_dictionary.GetString("/W");
+    else width_string = descendant_dictionary["/W"];
 
     // in either case width_string should now contain the /W array which we
     // now need to parse using our lexer method

@@ -61,6 +61,7 @@
 
 class Dictionary;
 class Crypto;
+class CharString;
 
 /*---------------------------------------------------------------------------*/
 // The main XRef data member is an unordered map with the key being the object
@@ -94,8 +95,9 @@ class XRef
   Dictionary GetTrailer()                    const; // Gets trailer dictionary
   size_t GetObjectEndByte(int)               const; // Gets object end position
   std::vector<int> GetAllObjectNumbers()     const; // Gets all object numbers
-  std::vector<size_t> GetStreamLocation(int) const; // Gets start/stop of stream
-  void Decrypt(std::string&, int, int)       const; // Decrypts a stream
+  CharString GetStreamLocation(int) const; // Gets start/stop of stream
+  std::string Decrypt(std::string&, int, int) const; // Decrypts a stream
+  std::string Decrypt(const CharString&, int, int) const;
 
   inline std::shared_ptr<const std::string> File() const { return file_string_;}
 
@@ -122,7 +124,7 @@ class XRef
   void LocateXRefs_();                    // Finds XRef locations
   void ReadXRefStrings_(int);             // Gets strings from XRef locations
   void ReadXRefFromStream_(int);          // Uses xrefstream class to get XRef
-  void ReadXRefFromString_(std::string&); // parses XRef directly
+  void ReadXRefFromString_(const CharString&); // parses XRef directly
   void CreateCrypto_();                   // Allows decryption of encrypted docs
   const XRefRow& GetRow_(int) const;
 };

@@ -280,9 +280,9 @@ void Encoding::ReadEncoding_()
   Dictionary encoding_dictionary = *font_dictionary_;
 
   // Reads the encoding entry
-  string encoding_name = encoding_dictionary.GetString("/Encoding");
+  string encoding_name = encoding_dictionary["/Encoding"];
 
-  string subtype = encoding_dictionary.GetString("/Subtype");
+  string subtype = encoding_dictionary["/Subtype"];
 
   // If an encoding dictionary exists, gets it and read the baseencoding entry
   if (font_dictionary_->ContainsReferences("/Encoding"))
@@ -292,7 +292,7 @@ void Encoding::ReadEncoding_()
     encoding_dictionary = encoding_object_ptr->GetDictionary();
     if (encoding_dictionary.HasKey("/BaseEncoding"))
     {
-      encoding_name = encoding_dictionary.GetString("/BaseEncoding");
+      encoding_name = encoding_dictionary["/BaseEncoding"];
     }
   }
 
@@ -323,7 +323,7 @@ void Encoding::ReadEncoding_()
   // Call Differences() if a /Differences entry is found to modify encoding
   if (encoding_dictionary.HasKey("/Differences"))
   {
-    base_encoding_ = encoding_dictionary.GetString("/Differences");
+    base_encoding_ = encoding_dictionary["/Differences"];
     ReadDifferences_(base_encoding_);
   }
 }
@@ -361,7 +361,7 @@ void Encoding::HandleTypeOneFont_()
     auto descriptor_number = font_dictionary_->GetReference("/FontDescriptor");
     auto descriptor_object_ptr = document_->GetObject(descriptor_number);
     auto descriptor_dictionary = descriptor_object_ptr->GetDictionary();
-    auto encoding_name = descriptor_dictionary.GetString("/Encoding");
+    auto encoding_name = descriptor_dictionary["/Encoding"];
     if(encoding_name == "")
     {
       if(descriptor_dictionary.ContainsReferences("/FontFile"))

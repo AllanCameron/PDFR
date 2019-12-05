@@ -553,7 +553,10 @@ Rcpp::DataFrame ShowTypeSizes()
                                   "WhiteSpace",
                                   "WordGrouper",
                                   "LineGrouper",
-                                  "TextElement"};
+                                  "TextElement",
+                                  "std::string",
+                                  "CharString",
+                                  "Reader"};
   std::vector<size_t> type_sizes {};
   type_sizes.push_back(sizeof(XRef));
   type_sizes.push_back(sizeof(Dictionary));
@@ -569,6 +572,9 @@ Rcpp::DataFrame ShowTypeSizes()
   type_sizes.push_back(sizeof(WordGrouper));
   type_sizes.push_back(sizeof(LineGrouper));
   type_sizes.push_back(sizeof(TextElement));
+  type_sizes.push_back(sizeof(std::string));
+  type_sizes.push_back(sizeof(CharString));
+  type_sizes.push_back(sizeof(Reader));
 
   return DataFrame::create(Named("Class") = types, Named("Size") = type_sizes);
 };
@@ -603,6 +609,12 @@ void TestCharString(const std::string& p_needle, const std::string& p_haystack)
        << needle.substr(1, 3) << "\"" << endl;
   cout << "The last letter in the second string is '"
        << haystack.substr(haystack.size() - 1, 1) << "'" << endl;
+
+  cout << "Carving first string between \"head\" and \"tail\" gives \""
+       << needle.CarveOut("head", "tail") << "\"" << endl;
+  CharString dictstring("<</a 123/b[hello] /cde (well i never) >>");
+  Dictionary newdict(dictstring);
+  newdict.PrettyPrint();
 }
 
 #ifdef PROFILER_PDFR

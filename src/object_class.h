@@ -68,15 +68,14 @@ class Object
   int object_number_;                     // The object knows its own number
   std::shared_ptr<Dictionary> header_;    // The object's dictionary
   std::string stream_;                    // The object's stream or contents
-  std::vector<size_t> stream_location_;   // Start position and length of stream
+  CharString raw_stream_;            // Start position and length of stream
 
   // A lookup of start / stop positions of the objects within an object stream
   std::shared_ptr<std::unordered_map<int, std::pair<int, int>>> stream_index_;
 
   // private methods
   void IndexObjectStream_();
-  void ApplyFilters_();
-  void ReadStreamFromStreamLocations_();
+  void ReadStream_();
 };
 
 //---------------------------------------------------------------------------//

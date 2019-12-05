@@ -47,7 +47,7 @@ class TextElement : public Box
               float p_size, std::shared_ptr<Font> p_font,
               std::vector<Unicode> p_glyphs)
     : Box(p_left, p_right, p_top, p_bottom), size_(p_size),
-      font_(p_font), glyph_(p_glyphs), join_(nullptr) {};
+      font_(p_font), glyph_(std::move(p_glyphs)), join_(nullptr) {};
 
   // Inevitably, we need to define some "magic number" constants to define
   // how close together text elements have to be to clump together

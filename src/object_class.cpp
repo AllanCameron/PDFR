@@ -28,7 +28,7 @@ using namespace std;
 Object::Object(shared_ptr<const XRef> p_xref, int p_object_number) :
   xref_(p_xref),
   object_number_(p_object_number),
-  stream_location_({0, 0}),
+  raw_stream_(),
   stream_index_(make_shared<unordered_map<int, pair<int, int>>>())
 {
   // Find start and end of object
@@ -47,22 +47,21 @@ Object::Object(shared_ptr<const XRef> p_xref, int p_object_number) :
     header_ = make_shared<Dictionary>(Dictionary());
 
     // Finds start and length of contents
-    size_t content_start = xref_->File()->find(" obj", start) + 4;
-    stream_location_ = {content_start, stop - content_start};
+    size_t c_start = xref_->File()->find(" obj", start) + 4;
+    raw_stream_ = {xref_->File()->c_str() + c_start, stop - c_start};
   }
 
   else // Else the object has a header dictionary
   {
     header_ = make_shared<Dictionary>(Dictionary(xref_->File(), start));
-
     // Find the stream (if any)
-    stream_location_ = xref_->GetStreamLocation(start);
+    raw_stream_ = xref_->GetStreamLocation(start);
 
     // The object may contain an object stream that needs unpacked
     if (header_->GetString("/Type") == "/ObjStm")
     {
       // Get the object stream
-      ReadStreamFromStreamLocations_();
+      ReadStream_();
 
       // Index the objects in the stream
       IndexObjectStream_();
@@ -112,7 +111,7 @@ void Object::IndexObjectStream_()
 Object::Object(shared_ptr<Object> p_holder, int p_object_number):
   xref_(p_holder->xref_),
   object_number_(p_object_number),
-  stream_location_({0, 0})
+  raw_stream_()
 {
   auto finder = p_holder->stream_index_->find(object_number_);
   if (finder == p_holder->stream_index_->end())
@@ -164,7 +163,7 @@ Dictionary Object::GetDictionary()
 string Object::GetStream()
 {
   // If the stream has not already been processed, do it now
-  if (stream_.empty()) ReadStreamFromStreamLocations_();
+  if (stream_.empty()) ReadStream_();
   return stream_;
 }
 
@@ -172,27 +171,21 @@ string Object::GetStream()
 // We will keep all stream processing in one place for easier debugging and
 // future development
 
-void Object::ApplyFilters_()
+void Object::ReadStream_()
 {
-  // Decrypt if necessary
-  if (xref_->IsEncrypted()) xref_->Decrypt(stream_, object_number_, 0);
 
-  // Read filters
   string filters = header_->GetString("/Filter");
+  bool is_flatedecode = filters.find("/FlateDecode") != string::npos;
 
-  // Apply filters
-  if (filters.find("/FlateDecode") != string::npos) FlateDecode(&stream_);
-
+  // Decrypt if necessary
+  if (xref_->IsEncrypted())
+  {
+    stream_ = xref_->Decrypt(raw_stream_, object_number_, 0);
+    if (is_flatedecode) stream_ = FlateDecode(&stream_);
+  }
+  else
+  {
+    if (is_flatedecode) stream_ = FlateDecode(raw_stream_);
+  }
 }
 
-/*---------------------------------------------------------------------------*/
-// Turns stream locations into unencrypted, uncompressed stream
-
-void Object::ReadStreamFromStreamLocations_()
-{
-  // Read the string from the current positions
-  stream_ = xref_->File()->substr(stream_location_[0], stream_location_[1]);
-
-  // Apply necessary decryption and deflation
-  ApplyFilters_();
-}

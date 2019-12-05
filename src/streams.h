@@ -64,6 +64,7 @@ class Stream
 // The constructors are protected to make this an abstract class.
 protected:
   Stream(const std::string*);
+  Stream(const CharString&);
 
 public:
   inline std::string Output(){return output_;} // Getter for output
@@ -91,7 +92,7 @@ public:
 
   inline void ExpectExpansionFactor(uint8_t p_ratio)
   {
-    output_.reserve(input_->size() * p_ratio);
+    output_.reserve(input_.size() * p_ratio);
   }
 
   inline void ShrinkToFit()
@@ -105,10 +106,10 @@ public:
   inline char GetOutput(){return *output_position_++;}
 
   private:
-  const std::string* input_;                    // The input string
+  CharString input_;                            // The input string
   std::string output_;                          // The output string
-  std::string::const_iterator input_position_;  // Input iterator
-  std::string::iterator output_position_;       // Output iterator
+  const char* input_position_;                  // Input iterator
+  std::string::const_iterator output_position_; // Output iterator
   uint8_t unconsumed_bits_;                     // Bit iterator
   uint32_t unconsumed_bit_value_;               // Keeps track of unused bits
 

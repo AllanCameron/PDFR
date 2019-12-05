@@ -358,7 +358,7 @@ vector<int> ParseReferences(const string& p_string)
 //
 // ParseInts("<</Refs 1 0 R 2 0 R 31 5 R>>") == vector<int> {1, 0, 2, 0, 31, 5};
 
-vector<int> ParseInts(const string& p_string)
+vector<int> ParseInts(const CharString& p_string)
 {
   // Define the possible states of the lexer
   enum IntState
@@ -375,8 +375,9 @@ vector<int> ParseInts(const string& p_string)
   IntState state = WAITING; // Current state of the finite state machine.
 
   // The main loop cycles through each char in the string to write the result
-  for (auto chr : p_string)
+  for (auto it = p_string.begin(); it != p_string.end(); ++it)
   {
+    char chr = *it;
     char m = GetSymbolType(chr);
     switch (state)
     {
@@ -417,6 +418,10 @@ vector<int> ParseInts(const string& p_string)
   return result;
 }
 
+vector<int> ParseInts(const string& p_string)
+{
+  return ParseInts(CharString(p_string));
+}
 /*--------------------------------------------------------------------------*/
 // This lexer retrieves floats from a string. It searches through the entire
 // given string character by character and returns all instances where the

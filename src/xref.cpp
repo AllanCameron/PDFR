@@ -81,13 +81,12 @@ XRef::XRef(shared_ptr<const string> p_file_string_ptr)
 void XRef::LocateXRefs_()
 {
   // Get last 50 chars of the file
-  string&& last_50_chars = file_string_->substr(file_string_->size()-50, 50);
+  CharString file_tail(*file_string_, file_string_->size() - 50);
 
-  // Use CarveOut() from utilities.h to find the first XRef offset
-  string&& xref_string =  CarveOut(last_50_chars, "startxref", "%%EOF");
+  auto xref_charstring = file_tail.CarveOut("startxref", "%%EOF");
 
   // Convert the number string to an int
-  vector<int> xref_locations {stoi(xref_string)};
+  vector<int> xref_locations {atoi(xref_charstring.begin())};
 
   // If no XRef location is found, then we're stuck. Throw an error.
   if (xref_locations.empty()) throw runtime_error("No XRef entry found");
@@ -116,20 +115,20 @@ void XRef::LocateXRefs_()
 void XRef::ReadXRefStrings_(int p_start)
 {
   // Find the length of XRef in chars
-  int length = file_string_->find("startxref", p_start) - p_start;
+  int end = file_string_->find("startxref", p_start);
 
   // Throw error if no XRef found
-  if (length <= 0) throw runtime_error("No object found at location");
+  if (end <= 0) throw runtime_error("No object found at location");
 
   // Extract the XRef string
-  string&& fullxref = file_string_->substr(p_start, length);
+  CharString fullxref(file_string_->c_str(), p_start, end);
 
   // Carve out the actual string
-  string xref_string = CarveOut(move(fullxref), "xref", "trailer");
+  CharString xref_string = fullxref.CarveOut("xref", "trailer");
 
   // If it contains a dictionary, process as a stream, otherwise as a string
-  auto finder = xref_string.substr(0, 15).find("<<", 0);
-  if (finder != string::npos) ReadXRefFromStream_(p_start);
+  auto finder = xref_string.substr(0, 20);
+  if (finder.contains("<<")) ReadXRefFromStream_(p_start);
   else ReadXRefFromString_(xref_string);
 }
 
@@ -168,13 +167,13 @@ void XRef::ReadXRefFromStream_(int p_location)
 // described, respectively. Thereafter the rows represent sequential objects
 // counted from the first.
 
-void XRef::ReadXRefFromString_(string& p_xref_string)
+void XRef::ReadXRefFromString_(const CharString& p_xref_string)
 {
   auto all_ints = ParseInts(p_xref_string);
 
   // A valid XRef has >= 4 ints in it and must have an even number of ints
   auto xref_size = all_ints.size();
-  if (xref_size % 2) { throw runtime_error(p_xref_string); }
+  if (xref_size % 2) { throw runtime_error(p_xref_string.AsString()); }
 
   // This loop starts on the second row of the table. Even numbers are the
   // byte offsets and odd numbers are the in_use numbers
@@ -233,8 +232,8 @@ int XRef::GetStreamLength_(const Dictionary& p_dictionary) const
     int length_object_number = p_dictionary.GetReference("/Length");
     size_t first_position = GetObjectStartByte(length_object_number);
     size_t len = file_string_->find("endobj", first_position) - first_position;
-    string object_string = file_string_->substr(first_position, len);
-    return ParseInts(move(object_string)).back();
+    CharString object_string(file_string_->c_str() + first_position, len);
+    return ParseInts(object_string).back();
   }
 
   // Thankfully though most lengths are just direct ints
@@ -245,7 +244,7 @@ int XRef::GetStreamLength_(const Dictionary& p_dictionary) const
 // Returns the offset of the start location relative to the file start, and the
 // length, of the stream belonging to the given object
 
-vector<size_t> XRef::GetStreamLocation(int p_object_start) const
+CharString XRef::GetStreamLocation(int p_object_start) const
 {
   // Get the object dictionary
   Dictionary dictionary = Dictionary(file_string_, p_object_start);
@@ -255,17 +254,18 @@ vector<size_t> XRef::GetStreamLocation(int p_object_start) const
   {
     size_t stream_length = (size_t) GetStreamLength_(dictionary);
     size_t stream_start  = (size_t) dictionary.GetInts("stream")[0];
-    return vector<size_t>  {stream_start, stream_length};
+    stream_length += stream_start;
+    return CharString(file_string_->c_str(), stream_start, stream_length);
   }
-  return vector<size_t> {0,0}; // if no length, return empty length-2 array
+  return CharString(); // if no length, return empty length-2 array
 }
 
 /*---------------------------------------------------------------------------*/
 // Wrapper for Encryption object so that XRef is the only class that uses it
 
-void XRef::Decrypt(string& p_stream, int p_object, int p_generation) const
+string XRef::Decrypt(const CharString& p_str, int p_obj, int p_gen)const
 {
-  encryption_->DecryptStream(p_stream, p_object, p_generation);
+  return encryption_->DecryptStream(p_str, p_obj, p_gen);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -374,7 +374,7 @@ void XRefStream::ReadParameters_()
 
   if (dictionary_.HasKey("/DecodeParms"))
   {
-    sub_dictionary_string = dictionary_.GetString("/DecodeParms");
+    sub_dictionary_string = dictionary_["/DecodeParms"];
   }
 
   Dictionary sub_dictionary(make_shared<string>(sub_dictionary_string));
@@ -397,13 +397,14 @@ void XRefStream::ReadParameters_()
 void XRefStream::GetRawMatrix_()
 {
   // Obtain the raw stream data
-  auto stream_location = xref_->GetStreamLocation(object_start_);
-  string stream = xref_->File()->substr(stream_location[0], stream_location[1]);
+  auto charstream = xref_->GetStreamLocation(object_start_);
+
+  string stream = charstream.AsString();
 
   // Applies decompression to stream if needed
-  if (dictionary_.GetString("/Filter").find("/FlateDecode", 0) != string::npos)
+  if (dictionary_["/Filter"].find("/FlateDecode", 0) != string::npos)
   {
-    FlateDecode(&stream);
+    stream = FlateDecode(&stream);
   }
 
   // Convert stream to bytes then bytes to ints

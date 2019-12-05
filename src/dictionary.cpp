@@ -69,6 +69,7 @@ class DictionaryBuilder
 
   DictionaryBuilder(StringPointer dictionary_string_ptr);
   DictionaryBuilder(StringPointer dictionary_string_ptr, size_t start_position);
+  DictionaryBuilder(const CharString& p_charstring);
   DictionaryBuilder();
   std::unordered_map<std::string, std::string>&& Get();
 
@@ -115,6 +116,12 @@ DictionaryBuilder::DictionaryBuilder(shared_ptr<const string> p_ptr)
   // Otherwise use the lexer to build the dictionary
   if (p_ptr->empty()) *this = DictionaryBuilder();
   else TokenizeDictionary_();
+}
+
+DictionaryBuilder::DictionaryBuilder(const CharString& p_charstr) :
+  bracket_(0), key_pending_(false), buf_(Reader(p_charstr)), state_(PREENTRY)
+{
+  TokenizeDictionary_();
 }
 
 /*---------------------------------------------------------------------------*/
@@ -427,6 +434,10 @@ Dictionary::Dictionary(shared_ptr<const string> p_string_ptr)
   map_ = move(DictionaryBuilder(p_string_ptr).Get());
 }
 
+Dictionary::Dictionary(const CharString& p_charstring)
+{
+  map_ = move(DictionaryBuilder(p_charstring).Get());
+}
 /*---------------------------------------------------------------------------*/
 // This alternative Dictionary constructor uses the same method as the normal
 // constructor, but starts at a given offset in the supplied string.
@@ -436,23 +447,6 @@ Dictionary::Dictionary(shared_ptr<const string> p_string_ptr, size_t p_offset)
   map_ = move(DictionaryBuilder(p_string_ptr, p_offset).Get());
 }
 
-/*---------------------------------------------------------------------------*/
-// Simple getter of dictionary contents as a string from given key name
-
-string Dictionary::GetString(const string& p_key) const
-{
-  // A simple map index lookup with square brackets adds the key to
-  // map_, which we don't want. Using find(key) leaves it unaltered
-  auto finder = map_.find(p_key);
-  if (finder != map_.end()) return finder->second;
-
-  // We want an empty string rather than an error if the key isn't found.
-  // This allows functions that try to return references, ints, floats etc
-  // to return an empty vector so a boolean test of their presence is
-  // possible without calling the lexer twice.
-  return string();
-}
-
 
 /*---------------------------------------------------------------------------*/
 // Returns a single object number from any reference found in the
@@ -460,8 +454,11 @@ string Dictionary::GetString(const string& p_key) const
 
 int Dictionary::GetReference(const string& p_key) const
 {
-  vector<int> all_references = ParseReferences(this->GetString(p_key));
-  if (all_references.empty()) throw runtime_error("No reference found");
+  vector<int> all_references = ParseReferences((*this)[p_key]);
+  if (all_references.empty())
+  {
+    throw runtime_error("No reference found");
+  }
   return all_references[0];
 }
 

@@ -157,7 +157,7 @@ context("utilities.h")
 
   test_that("Ints are parsed as expected.")
   {
-    expect_true(ParseInts("01.04 2.1 A 31") == test_ints);
+    expect_true(ParseInts(std::string("01.04 2.1 A 31")) == test_ints);
   }
 
   test_that("Floats are parsed as expected.")
@@ -191,8 +191,7 @@ context("dictionary.h")
     expect_true(test_dictionary.GetReferences("/Ref") == test_ints);
     expect_true(test_dictionary.GetInts("/SomeInts") == test_ints);
     expect_true(test_dictionary.GetFloats("/SomeFloats") == test_floats);
-    expect_true(test_dictionary.GetDictionary("/Dict").GetString("/Subdict") ==
-      "Success");
+    expect_true(test_dictionary.GetDictionary("/Dict")["/Subdict"] =="Success");
     expect_true(get_font_name == string("/Times-Roman"));
   }
 }

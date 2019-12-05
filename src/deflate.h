@@ -18,7 +18,8 @@
 #include<map>
 #include "streams.h"
 
-void FlateDecode(std::string* p_message);
+std::string FlateDecode(std::string* p_message);
+std::string FlateDecode(const CharString& p_message);
 
 //---------------------------------------------------------------------------//
 // This class reinvents the wheel in an attempt to free the library from
@@ -32,6 +33,7 @@ class Deflate : public Stream
 public:
   // String and byte-vector constructors. The latter converts to a string.
   Deflate(const std::string*);
+  Deflate(const CharString&);
 
 private:
   bool is_last_block_;    // Flag so decompressor knows when to stop

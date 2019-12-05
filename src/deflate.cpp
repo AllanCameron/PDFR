@@ -29,11 +29,15 @@ typedef unordered_map<uint32_t, uint32_t> HuffmanMap;
 // compressed string and it will replace it with a pointer to the uncompressed
 // version.
 
-void FlateDecode(string* p_message)
+std::string FlateDecode(string* p_message)
 {
-  *p_message = Deflate(p_message).Output();
+  return Deflate(p_message).Output();
 }
 
+std::string FlateDecode(const CharString& p_message)
+{
+  return Deflate(p_message).Output();
+}
 /*---------------------------------------------------------------------------*/
 // In Deflate, some short messages are encoded with a fixed dictionary, since
 // including a dictionary would make the stream longer instead of shorter.
@@ -171,6 +175,19 @@ Deflate::Deflate(const string* p_input) : Stream(p_input),
   ShrinkToFit();
 }
 
+Deflate::Deflate(const CharString& p_input) : Stream(p_input),
+                                          is_last_block_(false)
+{
+  ExpectExpansionFactor(6);
+
+  // This will abort further reading if the two header bytes aren't right.
+  CheckHeader_();
+
+  // Reads each available block sequentially
+  while (!is_last_block_) ReadBlock_();
+
+  ShrinkToFit();
+}
 
 /*---------------------------------------------------------------------------*/
 // The Huffmanize function reconstructs a Huffman tree from a vector of lengths.
