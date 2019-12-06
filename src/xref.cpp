@@ -140,7 +140,7 @@ void XRef::ReadXRefStrings_(int p_start)
 void XRef::ReadXRefFromStream_(int p_location)
 {
   // Calls XRefStream constructor to make the data table from the stream
-  auto xref_table = XRefStream(make_shared<XRef>(*this), p_location).Table_();
+  auto&& xref_table = XRefStream(make_shared<XRef>(*this), p_location).Table_();
 
   // Throws if XRefStream returns an empty table
   if (xref_table.empty()) throw runtime_error("XRef table empty");
@@ -249,7 +249,7 @@ CharString XRef::GetStreamLocation(int p_object_start) const
   // Get the object dictionary
   Dictionary dictionary = Dictionary(file_string_, p_object_start);
 
-  // If the stream exists, get its start / stop positions as a length-2 array
+  // If the stream exists, get its start / stop positions as a CharString
   if (dictionary.HasKey("stream") && dictionary.HasKey("/Length"))
   {
     size_t stream_length = (size_t) GetStreamLength_(dictionary);
@@ -370,24 +370,9 @@ void XRefStream::ReadIndex_()
 
 void XRefStream::ReadParameters_()
 {
-  string sub_dictionary_string = "<<>>";
-
-  if (dictionary_.HasKey("/DecodeParms"))
-  {
-    sub_dictionary_string = dictionary_["/DecodeParms"];
-  }
-
-  Dictionary sub_dictionary(make_shared<string>(sub_dictionary_string));
-
-  if (sub_dictionary.ContainsInts("/Columns"))
-  {
-    number_of_columns_ = sub_dictionary.GetInts("/Columns")[0];
-  }
-
-  if (sub_dictionary.ContainsInts("/Predictor"))
-  {
-    predictor_ = sub_dictionary.GetInts("/Predictor")[0];
-  }
+  Dictionary sub_dictionary(dictionary_.GetDictionary("/DecodeParms"));
+  number_of_columns_ = sub_dictionary.GetInts("/Columns").at(0);
+  predictor_ = sub_dictionary.GetInts("/Predictor").at(0);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -399,12 +384,16 @@ void XRefStream::GetRawMatrix_()
   // Obtain the raw stream data
   auto charstream = xref_->GetStreamLocation(object_start_);
 
-  string stream = charstream.AsString();
+  string stream;
 
   // Applies decompression to stream if needed
   if (dictionary_["/Filter"].find("/FlateDecode", 0) != string::npos)
   {
-    stream = FlateDecode(&stream);
+    stream = FlateDecode(charstream);
+  }
+  else
+  {
+    stream = charstream.AsString();
   }
 
   // Convert stream to bytes then bytes to ints
@@ -416,17 +405,13 @@ void XRefStream::GetRawMatrix_()
   array_widths_ = dictionary_.GetInts("/W");
   auto new_end_marker = remove(array_widths_.begin(), array_widths_.end(), 0);
   array_widths_.erase(new_end_marker, array_widths_.end());
+  if(array_widths_.empty()) throw runtime_error("Invalid /W entry in XRefStrm");
 
   // if no record of column numbers, infer from number of /W entries
-  if (number_of_columns_ == 0)
-  {
-    for (auto entry : array_widths_) number_of_columns_ += entry;
-  }
+  if (number_of_columns_ == 0) number_of_columns_ = array_widths_.size();
 
   // Predictors above 10 require an extra column
-  if (predictor_ > 9) number_of_columns_++;
-
-  if (number_of_columns_ == 0) throw runtime_error("divide by zero error");
+  if (predictor_ > 9) ++number_of_columns_;
 
   // Gets number of rows
   int number_of_rows = int_stream.size() / number_of_columns_;
@@ -464,7 +449,7 @@ void XRefStream::DiffUp_()
       // Take each entry & add the entry above
       for (size_t column = 0; column < this_row.size(); ++column)
       {
-        this_row.at(column) += row_above.at(column);
+        this_row[column]+= row_above[column];
       }
     }
   }

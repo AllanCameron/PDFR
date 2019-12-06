@@ -129,7 +129,10 @@ class Box
   Box(){}
 
   virtual ~Box() = default; //Box is a base class - make its destructor virtual
-
+  Box(Box&&) = default;
+  Box(const Box&) = default;
+  Box& operator=(const Box&) = default;
+  Box& operator=(Box&&) = default;
   // We can use the direction enum to access the edges of the box instead of
   // using getters if we need to calculate the edge we're interested in getting.
   inline float Edge(int p_side) const
