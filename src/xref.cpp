@@ -33,6 +33,7 @@ class XRefStream
   friend class XRef;  // This class is only constructible via XRef
 
   shared_ptr<XRef>    xref_;         // Pointer to creating XRef
+  vector<uint8_t> byte_stream_;
   vector<vector<int>> final_array_,  // Transposed, modulo 256 table
                       result_;       // The main results table for export
   vector<int> array_widths_,         // Bytes per column from /w entry
@@ -43,10 +44,9 @@ class XRefStream
   Dictionary  dictionary_;           // Dictionary of object containing stream
 
   XRefStream(shared_ptr<XRef>, int); // Private constructor
-  void ReadIndex_();                 // Reads the index entry of main dict
-  void ReadParameters_();            // Reads the PNG decoding parameters
-  void GetRawMatrix_();              // Reads the stream into data table
-  void ModuloTranspose_(vector<uint8_t>&, int, int);  // Transposes table and makes it modulo 256
+  void ReadStream_();            // Reads the PNG decoding parameters
+  void ProcessStream_();              // Reads the stream into data table
+  void ToColumns_(int, int);  // Transposes table and makes it modulo 256
   void ExpandBytes_();               // Multiply bytes by correct powers of 256
   void MergeColumns_();              // Adds adjacent columns as per parameters
   void NumberRows_();                // Merges object numbers with data table
@@ -315,12 +315,8 @@ XRefStream::XRefStream(shared_ptr<XRef> p_xref, int p_starts_at)
     object_start_(p_starts_at),
     dictionary_(Dictionary(xref_->File(), object_start_))
 {
-  // If there is no /W entry, we don't know how to interpret the stream.
-  if (!dictionary_.ContainsInts("/W")) throw runtime_error("No /W entry found");
-
-  ReadIndex_();       // Reads Index so we know which objects are in stream
-  ReadParameters_();  // Reads the PNG decoding parameters
-  GetRawMatrix_();    // Arranges the raw data in stream into correct table form
+  ReadStream_();  // Reads the PNG decoding parameters
+  ProcessStream_();    // Arranges the raw data in stream into correct table form
   ExpandBytes_();     // Multiplies bytes according to their position
   MergeColumns_();    // Sums adjacent columns that represent large numbers
   NumberRows_();      // Marries rows to object numbers from the /Index entry
@@ -341,10 +337,17 @@ XRefStream::XRefStream(shared_ptr<XRef> p_xref, int p_starts_at)
 // sequence 3 5 10 1 20 3 equates to {3, 4, 5, 6, 7, 10, 20, 21, 22}.
 // The expanded sequence is stored as a private data member of type integer
 // vector: objectNumbers
+//
+// We next read two parameters we need from the /DecodeParms entry of the
+// stream dictionary: the number of columns in the table and the predictor
+// number, which gives the method used to decode the stream
 
-void XRefStream::ReadIndex_()
+void XRefStream::ReadStream_()
 {
-  // Gets the numbers in the /Index entry
+  // If there is no /W entry, we don't know how to interpret the stream.
+  if (!dictionary_.ContainsInts("/W")) throw runtime_error("No /W entry found");
+
+   // Gets the numbers in the /Index entry
   auto index_entries = dictionary_.GetInts("/Index");
 
   if (!index_entries.empty())
@@ -357,42 +360,10 @@ void XRefStream::ReadIndex_()
       iota(object_numbers_.begin(), object_numbers_.end(), index_entries[i]);
     }
   }
-}
 
-/*---------------------------------------------------------------------------*/
-// We next read two parameters we need from the /DecodeParms entry of the
-// stream dictionary: the number of columns in the table and the predictor
-// number, which gives the method used to decode the stream
-
-void XRefStream::ReadParameters_()
-{
   Dictionary sub_dictionary(dictionary_.GetDictionary("/DecodeParms"));
   number_of_columns_ = sub_dictionary.GetInts("/Columns").at(0);
   predictor_ = sub_dictionary.GetInts("/Predictor").at(0);
-}
-
-/*---------------------------------------------------------------------------*/
-// Get the raw data from the stream and arrange it in a table as directed by
-// the /W ("widths") entry in the main dictionary
-
-void XRefStream::GetRawMatrix_()
-{
-  // Obtain the raw stream data
-  auto charstream = xref_->GetStreamLocation(object_start_);
-
-  string stream;
-
-  // Applies decompression to stream if needed
-  if (dictionary_["/Filter"].find("/FlateDecode", 0) != string::npos)
-  {
-    stream = FlateDecode(charstream);
-  }
-  else
-  {
-    stream = charstream.AsString();
-  }
-
-  vector<uint8_t> byte_stream(stream.begin(), stream.end());
 
   // Read the /W entry to get the width in bytes of each column in the table
   // check the widths for any zero values and skip them if present
@@ -405,31 +376,47 @@ void XRefStream::GetRawMatrix_()
   // Predictors above 10 require an extra column
   if (predictor_ > 9) ++number_of_columns_;
 
+  // Obtain the raw stream data
+  auto charstream = xref_->GetStreamLocation(object_start_);
+
+  // Applies decompression to stream if needed
+  string&& s = dictionary_["/Filter"].find("/FlateDecode", 0) != string::npos?
+               FlateDecode(charstream) : charstream.AsString();
+
+  byte_stream_ = vector<uint8_t>(s.begin(), s.end());
+}
+
+/*---------------------------------------------------------------------------*/
+// Get the raw data from the stream and arrange it in a table as directed by
+// the /W ("widths") entry in the main dictionary
+
+void XRefStream::ProcessStream_()
+{
   // Gets number of rows
-  int number_of_rows = byte_stream.size() / number_of_columns_;
+  int number_of_rows = byte_stream_.size() / number_of_columns_;
 
   // Ensures rectangular table
-  if ((size_t)(number_of_rows * number_of_columns_) != byte_stream.size())
+  if ((size_t)(number_of_rows * number_of_columns_) != byte_stream_.size())
   {
     throw runtime_error("Unmatched row and column numbers");
   }
 
   if (predictor_ == 12)
   {
-    for (auto element = byte_stream.begin() + number_of_columns_;
-              element != byte_stream.end(); ++element)
+    for (auto element = byte_stream_.begin() + number_of_columns_;
+              element != byte_stream_.end(); ++element)
     {
       *element += *(element - number_of_columns_);
     }
   }
-  ModuloTranspose_(byte_stream, number_of_columns_, number_of_rows);
+  ToColumns_(number_of_columns_, number_of_rows);
 }
 
 
 /*---------------------------------------------------------------------------*/
 // transposes the matrix and makes it modulo 256.
 
-void XRefStream::ModuloTranspose_(vector<uint8_t>& p_bytes, int p_n_cols, int p_n_rows)
+void XRefStream::ToColumns_(int p_n_cols, int p_n_rows)
 {
   for (int i = 0; i < p_n_cols; ++i)
   {
@@ -438,7 +425,7 @@ void XRefStream::ModuloTranspose_(vector<uint8_t>& p_bytes, int p_n_cols, int p_
     temp_column.reserve(p_n_rows);
     for(int j = 0; j < p_n_rows; ++j)
     {
-      temp_column.push_back((int) (uint8_t) p_bytes[i + j * p_n_cols]);
+      temp_column.push_back((int) (uint8_t) byte_stream_[i + j * p_n_cols]);
     }
 
     // the new column is pushed to the final array unless it is the first
