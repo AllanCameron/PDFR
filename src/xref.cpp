@@ -33,8 +33,7 @@ class XRefStream
   friend class XRef;  // This class is only constructible via XRef
 
   shared_ptr<XRef>    xref_;         // Pointer to creating XRef
-  vector<vector<int>> raw_matrix_,   // Holds the raw data in (row x col) vecs
-                      final_array_,  // Transposed, modulo 256 table
+  vector<vector<int>> final_array_,  // Transposed, modulo 256 table
                       result_;       // The main results table for export
   vector<int> array_widths_,         // Bytes per column from /w entry
               object_numbers_;       // vector of object numbers inside stream.
@@ -47,8 +46,7 @@ class XRefStream
   void ReadIndex_();                 // Reads the index entry of main dict
   void ReadParameters_();            // Reads the PNG decoding parameters
   void GetRawMatrix_();              // Reads the stream into data table
-  void DiffUp_();                    // Un-diffs the table
-  void ModuloTranspose_();           // Transposes table and makes it modulo 256
+  void ModuloTranspose_(vector<uint8_t>&, int, int);  // Transposes table and makes it modulo 256
   void ExpandBytes_();               // Multiply bytes by correct powers of 256
   void MergeColumns_();              // Adds adjacent columns as per parameters
   void NumberRows_();                // Merges object numbers with data table
@@ -323,8 +321,6 @@ XRefStream::XRefStream(shared_ptr<XRef> p_xref, int p_starts_at)
   ReadIndex_();       // Reads Index so we know which objects are in stream
   ReadParameters_();  // Reads the PNG decoding parameters
   GetRawMatrix_();    // Arranges the raw data in stream into correct table form
-  DiffUp_();          // Undiffs the raw data
-  ModuloTranspose_(); // Transposes table which ensuring all numbers are <256
   ExpandBytes_();     // Multiplies bytes according to their position
   MergeColumns_();    // Sums adjacent columns that represent large numbers
   NumberRows_();      // Marries rows to object numbers from the /Index entry
@@ -396,15 +392,11 @@ void XRefStream::GetRawMatrix_()
     stream = charstream.AsString();
   }
 
-  // Convert stream to bytes then bytes to ints
-  vector<uint8_t> conv(stream.begin(), stream.end());
-  vector<int> int_stream(conv.begin(), conv.end());
+  vector<uint8_t> byte_stream(stream.begin(), stream.end());
 
   // Read the /W entry to get the width in bytes of each column in the table
   // check the widths for any zero values and skip them if present
-  array_widths_ = dictionary_.GetInts("/W");
-  auto new_end_marker = remove(array_widths_.begin(), array_widths_.end(), 0);
-  array_widths_.erase(new_end_marker, array_widths_.end());
+  for (auto i : dictionary_.GetInts("/W")) if (i) array_widths_.push_back(i);
   if(array_widths_.empty()) throw runtime_error("Invalid /W entry in XRefStrm");
 
   // if no record of column numbers, infer from number of /W entries
@@ -414,63 +406,44 @@ void XRefStream::GetRawMatrix_()
   if (predictor_ > 9) ++number_of_columns_;
 
   // Gets number of rows
-  int number_of_rows = int_stream.size() / number_of_columns_;
+  int number_of_rows = byte_stream.size() / number_of_columns_;
 
   // Ensures rectangular table
-  if ((size_t)(number_of_rows * number_of_columns_) != int_stream.size())
+  if ((size_t)(number_of_rows * number_of_columns_) != byte_stream.size())
   {
     throw runtime_error("Unmatched row and column numbers");
   }
 
-  // Fills the raw matrix with stream data
-  for (int i = 0; i < number_of_rows; ++i)
-  {
-    raw_matrix_.emplace_back(int_stream.begin() + number_of_columns_ * i,
-                             int_stream.begin() + number_of_columns_ * (i + 1));
-  }
-}
-
-/*---------------------------------------------------------------------------*/
-// The PNG algorithm involves finding the difference between adjacent cells
-// and storing this instead of the actual number. This function reverses that
-// differencing by calculating the cumulative sums of the columns
-
-void XRefStream::DiffUp_()
-{
   if (predictor_ == 12)
   {
-    // For each row
-    for (size_t row = 1; row < raw_matrix_.size(); ++row )
+    for (auto element = byte_stream.begin() + number_of_columns_;
+              element != byte_stream.end(); ++element)
     {
-      // Create references for this row and the row above it
-      auto& this_row = raw_matrix_.at(row);
-      auto& row_above = raw_matrix_.at(row - 1);
-
-      // Take each entry & add the entry above
-      for (size_t column = 0; column < this_row.size(); ++column)
-      {
-        this_row[column]+= row_above[column];
-      }
+      *element += *(element - number_of_columns_);
     }
   }
+  ModuloTranspose_(byte_stream, number_of_columns_, number_of_rows);
 }
+
 
 /*---------------------------------------------------------------------------*/
 // transposes the matrix and makes it modulo 256.
 
-void XRefStream::ModuloTranspose_()
+void XRefStream::ModuloTranspose_(vector<uint8_t>& p_bytes, int p_n_cols, int p_n_rows)
 {
-  for (size_t i = 0; i < raw_matrix_.at(0).size(); ++i)
+  for (int i = 0; i < p_n_cols; ++i)
   {
     // Create a new column vector
-    vector<int> temp_column;
-
-    // Then for each entry in the row make it modulo 256 and push to new column
-    for (auto& j : raw_matrix_) temp_column.push_back(j[i] & 0x00ff);
+    vector<int> temp_column{};
+    temp_column.reserve(p_n_rows);
+    for(int j = 0; j < p_n_rows; ++j)
+    {
+      temp_column.push_back((int) (uint8_t) p_bytes[i + j * p_n_cols]);
+    }
 
     // the new column is pushed to the final array unless it is the first
     // column (which is skipped when the predictor is > 9)
-    if (predictor_ < 10 || i > 0) final_array_.push_back(temp_column);
+    if (predictor_ < 10 || i > 0) final_array_.push_back(move(temp_column));
   }
 }
 
