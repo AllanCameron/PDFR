@@ -315,11 +315,8 @@ XRefStream::XRefStream(shared_ptr<XRef> p_xref, int p_starts_at)
     object_start_(p_starts_at),
     dictionary_(Dictionary(xref_->File(), object_start_))
 {
-  ReadStream_();  // Reads the PNG decoding parameters
-  ProcessStream_();    // Arranges the raw data in stream into correct table form
-  ExpandBytes_();     // Multiplies bytes according to their position
-  MergeColumns_();    // Sums adjacent columns that represent large numbers
-  NumberRows_();      // Marries rows to object numbers from the /Index entry
+  ReadStream_();    // Reads the PNG decoding parameters
+  ProcessStream_(); // Arranges the raw data in stream into correct table form
 }
 
 /*---------------------------------------------------------------------------*/
@@ -410,11 +407,14 @@ void XRefStream::ProcessStream_()
     }
   }
   ToColumns_(number_of_columns_, number_of_rows);
+  ExpandBytes_();
+  MergeColumns_();
+  NumberRows_();
 }
 
 
 /*---------------------------------------------------------------------------*/
-// transposes the matrix and makes it modulo 256.
+// Changes the byte stream into a group of columns
 
 void XRefStream::ToColumns_(int p_n_cols, int p_n_rows)
 {

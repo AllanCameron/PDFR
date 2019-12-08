@@ -5,6 +5,8 @@ TODO.md
 CONTRIBUTING.md
 CODE_OF_CONDUCT.md
 PULL_REQUEST_TEMPLATE.md
+inflate_method.md
+working.R
 .gitignore
 ^\.github
 headerMap.txt

@@ -53,34 +53,6 @@
     .Call(`_PDFR_GetPdfBoxesFromRaw`, p_file_name, p_page_number)
 }
 
-TestStream <- function(p_raw_vector) {
-    .Call(`_PDFR_TestStream`, p_raw_vector)
-}
-
-ReadFont <- function(fontfile) {
-    invisible(.Call(`_PDFR_ReadFont`, fontfile))
-}
-
-ShowTypeSizes <- function() {
-    .Call(`_PDFR_ShowTypeSizes`)
-}
-
-FloatParseStd <- function(a) {
-    .Call(`_PDFR_FloatParseStd`, a)
-}
-
-FloatParseMe <- function(a) {
-    .Call(`_PDFR_FloatParseMe`, a)
-}
-
-TestDict <- function(p_string) {
-    invisible(.Call(`_PDFR_TestDict`, p_string))
-}
-
-TestCharString <- function(p_needle, p_haystack) {
-    invisible(.Call(`_PDFR_TestCharString`, p_needle, p_haystack))
-}
-
 .stopCpp <- function() {
     invisible(.Call(`_PDFR_stopCpp`))
 }

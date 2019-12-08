@@ -101,7 +101,6 @@ class Dictionary
   std::vector<std::string> GetAllKeys()                      const;
   Dictionary GetDictionary(const std::string& key)           const;
   std::unordered_map<std::string, std::string> GetMap()      const;
-  void PrettyPrint ()                                        const;
 
   // Inline definition of dictionary iterators
   typedef std::unordered_map<std::string, std::string>::const_iterator DictIt;
@@ -217,4 +216,6 @@ inline std::vector<int> Dictionary::GetReferences(const std::string& p_key)const
   return ParseReferences(this->GetString(p_key));
 }
 
+// Declaration for output stream interface doesn't need to be a member
+std::ostream& operator<<(std::ostream& p_os, const Dictionary& p_dict);
 #endif

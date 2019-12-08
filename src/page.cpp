@@ -105,8 +105,7 @@ void Page::ReadHeader_()
   {
     // create an error message in case of missing page
     string error_message("No header found for page ");
-    error_message += to_string(page_number_);
-    throw runtime_error(error_message);
+    throw runtime_error(error_message + to_string(page_number_));
   }
 }
 
@@ -336,11 +335,13 @@ shared_ptr<Font> Page::GetFont(const string& p_font_id)
 }
 
 /*--------------------------------------------------------------------------*/
-// Allows a dictionary to be read whether it is direct or via a reference
+// Allows a dictionary to be read whether it is direct or via a reference. This
+// should probably allow for recursion, since there doesn't seem to be anything
+// preventing this in iso 32000, though I haven't come across any multiple
+// indirections in sample pdfs yet.
 
 shared_ptr<Dictionary>
-Page::FollowToDictionary(shared_ptr<Dictionary> p_entry,
-                         const string& p_name)
+Page::FollowToDictionary(shared_ptr<Dictionary> p_entry, const string& p_name)
 {
   // If it isn't a dictionary
   if (!p_entry->ContainsDictionary(p_name))

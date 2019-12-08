@@ -157,27 +157,6 @@ GetPdfBoxesFromString(const std::string& p_file_name, int p_page_number);
 Rcpp::DataFrame
 GetPdfBoxesFromRaw(const std::vector<uint8_t>& p_file_name, int p_page_number);
 
-// [[Rcpp::export(TestStream)]]
-std::string TestStream(std::vector<uint8_t> p_raw_vector);
-
-
-// [[Rcpp::export]]
-void ReadFont(std::vector<uint8_t> fontfile);
-
-// [[Rcpp::export]]
-Rcpp::DataFrame ShowTypeSizes();
-
-// [[Rcpp::export]]
-float FloatParseStd(std::string a);
-
-// [[Rcpp::export]]
-float FloatParseMe(std::string a);
-
-// [[Rcpp::export]]
-void TestDict(const std::string& p_string);
-
-// [[Rcpp::export]]
-void TestCharString(const std::string& p_needle, const std::string& p_haystack);
 
 //---------------------------------------------------------------------------//
 // This function can be called from R to stop the underlying C++ code. This can

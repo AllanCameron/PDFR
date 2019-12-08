@@ -412,6 +412,6 @@ std::string GetFile(const std::string& p_path_to_file);
 //---------------------------------------------------------------------------//
 // Prints bytes to screen for debugging
 
-void PrintBytes(std::vector<uint8_t> p_bytes, const std::string& p_message);
+std::ostream& operator<<(std::ostream& p_os, std::vector<uint8_t> p_bytes);
 
 #endif

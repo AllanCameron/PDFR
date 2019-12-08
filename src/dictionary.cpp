@@ -485,14 +485,9 @@ Dictionary Dictionary::GetDictionary(const string& p_key) const
 /*---------------------------------------------------------------------------*/
 // Mainly for debugging. Prints all key:value pairs to the console
 
-void Dictionary::PrettyPrint() const
+std::ostream& operator<<(std::ostream& p_os, const Dictionary& p_dict)
 {
-  auto key_names = GetKeys(this->GetMap());
-  for(auto key_name : key_names)
-  {
-    auto entry = this->GetString(key_name);
-    cout << key_name << " : ";
-    cout << entry;
-    cout << endl;
-  }
+  auto&& key_names = GetKeys(p_dict.GetMap());
+  for(auto key : key_names) p_os << key << " : " << p_dict[key] << endl;
+  return p_os;
 }

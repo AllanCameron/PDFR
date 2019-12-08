@@ -12,9 +12,6 @@ struct TTFRow
   uint32_t checksum_;
   uint32_t offset_;
   uint32_t length_;
-  inline void Print() { std::cout << table_name_ << "\t"
-                                  << offset_     << "\t"
-                                  << length_     << std::endl;}
 };
 
 struct CMapDirectory
@@ -41,7 +38,6 @@ class TTFont
 public:
   TTFont(const std::string& p_stream);
 
-  void ShowTables();
   uint16_t GetUint16();
   uint32_t GetUint32();
   TTFRow GetTTRow();

@@ -517,15 +517,16 @@ string GetFile(const string& p_file)
 
 /*--------------------------------------------------------------------------*/
 
-void PrintBytes(vector<uint8_t> p_bytes, const string& p_message)
+std::ostream& operator<<(std::ostream& p_os, std::vector<uint8_t> p_bytes)
 {
-  cout << p_message << " : (";
+  p_os << "(";
   for(auto byte = p_bytes.begin(); byte != (p_bytes.end() - 1); ++byte)
   {
-    cout << "0x" << setfill('0') << setw(2) << hex << (int) *byte;
-    cout << ", ";
+    p_os << "0x" << setfill('0') << setw(2) << hex << (int) *byte;
+    p_os << ", ";
   }
-  cout << "0x" << setfill('0') << setw(2) << hex << (int) *(p_bytes.end() - 1);
-  cout << ")" << endl;
+  p_os << "0x" << setfill('0') << setw(2) << hex << (int) *(p_bytes.end() - 1);
+  p_os << ")" << endl;
+  return p_os;
 }
 

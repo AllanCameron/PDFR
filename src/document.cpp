@@ -49,7 +49,7 @@ Document::Document(const vector<uint8_t>& p_byte_vector)
 }
 
 /*---------------------------------------------------------------------------*/
-// buildDoc is just a helper function to create Document objects. It is the
+// This is just a helper function to create Document objects. It is the
 // "final common pathway" of both non-default Document constructor functions
 // and is seperated out to make this clear and avoid duplication of code
 
@@ -84,8 +84,8 @@ void Document::BuildDocument_()
 // the pointers do not point directly to page descriptors, but to further
 // /Pages dictionaries with /Kids entries that act as parent nodes for further
 // /Pages dictionaries and so on. This is a tree structure, but my attempt to
-// model this with a tree structure caused runtime errors on 64 bit
-// architectures, so I've created a simpler algorithm using std::list instead.
+// model this with a tree structure was actually slower than just implementing
+// it with a std::list.
 //
 // This function takes a lot of the time needed for document creation. It is
 // not that the algorithm is particularly slow; rather, it has to create all the
@@ -160,12 +160,12 @@ shared_ptr<Object> Document::GetObject(int p_object_number)
     // Otherwise create & store it directly
     if (holder)
     {
-      auto object_ptr = make_shared<Object>(GetObject(holder), p_object_number);
-      object_cache_[p_object_number] = object_ptr;
+      auto&& obj_ptr = make_shared<Object>(GetObject(holder), p_object_number);
+      object_cache_[p_object_number] = obj_ptr;
     }
     else
     {
-      auto object_ptr = make_shared<Object>(xref_, p_object_number);
+      auto&& object_ptr = make_shared<Object>(xref_, p_object_number);
       object_cache_[p_object_number] = object_ptr;
     }
   }
@@ -180,9 +180,7 @@ Dictionary Document::GetPageHeader(size_t p_page_number)
 {
   // Ensure the pagenumber is valid
   if (page_object_numbers_.size() < p_page_number)
-  {
     throw runtime_error("Invalid page number");
-  }
 
   // All good - return the requested header
   return object_cache_[page_object_numbers_[p_page_number]]->GetDictionary();

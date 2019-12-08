@@ -20,15 +20,7 @@ it_(stream_.begin())
   ReadTables();
 };
 
-void TTFont::ShowTables()
-{
-  std::cout << "table\toffset\tlength" << std::endl;
-  std::cout << "-----\t------\t------" << std::endl;
-  for (unsigned i = 0; i < table_of_tables_.size(); ++i)
-  {
-    (table_of_tables_[i]).Print();
-  }
-};
+
 
 uint16_t TTFont::GetUint16()
 {
@@ -75,7 +67,6 @@ void TTFont::ReadTables()
     }
     it_ = it_store;
 	}
-  ShowTables();
   ReadCMap();
 }
 
@@ -112,7 +103,7 @@ void TTFont::ReadCMap()
   uint16_t n_tables = GetUint16();
 
   std::vector<CMapDirectory> cmap_directory;
-  std::cout << "\n\nPlatform\tid\toffset\tname" << endl;
+
   for (uint16_t i = 0; i < n_tables; ++i)
   {
     std::string encoding;
@@ -135,12 +126,7 @@ void TTFont::ReadCMap()
     }
     uint16_t offset = GetUint32();
     cmap_directory.emplace_back(CMapDirectory(platform, id, offset, encoding));
-    cout << cmap_directory.back().platform_id_ << "\t\t"
-         << cmap_directory.back().specific_id_ << "\t"
-         << cmap_directory.back().offset_ << "\t"
-         << cmap_directory.back().encoding_ << std::endl;
   }
-  std::cout << "\n" << std::endl;
 
   for (auto& entry : cmap_directory)
   {
@@ -152,10 +138,8 @@ void TTFont::ReadCMap()
     }
     entry.length_ = GetUint16();
     uint16_t language = GetUint16();
-    std::cout << "Entry with offset " << entry.offset_
-              << " has format " << entry.format_ << ", length "
-              << entry.length_
-              << ", and language " << language << endl;
+    if (language) language = 0; // Language is unused variable - removes warning
+
     switch(entry.format_)
     {
       case 0 : HandleFormat0(entry); break;
@@ -187,7 +171,7 @@ void TTFont::HandleFormat2(CMapDirectory& p_entry)
   for (uint16_t i = 0; i < 256; ++i)
   {
     uint16_t k = GetUint16()/8;
-    std::cout << k << endl;
+    if (k) k = 0; // Unused variable - this kills warnings
   }
 }
 
@@ -221,7 +205,6 @@ void TTFont::HandleFormat6(CMapDirectory& p_entry)
   for (uint16_t i = 0; i < num_entries; ++i )
   {
     p_entry.cmap_[first_entry + i] = GetUint16();
-    cout << p_entry.cmap_[first_entry + i] << " -> " << first_entry + i << endl;
   }
 }
 
