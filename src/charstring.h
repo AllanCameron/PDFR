@@ -53,62 +53,53 @@ public:
   // There are several ways to construct a Charstring:
 
   // Give it a pointer, a starting offset and an endpoint
-  CharString(const char* p_ptr, size_t p_start, size_t p_end) :
-  begin_(p_ptr + p_start), length_(p_end - p_start) {}
+  CharString(const char* ptr, size_t start, size_t end) :
+  begin_(ptr + start), length_(end - start) {}
 
   // Or just a pointer and a length
-  CharString(const char* p_ptr, size_t p_length) :
-  begin_(p_ptr), length_(p_length) {}
+  CharString(const char* ptr, size_t length) : begin_(ptr), length_(length) {}
 
   // Or just a pointer to a zero-terminated string
-  CharString(const char* p_ptr) :
-  begin_(p_ptr), length_(0) { while (*(begin_ + length_)) ++length_; }
+  CharString(const char* ptr) :
+  begin_(ptr), length_(0) { while (*(begin_ + length_)) ++length_; }
 
   // Or an std::string
-  CharString(const std::string& p_string) :
-  begin_(p_string.c_str()), length_(p_string.size()) {}
+  CharString(const std::string& s) : begin_(s.c_str()), length_(s.size()) {}
 
   // Or an std::string with a starting offset
-  CharString(const std::string& p_string, size_t p_start) :
-  begin_(p_string.c_str() + p_start), length_(p_string.size() - p_start) {}
+  CharString(const std::string& str, size_t start) :
+  begin_(str.c_str() + start), length_(str.size() - start) {}
 
-  // Or finally another CharString
+  // Or another CharString
   CharString(const CharString&) = default;
-  CharString& operator=(const CharString& p_chunk) = default;
+  CharString& operator=(const CharString& chunk) = default;
+  CharString& operator=(CharString&& chunk) noexcept = default;
 
-  // And an empty CharString
+  // Empty constructor
   CharString() : begin_(nullptr), length_(0) {}
 
   // The comparators are seperately defined
-  bool operator==(const CharString& p_other)         const;
-  bool operator==(const std::string& p_string)       const;
-  bool operator==(const char* p_cstring)             const;
+  bool operator==(const CharString& other)   const;
+  bool operator==(const std::string& string) const;
+  bool operator==(const char* cstring)       const;
 
   // Find and substr also require seperate definition
-  const char* find(const char* p_target)             const;
-  CharString substr(size_t p_start, size_t p_length) const;
-  CharString CarveOut(const char* p_left, const char* p_right) const;
+  const char* find(const char* target)                     const;
+  const char* find(const CharString& target)               const;
+  CharString substr(size_t start, size_t length)           const;
+  CharString CarveOut(const char* left, const char* right) const;
 
   // The basic reading operations are all inlined
-  char operator[](int p_index) const {return *(begin_ + p_index);}
-
-  std::string AsString() const {return std::string(begin_, length_);};
-
-  const char* begin() const {return begin_;}
-
-  const char* end() const {return begin_ + length_;}
-
-  char back() const { return *(end() - 1);}
-
-  bool empty() const {return length_ == 0;}
-
-  size_t size() const {return length_;}
-
-  const char* find(const std::string& p_str) const {return find(p_str.c_str());}
-
-  bool contains(const char* p_target) const { return find(p_target) != end();}
-
-  bool contains(std::string p_target) const {return find(p_target) != end();}
+  char operator[](int index)               const {return *(begin_ + index);}
+  std::string AsString()                   const {return {begin_, length_};}
+  const char* begin()                      const {return begin_;}
+  const char* end()                        const {return begin_ + length_;}
+  char back()                              const {return *(end() - 1);}
+  bool empty()                             const {return length_ == 0;}
+  size_t size()                            const {return length_;}
+  const char* find(const std::string& str) const {return find(str.c_str());}
+  bool contains(const char* target)        const {return find(target) != end();}
+  bool contains(std::string target)        const {return find(target) != end();}
 
 private:
   const char* begin_;
@@ -116,6 +107,9 @@ private:
 };
 
 // Declaration for output stream interface doesn't need to be a member
-std::ostream& operator<<(std::ostream& p_os, const CharString& p_cs);
+std::ostream& operator<<(std::ostream& os, const CharString& charstring);
+
+// Create a string literal CharString directly
+inline CharString operator "" _cs(const char* cstr) { return CharString(cstr);}
 
 #endif

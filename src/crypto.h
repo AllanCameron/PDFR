@@ -74,15 +74,15 @@ class Crypto
 {
  public:
   // Constructors
-  Crypto(const Dictionary& p_encryption_dictionary,
-         const Dictionary& p_trailer_dictionary);
+  Crypto(const Dictionary& encryption_dictionary,
+         const Dictionary& trailer_dictionary);
 
   // This is the main decryption function which is also the public interface for
   // the class. It takes the raw stream, the object and generation numbers then
   // returns the decrypted stream.
-  std::string DecryptStream(const std::string& p_stream_to_be_decoded,
-                      int p_object_number,
-                      int p_object_generation_number) const;
+  std::string DecryptStream(const std::string& stream_to_be_decoded,
+                            int object_number,
+                            int object_generation_number) const;
 
   std::string DecryptStream(const CharString&, int, int) const;
 

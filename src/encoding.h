@@ -87,11 +87,11 @@ class Encoding
 {
  public:
   // Constructor
-  Encoding(std::shared_ptr<Dictionary> p_font_dictionary,
-           std::shared_ptr<Document> p_ptr_to_document);
+  Encoding(Dictionary& font_dictionary,
+           std::shared_ptr<Document> ptr_to_document);
 
   // Maps given raw code point to Unicode
-  Unicode Interpret(const RawChar& p_code_point_to_be_interpreted);
+  Unicode Interpret(const RawChar& code_point_to_be_interpreted);
 
   // This typedef shortens the name of the RawChar to Unicode lookup maps.
   typedef std::unordered_map<RawChar, Unicode> UnicodeMap;
@@ -112,7 +112,7 @@ class Encoding
   static const UnicodeMap pdfdoc_to_unicode_;
 
   UnicodeMap encoding_map_;             // The main data member lookup
-  std::shared_ptr<Dictionary> font_dictionary_; // the main font dictionary
+  Dictionary& font_dictionary_;         // the main font dictionary
   std::shared_ptr<Document> document_;  // pointer to the containing document
   std::string base_encoding_;           // value of /BaseEncoding entry
 
@@ -144,8 +144,8 @@ class Encoding
   void ParseTypeOneFont_(std::string);
 
   // Helper function for parser
-  void Write_(DifferencesState& p_state_to_push_to_entries,
-              std::string& p_string_to_push_to_entries);
+  void Write_(DifferencesState& state_to_push_to_entries,
+              std::string& string_to_push_to_entries);
 };
 
 //---------------------------------------------------------------------------//

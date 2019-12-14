@@ -115,7 +115,7 @@ class XRef
  private:
   std::shared_ptr<const std::string> file_string_;  // Pointer to file string
   std::unordered_map<int, XRefRow> xref_table_;     // Main data member
-  std::shared_ptr<Dictionary> trailer_dictionary_;  // Main trailer dictionary
+  Dictionary trailer_dictionary_;  // Main trailer dictionary
   std::shared_ptr<Crypto> encryption_;              // Used for encrypted files
 
   // private methods

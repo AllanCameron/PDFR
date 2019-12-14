@@ -42,9 +42,9 @@
  */
 
 #include "font.h"
+#include "dictionary.h"
 
 class Box;
-template <class T> class TreeNode;
 
 //---------------------------------------------------------------------------//
 
@@ -52,22 +52,22 @@ class Page
 {
  public:
   // Constructor
-  Page(std::shared_ptr<Document> document_ptr, int page_number);
+  Page(std::shared_ptr<Document> document_pointer, int page_number);
 
   // Move constructor
-  Page(Page&& p_other_page) noexcept {*this = std::move(p_other_page);}
+  Page(Page&& other_page) noexcept {*this = std::move(other_page);}
 
   // lvalue assignment operator
-  Page& operator=(const Page& p_other_page)
+  Page& operator=(const Page& other_page)
   {
-    *this = p_other_page;
+    *this = other_page;
     return *this;
   }
 
   // rvalue assignment operator
-  Page& operator=(Page&& p_other_page) noexcept
+  Page& operator=(Page&& other_page) noexcept
   {
-    *this = std::move(p_other_page);
+    *this = std::move(other_page);
     return *this;
   }
 
@@ -78,27 +78,25 @@ class Page
   std::shared_ptr<std::string> GetPageContents();
 
   // Returns a pointer to the contents of an XObject used by the page
-  std::shared_ptr<std::string> GetXObject(const std::string& p_x_object_name);
+  std::shared_ptr<std::string> GetXObject(const std::string& x_object_name);
 
   // Returns a pointer to the Font object from a given font name
-  std::shared_ptr<Font> GetFont(const std::string& p_font_name);
+  std::shared_ptr<Font> GetFont(const std::string& font_name);
 
   // Returns a Box object describing the page's bounding box.
-  inline std::shared_ptr<Box> GetMinbox() const { return minbox_;}
+  std::shared_ptr<Box> GetMinbox() const { return minbox_;}
 
   // Since the font map is a static object, it should be cleared at the end
   // of processing any particular document. Important!
-  inline void ClearFontMap() { fontmap_.clear(); };
+  void ClearFontMap() { fontmap_.clear(); };
 
   // Allows a dictionary to be returned either directly or via reference
-  std::shared_ptr<Dictionary> FollowToDictionary(std::shared_ptr<Dictionary>,
-                                                 const std::string&);
+  Dictionary FollowToDictionary(Dictionary&,  const std::string&);
 
  private:
-  // private data members
   std::shared_ptr<Document>   document_;        // Pointer to main document
   int                         page_number_;     // [Zero-indexed] page number
-  std::shared_ptr<Dictionary> header_,          // The page's header dictionary
+  Dictionary                  header_,          // The page's header dictionary
                               resources_,       // Resource sub-dictionary
                               fonts_;           // Font sub-dictionary
   std::shared_ptr<Box>        minbox_;          // Page bounding Box
@@ -112,7 +110,7 @@ class Page
   static std::unordered_map<std::string, std::shared_ptr<Font>> fontmap_;
 
   // private methods
-  void ReadXObjects_(); // Write form XObjects to the xobject map
+  void ReadXObjects_();     // Write form XObjects to the xobject map
   void ReadBoxes_();        // Store bounding boxes and calculate the smallest
   void ReadHeader_();       // Find the correct header dictionary in document
   void ReadResources_();    // Obtain the resource dictionary

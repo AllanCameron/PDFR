@@ -30,14 +30,14 @@
 using namespace std;
 
 
-Stream::Stream(const string* p_input) : input_(*p_input),
+Stream::Stream(const string* input) : input_(*input),
                                         output_(std::string()),
                                         input_position_(input_.begin()),
                                         output_position_(output_.begin()),
                                         unconsumed_bits_(0),
                                         unconsumed_bit_value_(0) {}
 
-Stream::Stream(const CharString& p_input) : input_(p_input),
+Stream::Stream(const CharString& input) : input_(input),
                                         output_(std::string()),
                                         input_position_(input_.begin()),
                                         output_position_(output_.begin()),
@@ -86,12 +86,12 @@ void Stream::Reset()
 
 /*---------------------------------------------------------------------------*/
 
-uint32_t Stream::GetBits(uint32_t p_n_bits)
+uint32_t Stream::GetBits(uint32_t n_bits)
 {
   uint32_t value_read = unconsumed_bit_value_;
   uint8_t bits_read = unconsumed_bits_;
 
-  while (bits_read < p_n_bits)
+  while (bits_read < n_bits)
   {
     uint32_t new_byte = GetByte();
     if (new_byte == 256) throw runtime_error("Unexpected end of stream");
@@ -99,22 +99,22 @@ uint32_t Stream::GetBits(uint32_t p_n_bits)
     bits_read += 8;
   }
 
-  uint32_t result = value_read & ((1 << p_n_bits) - 1);
-  unconsumed_bit_value_ = value_read >> p_n_bits;
-  bits_read -= p_n_bits;
+  uint32_t result = value_read & ((1 << n_bits) - 1);
+  unconsumed_bit_value_ = value_read >> n_bits;
+  bits_read -= n_bits;
   unconsumed_bits_ = bits_read;
   return result;
 }
 
 /*---------------------------------------------------------------------------*/
 
-uint32_t Stream::BitFlip(uint32_t p_value, uint32_t p_n_bits)
+uint32_t Stream::BitFlip(uint32_t value, uint32_t n_bits)
 {
   uint32_t result = 0;
-  for(uint32_t i = 1; i <= p_n_bits; ++i)
+  for(uint32_t i = 1; i <= n_bits; ++i)
   {
-    result = (result << 1) | (p_value & 1);
-    p_value  >>= 1;
+    result = (result << 1) | (value & 1);
+    value  >>= 1;
   }
   return result;
 }

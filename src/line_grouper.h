@@ -52,7 +52,7 @@ class LineGrouper
   using TextPointer = std::shared_ptr<TextElement>;
 
   // Constructor takes the output of WordGrouper - a vector of TextBoxes
-  LineGrouper(PageBox p_page_box_from_whitespace);
+  LineGrouper(PageBox page_box_from_whitespace);
 
   // The output is also a vector of TextBoxes
   inline TextBox Output() { return text_boxes_.CastToTextBox();}
@@ -68,11 +68,11 @@ class LineGrouper
   // it comes afterwards.
   struct ReadingOrder_
   {
-    bool operator() (const TextPointer& p_row1, const TextPointer& p_row2) const
+    bool operator() (const TextPointer& row1, const TextPointer& row2) const
     {
-      if (p_row1->GetBottom()  > p_row2->GetBottom() ) return true;
-      if (p_row1->GetBottom() == p_row2->GetBottom() &&
-          p_row1->GetLeft()    < p_row2->GetLeft()   ) return true;
+      if (row1->GetBottom()  > row2->GetBottom() ) return true;
+      if (row1->GetBottom() == row2->GetBottom() &&
+          row1->GetLeft()    < row2->GetLeft()   ) return true;
       return false;
     }
   };

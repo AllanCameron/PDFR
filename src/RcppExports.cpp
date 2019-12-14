@@ -6,156 +6,156 @@
 using namespace Rcpp;
 
 // GetXrefFromString
-Rcpp::DataFrame GetXrefFromString(const std::string& p_file_name);
-RcppExport SEXP _PDFR_GetXrefFromString(SEXP p_file_nameSEXP) {
+Rcpp::DataFrame GetXrefFromString(const std::string& file_name);
+RcppExport SEXP _PDFR_GetXrefFromString(SEXP file_nameSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const std::string& >::type p_file_name(p_file_nameSEXP);
-    rcpp_result_gen = Rcpp::wrap(GetXrefFromString(p_file_name));
+    Rcpp::traits::input_parameter< const std::string& >::type file_name(file_nameSEXP);
+    rcpp_result_gen = Rcpp::wrap(GetXrefFromString(file_name));
     return rcpp_result_gen;
 END_RCPP
 }
 // GetXrefFromRaw
-Rcpp::DataFrame GetXrefFromRaw(const std::vector<uint8_t>& p_raw_file);
-RcppExport SEXP _PDFR_GetXrefFromRaw(SEXP p_raw_fileSEXP) {
+Rcpp::DataFrame GetXrefFromRaw(const std::vector<uint8_t>& raw_file);
+RcppExport SEXP _PDFR_GetXrefFromRaw(SEXP raw_fileSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const std::vector<uint8_t>& >::type p_raw_file(p_raw_fileSEXP);
-    rcpp_result_gen = Rcpp::wrap(GetXrefFromRaw(p_raw_file));
+    Rcpp::traits::input_parameter< const std::vector<uint8_t>& >::type raw_file(raw_fileSEXP);
+    rcpp_result_gen = Rcpp::wrap(GetXrefFromRaw(raw_file));
     return rcpp_result_gen;
 END_RCPP
 }
 // GetObjectFromString
-Rcpp::List GetObjectFromString(const std::string& p_file_name, int p_object_number);
-RcppExport SEXP _PDFR_GetObjectFromString(SEXP p_file_nameSEXP, SEXP p_object_numberSEXP) {
+Rcpp::List GetObjectFromString(const std::string& file_name, int object_number);
+RcppExport SEXP _PDFR_GetObjectFromString(SEXP file_nameSEXP, SEXP object_numberSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const std::string& >::type p_file_name(p_file_nameSEXP);
-    Rcpp::traits::input_parameter< int >::type p_object_number(p_object_numberSEXP);
-    rcpp_result_gen = Rcpp::wrap(GetObjectFromString(p_file_name, p_object_number));
+    Rcpp::traits::input_parameter< const std::string& >::type file_name(file_nameSEXP);
+    Rcpp::traits::input_parameter< int >::type object_number(object_numberSEXP);
+    rcpp_result_gen = Rcpp::wrap(GetObjectFromString(file_name, object_number));
     return rcpp_result_gen;
 END_RCPP
 }
 // GetObjectFromRaw
-Rcpp::List GetObjectFromRaw(const std::vector<uint8_t>& p_raw_file, int p_object_number);
-RcppExport SEXP _PDFR_GetObjectFromRaw(SEXP p_raw_fileSEXP, SEXP p_object_numberSEXP) {
+Rcpp::List GetObjectFromRaw(const std::vector<uint8_t>& raw_file, int object_number);
+RcppExport SEXP _PDFR_GetObjectFromRaw(SEXP raw_fileSEXP, SEXP object_numberSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const std::vector<uint8_t>& >::type p_raw_file(p_raw_fileSEXP);
-    Rcpp::traits::input_parameter< int >::type p_object_number(p_object_numberSEXP);
-    rcpp_result_gen = Rcpp::wrap(GetObjectFromRaw(p_raw_file, p_object_number));
+    Rcpp::traits::input_parameter< const std::vector<uint8_t>& >::type raw_file(raw_fileSEXP);
+    Rcpp::traits::input_parameter< int >::type object_number(object_numberSEXP);
+    rcpp_result_gen = Rcpp::wrap(GetObjectFromRaw(raw_file, object_number));
     return rcpp_result_gen;
 END_RCPP
 }
 // GetPdfPageFromString
-Rcpp::List GetPdfPageFromString(const std::string& p_file_name, int p_page_number, bool p_each_glyph);
-RcppExport SEXP _PDFR_GetPdfPageFromString(SEXP p_file_nameSEXP, SEXP p_page_numberSEXP, SEXP p_each_glyphSEXP) {
+Rcpp::List GetPdfPageFromString(const std::string& file_name, int page_number, bool each_glyph);
+RcppExport SEXP _PDFR_GetPdfPageFromString(SEXP file_nameSEXP, SEXP page_numberSEXP, SEXP each_glyphSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const std::string& >::type p_file_name(p_file_nameSEXP);
-    Rcpp::traits::input_parameter< int >::type p_page_number(p_page_numberSEXP);
-    Rcpp::traits::input_parameter< bool >::type p_each_glyph(p_each_glyphSEXP);
-    rcpp_result_gen = Rcpp::wrap(GetPdfPageFromString(p_file_name, p_page_number, p_each_glyph));
+    Rcpp::traits::input_parameter< const std::string& >::type file_name(file_nameSEXP);
+    Rcpp::traits::input_parameter< int >::type page_number(page_numberSEXP);
+    Rcpp::traits::input_parameter< bool >::type each_glyph(each_glyphSEXP);
+    rcpp_result_gen = Rcpp::wrap(GetPdfPageFromString(file_name, page_number, each_glyph));
     return rcpp_result_gen;
 END_RCPP
 }
 // GetPdfPageFromRaw
-Rcpp::List GetPdfPageFromRaw(const std::vector<uint8_t>& p_raw_file, int p_page_number, bool p_atoms);
-RcppExport SEXP _PDFR_GetPdfPageFromRaw(SEXP p_raw_fileSEXP, SEXP p_page_numberSEXP, SEXP p_atomsSEXP) {
+Rcpp::List GetPdfPageFromRaw(const std::vector<uint8_t>& raw_file, int page_number, bool atoms);
+RcppExport SEXP _PDFR_GetPdfPageFromRaw(SEXP raw_fileSEXP, SEXP page_numberSEXP, SEXP atomsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const std::vector<uint8_t>& >::type p_raw_file(p_raw_fileSEXP);
-    Rcpp::traits::input_parameter< int >::type p_page_number(p_page_numberSEXP);
-    Rcpp::traits::input_parameter< bool >::type p_atoms(p_atomsSEXP);
-    rcpp_result_gen = Rcpp::wrap(GetPdfPageFromRaw(p_raw_file, p_page_number, p_atoms));
+    Rcpp::traits::input_parameter< const std::vector<uint8_t>& >::type raw_file(raw_fileSEXP);
+    Rcpp::traits::input_parameter< int >::type page_number(page_numberSEXP);
+    Rcpp::traits::input_parameter< bool >::type atoms(atomsSEXP);
+    rcpp_result_gen = Rcpp::wrap(GetPdfPageFromRaw(raw_file, page_number, atoms));
     return rcpp_result_gen;
 END_RCPP
 }
 // GetGlyphMap
-Rcpp::DataFrame GetGlyphMap(const std::string& p_file_name, int p_page_number);
-RcppExport SEXP _PDFR_GetGlyphMap(SEXP p_file_nameSEXP, SEXP p_page_numberSEXP) {
+Rcpp::DataFrame GetGlyphMap(const std::string& file_name, int page_number);
+RcppExport SEXP _PDFR_GetGlyphMap(SEXP file_nameSEXP, SEXP page_numberSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const std::string& >::type p_file_name(p_file_nameSEXP);
-    Rcpp::traits::input_parameter< int >::type p_page_number(p_page_numberSEXP);
-    rcpp_result_gen = Rcpp::wrap(GetGlyphMap(p_file_name, p_page_number));
+    Rcpp::traits::input_parameter< const std::string& >::type file_name(file_nameSEXP);
+    Rcpp::traits::input_parameter< int >::type page_number(page_numberSEXP);
+    rcpp_result_gen = Rcpp::wrap(GetGlyphMap(file_name, page_number));
     return rcpp_result_gen;
 END_RCPP
 }
 // GetPageStringFromString
-std::string GetPageStringFromString(const std::string& p_file_name, int p_page_number);
-RcppExport SEXP _PDFR_GetPageStringFromString(SEXP p_file_nameSEXP, SEXP p_page_numberSEXP) {
+std::string GetPageStringFromString(const std::string& file_name, int page_number);
+RcppExport SEXP _PDFR_GetPageStringFromString(SEXP file_nameSEXP, SEXP page_numberSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const std::string& >::type p_file_name(p_file_nameSEXP);
-    Rcpp::traits::input_parameter< int >::type p_page_number(p_page_numberSEXP);
-    rcpp_result_gen = Rcpp::wrap(GetPageStringFromString(p_file_name, p_page_number));
+    Rcpp::traits::input_parameter< const std::string& >::type file_name(file_nameSEXP);
+    Rcpp::traits::input_parameter< int >::type page_number(page_numberSEXP);
+    rcpp_result_gen = Rcpp::wrap(GetPageStringFromString(file_name, page_number));
     return rcpp_result_gen;
 END_RCPP
 }
 // GetPageStringFromRaw
-std::string GetPageStringFromRaw(const std::vector<uint8_t>& p_raw_file, int p_page_number);
-RcppExport SEXP _PDFR_GetPageStringFromRaw(SEXP p_raw_fileSEXP, SEXP p_page_numberSEXP) {
+std::string GetPageStringFromRaw(const std::vector<uint8_t>& raw_file, int page_number);
+RcppExport SEXP _PDFR_GetPageStringFromRaw(SEXP raw_fileSEXP, SEXP page_numberSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const std::vector<uint8_t>& >::type p_raw_file(p_raw_fileSEXP);
-    Rcpp::traits::input_parameter< int >::type p_page_number(p_page_numberSEXP);
-    rcpp_result_gen = Rcpp::wrap(GetPageStringFromRaw(p_raw_file, p_page_number));
+    Rcpp::traits::input_parameter< const std::vector<uint8_t>& >::type raw_file(raw_fileSEXP);
+    Rcpp::traits::input_parameter< int >::type page_number(page_numberSEXP);
+    rcpp_result_gen = Rcpp::wrap(GetPageStringFromRaw(raw_file, page_number));
     return rcpp_result_gen;
 END_RCPP
 }
 // GetPdfDocumentFromString
-Rcpp::DataFrame GetPdfDocumentFromString(const std::string& p_file_name);
-RcppExport SEXP _PDFR_GetPdfDocumentFromString(SEXP p_file_nameSEXP) {
+Rcpp::DataFrame GetPdfDocumentFromString(const std::string& file_name);
+RcppExport SEXP _PDFR_GetPdfDocumentFromString(SEXP file_nameSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const std::string& >::type p_file_name(p_file_nameSEXP);
-    rcpp_result_gen = Rcpp::wrap(GetPdfDocumentFromString(p_file_name));
+    Rcpp::traits::input_parameter< const std::string& >::type file_name(file_nameSEXP);
+    rcpp_result_gen = Rcpp::wrap(GetPdfDocumentFromString(file_name));
     return rcpp_result_gen;
 END_RCPP
 }
 // GetPdfDocumentFromRaw
-Rcpp::DataFrame GetPdfDocumentFromRaw(const std::vector<uint8_t>& p_file_name);
-RcppExport SEXP _PDFR_GetPdfDocumentFromRaw(SEXP p_file_nameSEXP) {
+Rcpp::DataFrame GetPdfDocumentFromRaw(const std::vector<uint8_t>& file_name);
+RcppExport SEXP _PDFR_GetPdfDocumentFromRaw(SEXP file_nameSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const std::vector<uint8_t>& >::type p_file_name(p_file_nameSEXP);
-    rcpp_result_gen = Rcpp::wrap(GetPdfDocumentFromRaw(p_file_name));
+    Rcpp::traits::input_parameter< const std::vector<uint8_t>& >::type file_name(file_nameSEXP);
+    rcpp_result_gen = Rcpp::wrap(GetPdfDocumentFromRaw(file_name));
     return rcpp_result_gen;
 END_RCPP
 }
 // GetPdfBoxesFromString
-Rcpp::DataFrame GetPdfBoxesFromString(const std::string& p_file_name, int p_page_number);
-RcppExport SEXP _PDFR_GetPdfBoxesFromString(SEXP p_file_nameSEXP, SEXP p_page_numberSEXP) {
+Rcpp::DataFrame GetPdfBoxesFromString(const std::string& file_name, int page_number);
+RcppExport SEXP _PDFR_GetPdfBoxesFromString(SEXP file_nameSEXP, SEXP page_numberSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const std::string& >::type p_file_name(p_file_nameSEXP);
-    Rcpp::traits::input_parameter< int >::type p_page_number(p_page_numberSEXP);
-    rcpp_result_gen = Rcpp::wrap(GetPdfBoxesFromString(p_file_name, p_page_number));
+    Rcpp::traits::input_parameter< const std::string& >::type file_name(file_nameSEXP);
+    Rcpp::traits::input_parameter< int >::type page_number(page_numberSEXP);
+    rcpp_result_gen = Rcpp::wrap(GetPdfBoxesFromString(file_name, page_number));
     return rcpp_result_gen;
 END_RCPP
 }
 // GetPdfBoxesFromRaw
-Rcpp::DataFrame GetPdfBoxesFromRaw(const std::vector<uint8_t>& p_file_name, int p_page_number);
-RcppExport SEXP _PDFR_GetPdfBoxesFromRaw(SEXP p_file_nameSEXP, SEXP p_page_numberSEXP) {
+Rcpp::DataFrame GetPdfBoxesFromRaw(const std::vector<uint8_t>& file_name, int page_number);
+RcppExport SEXP _PDFR_GetPdfBoxesFromRaw(SEXP file_nameSEXP, SEXP page_numberSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const std::vector<uint8_t>& >::type p_file_name(p_file_nameSEXP);
-    Rcpp::traits::input_parameter< int >::type p_page_number(p_page_numberSEXP);
-    rcpp_result_gen = Rcpp::wrap(GetPdfBoxesFromRaw(p_file_name, p_page_number));
+    Rcpp::traits::input_parameter< const std::vector<uint8_t>& >::type file_name(file_nameSEXP);
+    Rcpp::traits::input_parameter< int >::type page_number(page_numberSEXP);
+    rcpp_result_gen = Rcpp::wrap(GetPdfBoxesFromRaw(file_name, page_number));
     return rcpp_result_gen;
 END_RCPP
 }

@@ -68,12 +68,9 @@ class Font
 {
  public:
   // Constructor
-  Font(std::shared_ptr<Document> p_document_ptr,
-       std::shared_ptr<Dictionary> p_font_dictionary_ptr,
-       const std::string& p_id);
-
-  // Default Constructor
-  Font(){};
+  Font(std::shared_ptr<Document> document_ptr,
+       Dictionary& font_dictionary_ptr,
+       const std::string& id);
 
   // public methods
   std::string GetFontName();            // Gets the actual PostScript Font name
@@ -82,12 +79,12 @@ class Font
   // The most important public method is MapRawChar, which takes a vector of
   // uint16_t representing raw character codes, and returns a vector of pairs
   // containing the Unicode interpretation and its associated width
-  std::vector<GlyphData> MapRawChar(const std::vector<RawChar>& p_raw_chars);
+  std::vector<GlyphData> MapRawChar(const std::vector<RawChar>& raw_chars);
 
 private:
   // private data members
   std::shared_ptr<Document> document_;  // - Pointer to the containing document
-  std::shared_ptr<Dictionary>  font_dictionary_;  // - The main font dictionary
+  Dictionary& font_dictionary_;         // - The main font dictionary
   std::string font_id_,                 // - The name the font as used in PDF
               font_name_;               // - The actual name of the font
   GlyphMap glyph_map_;                  // - Main data member, mapping RawChar

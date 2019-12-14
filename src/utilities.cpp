@@ -66,31 +66,31 @@ const std::array<CharType, 256> Reader::char_lookup_ =
 };
 
 /*---------------------------------------------------------------------------*/
-// Returns the first substring of p_string that lies between two delimiters.
+// Returns the first substring of haystack that lies between two delimiters.
 // e.g.
 //
 // CarveOut("Hello there world!", "Hello", "world") == " there ";
 
-string CarveOut(const string& p_string,
-                const string& p_left,
-                const string& p_right)
+string CarveOut(const string& haystack,
+                const string& left,
+                const string& right)
 {
   // Find the starting point of the left delimiter
-  int start =  p_string.find(p_left);
+  int start =  haystack.find(left);
 
-  // If left delimiter absent, start at p_string[0], otherwise start at the end
+  // If left delimiter absent, start at haystack[0], otherwise start at the end
   // of first occurrence of left delimiter
-  if (start >= 0) start += p_left.size();
+  if (start >= 0) start += left.size();
   else start = 0;
 
   // Now find the starting point of the first occurrence of right delimiter
   // in the remaining string
-  int length = p_string.find(p_right, start);
+  int length = haystack.find(right, start);
   length -= start;
 
   // If not found, stop at the end of the string
-  if (length < 0) length = p_string.length() - start;
-  return p_string.substr(start, length);
+  if (length < 0) length = haystack.length() - start;
+  return haystack.substr(start, length);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -103,41 +103,41 @@ string CarveOut(const string& p_string,
 // result == vector<string> {" not a pheasant ", " a pheasant "};
 //
 
-vector<string> MultiCarve(const string& p_string,
-                          const string& p_left,
-                          const string& p_right)
+vector<string> MultiCarve(const string& haystack,
+                          const string& left,
+                          const string& right)
 {
   vector<string> result;
 
   // If any of the strings are length 0 then return an empty vector
-  if (p_string.empty() || p_left.empty() || p_right.empty()) return result;
+  if (haystack.empty() || left.empty() || right.empty()) return result;
 
   // Makes a copy to allow const correctness
-  string trimmed(p_string);
+  string trimmed(haystack);
 
   // This loop finds the first occurrence of the left delimiter, then stores
-  // a copy of the portion of p_string between the end of the left delimiter
+  // a copy of the portion of haystack between the end of the left delimiter
   // and the start of the right delimiter. It then trims the beginning of the
   // string, leaving the portion after the right delimiter. It repeats until
-  // the whole p_string is consumed
+  // the whole haystack is consumed
   while (true)
   {
-    int start = trimmed.find(p_left);
+    int start = trimmed.find(left);
     if (start == -1) break;
 
-    // Chops beginning off p_string up to end of first match of left delimiter
-    int end_of_match     = start + p_left.length();
+    // Chops beginning off haystack up to end of first match of left delimiter
+    int end_of_match     = start + left.length();
     int remaining_length = trimmed.length() - end_of_match;
     trimmed              = trimmed.substr(end_of_match, remaining_length);
 
-    int stop = trimmed.find(p_right);
+    int stop = trimmed.find(right);
     if (stop == -1) break;
 
     // Target found - push to result
     result.push_back(trimmed.substr(0, stop));
 
     // Now discard the target plus the following instance of right delimiter
-    end_of_match     = stop + p_right.length();
+    end_of_match     = stop + right.length();
     remaining_length = trimmed.length() - end_of_match;
     trimmed          = trimmed.substr(end_of_match, remaining_length);
   }
@@ -152,12 +152,12 @@ vector<string> MultiCarve(const string& p_string,
 // IsAscii("I am an Ascii string.") == true;
 // IsAscii("I am an Äscii string.") == false;
 
-bool IsAscii(const string& p_string)
+bool IsAscii(const string& candidate)
 {
-  if (p_string.empty()) return false; // Not sure if this is true or false
+  if (candidate.empty()) return false; // Not sure if this is true or false
 
   // Use minmax to get a pair of iterators pointing to min & max char values
-  auto&& minmax_ptrs = minmax_element(p_string.begin(), p_string.end());
+  auto&& minmax_ptrs = minmax_element(candidate.begin(), candidate.end());
 
   // If any are outside the ascii range return false, otherwise return true
   return *(minmax_ptrs.first) > 7 && *(minmax_ptrs.second) < 127;
@@ -168,15 +168,15 @@ bool IsAscii(const string& p_string)
 //
 // ConvertHexToBytes("01ABEF2A") == vector<uint8_t> { 0x01, 0xAB, 0xEF, 0x2A };
 
-vector<uint8_t> ConvertHexToBytes(const string& p_hexstring)
+vector<uint8_t> ConvertHexToBytes(const string& hexstring)
 {
   vector<uint8_t> byte_vector{};
-  byte_vector.reserve(p_hexstring.size());
+  byte_vector.reserve(hexstring.size());
 
   // If hexstring is empty, return an empty vector;
-  if (p_hexstring.empty()) return byte_vector;
+  if (hexstring.empty()) return byte_vector;
 
-  for (auto hexchar : p_hexstring)
+  for (auto hexchar : hexstring)
   {
     const auto& found = s_hexmap.find(hexchar);
     if (found != s_hexmap.end()) byte_vector.push_back(found->second);
@@ -204,14 +204,15 @@ vector<uint8_t> ConvertHexToBytes(const string& p_hexstring)
 //
 // ConvertIntToHex(161) == string("00A1");
 
-string ConvertIntToHex(int p_int)
+string ConvertIntToHex(int input)
 {
-  if (p_int < 0 || p_int > 0xffff) return "FFFF"; // Returns max if out of range
+  if (input < 0 || input > 0xffff) return "FFFF"; // Returns max if out of range
   string hex {"0123456789ABCDEF"};
-  hex += hex[(p_int & 0xf000) >> 12];  // Gets index of hex from first 4 bits
-  hex += hex[(p_int & 0x0f00) >>  8];  // Gets index of hex from second 4 bits
-  hex += hex[(p_int & 0x00f0) >>  4];  // Gets index of hex from third 4 bits
-  hex += hex[(p_int & 0x000f) >>  0];  // Gets index of hex from last 4 bits
+  hex.reserve(20);
+  hex += hex[(input & 0xf000) >> 12];  // Gets index of hex from first 4 bits
+  hex += hex[(input & 0x0f00) >>  8];  // Gets index of hex from second 4 bits
+  hex += hex[(input & 0x00f0) >>  4];  // Gets index of hex from third 4 bits
+  hex += hex[(input & 0x000f) >>  0];  // Gets index of hex from last 4 bits
   return string {hex, 16, 4};
 }
 
@@ -221,24 +222,24 @@ string ConvertIntToHex(int p_int)
 //
 // ConvertHexToRawChar("ABCD0123") == vector<RawChar> {0xABCD, 0x0123};
 
-vector<RawChar> ConvertHexToRawChar(string& p_string)
+vector<RawChar> ConvertHexToRawChar(string& hexstring)
 {
   // Prepends zeros until the string can be split into length-4 sections
-  while (p_string.size() % 4) p_string = '0' + p_string;
+  while (hexstring.size() % 4) hexstring = '0' + hexstring;
 
   // Declares vector to store results and ensures it is large enough to do so
   vector<RawChar> raw_vector;
-  raw_vector.reserve(p_string.size() / 4);
+  raw_vector.reserve(hexstring.size() / 4);
 
   // Note this loop reads 4 chars at a time and stops incrementing at size - 3.
   // It looks up each character in the hexmap and places it in the correct
   // 4-bit section of the 16-bit result using the bit shift operator.
-  for (size_t i = 0; i < (p_string.size() - 3); i += 4)
+  for (size_t i = 0; i < (hexstring.size() - 3); i += 4)
   {
-    raw_vector.emplace_back(((s_hexmap[p_string[i + 0]] & 0x000f) << 12)  |
-                            ((s_hexmap[p_string[i + 1]] & 0x000f) <<  8)  |
-                            ((s_hexmap[p_string[i + 2]] & 0x000f) <<  4)  |
-                            ((s_hexmap[p_string[i + 3]] & 0x000f) <<  0)  );
+    raw_vector.emplace_back(((s_hexmap[hexstring[i + 0]] & 0x000f) << 12)  |
+                            ((s_hexmap[hexstring[i + 1]] & 0x000f) <<  8)  |
+                            ((s_hexmap[hexstring[i + 2]] & 0x000f) <<  4)  |
+                            ((s_hexmap[hexstring[i + 3]] & 0x000f) <<  0)  );
   }
   return raw_vector;
 }
@@ -252,12 +253,12 @@ vector<RawChar> ConvertHexToRawChar(string& p_string)
 // ConvertStringToRawChar("Hello") ==
 // vector<RawChar> { 0x0048, 0x0065, 0x006c, 0x006c, 0x006f};
 
-vector<RawChar> ConvertStringToRawChar(const string& p_string)
+vector<RawChar> ConvertStringToRawChar(const string& std_string)
 {
   vector<RawChar> result {};            // Declare result vector
-  if (p_string.empty()) return result;  // If string empty, return empty vector
-  result.reserve(p_string.size());      // Otherwise, reserve enough space
-  for (auto string_char : p_string)     // Then place 2 bytes per char in result
+  if (std_string.empty()) return result; // If string empty, return empty vector
+  result.reserve(std_string.size());      // Otherwise, reserve enough space
+  for (auto string_char : std_string)     // Then place 2 bytes per char in result
   {
     result.emplace_back(0x00ff & string_char);
   }
@@ -273,7 +274,7 @@ vector<RawChar> ConvertStringToRawChar(const string& p_string)
 //
 // ParseReferences("<</Refs 1 0 R 2 0 R 31 5 R>>") == vector<int> {1, 2, 31};
 
-vector<int> ParseReferences(const string& p_string)
+vector<int> ParseReferences(const string& ref_string)
 {
   // Defines the possible states of the finite state machine (fsm)
   enum ReferenceState
@@ -290,7 +291,7 @@ vector<int> ParseReferences(const string& p_string)
   ReferenceState state = START;  // Current state of finite state machine
 
   // The main loop cycles through each char in the string to write the result
-  for (const auto& chr : p_string)
+  for (const auto& chr : ref_string)
   {
     char m = GetSymbolType(chr);
     switch (state)
@@ -358,7 +359,7 @@ vector<int> ParseReferences(const string& p_string)
 //
 // ParseInts("<</Refs 1 0 R 2 0 R 31 5 R>>") == vector<int> {1, 0, 2, 0, 31, 5};
 
-vector<int> ParseInts(const CharString& p_string)
+vector<int> ParseInts(const CharString& int_string)
 {
   // Define the possible states of the lexer
   enum IntState
@@ -375,7 +376,7 @@ vector<int> ParseInts(const CharString& p_string)
   IntState state = WAITING; // Current state of the finite state machine.
 
   // The main loop cycles through each char in the string to write the result
-  for (auto it = p_string.begin(); it != p_string.end(); ++it)
+  for (auto it = int_string.begin(); it != int_string.end(); ++it)
   {
     char chr = *it;
     char m = GetSymbolType(chr);
@@ -418,9 +419,9 @@ vector<int> ParseInts(const CharString& p_string)
   return result;
 }
 
-vector<int> ParseInts(const string& p_string)
+vector<int> ParseInts(const string& int_string)
 {
-  return ParseInts(CharString(p_string));
+  return ParseInts(CharString(int_string));
 }
 /*--------------------------------------------------------------------------*/
 // This lexer retrieves floats from a string. It searches through the entire
@@ -431,7 +432,7 @@ vector<int> ParseInts(const string& p_string)
 //
 // ParseFloats("pi is 3.14, e is 2.72") == vector<float> {3.14, 2.72};
 
-vector<float> ParseFloats(const string& p_string)
+vector<float> ParseFloats(const string& float_string)
 {
   enum FloatState  // The possible states of the finite state machine
   {
@@ -448,7 +449,7 @@ vector<float> ParseFloats(const string& p_string)
   FloatState state = WAITING;  // Current state of the finite state machine
 
   // The main loop cycles through each char in the string to write the result
-  for (const auto& chr : p_string)
+  for (const auto& chr : float_string)
   {
     char m = GetSymbolType(chr);
     switch (state)
@@ -487,46 +488,36 @@ vector<float> ParseFloats(const string& p_string)
 //
 // string file_contents = GetFile("C://documents/my_binary_file.bin");
 
-string GetFile(const string& p_file)
+string GetFile(const string& file_name)
 {
-  // A new string in which to store file contents.
-  string file_string;
+  string file_string;  // A new string in which to store file contents.
 
-  // Open connection to file
-  ifstream file_stream(p_file.c_str(), ios::in | ios::binary);
-
+  // Opens connection to the file. If it fails to open, it throws an error.
+  ifstream file_stream(file_name.c_str(), ios::in | ios::binary);
   if (!file_stream) throw runtime_error("Couldn't open file.");
 
-  // Move to end of file
-  file_stream.seekg(0, ios::end);
-
-  // Ensure string is big enough
-  file_string.resize(file_stream.tellg());
-
-  // Move to start of file
-  file_stream.seekg(0, ios::beg);
-
-  // Copy contents
-  file_stream.read(&file_string[0], file_string.size());
-
-  // Ensure the connection is closed before proceeding
-  file_stream.close();
+  file_stream.seekg(0, ios::end);           // Moves to end of file
+  file_string.resize(file_stream.tellg());  // Ensures string is big enough
+  file_stream.seekg(0, ios::beg);           // Moves back to start of file
+  file_stream.read(&file_string[0], file_string.size()); // Copies contents
+  file_stream.close(); // Ensures the connection is closed before proceeding
 
   return file_string;
 }
 
 /*--------------------------------------------------------------------------*/
+// Allows a vector of bytes to be output to a stream using the << operator
 
-std::ostream& operator<<(std::ostream& p_os, std::vector<uint8_t> p_bytes)
+std::ostream& operator<<(std::ostream& os, std::vector<uint8_t> bytes)
 {
-  p_os << "(";
-  for(auto byte = p_bytes.begin(); byte != (p_bytes.end() - 1); ++byte)
+  os << "(";
+  for(auto byte = bytes.begin(); byte != (bytes.end() - 1); ++byte)
   {
-    p_os << "0x" << setfill('0') << setw(2) << hex << (int) *byte;
-    p_os << ", ";
+    os << "0x" << setfill('0') << setw(2) << hex << (int) *byte;
+    os << ", ";
   }
-  p_os << "0x" << setfill('0') << setw(2) << hex << (int) *(p_bytes.end() - 1);
-  p_os << ")" << endl;
-  return p_os;
+  os << "0x" << setfill('0') << setw(2) << hex << (int) *(bytes.end() - 1);
+  os << ")" << endl;
+  return os;
 }
 

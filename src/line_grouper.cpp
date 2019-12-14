@@ -25,8 +25,8 @@ using namespace std;
 // into a single logical component, then they are glued together into a logical
 // unit. Otherwise, the box is split vertically.
 
-LineGrouper::LineGrouper(PageBox p_text_boxes)
-  : text_boxes_(p_text_boxes)
+LineGrouper::LineGrouper(PageBox text_boxes)
+  : text_boxes_(text_boxes)
 {
   size_t i = 0;
 
@@ -64,16 +64,16 @@ LineGrouper::LineGrouper(PageBox p_text_boxes)
 // This method identifies whether a new line is indented compared the previous
 // line.
 
-void LineGrouper::FindBreaks_(TextBox& p_text_box)
+void LineGrouper::FindBreaks_(TextBox& text_box)
 {
   // For each TextElement in the TextBox
-  for (size_t i = 1; i < p_text_box.size(); ++i)
+  for (size_t i = 1; i < text_box.size(); ++i)
   {
-    if (p_text_box[i]->GetBottom() < p_text_box[i - 1]->GetBottom() && // Below
-       p_text_box[i]->GetLeft() - p_text_box[i - 1]->GetLeft() > 0.1) // To left
+    if (text_box[i]->GetBottom() < text_box[i - 1]->GetBottom() && // Below
+       text_box[i]->GetLeft() - text_box[i - 1]->GetLeft() > 0.1) // To left
     {
-      auto slice_at = p_text_box[i - 1]->GetBottom();
-      auto&& new_box = p_text_box.SplitIntoTopAndBottom(slice_at);
+      auto slice_at = text_box[i - 1]->GetBottom();
+      auto&& new_box = text_box.SplitIntoTopAndBottom(slice_at);
       if (!new_box.empty()) text_boxes_.push_back(new_box);
       break;
     }
@@ -90,12 +90,12 @@ void LineGrouper::FindBreaks_(TextBox& p_text_box)
 //
 // This method handles these various possibilities
 
-void LineGrouper::LineEndings_(TextBox& p_text_box)
+void LineGrouper::LineEndings_(TextBox& text_box)
 {
   // For each element in the TextBox
-  for (size_t i = 0; i < p_text_box.size() - 1; ++i)
+  for (size_t i = 0; i < text_box.size() - 1; ++i)
   {
-    auto& element = p_text_box[i];
+    auto& element = text_box[i];
     switch (element->GetGlyph().back())
     {
       case 0x0020:                          break;
@@ -115,15 +115,15 @@ void LineGrouper::LineEndings_(TextBox& p_text_box)
 //----------------------------------------------------------------------------//
 // Combines the text elements into a single element with the textbox
 
-void LineGrouper::PasteLines_(TextBox& p_text_box)
+void LineGrouper::PasteLines_(TextBox& text_box)
 {
-  for (auto& element : p_text_box)
+  for (auto& element : text_box)
   {
-    if (&element == &(p_text_box[0])) continue;
-    p_text_box[0]->ConcatenateUnicode(element->GetGlyph());
+    if (&element == &(text_box[0])) continue;
+    text_box[0]->ConcatenateUnicode(element->GetGlyph());
   }
 
-  p_text_box.resize(1);
+  text_box.resize(1);
 }
 
 

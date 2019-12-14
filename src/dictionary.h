@@ -67,23 +67,23 @@ class Dictionary
 
   Dictionary(const CharString&);
 
-  Dictionary(std::unordered_map<std::string, std::string> p_map): map_(p_map){};
+  Dictionary(std::unordered_map<std::string, std::string> m): map_(m){};
 
-  Dictionary(const Dictionary& p_other): map_(p_other.map_){};
+  Dictionary(const Dictionary& other): map_(other.map_){};
 
-  Dictionary(Dictionary&& p_other) noexcept { std::swap(map_, p_other.map_); }
+  Dictionary(Dictionary&& other) noexcept { std::swap(map_, other.map_); }
 
   Dictionary() = default;
 
-  Dictionary& operator=(Dictionary&& p_other) noexcept
+  Dictionary& operator=(Dictionary&& other) noexcept
   {
-    std::swap(map_, p_other.map_);
+    std::swap(map_, other.map_);
     return *this;
   }
 
-  Dictionary& operator=(const Dictionary& p_other)
+  Dictionary& operator=(const Dictionary& other)
   {
-    map_ = p_other.map_;
+    map_ = other.map_;
     return *this;
   }
 
@@ -115,11 +115,11 @@ class Dictionary
 /*---------------------------------------------------------------------------*/
 // Simple getter of dictionary contents as a string from given key name
 
-inline std::string Dictionary::GetString(const std::string& p_key) const
+inline std::string Dictionary::GetString(const std::string& key) const
 {
   // A simple map index lookup with square brackets adds the key to
   // map_, which we don't want. Using find(key) leaves it unaltered
-  auto finder = map_.find(p_key);
+  auto finder = map_.find(key);
   if (finder != map_.end()) return finder->second;
 
   // We want an empty string rather than an error if the key isn't found.
@@ -129,36 +129,36 @@ inline std::string Dictionary::GetString(const std::string& p_key) const
   return std::string();
 }
 
-inline std::string Dictionary::operator[](const std::string& p_key) const
+inline std::string Dictionary::operator[](const std::string& key) const
 {
-  return GetString(p_key);
+  return GetString(key);
 }
 
 /*---------------------------------------------------------------------------*/
 // Returns any integers present in the value string as read by the ParseInts()
 // global function defined in utilities.cpp
 
-inline std::vector<int> Dictionary::GetInts(const std::string& p_key) const
+inline std::vector<int> Dictionary::GetInts(const std::string& key) const
 {
-  return ParseInts(this->GetString(p_key));
+  return ParseInts(this->GetString(key));
 }
 
 /*---------------------------------------------------------------------------*/
 // Returns any floats present in the value string as read by the ParseFloats()
 // global function defined in utilities.cpp
 
-inline std::vector<float> Dictionary::GetFloats(const std::string& p_key) const
+inline std::vector<float> Dictionary::GetFloats(const std::string& key) const
 {
-  return ParseFloats(this->GetString(p_key));
+  return ParseFloats(this->GetString(key));
 }
 
 /*---------------------------------------------------------------------------*/
 // Checks whether a subdictionary is present in the value string by looking
 // for double angle brackets
 
-inline bool Dictionary::ContainsDictionary(const std::string& p_key) const
+inline bool Dictionary::ContainsDictionary(const std::string& key) const
 {
-  std::string dictionary = this->GetString(p_key);
+  std::string dictionary = this->GetString(key);
   return dictionary.find("<<") != std::string::npos;
 }
 
@@ -183,9 +183,9 @@ inline std::unordered_map<std::string, std::string> Dictionary::GetMap() const
 /*---------------------------------------------------------------------------*/
 // Sometimes we just need a boolean check for the presence of a key
 
-inline bool Dictionary::HasKey(const std::string& p_key) const
+inline bool Dictionary::HasKey(const std::string& key) const
 {
-  return map_.find(p_key) != map_.end();
+  return map_.find(key) != map_.end();
 }
 
 /*---------------------------------------------------------------------------*/
@@ -193,29 +193,29 @@ inline bool Dictionary::HasKey(const std::string& p_key) const
 // This should return true if the key is present AND its value contains
 // at least one object reference, and should be false in all other cases
 
-inline bool Dictionary::ContainsReferences(const std::string& p_key) const
+inline bool Dictionary::ContainsReferences(const std::string& key) const
 {
-  return !this->GetReferences(p_key).empty();
+  return !this->GetReferences(key).empty();
 }
 
 /*---------------------------------------------------------------------------*/
 // Checks whether the key's values contains any integers. If a key is present
 // AND its value contains ints, this returns true. Otherwise false.
 
-inline bool Dictionary::ContainsInts(const std::string& p_key) const
+inline bool Dictionary::ContainsInts(const std::string& key) const
 {
-  return !this->GetInts(p_key).empty();
+  return !this->GetInts(key).empty();
 }
 
 /*---------------------------------------------------------------------------*/
 // Returns a vector of object numbers from any object references found in the
 // given key's value. Uses a global function from utilities.h
 
-inline std::vector<int> Dictionary::GetReferences(const std::string& p_key)const
+inline std::vector<int> Dictionary::GetReferences(const std::string& key)const
 {
-  return ParseReferences(this->GetString(p_key));
+  return ParseReferences(this->GetString(key));
 }
 
 // Declaration for output stream interface doesn't need to be a member
-std::ostream& operator<<(std::ostream& p_os, const Dictionary& p_dict);
+std::ostream& operator<<(std::ostream& os, const Dictionary& dict);
 #endif

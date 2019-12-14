@@ -29,14 +29,14 @@ typedef unordered_map<uint32_t, uint32_t> HuffmanMap;
 // compressed string and it will replace it with a pointer to the uncompressed
 // version.
 
-std::string FlateDecode(string* p_message)
+std::string FlateDecode(string* message)
 {
-  return Deflate(p_message).Output();
+  return Deflate(message).Output();
 }
 
-std::string FlateDecode(const CharString& p_message)
+std::string FlateDecode(const CharString& message)
 {
-  return Deflate(p_message).Output();
+  return Deflate(message).Output();
 }
 /*---------------------------------------------------------------------------*/
 // In Deflate, some short messages are encoded with a fixed dictionary, since
@@ -161,7 +161,7 @@ const vector<uint32_t> Deflate::distance_table_{
 // The Deflate constructor calls the stream constructor and then runs the
 // decompression without further prompting.
 
-Deflate::Deflate(const string* p_input) : Stream(p_input),
+Deflate::Deflate(const string* input) : Stream(input),
                                           is_last_block_(false)
 {
   ExpectExpansionFactor(6);
@@ -175,7 +175,7 @@ Deflate::Deflate(const string* p_input) : Stream(p_input),
   ShrinkToFit();
 }
 
-Deflate::Deflate(const CharString& p_input) : Stream(p_input),
+Deflate::Deflate(const CharString& input) : Stream(input),
                                           is_last_block_(false)
 {
   ExpectExpansionFactor(6);
@@ -203,25 +203,25 @@ Deflate::Deflate(const CharString& p_input) : Stream(p_input),
 // the low order bits, then store the number of bits in the high order bits.
 
 unordered_map<uint32_t, uint32_t>
-Deflate::Huffmanize_(const vector<uint32_t>& p_lengths)
+Deflate::Huffmanize_(const vector<uint32_t>& lengths)
 {
   unordered_map<uint32_t, uint32_t> huffman_table;
 
   // The maximum length is stored in the main table as it is needed for reading
   // the table later.
-  uint32_t max_length = *max_element(p_lengths.begin(), p_lengths.end());
+  uint32_t max_length = *max_element(lengths.begin(), lengths.end());
 
   // The minimum length needs to be found in the loop.
   uint32_t min_length = 15, code = 0;
 
   for(uint32_t i = 1; i <= max_length; ++i) // For each possible length
   {
-    for(size_t j = 0; j < p_lengths.size(); ++j) // check each acutal length
+    for(size_t j = 0; j < lengths.size(); ++j) // check each acutal length
     {
-      if(p_lengths[j] == i) // If it matches, add it to the table.
+      if(lengths[j] == i) // If it matches, add it to the table.
       {
         // Creates the lookup value from the code value and number of bits
-        uint32_t&& lookup = (p_lengths[j] << 16)|BitFlip(code++, p_lengths[j]);
+        uint32_t&& lookup = (lengths[j] << 16)|BitFlip(code++, lengths[j]);
 
         // Stores the result
         huffman_table[lookup] = j;
@@ -248,12 +248,12 @@ Deflate::Huffmanize_(const vector<uint32_t>& p_lengths)
 // zeros to show the bits represented. It is a non-exported function and does
 // not appear in the header file.
 
-std::string PrintBits(uint32_t p_entry)
+std::string PrintBits(uint32_t entry)
 {
   std::string result = "";
 
   // Read the value and number of bits from the uint32
-  uint32_t n_bits = p_entry >> 16, value = p_entry & 0xffff;
+  uint32_t n_bits = entry >> 16, value = entry & 0xffff;
 
   // Set an initial mask to give only the number of bits needed for the value
   uint32_t mask = 1 << (n_bits - 1);
@@ -274,11 +274,11 @@ std::string PrintBits(uint32_t p_entry)
 // code, matching it against the appropriate Huffman map. The map is passed
 // by reference.
 
-uint32_t Deflate::ReadCode_(unordered_map<uint32_t, uint32_t>& p_map)
+uint32_t Deflate::ReadCode_(unordered_map<uint32_t, uint32_t>& map_to_read)
 {
   // The maximum and minimum number of bits that may be required for a match
   // in a given Huffman table is stored in the table itself and retrieved here.
-  uint32_t read_bits = p_map[0x00000], maxbits = p_map[0xfffff];
+  uint32_t read_bits = map_to_read[0x00000], maxbits = map_to_read[0xfffff];
 
   // Start by reading in the minimum number of bits that could match
   uint32_t read_value = GetBits(read_bits);
@@ -286,10 +286,10 @@ uint32_t Deflate::ReadCode_(unordered_map<uint32_t, uint32_t>& p_map)
   while(true) // The loop will run until explicitly exited by return or throw
   {
     // Create a lookup key from the number of read bits and their value
-    auto lookup = p_map.find(read_value | (read_bits << 16));
+    auto lookup = map_to_read.find(read_value | (read_bits << 16));
 
     // If this isn't found, get the next bit and repeat the loop
-    if (lookup == p_map.end())
+    if (lookup == map_to_read.end())
     {
       read_value = read_value + (GetBits(1) << read_bits++);
 
@@ -500,30 +500,30 @@ void Deflate::ReadCodes_()
 // dealing with a length code which will in turn be followed by a distance code.
 // This single function handles that situation.
 
-void Deflate::HandlePointer_(uint32_t p_code)
+void Deflate::HandlePointer_(uint32_t code)
 {
   // Initialize the variables we will use to store the length and distance
   uint32_t length_value = 0, distance_value = 0, extrabits = 0;
 
   // Length codes of 257 -> 264 represent lengths 1 -> 8
-  if (p_code < 265) length_value = p_code - 254;
+  if (code < 265) length_value = code - 254;
 
   // length code 285 represents the maximum length of 258
-  else if (p_code == 285) length_value = 258;
+  else if (code == 285) length_value = 258;
 
   // The other length codes (265 - 284) are less straightforward. Each of them
   // requires a specific number of extra bits to be read to determine the actual
-  // length. The number of bits is easily calculated by (p_code - 261) / 4,
+  // length. The number of bits is easily calculated by (code - 261) / 4,
   // but the actual base lengths are just looked up in a table.
   else
   {
     // How many extra bits should be looked up is dependent on the code itself
-    extrabits = (p_code - 261) / 4;
+    extrabits = (code - 261) / 4;
 
     // We now read these extra bits and add them to the base length value
     // looked up in the length_table_ member
     uint32_t read_value = GetBits(extrabits);
-    length_value = read_value + length_table_[p_code - 265];
+    length_value = read_value + length_table_[code - 265];
   }
 
   // Now we have our length, we need the distance. The distance codes are stored

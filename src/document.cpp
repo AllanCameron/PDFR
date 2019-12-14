@@ -31,8 +31,7 @@ using namespace std;
 // then uses the GetFile() function from utilities.h to read in the filestring
 // from which buildDoc() then creates the object
 
-Document::Document(const string& p_file_path)
-  : file_string_(GetFile(p_file_path))
+Document::Document(const string& file_path) : file_string_(GetFile(file_path))
 {
   BuildDocument_(); // Call constructor helper to build Document
 }
@@ -42,8 +41,8 @@ Document::Document(const string& p_file_path)
 // of bytes and converts it to the filestring before calling the helper function
 // to construct the Document object
 
-Document::Document(const vector<uint8_t>& p_byte_vector)
-  : file_string_(string(p_byte_vector.begin(), p_byte_vector.end()))
+Document::Document(const vector<uint8_t>& byte_vector)
+  : file_string_(string(byte_vector.begin(), byte_vector.end()))
 {
   BuildDocument_(); // Call constructor helper to build Document
 }
@@ -92,12 +91,12 @@ void Document::BuildDocument_()
 // objects it comes across, and there are at least as many of these are there
 // are pages.
 
-vector<int> Document::ExpandKids_(const vector<int>& p_object_numbers)
+vector<int> Document::ExpandKids_(const vector<int>& object_numbers)
 {
   // We first copy the vector over to a list because we may need to do a lot
   // of insertions depending on how big the document is, and vectors are not
   // efficient for this purpose.
-  list<int> kids_list(p_object_numbers.begin(), p_object_numbers.end());
+  list<int> kids_list(object_numbers.begin(), object_numbers.end());
 
   // Define an iterator to erase root nodes and replace with child nodes.
   auto kid = kids_list.begin();
@@ -122,18 +121,12 @@ vector<int> Document::ExpandKids_(const vector<int>& p_object_numbers)
     // We therefore need to replace it with its child nodes.
     if (!refs.empty())
     {
-      for (auto new_kid : refs)
-      {
-        kids_list.insert(kid, new_kid); // Insert is OK since this is a list
-      }
+      for (auto new_kid : refs) kids_list.insert(kid, new_kid);
       auto erase_point = kid;
       kid = prev(kid, refs.size());
       kids_list.erase(erase_point);
     }
-    else // If there are no /Kids, this is a leaf node - increment to next node
-    {
-      ++kid;
-    }
+    else ++kid; // If there are no /Kids, this is a leaf node so move to next
   }
 
   // Remember to convert the list back into a vector for return
@@ -148,40 +141,39 @@ vector<int> Document::ExpandKids_(const vector<int>& p_object_numbers)
 // returns it from the 'objects' vector. If not, it creates the object then
 // stores a copy in the 'objects' vector before returning the requested object.
 
-shared_ptr<Object> Document::GetObject(int p_object_number)
+shared_ptr<Object> Document::GetObject(int object_number)
 {
   // Check if object n is already stored
-  if (object_cache_.find(p_object_number) == object_cache_.end())
+  if (object_cache_.find(object_number) == object_cache_.end())
   {
     // If it is not stored, check whether it is in an object stream
-    size_t holder = xref_->GetHoldingNumberOf(p_object_number);
+    size_t holder = xref_->GetHoldingNumberOf(object_number);
 
     // If object is in a stream, create it recursively from the stream object.
     // Otherwise create & store it directly
     if (holder)
     {
-      auto&& obj_ptr = make_shared<Object>(GetObject(holder), p_object_number);
-      object_cache_[p_object_number] = obj_ptr;
+      auto&& obj_ptr = make_shared<Object>(GetObject(holder), object_number);
+      object_cache_[object_number] = obj_ptr;
     }
     else
     {
-      auto&& object_ptr = make_shared<Object>(xref_, p_object_number);
-      object_cache_[p_object_number] = object_ptr;
+      auto&& object_ptr = make_shared<Object>(xref_, object_number);
+      object_cache_[object_number] = object_ptr;
     }
   }
-  return object_cache_[p_object_number];
+  return object_cache_[object_number];
 }
-
 
 /*---------------------------------------------------------------------------*/
 // Public function that gets a specific page header from the pageheader vector
 
-Dictionary Document::GetPageHeader(size_t p_page_number)
+Dictionary Document::GetPageHeader(size_t page_number)
 {
   // Ensure the pagenumber is valid
-  if (page_object_numbers_.size() < p_page_number)
+  if (page_object_numbers_.size() < page_number)
     throw runtime_error("Invalid page number");
 
   // All good - return the requested header
-  return object_cache_[page_object_numbers_[p_page_number]]->GetDictionary();
+  return object_cache_[page_object_numbers_[page_number]]->GetDictionary();
 }

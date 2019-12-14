@@ -15,8 +15,6 @@
 
 #define PDFR_BOX
 
-
-
 //---------------------------------------------------------------------------//
 // Before we get to reading the page description program from the PDF, we first
 // need to define some data structures we are going to need to store the output
@@ -60,38 +58,38 @@ enum Direction {North = 3, South = 1, East = 2, West = 0, None = 4};
 class Vertex
 {
  public:
-  Vertex(float p_x, float p_y, uint8_t p_flags):
-    x_(p_x), y_(p_y), flags_(p_flags), points_to_(0), group_(0) {}
+  Vertex(float x, float y, uint8_t flags):
+    x_(x), y_(y), flags_(flags), points_to_(0), group_(0) {}
 
-  Vertex(const Vertex& p_other) = default;
-  Vertex& operator=(const Vertex& p_other) = default;
-  Vertex& operator=(Vertex&& p_other) {std::swap(p_other, *this); return *this;}
+  Vertex(const Vertex& other) = default;
+  Vertex& operator=(const Vertex& other) = default;
+  Vertex& operator=(Vertex&& other) {std::swap(other, *this); return *this;}
 
   // Getters
-  inline Direction In()        const {return arrows_.at(flags_ & 0x0f).first;}
-  inline Direction Out()       const {return arrows_.at(flags_ & 0x0f).second;}
-  inline float     GetX()      const {return x_;}
-  inline float     GetY()      const {return y_;}
-  inline uint8_t   GetFlags()  const {return flags_;}
-  inline size_t    GetGroup()  const {return group_;}
-  inline size_t    PointsTo()  const {return points_to_;}
+  Direction In()        const {return arrows_.at(flags_ & 0x0f).first;}
+  Direction Out()       const {return arrows_.at(flags_ & 0x0f).second;}
+  float     GetX()      const {return x_;}
+  float     GetY()      const {return y_;}
+  uint8_t   GetFlags()  const {return flags_;}
+  size_t    GetGroup()  const {return group_;}
+  size_t    PointsTo()  const {return points_to_;}
 
   // Setters
-  inline void SetFlags(uint8_t p_new_flag) { flags_ |= p_new_flag;}
-  inline void SetGroup(size_t p_group) { group_ = p_group;}
-  inline void PointAt(size_t p_element) { points_to_ = p_element;}
+  void SetFlags(uint8_t new_flag) { flags_ |= new_flag  ;}
+  void SetGroup(size_t group)     { group_ = group      ;}
+  void PointAt(size_t element)    { points_to_ = element;}
 
-  inline bool IsCloserThan(const Vertex& p_other, const float& p_edge)
+  bool IsCloserThan(const Vertex& other, const float& edge)
   {
     return
-    (Out() == North && p_other.x_ == x_ && p_other.In() == North &&
-    p_other.y_ > y_ && p_other.y_ < p_edge) ||
-    (Out() == South && p_other.x_ == x_ && p_other.In() == South &&
-    p_other.y_ < y_ && p_other.y_ > p_edge) ||
-    (Out() == East  && p_other.y_ == y_ && p_other.In() == East  &&
-    p_other.x_ > x_ && p_other.x_ < p_edge) ||
-    (Out() == West  && p_other.y_ == y_ && p_other.In() == West  &&
-    p_other.x_ < x_ && p_other.x_ > p_edge) ;
+    (Out() == North && other.x_ == x_ && other.In() == North &&
+    other.y_ > y_ && other.y_ < edge) ||
+    (Out() == South && other.x_ == x_ && other.In() == South &&
+    other.y_ < y_ && other.y_ > edge) ||
+    (Out() == East  && other.y_ == y_ && other.In() == East  &&
+    other.x_ > x_ && other.x_ < edge) ||
+    (Out() == West  && other.y_ == y_ && other.In() == West  &&
+    other.x_ < x_ && other.x_ > edge) ;
   }
 
 private:
@@ -112,17 +110,17 @@ class Box
 {
  public:
   // Constructor from four separate floats
-  Box(float p_left, float p_right, float p_top, float p_bottom)
-   : left_(p_left), right_(p_right), top_(p_top), bottom_(p_bottom), flags_(0){}
+  Box(float left, float right, float top, float bottom)
+   :  left_(left), right_(right), top_(top), bottom_(bottom), flags_(0){}
 
   // Constructor from length-4 vector
-  Box(std::vector<float> p_vector): flags_(0)
+  Box(std::vector<float> floats): flags_(0)
   {
-    if (p_vector.size() < 4) throw std::runtime_error("Box needs four floats");
-    left_   = p_vector[0];
-    right_  = p_vector[2];
-    top_    = p_vector[3];
-    bottom_ = p_vector[1];
+    if (floats.size() != 4) throw std::runtime_error("Box needs four floats");
+    left_   = floats[0];
+    right_  = floats[2];
+    top_    = floats[3];
+    bottom_ = floats[1];
   }
 
   // Default constructor
@@ -132,12 +130,13 @@ class Box
   Box(Box&&) = default;
   Box(const Box&) = default;
   Box& operator=(const Box&) = default;
-  Box& operator=(Box&&) = default;
+  Box& operator=(Box&&) noexcept = default;
+
   // We can use the direction enum to access the edges of the box instead of
   // using getters if we need to calculate the edge we're interested in getting.
-  inline float Edge(int p_side) const
+  float Edge(int side) const
   {
-    switch (p_side)
+    switch (side)
     {
       case 0: return left_;
       case 1: return bottom_;
@@ -148,163 +147,154 @@ class Box
   }
 
   // Getters
-  inline float GetLeft()   const   { return this->left_               ;}
-  inline float GetRight()  const   { return this->right_              ;}
-  inline float GetTop()    const   { return this->top_                ;}
-  inline float GetBottom() const   { return this->bottom_             ;}
-  inline virtual float GetSize() const { return this->top_ - this->bottom_;}
-  inline bool  HasFlag(uint8_t p_flag) const
-  {
-    return (flags_ & p_flag) == p_flag;
-  }
+  float GetLeft()             const { return this->left_               ;}
+  float GetRight()            const { return this->right_              ;}
+  float GetTop()              const { return this->top_                ;}
+  float GetBottom()           const { return this->bottom_             ;}
+  virtual float GetSize()     const { return this->top_ - this->bottom_;}
+  bool  HasFlag(uint8_t flag) const { return (flags_ & flag) == flag   ;}
 
   // Setters
-  inline void  SetLeft   (float   p_left)   { left_   = p_left  ;}
-  inline void  SetRight  (float   p_right)  { right_  = p_right ;}
-  inline void  SetTop    (float   p_top)    { top_    = p_top   ;}
-  inline void  SetBottom (float   p_bottom) { bottom_ = p_bottom;}
-  inline void  SetFlag   (uint8_t p_flag)   { flags_ |= p_flag  ;}
+  void  SetLeft   (float   left)   { left_   = left  ;}
+  void  SetRight  (float   right)  { right_  = right ;}
+  void  SetTop    (float   top)    { top_    = top   ;}
+  void  SetBottom (float   bottom) { bottom_ = bottom;}
+  void  SetFlag   (uint8_t flag)   { flags_ |= flag  ;}
 
   // Make the box dimensions equal to the smallest box that covers this box
   // AND the other box
-  inline void Merge(Box& p_other)
+  void Merge(Box& other)
   {
-    if(&p_other == this) return;
-    this->left_   = std::min(this->left_,   p_other.left_  );
-    this->right_  = std::max(this->right_,  p_other.right_ );
-    this->bottom_ = std::min(this->bottom_, p_other.bottom_);
-    this->top_    = std::max(this->top_,    p_other.top_   );
-    p_other.Consume();
+    if(&other == this) return;
+    this->left_   = std::min(this->left_,   other.left_  );
+    this->right_  = std::max(this->right_,  other.right_ );
+    this->bottom_ = std::min(this->bottom_, other.bottom_);
+    this->top_    = std::max(this->top_,    other.top_   );
+    other.Consume();
   }
 
   // Make the box dimensions equal to the smallest box that covers this box
   // and the given vertex
-  inline void ExpandBoxToIncludeVertex(const Vertex& p_vertex)
+  void ExpandBoxToIncludeVertex(const Vertex& vertex)
   {
-    this->left_   = std::min(this->left_,   p_vertex.GetX());
-    this->right_  = std::max(this->right_,  p_vertex.GetX());
-    this->bottom_ = std::min(this->bottom_, p_vertex.GetY());
-    this->top_    = std::max(this->top_,    p_vertex.GetY());
+    this->left_   = std::min(this->left_,   vertex.GetX());
+    this->right_  = std::max(this->right_,  vertex.GetX());
+    this->bottom_ = std::min(this->bottom_, vertex.GetY());
+    this->top_    = std::max(this->top_,    vertex.GetY());
   }
 
   // Compare two boxes for exact equality
-  inline bool operator==(const Box& p_other) const
+  bool operator==(const Box& other) const
   {
-    if (&p_other == this) return true;
-    return left_ == p_other.left_ && right_  == p_other.right_  &&
-           top_  == p_other.top_  && bottom_ == p_other.bottom_;
+    if (&other == this) return true;
+    return left_ == other.left_ && right_  == other.right_  &&
+           top_  == other.top_  && bottom_ == other.bottom_;
   }
 
   // Approximate equality between floats
-  inline bool Eq(const float& p_lhs, const float& p_rhs) const
+  bool Eq(const float& lhs, const float& rhs) const
   {
-    if (p_lhs == p_rhs) return true;
-    return (p_lhs - p_rhs < 0.1) && (p_rhs - p_lhs < 0.1);
+    if (lhs == rhs) return true;
+    return (lhs - rhs < 0.1) && (rhs - lhs < 0.1);
   }
 
   // Test for non-strict equality
-  inline bool IsApproximatelySameAs(const Box& p_other) const
+  bool IsApproximatelySameAs(const Box& other) const
   {
-    if (&p_other == this) return true;
-    return Eq(left_, p_other.left_) && Eq(right_,  p_other.right_) &&
-           Eq(top_,  p_other.top_)  && Eq(bottom_, p_other.bottom_ );
+    if (&other == this) return true;
+    return Eq(left_, other.left_) && Eq(right_,  other.right_) &&
+           Eq(top_,  other.top_)  && Eq(bottom_, other.bottom_ );
   }
 
-  inline bool IsBeyond(const Box& p_other) const
+  bool IsBeyond(const Box& other) const
   {
-    return left_ > p_other.right_;
+    return left_ > other.right_;
   }
 
   // Mark for deletion
-  inline void Consume() { flags_ |= 0x01; }
-  inline bool IsConsumed() const { return (flags_ & 0x01) == 0x01; }
+  void Consume() { flags_ |= 0x01; }
+  bool IsConsumed() const { return (flags_ & 0x01) == 0x01; }
 
   // Simple calculations of width and height
-  inline float Width()  const { return right_ - left_  ;}
-  inline float Height() const { return top_   - bottom_;}
+  float Width()  const { return right_ - left_  ;}
+  float Height() const { return top_   - bottom_;}
 
   // Are two given boxes aligned on at least one side?
-  inline bool SharesEdge(const Box& p_other) const
+  bool SharesEdge(const Box& other) const
   {
-    return this->top_  == p_other.top_  || this->bottom_ == p_other.bottom_ ||
-           this->left_ == p_other.left_ || this->right_  == p_other.right_  ;
+    return this->top_  == other.top_  || this->bottom_ == other.bottom_ ||
+           this->left_ == other.left_ || this->right_  == other.right_  ;
   }
 
   // Is this box immediately to the right of the given box, sharing two
   // vertices? This can be used to merge boxes
-  inline bool IsAdjacent(const Box& p_other) const
+  bool IsAdjacent(const Box& other) const
   {
-    return left_   == p_other.right_  &&
-           top_    == p_other.top_    &&
-           bottom_ == p_other.bottom_  ;
+    return left_   == other.right_  &&
+           top_    == other.top_    &&
+           bottom_ == other.bottom_  ;
   }
 
   // Check whether one box partially covers another box
-  inline bool Encroaches(Box& p_other)
+  bool Encroaches(Box& other)
   {
-    if (&p_other == this) return true;
-    return (left_ < p_other.right_ && right_ > p_other.left_) &&
-           (bottom_ < p_other.top_ && top_ > p_other.bottom_);
+    if (&other == this) return true;
+    return (left_ < other.right_ && right_ > other.left_) &&
+           (bottom_ < other.top_ && top_ > other.bottom_);
   }
 
   // Is another box completely enclosed by this one?
-  inline bool Engulfs(const Box& p_other) const
+  bool Engulfs(const Box& other) const
   {
-    return  p_other.bottom_ - bottom_ > -0.1 && p_other.top_ - top_ < 0.1 &&
-            p_other.left_ - left_ > -0.1 && p_other.right_ - right_ < 0.1 &&
-            !(*this == p_other);
+    return  other.bottom_ - bottom_ > -0.1 && other.top_ - top_ < 0.1 &&
+            other.left_ - left_ > -0.1 && other.right_ - right_ < 0.1 &&
+            !(*this == other);
   }
 
   // The following four functions determine whether, for any given Vertex,
   // moving an arbitrarily small distance in the stated direction will put
   // us inside this box. This allows us to work out on which edges of which
   // boxes the point lies.
-  inline bool IsNorthWestOf(Vertex& p_vertex) const
+  bool IsNorthWestOf(Vertex& vertex) const
   {
-    return right_ >= p_vertex.GetX() && left_   <  p_vertex.GetX() &&
-           top_   >  p_vertex.GetY() && bottom_ <= p_vertex.GetY();
+    return right_ >= vertex.GetX() && left_   <  vertex.GetX() &&
+           top_   >  vertex.GetY() && bottom_ <= vertex.GetY();
   }
 
-  inline bool IsNorthEastOf(Vertex& p_vertex) const
+  bool IsNorthEastOf(Vertex& vertex) const
   {
-    return right_ >  p_vertex.GetX() && left_   <= p_vertex.GetX() &&
-           top_   >  p_vertex.GetY() && bottom_ <= p_vertex.GetY();
+    return right_ >  vertex.GetX() && left_   <= vertex.GetX() &&
+           top_   >  vertex.GetY() && bottom_ <= vertex.GetY();
   }
 
-  inline bool IsSouthEastOf(Vertex& p_vertex) const
+  bool IsSouthEastOf(Vertex& vertex) const
   {
-    return right_ >  p_vertex.GetX() && left_   <= p_vertex.GetX() &&
-           top_   >= p_vertex.GetY() && bottom_ <  p_vertex.GetY();
+    return right_ >  vertex.GetX() && left_   <= vertex.GetX() &&
+           top_   >= vertex.GetY() && bottom_ <  vertex.GetY();
   }
 
-  inline bool IsSouthWestOf(Vertex& p_vertex) const
+  bool IsSouthWestOf(Vertex& vertex) const
   {
-    return right_ >= p_vertex.GetX() && left_   <  p_vertex.GetX() &&
-           top_   >= p_vertex.GetY() && bottom_ <  p_vertex.GetY();
+    return right_ >= vertex.GetX() && left_   <  vertex.GetX() &&
+           top_   >= vertex.GetY() && bottom_ <  vertex.GetY();
   }
 
   // Create a vertex from a given corner of the box
   // (0 = top-left, 1 = top-right, 2 = bottom-left, 3 = bottom-right)
   // Note, the given vertex is automatically flagged as being impinged at the
   // correct compass direction
-  std::shared_ptr<Vertex> GetVertex(int p_corner);
+  std::shared_ptr<Vertex> GetVertex(int corner);
 
   // Marks a box's impingement on a given vertex. This records whether moving
   // an arbitrarily small distance in a given direction from the vertex will
   // place one inside the current box.
-  void RecordImpingementOn(Vertex& p_corner);
+  void RecordImpingementOn(Vertex& corner);
 
   // Return box dimensions as a vector for output
-  inline std::vector<float> Vector() const
-  {
-    return {left_, bottom_, right_, top_};
-  }
+  std::vector<float> Vector() const { return {left_, bottom_, right_, top_};}
 
  private:
-  float   left_,
-          right_,
-          top_,
-          bottom_;
+  float   left_, right_, top_, bottom_;
   uint8_t flags_; // void-void-void-void-void- no left - no right - delete
 };
 
