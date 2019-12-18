@@ -29,8 +29,8 @@ static const float MAX_LINE_FACTOR = 0.3;
 // then trace round all the vertices, storing every connected loop as a
 // polygon surrounding a text element.
 
-Whitespace::Whitespace(std::unique_ptr<TextBox> p_word_grouper_output):
-  text_box_(move(p_word_grouper_output))
+Whitespace::Whitespace(std::unique_ptr<TextBox> word_grouper_output):
+  text_box_(move(word_grouper_output))
 {
   PageDimensions_();
   MakeStrips_();

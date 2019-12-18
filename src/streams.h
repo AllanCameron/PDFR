@@ -61,13 +61,13 @@
 
 class Stream
 {
-// The constructors are protected to make this an abstract class.
-protected:
+ // The constructors are protected to make this an abstract class.
+ protected:
   Stream(const std::string*);
   Stream(const CharString&);
 
-public:
-  inline std::string Output(){return output_;} // Getter for output
+ public:
+  std::string Output(){return output_;}        // Getter for output
   uint32_t GetByte();                          // Consumes next byte
   uint32_t PeekByte();                         // Looks but doesn't consume
   void Reset();                                // Returns stream to start
@@ -75,44 +75,33 @@ public:
   uint32_t BitFlip(uint32_t value, uint32_t);  // Reverses bit order
 
   // Appends byte to output and advances iterator
-  inline void WriteOutput(uint8_t byte){output_.append(1, (char) byte);
-                                        output_position_ = output_.end();}
+  void WriteOutput(uint8_t byte)
+  {
+    output_.append(1, (char) byte);
+    output_position_ = output_.end();
+  }
 
   // Writes a repeat sequence from earlier in the ouput to the end of the
   // output. Used in Deflate and LZW.
-  inline void AppendPrevious(uint32_t distance_t, uint32_t length_t)
+  void AppendPrevious(uint32_t distance, uint32_t len)
   {
-    // Do this rather than use ranges, since repeats of length n can start
-    // from m bytes before the end of the output stream, even if n > m;
-    for (uint32_t i = 0; i < length_t; ++i)
-    {
-      WriteOutput(*(output_position_ - distance_t));
-    }
+    for (unsigned i = 0; i < len; ++i)
+      WriteOutput(*(output_position_ - distance));
   }
 
-  inline void ExpectExpansionFactor(uint8_t p_ratio)
-  {
-    output_.reserve(input_.size() * p_ratio);
-  }
-
-  inline void ShrinkToFit()
-  {
-    output_.shrink_to_fit();
-  }
+  void SetExpansionRatio(uint8_t r) {output_.reserve(input_.size() * r);}
+  void ShrinkToFit() { output_.shrink_to_fit();}
+  char GetOutput(){return *output_position_++;}
 
   uint64_t GetEightBytes();
 
-  // Gets a byte from a specific location in the output stream
-  inline char GetOutput(){return *output_position_++;}
-
-  private:
+ private:
   CharString input_;                            // The input string
   std::string output_;                          // The output string
   const char* input_position_;                  // Input iterator
   std::string::const_iterator output_position_; // Output iterator
   uint8_t unconsumed_bits_;                     // Bit iterator
   uint32_t unconsumed_bit_value_;               // Keeps track of unused bits
-
 };
 
 #endif

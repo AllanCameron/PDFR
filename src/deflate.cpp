@@ -164,7 +164,7 @@ const vector<uint32_t> Deflate::distance_table_{
 Deflate::Deflate(const string* input) : Stream(input),
                                           is_last_block_(false)
 {
-  ExpectExpansionFactor(6);
+  SetExpansionRatio(6);
 
   // This will abort further reading if the two header bytes aren't right.
   CheckHeader_();
@@ -178,7 +178,7 @@ Deflate::Deflate(const string* input) : Stream(input),
 Deflate::Deflate(const CharString& input) : Stream(input),
                                           is_last_block_(false)
 {
-  ExpectExpansionFactor(6);
+  SetExpansionRatio(6);
 
   // This will abort further reading if the two header bytes aren't right.
   CheckHeader_();

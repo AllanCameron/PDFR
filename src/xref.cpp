@@ -57,8 +57,8 @@ class XRefStream
 // The XRef constructor. It takes the entire file contents as a string
 // then sequentially runs the steps in creation of an XRef master map
 
-XRef::XRef(shared_ptr<const string> p_file_string_ptr)
-  : file_string_(p_file_string_ptr)
+XRef::XRef(shared_ptr<const string> file_string_ptr)
+  : file_string_(file_string_ptr)
 {
   LocateXRefs_();             // Find all xrefs
   CreateCrypto_();            // Get file key, needed for decryption of streams
@@ -109,23 +109,23 @@ void XRef::LocateXRefs_()
 // Whatever form the xrefs take (plain or XRefStream), we first get their
 // raw contents as strings from the XRef locations
 
-void XRef::ReadXRefStrings_(int p_start)
+void XRef::ReadXRefStrings_(int start)
 {
   // Find the length of XRef in chars
-  int end = file_string_->find("startxref", p_start);
+  int end = file_string_->find("startxref", start);
 
   // Throw error if no XRef found
   if (end <= 0) throw runtime_error("No object found at location");
 
   // Extract the XRef string
-  CharString fullxref(file_string_->c_str(), p_start, end);
+  CharString fullxref(file_string_->c_str(), start, end);
 
   // Carve out the actual string
   CharString xref_string = fullxref.CarveOut("xref", "trailer");
 
   // If it contains a dictionary, process as a stream, otherwise as a string
   auto finder = xref_string.substr(0, 20);
-  if (finder.contains("<<")) ReadXRefFromStream_(p_start);
+  if (finder.contains("<<")) ReadXRefFromStream_(start);
   else ReadXRefFromString_(xref_string);
 }
 
@@ -134,10 +134,10 @@ void XRef::ReadXRefStrings_(int p_start)
 // The output of this object is a "table" (vec<vec<int>>) which is parsed
 // and added to the main combined XRef table
 
-void XRef::ReadXRefFromStream_(int p_location)
+void XRef::ReadXRefFromStream_(int location)
 {
   // Calls XRefStream constructor to make the data table from the stream
-  auto&& xref_table = XRefStream(make_shared<XRef>(*this), p_location).Table_();
+  auto&& xref_table = XRefStream(make_shared<XRef>(*this), location).Table_();
 
   // Throws if XRefStream returns an empty table
   if (xref_table.empty()) throw runtime_error("XRef table empty");
@@ -164,13 +164,13 @@ void XRef::ReadXRefFromStream_(int p_location)
 // described, respectively. Thereafter the rows represent sequential objects
 // counted from the first.
 
-void XRef::ReadXRefFromString_(const CharString& p_xref_string)
+void XRef::ReadXRefFromString_(const CharString& xref_string)
 {
-  auto all_ints = ParseInts(p_xref_string);
+  auto all_ints = ParseInts(xref_string);
 
   // A valid XRef has >= 4 ints in it and must have an even number of ints
   auto xref_size = all_ints.size();
-  if (xref_size % 2) { throw runtime_error(p_xref_string.AsString()); }
+  if (xref_size % 2) { throw runtime_error(xref_string.AsString()); }
 
   // This loop starts on the second row of the table. Even numbers are the
   // byte offsets and odd numbers are the in_use numbers
@@ -188,9 +188,9 @@ void XRef::ReadXRefFromString_(const CharString& p_xref_string)
   }
 }
 
-const XRefRow& XRef::GetRow_(int p_object_number) const
+const XRefRow& XRef::GetRow_(int object_number) const
 {
-  auto found = xref_table_.find(p_object_number);
+  auto found = xref_table_.find(object_number);
   if (found == xref_table_.end()) throw runtime_error("Object does not exist");
   return found->second;
 }
@@ -200,9 +200,9 @@ const XRefRow& XRef::GetRow_(int p_object_number) const
 // Returns the end byte of an object by finding the first example of the
 // word "endobj" after the start of the object
 
-size_t XRef::GetObjectEndByte(int p_object_number) const
+size_t XRef::GetObjectEndByte(int object_number) const
 {
-  auto&& row = GetRow_(p_object_number);
+  auto&& row = GetRow_(object_number);
 
   // If the object is in an object stream, return 0;
   if (row.in_object) return 0;
@@ -222,11 +222,11 @@ vector<int> XRef::GetAllObjectNumbers() const
 
 /*---------------------------------------------------------------------------*/
 
-int XRef::GetStreamLength_(const Dictionary& p_dictionary) const
+int XRef::GetStreamLength_(const Dictionary& dictionary) const
 {
-  if (p_dictionary.ContainsReferences("/Length"))
+  if (dictionary.ContainsReferences("/Length"))
   {
-    int length_object_number = p_dictionary.GetReference("/Length");
+    int length_object_number = dictionary.GetReference("/Length");
     size_t first_position = GetObjectStartByte(length_object_number);
     size_t len = file_string_->find("endobj", first_position) - first_position;
     CharString object_string(file_string_->c_str() + first_position, len);
@@ -234,17 +234,17 @@ int XRef::GetStreamLength_(const Dictionary& p_dictionary) const
   }
 
   // Thankfully though most lengths are just direct ints
-  else return p_dictionary.GetInts("/Length")[0];
+  else return dictionary.GetInts("/Length")[0];
 }
 
 /*---------------------------------------------------------------------------*/
 // Returns the offset of the start location relative to the file start, and the
 // length, of the stream belonging to the given object
 
-CharString XRef::GetStreamLocation(int p_object_start) const
+CharString XRef::GetStreamLocation(int object_start) const
 {
   // Get the object dictionary
-  Dictionary dictionary = Dictionary(file_string_, p_object_start);
+  Dictionary dictionary = Dictionary(file_string_, object_start);
 
   // If the stream exists, get its start / stop positions as a CharString
   if (dictionary.HasKey("stream") && dictionary.HasKey("/Length"))
@@ -260,9 +260,9 @@ CharString XRef::GetStreamLocation(int p_object_start) const
 /*---------------------------------------------------------------------------*/
 // Wrapper for Encryption object so that XRef is the only class that uses it
 
-string XRef::Decrypt(const CharString& p_str, int p_obj, int p_gen)const
+string XRef::Decrypt(const CharString& str, int obj, int gen)const
 {
-  return encryption_->DecryptStream(p_str, p_obj, p_gen);
+  return encryption_->DecryptStream(str, obj, gen);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -307,11 +307,11 @@ vector<vector<int>> XRefStream::Table_()
 // PNG decompression algorithm. They are seperated out to prevent one large
 // hairball function being created that is difficult to debug.
 
-XRefStream::XRefStream(shared_ptr<XRef> p_xref, int p_starts_at)
-  : xref_(p_xref),
+XRefStream::XRefStream(shared_ptr<XRef> xref, int starts_at)
+  : xref_(xref),
     number_of_columns_(0),
     predictor_(0),
-    object_start_(p_starts_at),
+    object_start_(starts_at),
     dictionary_(Dictionary(xref_->File(), object_start_))
 {
   ReadStream_();    // Reads the PNG decoding parameters
@@ -415,16 +415,16 @@ void XRefStream::ProcessStream_()
 /*---------------------------------------------------------------------------*/
 // Changes the byte stream into a group of columns
 
-void XRefStream::ToColumns_(int p_n_cols, int p_n_rows)
+void XRefStream::ToColumns_(int n_cols, int n_rows)
 {
-  for (int i = 0; i < p_n_cols; ++i)
+  for (int i = 0; i < n_cols; ++i)
   {
     // Create a new column vector
     vector<int> temp_column{};
-    temp_column.reserve(p_n_rows);
-    for(int j = 0; j < p_n_rows; ++j)
+    temp_column.reserve(n_rows);
+    for(int j = 0; j < n_rows; ++j)
     {
-      temp_column.push_back((int) (uint8_t) byte_stream_[i + j * p_n_cols]);
+      temp_column.push_back((int) (uint8_t) byte_stream_[i + j * n_cols]);
     }
 
     // the new column is pushed to the final array unless it is the first

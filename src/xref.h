@@ -99,18 +99,17 @@ class XRef
   std::string Decrypt(std::string&, int, int) const; // Decrypts a stream
   std::string Decrypt(const CharString&, int, int) const;
 
-  inline std::shared_ptr<const std::string> File() const { return file_string_;}
+  std::shared_ptr<const std::string> File() const { return file_string_;}
 
   CharString GetCharString() const { return CharString(*file_string_);}
 
-  inline bool IsEncrypted() const
-    { if(encryption_) return true; else return false; }
+  bool IsEncrypted() const { if(encryption_) return true; else return false; }
 
-  inline size_t GetObjectStartByte(int p_object_number) const
-    { return GetRow_(p_object_number).startbyte; }
+  size_t GetObjectStartByte(int object_number) const
+    { return GetRow_(object_number).startbyte; }
 
-  inline size_t GetHoldingNumberOf(int p_object_number) const
-   { return GetRow_(p_object_number).in_object; }
+  size_t GetHoldingNumberOf(int object_number) const
+   { return GetRow_(object_number).in_object; }
 
  private:
   std::shared_ptr<const std::string> file_string_;  // Pointer to file string

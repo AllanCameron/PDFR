@@ -18,10 +18,10 @@ using namespace std;
 
 //---------------------------------------------------------------------------//
 // Converts TextBox to TextTable
-TextTable::TextTable(const TextBox& p_text_box):
-Box((Box) p_text_box)
+TextTable::TextTable(const TextBox& text_box):
+Box((Box) text_box)
 {
-  for (auto ptr = p_text_box.cbegin(); ptr != p_text_box.cend(); ++ptr)
+  for (auto ptr = text_box.cbegin(); ptr != text_box.cend(); ++ptr)
   {
     auto& element = *ptr;
     if (!element->IsConsumed())
@@ -59,28 +59,28 @@ void TextBox::RemoveDuplicates()
 //---------------------------------------------------------------------------//
 // Join another text table to this one
 
-void TextTable::Join(TextTable& p_other)
+void TextTable::Join(TextTable& other)
 {
-  this->Merge(p_other);
-  Concatenate(this->text_,    p_other.text_);
-  Concatenate(this->lefts_,   p_other.lefts_);
-  Concatenate(this->bottoms_, p_other.bottoms_);
-  Concatenate(this->rights_,  p_other.rights_);
-  Concatenate(this->fonts_,   p_other.fonts_);
-  Concatenate(this->tops_,    p_other.tops_);
+  this->Merge(other);
+  Concatenate(this->text_,    other.text_);
+  Concatenate(this->lefts_,   other.lefts_);
+  Concatenate(this->bottoms_, other.bottoms_);
+  Concatenate(this->rights_,  other.rights_);
+  Concatenate(this->fonts_,   other.fonts_);
+  Concatenate(this->tops_,    other.tops_);
 }
 
 
 //----------------------------------------------------------------------------//
 // Divides a TextBox into two by a horizontal line given as a y value
 
-TextBox TextBox::SplitIntoTopAndBottom(float p_top_edge)
+TextBox TextBox::SplitIntoTopAndBottom(float top_edge)
 {
   if (this->empty()) return TextBox(); // Don't split the box if it's empty
 
   // Lambda to find elements whose bottom edge is below the cutoff
   auto FindLower = [&](TextPointer text_ptr) -> bool
-                   { return text_ptr->GetTop() < p_top_edge; };
+                   { return text_ptr->GetTop() < top_edge; };
 
   // Gets an iterator to the first element below the cutoff
   auto split_at = find_if(this->begin(), this->end(), FindLower);
@@ -109,7 +109,7 @@ TextBox TextBox::SplitIntoTopAndBottom(float p_top_edge)
 //----------------------------------------------------------------------------//
 // Divides a TextBox into two by a vertical line given as an x value
 
-TextBox TextBox::SplitIntoLeftAndRight(float p_left_edge)
+TextBox TextBox::SplitIntoLeftAndRight(float left_edge)
 {
   if (this->empty()) return TextBox(); // Don't split the box if it's empty
 
@@ -121,7 +121,7 @@ TextBox TextBox::SplitIntoLeftAndRight(float p_left_edge)
 
   // Lambda to find elements whose left edge is below the cutoff
   auto FindLeftMost = [&](TextPointer text_ptr) -> bool
-                   { return text_ptr->GetLeft() < p_left_edge; };
+                   { return text_ptr->GetLeft() < left_edge; };
 
   // Gets an iterator to the first element right of the cutoff
   auto split_at = find_if(this->begin(), this->end(), FindLeftMost);
