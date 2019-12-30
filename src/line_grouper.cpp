@@ -70,14 +70,13 @@ void LineGrouper::FindBreaks_(TextBox& text_box)
   for (size_t i = 1; i < text_box.size(); ++i)
   {
     if (text_box[i]->GetBottom() < text_box[i - 1]->GetBottom() && // Below
-       text_box[i]->GetLeft() - text_box[i - 1]->GetLeft() > 0.1) // To left
+        text_box[i]->GetLeft() - text_box[i - 1]->GetLeft() > 0.1) // To left
     {
       auto slice_at = text_box[i - 1]->GetBottom();
       auto&& new_box = text_box.SplitIntoTopAndBottom(slice_at);
       if (!new_box.empty()) text_boxes_.push_back(new_box);
       break;
     }
-
   }
 }
 
@@ -119,10 +118,11 @@ void LineGrouper::PasteLines_(TextBox& text_box)
 {
   for (auto& element : text_box)
   {
-    if (&element == &(text_box[0])) continue;
-    text_box[0]->ConcatenateUnicode(element->GetGlyph());
+    if (&element != &(text_box[0]))
+    {
+      text_box[0]->ConcatenateUnicode(element->GetGlyph());
+    }
   }
-
   text_box.resize(1);
 }
 

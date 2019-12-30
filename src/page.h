@@ -75,7 +75,7 @@ class Page
   std::vector<std::string> GetFontNames();
 
   // Returns page description program
-  std::shared_ptr<std::string> GetPageContents();
+  const std::string& GetPageContents();
 
   // Returns a pointer to the contents of an XObject used by the page
   std::shared_ptr<std::string> GetXObject(const std::string& x_object_name);

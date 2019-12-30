@@ -76,7 +76,7 @@ struct XRefRow
 
 /*---------------------------------------------------------------------------*/
 // The main XRef class definition. Since this is the main "skeleton" of the pdf
-// which is used by other classes to negotiate and parse the pdf, and because it
+// which is used by other classes to negotiate & parse the pdf, and because it
 // can be complex to construct, it is a fairly large and complex class.
 //
 // Where possible I have tried to delegate some of its work to other classes
@@ -85,8 +85,7 @@ struct XRefRow
 class XRef
 {
  public:
-  // The main constructor takes a pointer to the whole file as a string
-  XRef(std::shared_ptr<const std::string> p_pointer_to_file_content_string);
+  XRef(std::shared_ptr<const std::string>);
 
   // Empty XRef constructor
   XRef(){};

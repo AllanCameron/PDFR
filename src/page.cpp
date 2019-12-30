@@ -296,9 +296,9 @@ vector<string> Page::GetFontNames()
 /*--------------------------------------------------------------------------*/
 // Simple getter for the content string of a Page
 
-shared_ptr<string> Page::GetPageContents()
+const string& Page::GetPageContents()
 {
-  return make_shared<string>(this->content_string_);
+  return this->content_string_;
 }
 
 /*--------------------------------------------------------------------------*/

@@ -55,23 +55,13 @@ testfiles <- list(
 internetFile <- function(x, filename = NULL)
 {
   xloc <- tempfile();
-  if (!is.null(filename))
-  {
-    xloc <-  filename
-  }
+  if (!is.null(filename)) { xloc <-  filename }
   writeBin(httr::GET(x)[[6]], xloc)
   res <- readBin(xloc, "raw", file.size(xloc))
   if (is.null(filename))
   {
     file.remove(xloc);
-    if (!any(res == 0))
-    {
-      return(rawToChar(res))
-    }
-    else
-    {
-      return(res)
-    }
+    if (!any(res == 0)) return(rawToChar(res)) else return(res)
   }
   else
   {

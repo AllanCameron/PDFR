@@ -26,26 +26,6 @@
 
 using namespace std;
 
-/*---------------------------------------------------------------------------*/
-// Constructor for Document class. This takes a file location as an argument
-// then uses the GetFile() function from utilities.h to read in the filestring
-// from which buildDoc() then creates the object
-
-Document::Document(const string& file_path) : file_string_(GetFile(file_path))
-{
-  BuildDocument_(); // Call constructor helper to build Document
-}
-
-/*---------------------------------------------------------------------------*/
-// Constructor for Document class. This takes raw data in the form of a vector
-// of bytes and converts it to the filestring before calling the helper function
-// to construct the Document object
-
-Document::Document(const vector<uint8_t>& byte_vector)
-  : file_string_(string(byte_vector.begin(), byte_vector.end()))
-{
-  BuildDocument_(); // Call constructor helper to build Document
-}
 
 /*---------------------------------------------------------------------------*/
 // This is just a helper function to create Document objects. It is the

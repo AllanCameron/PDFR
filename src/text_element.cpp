@@ -24,7 +24,7 @@ void TextElement::MergeLetters(TextElement& matcher)
   this->ConcatenateUnicode(matcher.glyph_);
 
   // make the right glyph now contain both glyphs
-  matcher.glyph_ = this->glyph_;
+  swap(matcher.glyph_, this->glyph_);
 
   // make the right glyph now start where the left glyph started
   matcher.SetLeft(this->GetLeft());

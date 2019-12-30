@@ -32,7 +32,7 @@ class XRefStream
 {
   friend class XRef;  // This class is only constructible via XRef
 
-  shared_ptr<XRef>    xref_;         // Pointer to creating XRef
+  XRef&   xref_;         // Pointer to creating XRef
   vector<uint8_t> byte_stream_;
   vector<vector<int>> final_array_,  // Transposed, modulo 256 table
                       result_;       // The main results table for export
@@ -43,7 +43,7 @@ class XRefStream
               object_start_;         // Byte offset of XRefStream's container
   Dictionary  dictionary_;           // Dictionary of object containing stream
 
-  XRefStream(shared_ptr<XRef>, int); // Private constructor
+  XRefStream(XRef&, int); // Private constructor
   void ReadStream_();            // Reads the PNG decoding parameters
   void ProcessStream_();              // Reads the stream into data table
   void ToColumns_(int, int);  // Transposes table and makes it modulo 256
@@ -80,7 +80,6 @@ void XRef::LocateXRefs_()
 {
   // Get last 50 chars of the file
   CharString file_tail(*file_string_, file_string_->size() - 50);
-
   auto xref_charstring = file_tail.CarveOut("startxref", "%%EOF");
 
   // Convert the number string to an int
@@ -137,7 +136,7 @@ void XRef::ReadXRefStrings_(int start)
 void XRef::ReadXRefFromStream_(int location)
 {
   // Calls XRefStream constructor to make the data table from the stream
-  auto&& xref_table = XRefStream(make_shared<XRef>(*this), location).Table_();
+  auto&& xref_table = XRefStream(*this, location).Table_();
 
   // Throws if XRefStream returns an empty table
   if (xref_table.empty()) throw runtime_error("XRef table empty");
@@ -146,11 +145,8 @@ void XRef::ReadXRefFromStream_(int location)
   for (size_t j = 0; j < xref_table[0].size(); j++)
   {
     int& object_number = xref_table[3][j], position = xref_table[1][j];
-
     xref_table_[object_number] = XRefRow {position, 0, position};
-
     if (xref_table[0][j] != 2) xref_table_[object_number].in_object = 0;
-
     else xref_table_[object_number].startbyte = 0;
   }
 }
@@ -307,12 +303,12 @@ vector<vector<int>> XRefStream::Table_()
 // PNG decompression algorithm. They are seperated out to prevent one large
 // hairball function being created that is difficult to debug.
 
-XRefStream::XRefStream(shared_ptr<XRef> xref, int starts_at)
+XRefStream::XRefStream(XRef& xref, int starts_at)
   : xref_(xref),
     number_of_columns_(0),
     predictor_(0),
     object_start_(starts_at),
-    dictionary_(Dictionary(xref_->File(), object_start_))
+    dictionary_(Dictionary(xref_.File(), object_start_))
 {
   ReadStream_();    // Reads the PNG decoding parameters
   ProcessStream_(); // Arranges the raw data in stream into correct table form
@@ -373,7 +369,7 @@ void XRefStream::ReadStream_()
   if (predictor_ > 9) ++number_of_columns_;
 
   // Obtain the raw stream data
-  auto charstream = xref_->GetStreamLocation(object_start_);
+  auto charstream = xref_.GetStreamLocation(object_start_);
 
   // Applies decompression to stream if needed
   string&& s = dictionary_["/Filter"].find("/FlateDecode", 0) != string::npos?

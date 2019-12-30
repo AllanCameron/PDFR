@@ -56,7 +56,7 @@ class WordGrouper
   WordGrouper(std::unique_ptr<TextBox> output_from_lettergrouper);
 
   // Output individual text elements for next phase of layout analysis
-  inline std::unique_ptr<TextBox> Output() { return std::move(text_box_); }
+  std::unique_ptr<TextBox> Output() { return std::move(text_box_); }
 
   // Output text elements with sizes, fonts, positions to API
   TextTable Out() const;

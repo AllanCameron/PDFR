@@ -217,13 +217,13 @@ class Parser
   void Reader(const std::string& token, Token::TokenState token_type);
 
   // Access results
-  inline std::unique_ptr<TextBox> Output() {return std::move(this->text_box_);}
+  std::unique_ptr<TextBox> Output() {return std::move(this->text_box_);}
 
   // To allow recursive parsing of form xobjects, the tokenizer needs to access
   // the name of the xobject. At the point when the "Do" identifier is read by
   // the tokenizer, the name of the xobject is sitting on the top of the
   // operands stack. This public method passes that name out of the Parser.
-  inline std::string GetOperand()
+  std::string GetOperand()
   {
     if (this->operands_.empty()) return std::string {};
     else return this->operands_[0];

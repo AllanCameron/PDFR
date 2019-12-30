@@ -22,7 +22,7 @@ std::string Tokenizer::in_loop_ = "none";
 /*---------------------------------------------------------------------------*/
 // constructor of Tokenizer - initializes members and starts tokenizing
 
-Tokenizer::Tokenizer(shared_ptr<string> input, Parser* interpreter)
+Tokenizer::Tokenizer(const string& input, Parser* interpreter)
   : it_(input),
     state_(NEWSYMBOL),
     interpreter_(interpreter)
@@ -65,7 +65,7 @@ void Tokenizer::HandleXObject_()
     shared_ptr<string> xobject = interpreter_->GetXObject(in_loop_);
 
     // Don't try to parse binary objects like images etc
-    if (IsAscii(*xobject)) Tokenizer(xobject, interpreter_);
+    if (IsAscii(*xobject)) Tokenizer(*xobject, interpreter_);
   }
 }
 

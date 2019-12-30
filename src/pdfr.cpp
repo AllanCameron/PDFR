@@ -428,7 +428,7 @@ string GetPageStringFromString(const string& file_name, int page_number)
   page_ptr->ClearFontMap();
 
   // Return a dereferenced pointer to the page contents
-  return *(page_ptr->GetPageContents());
+  return (page_ptr->GetPageContents());
 }
 
 //---------------------------------------------------------------------------//
@@ -445,7 +445,7 @@ string GetPageStringFromRaw(const vector<uint8_t>& raw_file,
   page_ptr->ClearFontMap();
 
   // Return a dereferenced pointer to the page contents
-  return *(page_ptr->GetPageContents());
+  return (page_ptr->GetPageContents());
 }
 
 //---------------------------------------------------------------------------//

@@ -68,14 +68,16 @@ class Object;
 class Document
 {
  public:
-  // Constructor to create Document from file path (given as std::string)
-  Document(const std::string& file_path);
+  // Constructor to create Document from file path
+  Document(const std::string& file_path)
+   : file_string_(GetFile(file_path))
+   { BuildDocument_(); }
 
-  // Constructor to create Document from raw data (given as vector<uint8_t>)
-  Document(const std::vector<uint8_t>& raw_data);
+  // Constructor to create Document from raw data
+  Document(const std::vector<uint8_t>& byte_vector)
+   : file_string_(std::string(byte_vector.begin(), byte_vector.end()))
+   { BuildDocument_(); }
 
-  // Default constructor
-  Document() {};
 
   // Gets a pointer to the Object specified by object_number. If the object has
   // previously been accessed, it will retrieve a pointer from the Object cache.
@@ -88,10 +90,7 @@ class Document
   Dictionary GetPageHeader(size_t page_number);
 
   // Accesses the private member containing object numbers of all page headers.
-  inline std::vector<int> GetPageObjectNumbers()
-  {
-    return page_object_numbers_;
-  };
+  std::vector<int> GetPageObjectNumbers() const {return page_object_numbers_;};
 
  private:
   const std::string file_string_;         // Full contents of file

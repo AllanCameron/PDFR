@@ -68,9 +68,9 @@ class Object
  private:
   std::shared_ptr<const XRef> xref_;      // Pointer to creating xref
   int object_number_;                     // The object knows its own number
-  Dictionary header_;    // The object's dictionary
+  Dictionary header_;                     // The object's dictionary
   std::string stream_;                    // The object's stream or contents
-  CharString raw_stream_;            // Start position and length of stream
+  CharString raw_stream_;                 // Start position and length of stream
 
   // A lookup of start / stop positions of the objects within an object stream
   std::shared_ptr<std::unordered_map<int, std::pair<int, int>>> stream_index_;
