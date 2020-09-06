@@ -42,8 +42,8 @@ target.
                           |     {dictionary.cpp}     |
                           |                          |
                           v                          v
-"external/miniz.h"    "streams.h"  <utility>    "crypto.h" <-- <deque>
-    {miniz.c}   ---> {streams.cpp}     |        {crypto.cpp}
+         "streams.h"  <utility>    "crypto.h" <-- <deque>
+        {streams.cpp}     |        {crypto.cpp}
                           |            |             |
                           |            v             |
                           '-------> "xref.h" <-------'

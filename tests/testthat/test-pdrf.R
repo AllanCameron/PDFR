@@ -29,3 +29,5 @@ test_that("Whole document can be parsed",
 {
   expect_silent(pdfdoc(testfiles[[2]]))
 })
+
+

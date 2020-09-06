@@ -21,9 +21,9 @@ using namespace std;
 // file key and to check it's right. The crypto object is then kept alive to
 // decode any encoded strings in the file
 
-Crypto::Crypto(const Dictionary& p_encrypt_dict, const Dictionary& p_trailer)
-  : encryption_dictionary_(p_encrypt_dict),
-    trailer_(p_trailer),
+Crypto::Crypto(const Dictionary& encrypt_dict, const Dictionary& trailer_dict)
+  : encryption_dictionary_(encrypt_dict),
+    trailer_(trailer_dict),
     revision_(2)
 {
   // Unless specified, the revision number used for encryption is 2
@@ -92,14 +92,14 @@ const std::vector<std::vector<FourBytes>> Crypto::mixarray =
 // This simple function "chops" a four-byte int to a vector of four bytes.
 // The bytes are returned lowest-order first as this is the typical use.
 
-vector<uint8_t> Crypto::ChopLong_(FourBytes p_long_int) const
+vector<uint8_t> Crypto::ChopLong_(FourBytes long_int) const
 {
   // The mask specifies that only the last byte is read when used with &
   FourBytes mask = 0x000000ff;
 
   // Create a length-4 vector of bytes filled with low-high bytes from longint
   vector<uint8_t> result(4, 0);
-  for (int i = 0; i < 4; ++i) result[i] = (p_long_int >> (8 * i)) & mask;
+  for (int i = 0; i < 4; ++i) result[i] = (long_int >> (8 * i)) & mask;
 
   return result;
 }
@@ -114,13 +114,13 @@ vector<uint8_t> Crypto::ChopLong_(FourBytes p_long_int) const
 // appropriately. For the purposes of text extraction however, this is not
 // required, and we just need the permissions flag to produce the file key.
 
-vector<uint8_t> Crypto::ReadPermissions_(const std::string& p_string)
+vector<uint8_t> Crypto::ReadPermissions_(const std::string& permission_string)
 {
   // No string == no permissions. Can't decode pdf, so throw an error
-  if (p_string.empty()) throw runtime_error("No permission flags");
+  if (permission_string.empty()) throw runtime_error("No permission flags");
 
   // Convert the string to a 4-byte int
-  int flags = stoi(p_string);
+  int flags = stoi(permission_string);
 
   // This reads off the bytes from lowest order to highest order
   return ChopLong_(flags);
@@ -145,58 +145,50 @@ vector<uint8_t> Crypto::ReadPermissions_(const std::string& p_string)
 // This function is called several times with different parameters as part
 // of the main Md5 algorithm. It can be considered a "shuffler" of bytes
 
-void Crypto::Md5Mix_(int p_cycle,
-                     deque<FourBytes>& p_deque,
-                     vector<FourBytes>& p_fingerprint) const
+void Crypto::Md5Mix_(int cycle,
+                     deque<FourBytes>& mix_deque,
+                     vector<FourBytes>& fingerprint) const
 {
   // Declare and define some pseudorandom numbers
-  FourBytes mixer,
-            e,
-            f = md5_table[p_cycle],
-            g = mixarray[p_cycle / 16][p_cycle % 4];
+  FourBytes mixer, e, f = md5_table[cycle], g = mixarray[cycle / 16][cycle % 4];
 
   // Mangle bytes in various ways as per Md5 algorithm
-  switch (p_cycle / 16 + 1)
+  switch (cycle / 16 + 1)
   {
-    case 1  : e     = p_fingerprint[(1 * p_cycle + 0) % 16];
-              mixer = (p_deque[0] + ((p_deque[1] & p_deque[2]) |
-                      (~p_deque[1] & p_deque[3])) + e + f);
-              break;
+    case 1  : e     = fingerprint[(1 * cycle + 0) % 16];
+              mixer = (mix_deque[0] + ((mix_deque[1] & mix_deque[2]) |
+                      (~mix_deque[1] & mix_deque[3])) + e + f);         break;
 
-    case 2  : e     = p_fingerprint[(5 * p_cycle + 1) % 16];
-              mixer = (p_deque[0] + ((p_deque[1] & p_deque[3]) |
-                      (p_deque[2] & ~p_deque[3])) + e + f);
-              break;
+    case 2  : e     = fingerprint[(5 * cycle + 1) % 16];
+              mixer = (mix_deque[0] + ((mix_deque[1] & mix_deque[3]) |
+                      (mix_deque[2] & ~mix_deque[3])) + e + f);         break;
 
-    case 3  : e     = p_fingerprint[(3 * p_cycle + 5) % 16];
-              mixer = (p_deque[0] + (p_deque[1] ^ p_deque[2] ^
-                       p_deque[3]) + e + f);
-              break;
+    case 3  : e     = fingerprint[(3 * cycle + 5) % 16];
+              mixer = (mix_deque[0] + (mix_deque[1] ^ mix_deque[2] ^
+                       mix_deque[3]) + e + f);                          break;
 
-    case 4  : e     = p_fingerprint[(7 * p_cycle + 0) % 16];
-              mixer = (p_deque[0] + (p_deque[2] ^
-                      (p_deque[1] | ~p_deque[3])) + e + f);
-              break;
+    case 4  : e     = fingerprint[(7 * cycle + 0) % 16];
+              mixer = (mix_deque[0] + (mix_deque[2] ^
+                      (mix_deque[1] | ~mix_deque[3])) + e + f);         break;
 
     default: throw runtime_error("Md5 error: n > 63");
   }
 
   // further bit shuffling:
-  p_deque[0] = p_deque[1] + (((mixer << g) | (mixer >> (32 - g))) & 0xffffffff);
+  mix_deque[0] = mix_deque[1] + ((mixer << g) | (mixer >> (32 - g)));
 
   // now push all elements to the left (with aliasing)
-  p_deque.push_front(p_deque.back());
-  p_deque.pop_back();
+  mix_deque.push_front(mix_deque.back());
+  mix_deque.pop_back();
 }
 
 /*---------------------------------------------------------------------------*/
 // The main Md5 algorithm. This version of it was modified from various
 // open source online implementations.
 
-vector<uint8_t> Crypto::Md5_(const vector<uint8_t>& p_message) const
+vector<uint8_t> Crypto::Md5_(const vector<uint8_t>& message) const
 {
-  // The length of the message
-  int message_length = p_message.size();
+  int message_length = message.size();
 
   // 16 * FourBytes will contain "fingerprint"
   std::vector<FourBytes> fingerprint(16, 0);
@@ -218,10 +210,10 @@ vector<uint8_t> Crypto::Md5_(const vector<uint8_t>& p_message) const
          fourbyte_it < 16 && message_it < message_length - 3;
          fourbyte_it++, message_it += 4)
     {
-      fingerprint[fourbyte_it] = (p_message[message_it + 3] << 24) |
-                                 (p_message[message_it + 2] << 16) |
-                                 (p_message[message_it + 1] <<  8) |
-                                 (p_message[message_it + 0] <<  0) ;
+      fingerprint[fourbyte_it] = (message[message_it + 3] << 24) |
+                                 (message[message_it + 2] << 16) |
+                                 (message[message_it + 1] <<  8) |
+                                 (message[message_it + 0] <<  0) ;
     }
 
     // If this is the last block...
@@ -232,20 +224,20 @@ vector<uint8_t> Crypto::Md5_(const vector<uint8_t>& p_message) const
       if (message_it == message_length - 3)
       {
         fingerprint[fourbyte_it++] = 0x80000000                        |
-                                     (p_message[message_it + 2] << 16) |
-                                     (p_message[message_it + 1] <<  8) |
-                                     (p_message[message_it + 0] <<  0) ;
+                                     (message[message_it + 2] << 16) |
+                                     (message[message_it + 1] <<  8) |
+                                     (message[message_it + 0] <<  0) ;
       }
       else if (message_it == message_length - 2)
       {
         fingerprint[fourbyte_it++] = 0x800000                          |
-                                     (p_message[message_it + 1] << 8)  |
-                                     (p_message[message_it + 0] << 0)  ;
+                                     (message[message_it + 1] << 8)  |
+                                     (message[message_it + 0] << 0)  ;
       }
 
       else if (message_it == message_length - 1)
       {
-        fingerprint[fourbyte_it++] = 0x8000 + p_message[message_it];
+        fingerprint[fourbyte_it++] = 0x8000 + message[message_it];
       }
       else fingerprint[fourbyte_it++] = 0x80;
 
@@ -279,9 +271,9 @@ vector<uint8_t> Crypto::Md5_(const vector<uint8_t>& p_message) const
 // conversion. It simply converts a string to bytes than puts it
 // into the "bytes" version of the function
 
-vector<uint8_t> Crypto::Md5_(const std::string& p_input) const
+vector<uint8_t> Crypto::Md5_(const std::string& input) const
 {
-  return Md5_(vector<uint8_t>(p_input.begin(), p_input.end()));
+  return Md5_(vector<uint8_t>(input.begin(), input.end()));
 }
 
 //-------------------------------------------------------------------------//
@@ -292,9 +284,9 @@ vector<uint8_t> Crypto::Md5_(const std::string& p_input) const
 // directly back into the original message using exactly the same key.
 // The algorithm is now in the public domain
 
-void Crypto::Rc4_(vector<uint8_t>& p_message, const vector<uint8_t>& p_key)
-  const {
-  int key_length = p_key.size(), message_length = p_message.size();
+void Crypto::Rc4_(vector<uint8_t>& message, const vector<uint8_t>& key) const
+{
+  int key_length = key.size(), message_length = message.size();
   uint8_t a = 0, b = 0, x = 0, y = 0;
 
   // Create state and fill with 0 - 0xff
@@ -307,7 +299,7 @@ void Crypto::Rc4_(vector<uint8_t>& p_message, const vector<uint8_t>& p_key)
   // for each element in state, mix the state around according to the key
   for (auto& element : state)
   {
-    b = (p_key[a] + element + b) % 256;
+    b = (key[a] + element + b) % 256;
     swap(element, state[b]);
     a = (a + 1) % key_length;
   }
@@ -319,7 +311,7 @@ void Crypto::Rc4_(vector<uint8_t>& p_message, const vector<uint8_t>& p_key)
     x1 = x = (x + 1) % 256;
     y1 = y = (state[x] + y) % 256;
     iter_swap(state.begin() + x1, state.begin() + y1);
-    p_message[k] = p_message[k] ^ state[(state[x1] + state[y1]) % 256];
+    message[k] = message[k] ^ state[(state[x1] + state[y1]) % 256];
   }
 }
 
@@ -335,27 +327,27 @@ void Crypto::Rc4_(vector<uint8_t>& p_message, const vector<uint8_t>& p_key)
 // key length plus 5, is then used as the key with which to decrypt the
 // stream using the Rc4 algorithm.
 
-string Crypto::DecryptStream(const string& p_stream,
-                           int p_object_number,
-                           int p_object_gen) const
+string Crypto::DecryptStream(const string& stream,
+                           int object_number,
+                           int object_gen) const
 {
-  // p_stream as bytes
-  vector<uint8_t> stream_as_bytes(p_stream.begin(), p_stream.end());
+  // stream as bytes
+  vector<uint8_t> stream_as_bytes(stream.begin(), stream.end());
 
   // Start building the object key with the file key
   vector<uint8_t> object_key = filekey_;
 
   // Append the bytes of the object number
-  Concatenate(object_key, ChopLong_(p_object_number));
+  Concatenate(object_key, ChopLong_(object_number));
 
   // We only want the three lowest order bytes; pop the last
   object_key.pop_back();
 
   // Append lowest order byte of gen number
-  object_key.push_back( p_object_gen & 0xff);
+  object_key.push_back( object_gen & 0xff);
 
   // Then append the second lowest byte of gen number
-  object_key.push_back((p_object_gen >> 8) & 0xff);
+  object_key.push_back((object_gen >> 8) & 0xff);
 
   // Store the object key's size
   uint8_t object_key_size = object_key.size();
@@ -376,19 +368,18 @@ string Crypto::DecryptStream(const string& p_stream,
 
 
 /*---------------------------------------------------------------------------*/
-string Crypto::DecryptStream(const CharString& p_input, int p_obj, int p_gen)
-const
+string Crypto::DecryptStream(const CharString& input, int obj, int gen) const
 {
-  return DecryptStream(p_input.AsString(), p_obj, p_gen);
+  return DecryptStream(input.AsString(), obj, gen);
 }
 /*---------------------------------------------------------------------------*/
 // Gets the bytes comprising the hashed owner password from the encryption
 // dictionary
 
-vector<uint8_t> Crypto::ReadPassword_(const string& p_key)
+vector<uint8_t> Crypto::ReadPassword_(const string& key)
 {
    // Get raw bytes of owner password hash
-  string password(encryption_dictionary_[p_key]);
+  string password(encryption_dictionary_[key]);
   string temporary_password;
   temporary_password.reserve(32);
 
@@ -550,24 +541,18 @@ void Crypto::CheckKeyR3_()
 /*---------------------------------------------------------------------------*/
 // Usually the ID is given as a hex string, but it can be given as a string
 // of bytes including backslashed escapes etc. This converts either into bytes.
-vector<uint8_t> Crypto::ParseID_(const string& p_string)
+
+vector<uint8_t> Crypto::ParseID_(const string& id_string)
 {
   vector<uint8_t> result {};
-  if (p_string.empty()) return result;
-  auto it = p_string.begin();
-
-/*  // Search for openers until end of string
-  while (*it != '[')
-  {
-    if (++it == p_string.end()) throw runtime_error("Couldn't read file ID");
-  }
- */
+  if (id_string.empty()) return result;
+  auto it = id_string.begin();
 
   for (unsigned loop = 0; loop < 2; ++loop)
   {
     while (*it != '<' && *it != '(')
     {
-      if (it++ == p_string.end()) throw runtime_error("Couldn't read file ID");
+      if (it++ == id_string.end()) throw runtime_error("Couldn't read file ID");
     }
 
     string temp_string {};
@@ -575,13 +560,13 @@ vector<uint8_t> Crypto::ParseID_(const string& p_string)
     if (*it == '<')
     {
       it++;
-      while (it != p_string.end() && *it != '>') temp_string += *it++;
+      while (it != id_string.end() && *it != '>') temp_string += *it++;
       Concatenate(result, ConvertHexToBytes(temp_string));
     }
     else
     {
       it++;
-      while (it != p_string.end())
+      while (it != id_string.end())
       {
         if (*it == '\\')
         {

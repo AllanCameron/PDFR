@@ -29,8 +29,8 @@ TextTable LetterGrouper::Out()
 // page into an easily addressable 16 x 16 grid, find glyphs in close proximity
 // to each other, and glue them together, respectively.
 
-LetterGrouper::LetterGrouper(std::unique_ptr<TextBox> p_text_box)
-  : text_box_(move(p_text_box))
+LetterGrouper::LetterGrouper(std::unique_ptr<TextBox> text_box)
+  : text_box_(move(text_box))
 {
   text_box_->RemoveDuplicates();
   MakeGrid_();     // Split the glyphs into 256 cells to reduce search space
@@ -180,30 +180,30 @@ void LetterGrouper::CompareCells_()
 // by its cell and the order it appears in the vector of glyphs contained in
 // that cell.
 
-void LetterGrouper::MatchRight_(TextPointer p_element, uint8_t p_key)
+void LetterGrouper::MatchRight_(TextPointer element, uint8_t key)
 {
 
-  auto& cell = grid_[p_key];  // The key is the address of the cell in the grid.
+  auto& cell = grid_[key];  // The key is the address of the cell in the grid.
   if (cell.empty()) return;  // some cells are empty - nothing to do
 
   for (auto& other : cell)   // For each glyph in the cell
   {
     // If in good position to be next glyph
-    if (p_element->IsAdjoiningLetter(*other))
+    if (element->IsAdjoiningLetter(*other))
     {
 
-      if (*other == *p_element) p_element->Consume(); // Consume if identical.
+      if (*other == *element) element->Consume(); // Consume if identical.
       if (other->IsConsumed()) continue;          // Skip if consumed.
 
-      if (!p_element->HasJoin())
+      if (!element->HasJoin())
       {
-        p_element->SetJoin(other);
+        element->SetJoin(other);
         continue;                // Don't bother checking next statement
       }
 
-      if (p_element->GetJoin()->GetLeft() > other->GetLeft())
+      if (element->GetJoin()->GetLeft() > other->GetLeft())
       {
-        p_element->SetJoin(other); // Join if this is better than existing match
+        element->SetJoin(other); // Join if this is better than existing match
       }
 
     }

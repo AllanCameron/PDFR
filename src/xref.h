@@ -76,7 +76,7 @@ struct XRefRow
 
 /*---------------------------------------------------------------------------*/
 // The main XRef class definition. Since this is the main "skeleton" of the pdf
-// which is used by other classes to negotiate and parse the pdf, and because it
+// which is used by other classes to negotiate & parse the pdf, and because it
 // can be complex to construct, it is a fairly large and complex class.
 //
 // Where possible I have tried to delegate some of its work to other classes
@@ -85,8 +85,7 @@ struct XRefRow
 class XRef
 {
  public:
-  // The main constructor takes a pointer to the whole file as a string
-  XRef(std::shared_ptr<const std::string> p_pointer_to_file_content_string);
+  XRef(std::shared_ptr<const std::string>);
 
   // Empty XRef constructor
   XRef(){};
@@ -99,23 +98,22 @@ class XRef
   std::string Decrypt(std::string&, int, int) const; // Decrypts a stream
   std::string Decrypt(const CharString&, int, int) const;
 
-  inline std::shared_ptr<const std::string> File() const { return file_string_;}
+  std::shared_ptr<const std::string> File() const { return file_string_;}
 
   CharString GetCharString() const { return CharString(*file_string_);}
 
-  inline bool IsEncrypted() const
-    { if(encryption_) return true; else return false; }
+  bool IsEncrypted() const { if(encryption_) return true; else return false; }
 
-  inline size_t GetObjectStartByte(int p_object_number) const
-    { return GetRow_(p_object_number).startbyte; }
+  size_t GetObjectStartByte(int object_number) const
+    { return GetRow_(object_number).startbyte; }
 
-  inline size_t GetHoldingNumberOf(int p_object_number) const
-   { return GetRow_(p_object_number).in_object; }
+  size_t GetHoldingNumberOf(int object_number) const
+   { return GetRow_(object_number).in_object; }
 
  private:
   std::shared_ptr<const std::string> file_string_;  // Pointer to file string
   std::unordered_map<int, XRefRow> xref_table_;     // Main data member
-  std::shared_ptr<Dictionary> trailer_dictionary_;  // Main trailer dictionary
+  Dictionary trailer_dictionary_;  // Main trailer dictionary
   std::shared_ptr<Crypto> encryption_;              // Used for encrypted files
 
   // private methods

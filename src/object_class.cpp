@@ -25,9 +25,9 @@ using namespace std;
 // The main object creator class. It needs a pointer to the xref and a number
 // representing the object's number as set out in the xref table.
 
-Object::Object(shared_ptr<const XRef> p_xref, int p_object_number) :
-  xref_(p_xref),
-  object_number_(p_object_number),
+Object::Object(shared_ptr<const XRef> xref, int object_number) :
+  xref_(xref),
+  object_number_(object_number),
   raw_stream_(),
   stream_index_(make_shared<unordered_map<int, pair<int, int>>>())
 {
@@ -44,7 +44,7 @@ Object::Object(shared_ptr<const XRef> p_xref, int p_object_number) :
   if (xref_->File()->substr(start, 20).find("<<") == string::npos)
   {
     // No dictionary found - make blank dictionary for header
-    header_ = make_shared<Dictionary>(Dictionary());
+    header_ = Dictionary();
 
     // Finds start and length of contents
     size_t c_start = xref_->File()->find(" obj", start) + 4;
@@ -53,12 +53,12 @@ Object::Object(shared_ptr<const XRef> p_xref, int p_object_number) :
 
   else // Else the object has a header dictionary
   {
-    header_ = make_shared<Dictionary>(Dictionary(xref_->File(), start));
+    header_ = Dictionary(xref_->File(), start);
     // Find the stream (if any)
     raw_stream_ = xref_->GetStreamLocation(start);
 
     // The object may contain an object stream that needs unpacked
-    if (header_->GetString("/Type") == "/ObjStm")
+    if (header_["/Type"] == "/ObjStm")
     {
       // Get the object stream
       ReadStream_();
@@ -108,30 +108,30 @@ void Object::IndexObjectStream_()
 // main object constructor if the main object constructor determines that the
 // requested object lies inside the stream of another object
 
-Object::Object(shared_ptr<Object> p_holder, int p_object_number):
-  xref_(p_holder->xref_),
-  object_number_(p_object_number),
+Object::Object(shared_ptr<Object> holder, int object_number):
+  xref_(holder->xref_),
+  object_number_(object_number),
   raw_stream_()
 {
-  auto finder = p_holder->stream_index_->find(object_number_);
-  if (finder == p_holder->stream_index_->end())
+  auto finder = holder->stream_index_->find(object_number_);
+  if (finder == holder->stream_index_->end())
   {
     throw runtime_error("Object not found in stream");
   }
 
   auto index_position = finder->second.first;
   auto index_length   = finder->second.second;
-  auto stream_string  = p_holder->stream_.substr(index_position, index_length);
+  auto stream_string  = holder->stream_.substr(index_position, index_length);
 
   // Most stream objects consist of just a dictionary
   if (stream_string[0] == '<')
   {
-    header_ = make_shared<Dictionary>(make_shared<string>(stream_string));
+    header_ = Dictionary(make_shared<string>(stream_string));
     stream_ = "";             // stream objects don't have their own stream
   }
   else // The object is not a dictionary - maybe just an array or int etc
   {
-    header_ = make_shared<Dictionary>(Dictionary());// empty header
+    header_ = Dictionary();// empty header
     stream_ = stream_string;  // Call the contents a stream for ease
 
     // Annoyingly, some "objects" in an object stream are just pointers
@@ -143,7 +143,7 @@ Object::Object(shared_ptr<Object> p_holder, int p_object_number):
       size_t holder = xref_->GetHoldingNumberOf(new_number);
       if (holder == 0) *this = Object(xref_, new_number);
       else *this = Object(make_shared<Object>(xref_, holder), new_number);
-      this->object_number_ = p_object_number;
+      this->object_number_ = object_number;
     }
   }
 }
@@ -151,16 +151,16 @@ Object::Object(shared_ptr<Object> p_holder, int p_object_number):
 /*---------------------------------------------------------------------------*/
 // Simple public getter for the header dictionary
 
-Dictionary Object::GetDictionary()
+Dictionary& Object::GetDictionary()
 {
-  return *header_;
+  return header_;
 }
 
 /*---------------------------------------------------------------------------*/
 // We have to create the stream on the fly when it is needed rather than
 // calculating and storing all the streams upon document creation
 
-string Object::GetStream()
+string& Object::GetStream()
 {
   // If the stream has not already been processed, do it now
   if (stream_.empty()) ReadStream_();
@@ -174,7 +174,7 @@ string Object::GetStream()
 void Object::ReadStream_()
 {
 
-  string filters = header_->GetString("/Filter");
+  string filters = header_["/Filter"];
   bool is_flatedecode = filters.find("/FlateDecode") != string::npos;
 
   // Decrypt if necessary

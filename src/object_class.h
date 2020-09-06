@@ -49,26 +49,28 @@ class Object
 {
  public:
   // Get pdf object from a given object number
-  Object(std::shared_ptr<const XRef> p_xref_ptr, int p_object_number);
+  Object(std::shared_ptr<const XRef> xref_ptr, int object_number);
 
   // Get stream object from inside the holding object, given object number
-  Object(std::shared_ptr<Object> p_holding_object_ptr, int p_object_number);
+  Object(std::shared_ptr<Object> holding_object_ptr, int object_number);
 
   // Default constructor
   Object() = delete;
 
   // Returns an Object's stream as a string
-  std::string GetStream();
+  std::string& GetStream();
 
   // Returns an Object's Dictionary
-  Dictionary  GetDictionary();
+  Dictionary& GetDictionary();
+
+  friend std::ostream& operator<<(std::ostream& os, const Object& obj);
 
  private:
   std::shared_ptr<const XRef> xref_;      // Pointer to creating xref
   int object_number_;                     // The object knows its own number
-  std::shared_ptr<Dictionary> header_;    // The object's dictionary
+  Dictionary header_;                     // The object's dictionary
   std::string stream_;                    // The object's stream or contents
-  CharString raw_stream_;            // Start position and length of stream
+  CharString raw_stream_;                 // Start position and length of stream
 
   // A lookup of start / stop positions of the objects within an object stream
   std::shared_ptr<std::unordered_map<int, std::pair<int, int>>> stream_index_;
@@ -79,5 +81,11 @@ class Object
 };
 
 //---------------------------------------------------------------------------//
+
+inline std::ostream& operator<<(std::ostream& os, Object& obj)
+{
+  os << obj.GetDictionary() << "\n\nStream:\n" << obj.GetStream();
+  return os;
+}
 
 #endif

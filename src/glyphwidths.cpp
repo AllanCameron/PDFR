@@ -32,10 +32,10 @@ using namespace std;
 // built in static corefont tables. Otherwise find and interpret widths.
 
 GlyphWidths::GlyphWidths
-  (shared_ptr<Dictionary> p_font_dictionary, shared_ptr<Document> p_document_ptr)
-  : font_dictionary_(p_font_dictionary),
-    document_(p_document_ptr),
-    base_font_(font_dictionary_->GetString("/BaseFont"))
+  (Dictionary& font_dictionary, shared_ptr<Document> document_ptr)
+  : font_dictionary_(font_dictionary),
+    document_(document_ptr),
+    base_font_(font_dictionary_.GetString("/BaseFont"))
 {
   ReadCoreFont_();
   if (width_map_.empty()) ReadWidthTable_();
@@ -50,13 +50,13 @@ GlyphWidths::GlyphWidths
 void GlyphWidths::ReadWidthTable_()
 {
   // If widths entry specified, use this by calling parsewidths method
-  if (font_dictionary_->HasKey("/Widths"))
+  if (font_dictionary_.HasKey("/Widths"))
   {
     ParseWidths_();
   }
 
   // otherwise look in descendants using parseDescendants method
-  else if (font_dictionary_->ContainsReferences("/DescendantFonts"))
+  else if (font_dictionary_.ContainsReferences("/DescendantFonts"))
   {
     ParseDescendants_();
   }
@@ -79,18 +79,18 @@ void GlyphWidths::ParseWidths_()
   RawChar first_character = 0x0000;
 
   // Otherwise we read the firstchar entry
-  if (font_dictionary_->ContainsInts("/FirstChar"))
+  if (font_dictionary_.ContainsInts("/FirstChar"))
   {
-    first_character = font_dictionary_->GetInts("/FirstChar")[0];
+    first_character = font_dictionary_.GetInts("/FirstChar")[0];
   }
   // Annoyingly, widths sometimes contains a pointer to another object that
   // contains the width array, either in a stream or as a 'naked object'.
   // Note that contents of a naked object are stored as the object's 'stream'.
 
   // Handle /widths being a reference to another object
-  if (font_dictionary_->ContainsReferences("/Widths"))
+  if (font_dictionary_.ContainsReferences("/Widths"))
   {
-    auto width_object_number = font_dictionary_->GetReference("/Widths");
+    auto width_object_number = font_dictionary_.GetReference("/Widths");
     auto width_object_ptr = document_->GetObject(width_object_number);
 
     // Get the referenced object's stream
@@ -100,7 +100,7 @@ void GlyphWidths::ParseWidths_()
     width_array = ParseFloats(width_object_stream);
   }
   // If /Widths is not a reference get the widths directly
-  else  width_array = font_dictionary_->GetFloats("/Widths");
+  else  width_array = font_dictionary_.GetFloats("/Widths");
 
   // If a width array was found
   if (!width_array.empty())
@@ -125,7 +125,7 @@ void GlyphWidths::ParseWidths_()
 void GlyphWidths::ParseDescendants_()
 {
   // get a pointer to the /Descendantfonts object
-  auto descendant_number = font_dictionary_->GetReference("/DescendantFonts");
+  auto descendant_number = font_dictionary_.GetReference("/DescendantFonts");
   auto descendant_object = document_->GetObject(descendant_number);
 
   // Extract its dictionary and its stream
@@ -200,10 +200,10 @@ void GlyphWidths::ReadCoreFont_()
 // Getter. Finds the width for a given character code. If it is not specified
 // returns the default width specified in the macro at the top of this file
 
-int GlyphWidths::GetWidth(const RawChar& p_raw)
+int GlyphWidths::GetWidth(const RawChar& raw)
 {
   // Look up the supplied rawChar
-  auto found = width_map_.find(p_raw);
+  auto found = width_map_.find(raw);
   if (found != width_map_.end()) return found->second;
 
   // No width found - return the default width
@@ -227,10 +227,10 @@ vector<RawChar> GlyphWidths::WidthKeys()
 // code point. Hence the string "[3[100 200 150] 10[250 300]]" should be
 // interpreted as mapping {{3, 100}, {4, 200}, {5, 150}, {10, 250}, {11, 300}}
 
-void GlyphWidths::ParseWidthArray_(const string& p_width_string)
+void GlyphWidths::ParseWidthArray_(const string& width_string)
 {
   // If the width string is empty, there's nothing to be done
-  if (p_width_string.empty()) return;
+  if (width_string.empty()) return;
 
   // These variables maintain state during the lexer process:
   WidthState state = NEWSYMB; // Uses enum to keep track of state of lexer
@@ -240,7 +240,7 @@ void GlyphWidths::ParseWidthArray_(const string& p_width_string)
   vector<vector<int>> result; // Each first_char has an int vector of widths
 
   // Main loop - Iterates through all the characters in t_width_string
-  for (const auto& current_char : p_width_string)
+  for (const auto& current_char : width_string)
   {
     // If opening of array not first character, simply wait for '['
     if (state == NEWSYMB)
@@ -285,7 +285,7 @@ void GlyphWidths::ParseWidthArray_(const string& p_width_string)
                 number_buffer.clear();
                 break;
 
-      default: throw (string("Error parsing string ") + p_width_string);
+      default: throw (string("Error parsing string ") + width_string);
       }
       continue;
     }
@@ -307,7 +307,7 @@ void GlyphWidths::ParseWidthArray_(const string& p_width_string)
 
       case 'D': buffer += current_char; break; // read actual width number
 
-      default: throw (string("Error parsing string ") + p_width_string);
+      default: throw (string("Error parsing string ") + width_string);
       }
 
       continue;

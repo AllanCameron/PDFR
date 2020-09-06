@@ -103,19 +103,20 @@ static const std::array<uint8_t, 256> s_symbol_type =
 // the map to the console
 
 template< typename K, typename V > // K, V stand for key, value
-std::vector<K> GetKeys(const std::unordered_map<K, V>& p_map)
+std::vector<K> GetKeys(const std::unordered_map<K, V>& target_map)
 {
   // vector to store results
   std::vector<K> result;
 
   // Ensure it is big enough
-  result.reserve(p_map.size());
+  result.reserve(target_map.size());
 
   // Declare map iterator according to its type
   typename std::unordered_map<K, V>::const_iterator it;
 
   // The following loop iterates through the map, gets the key and stores it
-  for (it = p_map.begin(); it != p_map.end(); ++it) result.push_back(it->first);
+  for (it = target_map.begin(); it != target_map.end(); ++it)
+    result.push_back(it->first);
 
   return result;
 }
@@ -126,9 +127,9 @@ std::vector<K> GetKeys(const std::unordered_map<K, V>& p_map)
 // This modifies A
 
 template <typename T>
-inline void Concatenate(std::vector<T>& p_start, const std::vector<T>& p_append)
+inline void Concatenate(std::vector<T>& start, const std::vector<T>& append)
 {
-  p_start.insert(p_start.end(), p_append.begin(), p_append.end());
+  start.insert(start.end(), append.begin(), append.end());
 }
 
 //---------------------------------------------------------------------------//
@@ -136,13 +137,13 @@ inline void Concatenate(std::vector<T>& p_start, const std::vector<T>& p_append)
 // vector from lowest to highest
 
 template <typename T>
-std::vector<int> Order(std::vector<T> p_data)
+std::vector<int> Order(std::vector<T> data)
 {
-  std::vector<int> index(p_data.size(), 0); // a new int vector to store results
-  for (size_t i = 0; i < p_data.size(); ++i)
+  std::vector<int> index(data.size(), 0); // a new int vector to store results
+  for (size_t i = 0; i < data.size(); ++i)
   {
-    index[i] = std::count_if(p_data.begin(), p_data.end(),
-               [&](T other) { return other < p_data[i]; });
+    index[i] = std::count_if(data.begin(), data.end(),
+               [&](T other) { return other < data[i]; });
   }
 
   return index;
@@ -152,14 +153,14 @@ std::vector<int> Order(std::vector<T> p_data)
 // Sort one vector by another's order. Modifies supplied vector
 
 template <typename Ta, typename Tb>
-std::vector<Ta> SortBy(std::vector<Ta> p_sortee,
-                       const std::vector<Tb>& p_sorter)
+std::vector<Ta> SortBy(std::vector<Ta> sortee,
+                       const std::vector<Tb>& sorter)
 {
   // Nothing to do!
-  if (p_sortee.empty()) return p_sortee;
+  if (sortee.empty()) return sortee;
 
   // Throw error if lengths don't match
-  if (p_sortee.size() != p_sorter.size())
+  if (sortee.size() != sorter.size())
   {
     throw std::runtime_error("SortBy requires equal-lengthed vectors");
   }
@@ -167,8 +168,8 @@ std::vector<Ta> SortBy(std::vector<Ta> p_sortee,
   // Vector to store results
   std::vector<Ta> result;
 
-  // Use Order(p_sorter) as defined above to sort sortee
-  for (auto i : Order(p_sorter)) result.emplace_back(p_sortee[i]);
+  // Use Order(sorter) as defined above to sort sortee
+  for (auto i : Order(sorter)) result.emplace_back(sortee[i]);
 
   return result;
 }
@@ -186,16 +187,16 @@ template <typename T>
 class Tree
 {
 public:
-   Tree<T>(const T& p_item) : parent_(nullptr), children_({}), item_(p_item){};
-   Tree<T>(Tree<T>* p_ptr, const T& p_item) :
-     parent_(p_ptr), children_({}), item_(p_item) {};
+   Tree<T>(const T& item) : parent_(nullptr), children_({}), item_(item){};
+   Tree<T>(Tree<T>* ptr, const T& item) :
+     parent_(ptr), children_({}), item_(item) {};
 
-   void AddChild(const T& p_item) {
-     children_.emplace_back(std::make_shared<Tree<T>>(this, p_item));}
+   void AddChild(const T& item) {
+     children_.emplace_back(std::make_shared<Tree<T>>(this, item));}
 
-   void AddChildren(const std::vector<T>& p_kids)
+   void AddChildren(const std::vector<T>& kids)
    {
-     for (const auto& i : p_kids) AddChild(i);
+     for (const auto& i : kids) AddChild(i);
    }
 
    std::vector<std::shared_ptr<Tree<T>>> GetChildren() { return children_;}
@@ -204,12 +205,12 @@ public:
    bool IsLeaf() { return children_.empty();}
    T& GetItem() { return item_;}
 
-   void GetDescendantLeafs(std::vector<T>& p_store)
+   void GetDescendantLeafs(std::vector<T>& store)
    {
      for(auto& child : children_)
      {
-       if(child->IsLeaf()) p_store.push_back(child->GetItem());
-       else child->GetDescendantLeafs(p_store);
+       if(child->IsLeaf()) store.push_back(child->GetItem());
+       else child->GetDescendantLeafs(store);
      }
    }
 
@@ -236,25 +237,25 @@ class Reader
 public:
   Reader() : start_(nullptr), first_(0), last_(0), size_(0) {}
 
-  Reader(std::shared_ptr<const std::string> p_input, size_t p_start) :
-    start_(p_input->c_str()),
-    first_(p_start),
-    last_(p_start),
-    size_(p_input->size()) {}
+  Reader(std::shared_ptr<const std::string> input, size_t start) :
+    start_(input->c_str()),
+    first_(start),
+    last_(start),
+    size_(input->size()) {}
 
-  Reader(std::shared_ptr<const std::string> p_ptr) {*this = Reader(p_ptr, 0);}
+  Reader(std::shared_ptr<const std::string> ptr) {*this = Reader(ptr, 0);}
 
-  Reader(const std::string& p_input) :
-    start_(p_input.c_str()),
+  Reader(const std::string& input) :
+    start_(input.c_str()),
     first_(0),
     last_(0),
-    size_(p_input.size()) {}
+    size_(input.size()) {}
 
-  Reader(const CharString& p_input) :
-    start_(p_input.begin()),
+  Reader(const CharString& input) :
+    start_(input.begin()),
     first_(0),
     last_(0),
-    size_(p_input.size()) {}
+    size_(input.size()) {}
 
   void operator++() {++last_;}
   void operator--() {--last_;}
@@ -265,19 +266,19 @@ public:
 
   char GetChar() const {return *(start_ + last_);}
 
-  bool StartsString(const std::string& p_string) const
+  bool StartsString(const std::string& input_string) const
   {
-    std::string test_string(start_ + first_, p_string.size());
-    if (p_string.size() > (size_ - last_)) return false;
-    return p_string == test_string;
+    std::string test_string(start_ + first_, input_string.size());
+    if (input_string.size() > (size_ - last_)) return false;
+    return input_string == test_string;
   }
 
-  bool operator==(const char* p_literal)
+  bool operator==(const char* literal)
   {
     auto store = first_;
-    while(*p_literal)
+    while(*literal)
     {
-      if (*p_literal++ != *(start_ + first_++))
+      if (*literal++ != *(start_ + first_++))
       {
         first_ = store; return false;
       }
@@ -316,36 +317,36 @@ private:
 // This can be used e.g. to find the byte position that always sits between
 // "startxref" and "%%EOF"
 
-std::string CarveOut(const std::string& p_string_to_be_carved,
-                     const std::string& p_left_delimiter,
-                     const std::string& p_right_delimiter);
+std::string CarveOut(const std::string& string_to_be_carved,
+                     const std::string& left_delimiter,
+                     const std::string& right_delimiter);
 
 //---------------------------------------------------------------------------//
 // finds all closest pairs of strings a, b and returns the substring between.
 // This is used to carve out variable substrings between fixed substrings -
 // a surprisingly common task in parsing text.
 
-std::vector<std::string> MultiCarve(const std::string& p_string_to_be_carved,
-                                    const std::string& p_left_delimiter,
-                                    const std::string& p_right_delimiter);
+std::vector<std::string> MultiCarve(const std::string& string_to_be_carved,
+                                    const std::string& left_delimiter,
+                                    const std::string& right_delimiter);
 
 //---------------------------------------------------------------------------//
 // Decent approximation of whether a string contains binary data or not
 // Uses <algorithm> from std
 
-bool IsAscii(const std::string& p_string_to_be_tested);
+bool IsAscii(const std::string& string_to_be_tested);
 
 //---------------------------------------------------------------------------//
 //Takes a string of bytes represented in ASCII and converts to actual bytes
 // eg "48656c6c6f20576f726c6421" -> "Hello World!"
 
-std::vector<uint8_t> ConvertHexToBytes(const std::string& p_hex_encoded_string);
+std::vector<uint8_t> ConvertHexToBytes(const std::string& hex_encoded_string);
 
 //---------------------------------------------------------------------------//
 //Converts an int to the relevant 2-byte ASCII hex (4 characters long)
 // eg 161 -> "00A1"
 
-std::string ConvertIntToHex(int p_int_to_be_converted);
+std::string ConvertIntToHex(int int_to_be_converted);
 
 /*---------------------------------------------------------------------------*/
 // Classifies characters for use in lexers. This allows the use of switch
@@ -360,24 +361,24 @@ std::string ConvertIntToHex(int p_int_to_be_converted);
 // GetSymbolType('\t') == ' '; // space
 // GetSymbolType( '#') == '#'; // not a letter, digit or space. Returns itself
 
-inline char GetSymbolType(const char& p_char)
+inline char GetSymbolType(const char& input_char)
 {
   // if none of the above, return the char itself;
-  return s_symbol_type[(uint8_t) p_char];
+  return s_symbol_type[(uint8_t) input_char];
 }
 
 //---------------------------------------------------------------------------//
 // Returns the data represented by an Ascii encoded hex string as a vector
 // of two-byte numbers
 
-std::vector<RawChar> ConvertHexToRawChar(std::string& p_hex_encoded_string);
+std::vector<RawChar> ConvertHexToRawChar(std::string& hex_encoded_string);
 
 //---------------------------------------------------------------------------//
 // Converts normal string to a vector of 2-byte width numbers (RawChar)
 // This requires sequential conversion from char to uint8_t to uint16_t
 // (RawChar is just a synonym for uint16_t)
 
-std::vector<RawChar> ConvertStringToRawChar(const std::string& p_input_string);
+std::vector<RawChar> ConvertStringToRawChar(const std::string& input_string);
 
 //---------------------------------------------------------------------------//
 // This is a simple lexer to find any object references in the given string,
@@ -385,16 +386,16 @@ std::vector<RawChar> ConvertStringToRawChar(const std::string& p_input_string);
 // even though the code is more unwieldy. It is essentially a finite state
 // machine that reads character by character and stores any matches found
 
-std::vector<int> ParseReferences(const std::string& p_string_to_be_parsed);
+std::vector<int> ParseReferences(const std::string& string_to_be_parsed);
 
 //---------------------------------------------------------------------------//
 // Another lexer. This one finds any integers in a string.
 // If there are decimal points, it ignores the fractional part.
 // It will not accurately represent hex, octal or scientific notation (eg 10e5)
 
-std::vector<int> ParseInts(const std::string& p_string_to_be_parsed);
+std::vector<int> ParseInts(const std::string& string_to_be_parsed);
 
-std::vector<int> ParseInts(const CharString& p_string_to_be_parsed);
+std::vector<int> ParseInts(const CharString& string_to_be_parsed);
 
 //---------------------------------------------------------------------------//
 // This lexer retrieves floats from a string. It searches through the entire
@@ -402,16 +403,16 @@ std::vector<int> ParseInts(const CharString& p_string_to_be_parsed);
 // result can be interpreted as a decimally represented number. It will also
 // consume and convert integers but not hex, octal or scientific notation
 
-std::vector<float> ParseFloats(const std::string& p_string_to_be_parsed);
+std::vector<float> ParseFloats(const std::string& string_to_be_parsed);
 
 //---------------------------------------------------------------------------//
 // Loads a file's contents into a single std::string using <fstream>
 
-std::string GetFile(const std::string& p_path_to_file);
+std::string GetFile(const std::string& path_to_file);
 
 //---------------------------------------------------------------------------//
 // Prints bytes to screen for debugging
 
-std::ostream& operator<<(std::ostream& p_os, std::vector<uint8_t> p_bytes);
+std::ostream& operator<<(std::ostream& os, std::vector<uint8_t> bytes);
 
 #endif

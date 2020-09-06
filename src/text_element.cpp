@@ -18,20 +18,20 @@ using namespace std;
 
 //---------------------------------------------------------------------------//
 
-void TextElement::MergeLetters(TextElement& p_matcher)
+void TextElement::MergeLetters(TextElement& matcher)
 {
    // paste the left glyph to the right glyph
-  this->ConcatenateUnicode(p_matcher.glyph_);
+  this->ConcatenateUnicode(matcher.glyph_);
 
   // make the right glyph now contain both glyphs
-  p_matcher.glyph_ = this->glyph_;
+  swap(matcher.glyph_, this->glyph_);
 
   // make the right glyph now start where the left glyph started
-  p_matcher.SetLeft(this->GetLeft());
+  matcher.SetLeft(this->GetLeft());
 
   // Ensure bottom is the lowest value of the two glyphs
-  if (this->GetBottom() < p_matcher.GetBottom())
-    p_matcher.SetBottom(this->GetBottom());
+  if (this->GetBottom() < matcher.GetBottom())
+    matcher.SetBottom(this->GetBottom());
 
   // The checked glyph is now consumed - move to the next
   this->Consume();
@@ -39,47 +39,47 @@ void TextElement::MergeLetters(TextElement& p_matcher)
 
 //---------------------------------------------------------------------------//
 
-bool TextElement::IsElligibleToJoin(const TextElement& p_other) const
+bool TextElement::IsElligibleToJoin(const TextElement& other) const
 {
-  return  !p_other.IsConsumed()                      &&
-           p_other.IsBeyond(*this)                   &&
-           p_other.IsOnSameLineAs(*this)             &&
-          !p_other.IsWayBeyond(*this)                &&
-          !this->CannotJoinLeftOf(p_other)            ;
+  return  !other.IsConsumed()                      &&
+           other.IsBeyond(*this)                   &&
+           other.IsOnSameLineAs(*this)             &&
+          !other.IsWayBeyond(*this)                &&
+          !this->CannotJoinLeftOf(other)            ;
 }
 
 //---------------------------------------------------------------------------//
 
-void TextElement::JoinWords(TextElement& p_other)
+void TextElement::JoinWords(TextElement& other)
 {
     // This element is elligible for joining - start by adding a space to it
     this->glyph_.push_back(0x0020);
 
     // If the gap is wide enough, add two spaces
-    if (p_other.GetLeft() - this->GetRight() > 1 * this->GetSize())
+    if (other.GetLeft() - this->GetRight() > 1 * this->GetSize())
     {
       this->glyph_.push_back(0x0020);
     }
 
     // Stick contents together
-    Concatenate(this->glyph_, p_other.GetGlyph());
+    Concatenate(this->glyph_, other.GetGlyph());
 
     // The rightmost glyph's right edge properties are also copied over
-    this->SetRight(p_other.GetRight());
-    if (p_other.IsRightEdge()) this->MakeRightEdge();
+    this->SetRight(other.GetRight());
+    if (other.IsRightEdge()) this->MakeRightEdge();
 
     // The word will take up the size of its largest glyph
-    this->SetTop(max(this->GetSize(), p_other.GetSize()) + this->GetBottom());
+    this->SetTop(max(this->GetSize(), other.GetSize()) + this->GetBottom());
 
     // The element on the right is now consumed
-    p_other.Consume();
+    other.Consume();
 }
 
 //---------------------------------------------------------------------------//
 
-void TextElement::ConcatenateUnicode(const std::vector<Unicode>& p_other)
+void TextElement::ConcatenateUnicode(const std::vector<Unicode>& other)
 {
-  Concatenate(glyph_, p_other);
+  Concatenate(glyph_, other);
 }
 
 /*--------------------------------------------------------------------------*/

@@ -92,11 +92,11 @@ class GlyphWidths
 {
  public:
   // Constructor
-  GlyphWidths(std::shared_ptr<Dictionary> p_font_dictionary_ptr,
-              std::shared_ptr<Document> p_document_ptr);
+  GlyphWidths(Dictionary& font_dictionary_ptr,
+              std::shared_ptr<Document> document_ptr);
 
   // public methods
-  int GetWidth(const RawChar& p_code_point);   // Get width of character code
+  int GetWidth(const RawChar& code_point);     // Get width of character code
   std::vector<RawChar> WidthKeys();            // Returns all map keys
 
   inline bool WidthsAreForRaw() const { return width_is_pre_interpretation_; }
@@ -107,7 +107,7 @@ class GlyphWidths
 
   // private data
   std::unordered_map<RawChar, int> width_map_;  // The main data member
-  std::shared_ptr<Dictionary> font_dictionary_; // The font dictionary
+  Dictionary& font_dictionary_;                 // The font dictionary
   std::shared_ptr<Document> document_;          // Pointer to document
   std::string base_font_;                       // The base font (if any)
   bool width_is_pre_interpretation_;            // Are widths for code points

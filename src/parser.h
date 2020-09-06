@@ -69,9 +69,9 @@ namespace Token
   };
 };
 
-inline std::string ShowToken(const Token::TokenState& p_token)
+inline std::string ShowToken(const Token::TokenState& token)
 {
-  switch(p_token)
+  switch(token)
   {
     case Token::NEWSYMBOL : return "NEWSYMBOL";
     case Token::IDENTIFIER : return "IDENTIFIER";
@@ -117,85 +117,85 @@ class Matrix
   Matrix(): data_(std::array<float, 9> {1.0, 0, 0, 0, 1.0, 0, 0, 0, 1.0}) {}
 
   // We can create a Matrix directly from a length-9 array of floats
-  Matrix(std::array<float, 9> p_array): data_(p_array){}
+  Matrix(std::array<float, 9> float_array): data_(float_array){}
 
   // This constructor takes a vector of 6 strings representing floats and
   // turns them into a 3 x 3 matrix as specified by the pdf page descriptor
-  Matrix(const std::vector<std::string>& p_string_vector)
+  Matrix(const std::vector<std::string>& string_vector)
   {
-    if (p_string_vector.size() < 6)
+    if (string_vector.size() < 6)
     {
       throw std::runtime_error("Can't create Matrix with fewer than 6 floats");
     }
 
-    data_ = {stof(p_string_vector[0]), stof(p_string_vector[1]), 0,
-             stof(p_string_vector[2]), stof(p_string_vector[3]), 0,
-             stof(p_string_vector[4]), stof(p_string_vector[5]), 1};
+    data_ = {stof(string_vector[0]), stof(string_vector[1]), 0,
+             stof(string_vector[2]), stof(string_vector[3]), 0,
+             stof(string_vector[4]), stof(string_vector[5]), 1};
   }
 
   // Assignment constructor
-  Matrix& operator=(const Matrix& p_other)
+  Matrix& operator=(const Matrix& other)
   {
-    this->data_ = p_other.data_;
+    this->data_ = other.data_;
     return *this;
   }
 
   // Operator overload of '*': returns dot product of two matrices
-  Matrix operator*(const Matrix& p_other)
+  Matrix operator*(const Matrix& other)
   {
     std::array<float, 9> new_data {};
 
     // Use indices to fill by loop
     for (size_t i = 0; i < 9; ++i)
     {
-      new_data[i] = (data_[i % 3 + 0] * p_other.data_[3 * (i / 3) + 0] +
-                     data_[i % 3 + 3] * p_other.data_[3 * (i / 3) + 1] +
-                     data_[i % 3 + 6] * p_other.data_[3 * (i / 3) + 2] );
+      new_data[i] = (data_[i % 3 + 0] * other.data_[3 * (i / 3) + 0] +
+                     data_[i % 3 + 3] * other.data_[3 * (i / 3) + 1] +
+                     data_[i % 3 + 6] * other.data_[3 * (i / 3) + 2] );
     }
 
     return Matrix(new_data);
   }
 
   // Transforms this matrix into the dot product of *this and t_other
-  void operator*=(const Matrix& p_other)
+  void operator*=(const Matrix& other)
   {
     std::array<float, 9> new_data {};
 
     // Use indices to fill by loop
     for (size_t i = 0; i < 9; ++i)
     {
-      new_data[i] = (data_[i % 3 + 0] * p_other.data_[3 * (i / 3) + 0] +
-                     data_[i % 3 + 3] * p_other.data_[3 * (i / 3) + 1] +
-                     data_[i % 3 + 6] * p_other.data_[3 * (i / 3) + 2] );
+      new_data[i] = (data_[i % 3 + 0] * other.data_[3 * (i / 3) + 0] +
+                     data_[i % 3 + 3] * other.data_[3 * (i / 3) + 1] +
+                     data_[i % 3 + 6] * other.data_[3 * (i / 3) + 2] );
     }
     // Swap rather than copy the array used as the data member
     std::swap(this->data_, new_data);
   }
 
   // Overloaded + operator returns the element-by-element addition of Matrices
-  Matrix operator+(const Matrix& p_other)
+  Matrix operator+(const Matrix& other)
   {
     std::array<float, 9> new_data {};
     for (size_t element = 0; element < 9; ++element)
     {
-      new_data[element] = this->data_[element] + p_other.data_[element];
+      new_data[element] = this->data_[element] + other.data_[element];
     }
     return Matrix(new_data);
   }
 
   // Transforms *this into *this + t_other using element-by-element addition
-  void operator+=(const Matrix& p_other)
+  void operator+=(const Matrix& other)
   {
     for (size_t element = 0; element < 9; ++element)
     {
-      this->data_[element] += p_other.data_[element];
+      this->data_[element] += other.data_[element];
     }
   }
 
   // Gets a reference to an element of the data member
-  float& operator[](size_t p_index)
+  float& operator[](size_t index)
   {
-    return data_[p_index];
+    return data_[index];
   }
 
  private:
@@ -211,26 +211,26 @@ class Parser
   Parser(std::shared_ptr<Page>);
 
   // Move constructor
-  Parser(Parser&& p_other) noexcept : text_box_(std::move(p_other.text_box_)){}
+  Parser(Parser&& other) noexcept : text_box_(std::move(other.text_box_)){}
 
   // Public function called by tokenizer to update graphics state
-  void Reader(const std::string& p_token, Token::TokenState p_token_type);
+  void Reader(const std::string& token, Token::TokenState token_type);
 
   // Access results
-  inline std::unique_ptr<TextBox> Output() {return std::move(this->text_box_);}
+  std::unique_ptr<TextBox> Output() {return std::move(this->text_box_);}
 
   // To allow recursive parsing of form xobjects, the tokenizer needs to access
   // the name of the xobject. At the point when the "Do" identifier is read by
   // the tokenizer, the name of the xobject is sitting on the top of the
   // operands stack. This public method passes that name out of the Parser.
-  inline std::string GetOperand()
+  std::string GetOperand()
   {
     if (this->operands_.empty()) return std::string {};
     else return this->operands_[0];
   }
 
   // This allows us to process an xObject
-  std::shared_ptr<std::string> GetXObject(const std::string& p_inloop) const;
+  std::shared_ptr<std::string> GetXObject(const std::string& inloop) const;
 
  private:
   // Private data members

@@ -68,30 +68,29 @@ class Object;
 class Document
 {
  public:
-  // Constructor to create Document from file path (given as std::string)
-  Document(const std::string& p_file_path);
+  // Constructor to create Document from file path
+  Document(const std::string& file_path)
+   : file_string_(GetFile(file_path))
+   { BuildDocument_(); }
 
-  // Constructor to create Document from raw data (given as vector<uint8_t>)
-  Document(const std::vector<uint8_t>& p_raw_data);
+  // Constructor to create Document from raw data
+  Document(const std::vector<uint8_t>& byte_vector)
+   : file_string_(std::string(byte_vector.begin(), byte_vector.end()))
+   { BuildDocument_(); }
 
-  // Default constructor
-  Document() {};
 
   // Gets a pointer to the Object specified by object_number. If the object has
   // previously been accessed, it will retrieve a pointer from the Object cache.
   // If it has not been accessed before, it will first create it. If the object
   // is inside an object stream, it will automatically add the holding object to
   // the cache as well.
-  std::shared_ptr<Object> GetObject(int p_object_number);
+  std::shared_ptr<Object> GetObject(int object_number);
 
   // Returns the main header dictionary for page specified by page_number
-  Dictionary GetPageHeader(size_t p_page_number);
+  Dictionary GetPageHeader(size_t page_number);
 
   // Accesses the private member containing object numbers of all page headers.
-  inline std::vector<int> GetPageObjectNumbers()
-  {
-    return page_object_numbers_;
-  };
+  std::vector<int> GetPageObjectNumbers() const {return page_object_numbers_;};
 
  private:
   const std::string file_string_;         // Full contents of file
@@ -107,7 +106,7 @@ class Document
   void BuildDocument_();      // The constructors use this as a common pathway
 
   // This function effectively builds the pages tree.
-  std::vector<int> ExpandKids_(const std::vector<int>& p_object_numbers);
+  std::vector<int> ExpandKids_(const std::vector<int>& object_numbers);
 };
 
 //---------------------------------------------------------------------------//

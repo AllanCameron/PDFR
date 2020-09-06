@@ -43,11 +43,11 @@ class TextElement : public Box
   typedef std::shared_ptr<TextElement> TextPointer;
 
  public:
-  TextElement(float p_left, float p_right, float p_top, float p_bottom,
-              float p_size, std::shared_ptr<Font> p_font,
-              std::vector<Unicode> p_glyphs)
-    : Box(p_left, p_right, p_top, p_bottom), size_(p_size),
-      font_(p_font), glyph_(std::move(p_glyphs)), join_(nullptr) {};
+  TextElement(float left, float right, float top, float bottom,
+              float size, std::shared_ptr<Font> font,
+              std::vector<Unicode> glyphs)
+    : Box(left, right, top, bottom), size_(size),
+      font_(font), glyph_(std::move(glyphs)), join_(nullptr) {};
 
   // Inevitably, we need to define some "magic number" constants to define
   // how close together text elements have to be to clump together
@@ -80,48 +80,48 @@ class TextElement : public Box
     else glyph_.pop_back();
   }
 
-  inline bool operator ==(const TextElement& p_other) const
+  inline bool operator ==(const TextElement& other) const
   {
-    if (&p_other == this) return true;
-    return (p_other.GetLeft()   == this->GetLeft()    &&
-            p_other.GetBottom() == this->GetBottom()  &&
-            p_other.GetTop()    == this->GetTop()     &&
-            p_other.GetGlyph()  == this->GetGlyph()   );
+    if (&other == this) return true;
+    return (other.GetLeft()   == this->GetLeft()    &&
+            other.GetBottom() == this->GetBottom()  &&
+            other.GetTop()    == this->GetTop()     &&
+            other.GetGlyph()  == this->GetGlyph()   );
   }
 
-  inline bool IsAdjoiningLetter(const TextElement& p_other) const
+  inline bool IsAdjoiningLetter(const TextElement& other) const
   {
-    if (&p_other == this) return false;
+    if (&other == this) return false;
     return
-      p_other.GetLeft() > GetLeft() &&
-      abs(p_other.GetBottom() - GetBottom()) < (CLUMP_V * GetSize()) &&
+      other.GetLeft() > GetLeft() &&
+      abs(other.GetBottom() - GetBottom()) < (CLUMP_V * GetSize()) &&
       (
-        abs(p_other.GetLeft() - GetRight()) < (CLUMP_H * GetSize()) ||
-        (p_other.GetLeft() < GetRight())
+        abs(other.GetLeft() - GetRight()) < (CLUMP_H * GetSize()) ||
+        (other.GetLeft() < GetRight())
       ) ;
   }
 
-  inline bool IsOnSameLineAs(const TextElement& p_other) const
+  inline bool IsOnSameLineAs(const TextElement& other) const
   {
-    if (&p_other == this) return true;
+    if (&other == this) return true;
     return
-    (p_other.GetBottom() - this->GetBottom() < LINE_CLUMP * this->GetSize()) &&
-    (this->GetBottom() - p_other.GetBottom() < LINE_CLUMP * this->GetSize());
+    (other.GetBottom() - this->GetBottom() < LINE_CLUMP * this->GetSize()) &&
+    (this->GetBottom() - other.GetBottom() < LINE_CLUMP * this->GetSize());
   }
 
-  inline bool IsWayBeyond(const TextElement& p_other) const
+  inline bool IsWayBeyond(const TextElement& other) const
   {
-    if (&p_other == this) return false;
-    return GetLeft() - p_other.GetRight() > MAX_WORD_GAP * p_other.GetSize();
+    if (&other == this) return false;
+    return GetLeft() - other.GetRight() > MAX_WORD_GAP * other.GetSize();
   }
 
-  inline bool CannotJoinLeftOf(const TextElement& p_other) const
+  inline bool CannotJoinLeftOf(const TextElement& other) const
   {
-    if (&p_other == this) return true;
+    if (&other == this) return true;
     return
-    ( p_other.IsLeftEdge()  || p_other.IsCentred()  ||
+    ( other.IsLeftEdge()  || other.IsCentred()  ||
       this->IsRightEdge()   || this->IsCentred())   &&
-    (p_other.GetLeft() - this->GetRight()) > (MAX_ALIGN_IGNORE * GetSize());
+    (other.GetLeft() - this->GetRight()) > (MAX_ALIGN_IGNORE * GetSize());
   }
 
   void MergeLetters(TextElement&);

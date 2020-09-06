@@ -41,33 +41,33 @@ class TextBox : public Box
 
  public:
   // Standard constructor - takes vector of TextElement pointers and the minbox
-  TextBox(std::vector<TextPointer> p_text, Box p_box)
-   : Box(p_box), data_(p_text) {}
+  TextBox(std::vector<TextPointer> text, Box box)
+   : Box(box), data_(text) {}
 
   // Constructor from text and vector of floats representing a box
-  TextBox(std::vector<TextPointer> p_text, std::vector<float> p_vector)
-   : Box(p_vector), data_(p_text) {}
+  TextBox(std::vector<TextPointer> text, std::vector<float> float_vector)
+   : Box(float_vector), data_(text) {}
 
   // Constructor from individual elements
-  TextBox(std::vector<TextPointer> p_text, float p_left, float p_right,
-          float p_top,  float p_bottom)
-   : Box(p_left, p_right, p_top, p_bottom), data_(p_text) {}
+  TextBox(std::vector<TextPointer> text, float left, float right,
+          float top,  float bottom)
+   : Box(left, right, top, bottom), data_(text) {}
 
   // Assignment constructor
-  TextBox(Box p_box):  Box(p_box) {}
+  TextBox(Box box):  Box(box) {}
 
   // Default constructor
   TextBox() = default;
 
   // Copy contructor
-  TextBox(const TextBox& p_textbox) = default;
+  TextBox(const TextBox& textbox) = default;
 
   // Lvalue assignment constructor
-  TextBox& operator=(const TextBox& p_textbox) = default;
+  TextBox& operator=(const TextBox& textbox) = default;
 
   // Rvalue assignment constructor
-  TextBox& operator=(TextBox&& p_textbox) noexcept {
-    std::swap(p_textbox, *this); return *this;}
+  TextBox& operator=(TextBox&& textbox) noexcept {
+    std::swap(textbox, *this); return *this;}
 
   std::shared_ptr<TextElement> CastToElement()
   {
@@ -92,22 +92,22 @@ class TextBox : public Box
   }
   inline TextBoxConstIterator cbegin() const {return data_.cbegin(); }
   inline TextBoxConstIterator cend() const {return data_.cend(); }
-  inline TextPointer& operator[](int p_index) { return data_[p_index]; }
+  inline TextPointer& operator[](int index) { return data_[index]; }
   inline TextPointer front() const {return data_.front(); }
   inline TextPointer back() const { return data_.back(); }
   inline size_t size() const { return data_.size(); }
   inline bool empty() const { return data_.empty(); }
-  inline void push_back(TextPointer p_text_ptr) { data_.push_back(p_text_ptr);}
+  inline void push_back(TextPointer text_ptr) { data_.push_back(text_ptr);}
   inline void clear() { data_.clear(); }
-  inline void resize(int p_new_size) { data_.resize(p_new_size); }
-  inline void SwapData(std::vector<TextPointer>& p_other)
+  inline void resize(int new_size) { data_.resize(new_size); }
+  inline void SwapData(std::vector<TextPointer>& other)
   {
-    std::swap(data_, p_other);
+    std::swap(data_, other);
   }
 
-  inline void emplace_back(TextPointer p_text_ptr)
+  inline void emplace_back(TextPointer text_ptr)
   {
-    data_.emplace_back(p_text_ptr);
+    data_.emplace_back(text_ptr);
   }
 
   void RemoveDuplicates();
@@ -152,15 +152,15 @@ class TextTable: public Box
 class PageBox : public Box
 {
  public:
-  PageBox(const Box& p_box, std::vector<TextBox> p_text_boxes)
-    : Box(p_box), data_(p_text_boxes) {}
+  PageBox(const Box& box, std::vector<TextBox> text_boxes)
+    : Box(box), data_(text_boxes) {}
 
-  inline TextBox& operator[](size_t p_i) { return data_[p_i];}
+  inline TextBox& operator[](size_t i) { return data_[i];}
   inline std::vector<TextBox>::iterator begin() { return data_.begin();}
   inline std::vector<TextBox>::iterator end() { return data_.end();}
   inline bool empty() const { return data_.empty();}
   inline size_t size() const { return data_.size();}
-  inline void push_back(TextBox p_textbox) { data_.push_back(p_textbox);}
+  inline void push_back(TextBox textbox) { data_.push_back(textbox);}
   TextBox CastToTextBox()
   {
     auto result = TextBox((Box) *this);

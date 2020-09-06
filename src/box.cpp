@@ -49,9 +49,9 @@ unordered_map<uint8_t, pair<Direction, Direction>> Vertex::arrows_ =
 // Note, the given vertex is automatically flagged as being impinged at the
 // correct compass direction
 
-shared_ptr<Vertex> Box::GetVertex(int p_corner)
+shared_ptr<Vertex> Box::GetVertex(int corner)
 {
-  switch (p_corner)
+  switch (corner)
   {
     case 0 : return std::make_shared<Vertex>(left_,  top_,    0x02);
     case 1 : return std::make_shared<Vertex>(right_, top_,    0x01);
@@ -67,10 +67,10 @@ shared_ptr<Vertex> Box::GetVertex(int p_corner)
 // an arbitrarily small distance in a given direction from the vertex will
 // place one inside the current box.
 
-void Box::RecordImpingementOn(Vertex& p_corner)
+void Box::RecordImpingementOn(Vertex& corner)
 {
-  if (IsNorthWestOf(p_corner)) p_corner.SetFlags(0x08);
-  if (IsNorthEastOf(p_corner)) p_corner.SetFlags(0x04);
-  if (IsSouthEastOf(p_corner)) p_corner.SetFlags(0x02);
-  if (IsSouthWestOf(p_corner)) p_corner.SetFlags(0x01);
+  if (IsNorthWestOf(corner)) corner.SetFlags(0x08);
+  if (IsNorthEastOf(corner)) corner.SetFlags(0x04);
+  if (IsSouthEastOf(corner)) corner.SetFlags(0x02);
+  if (IsSouthWestOf(corner)) corner.SetFlags(0x01);
 }

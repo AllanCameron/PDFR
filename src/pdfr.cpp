@@ -37,31 +37,31 @@ using namespace Rcpp;
 // page object. This is a common task in the exported functions, so we need to
 // seperate these functions out to reduce replication
 
-shared_ptr<Page> GetPage(string p_file_name, int p_page_number)
+shared_ptr<Page> GetPage(string file_name, int page_number)
 {
   // Pages are numbered from 1. Any less than this should throw an error
-  if (p_page_number < 1) stop("Invalid page number");
+  if (page_number < 1) stop("Invalid page number");
 
   // Create the Document object
-  auto document_ptr = make_shared<Document>(p_file_name);
+  auto document_ptr = make_shared<Document>(file_name);
 
   // Create the page object and return it
-  return make_shared<Page>(document_ptr, p_page_number - 1);
+  return make_shared<Page>(document_ptr, page_number - 1);
 }
 
 //---------------------------------------------------------------------------//
 // Raw version
 
-shared_ptr<Page> GetPage(vector<uint8_t> p_raw_file, int p_page_number)
+shared_ptr<Page> GetPage(vector<uint8_t> raw_file, int page_number)
 {
   // Pages are numbered from 1. Any less than this should throw an error
-  if (p_page_number < 1) stop("Invalid page number");
+  if (page_number < 1) stop("Invalid page number");
 
   // Create the Document object
-  auto document_ptr = make_shared<Document>(p_raw_file);
+  auto document_ptr = make_shared<Document>(raw_file);
 
   // Create the page object and return it
-  return make_shared<Page>(document_ptr, p_page_number - 1);
+  return make_shared<Page>(document_ptr, page_number - 1);
 }
 
 //---------------------------------------------------------------------------//
@@ -71,10 +71,10 @@ shared_ptr<Page> GetPage(vector<uint8_t> p_raw_file, int p_page_number)
 // also given its own column. This export may be removed in production or moved
 // to a debugging version
 
-DataFrame GetGlyphMap(const string& p_file_name, int p_page_number)
+DataFrame GetGlyphMap(const string& file_name, int page_number)
 {
   // Create Document and page objects
-  auto page_ptr = GetPage(p_file_name, p_page_number);
+  auto page_ptr = GetPage(file_name, page_number);
 
   // Declare containers for the R dataframe columns
   vector<uint16_t> codepoint, unicode, width;
@@ -111,10 +111,10 @@ DataFrame GetGlyphMap(const string& p_file_name, int p_page_number)
 // get_xref. It acts as a helper function and common final pathway for the
 // raw and filepath versions of get_xref
 
-DataFrame XrefCreator(shared_ptr<const string> p_file_string)
+DataFrame XrefCreator(shared_ptr<const string> file_string)
 {
   // Create the xref from the given string pointer
-  XRef Xref(p_file_string);
+  XRef Xref(file_string);
 
   // Declare containers used to fill dataframe
   vector<int> object {}, start_byte {}, holding_object {};
@@ -145,11 +145,11 @@ DataFrame XrefCreator(shared_ptr<const string> p_file_string)
 // the file path into a single large string, a pointer to which is used to
 // call the XrefCreator
 
-DataFrame GetXrefFromString(const string& p_filename)
+DataFrame GetXrefFromString(const string& filename)
 {
   // This one-liner gets the file string, builds the xref and turns it into an
   // R data frame
-  return XrefCreator(make_shared<string>(GetFile(p_filename)));
+  return XrefCreator(make_shared<string>(GetFile(filename)));
 }
 
 //---------------------------------------------------------------------------//
@@ -157,10 +157,10 @@ DataFrame GetXrefFromString(const string& p_filename)
 // raw data vector as a single large string, a pointer to which is used to
 // call the XrefCreator
 
-DataFrame GetXrefFromRaw(const vector<uint8_t>& p_raw_file)
+DataFrame GetXrefFromRaw(const vector<uint8_t>& raw_file)
 {
   // Cast raw vector to string
-  string file_string(p_raw_file.begin(), p_raw_file.end());
+  string file_string(raw_file.begin(), raw_file.end());
 
   // Create a dataframe representing the xref entry
   return XrefCreator(make_shared<string>(file_string));
@@ -174,22 +174,22 @@ DataFrame GetXrefFromRaw(const vector<uint8_t>& p_raw_file)
 // of two named values - the dictionary, as a named character vector, and the
 // decrypted / decompressed stream as a single string
 
-List GetObjectFromString(const string& p_file_name, int p_object)
+List GetObjectFromString(const string& file_name, int object)
 {
   // Create the Document
-  auto doc_ptr = make_shared<Document>(p_file_name);
+  auto doc_ptr = make_shared<Document>(file_name);
 
-  auto as_string = doc_ptr->GetObject(p_object)->GetStream();
+  auto as_string = doc_ptr->GetObject(object)->GetStream();
   std::vector<uint8_t> as_raw(as_string.begin(), as_string.end());
   // Fill an List with the requested object and return
   if(!IsAscii(as_string) && !as_raw.empty())
   {
   return List::create(
-    Named("header") = doc_ptr->GetObject(p_object)->GetDictionary().GetMap(),
+    Named("header") = doc_ptr->GetObject(object)->GetDictionary().GetMap(),
     Named("stream") = as_raw);
   } else {
   return List::create(
-    Named("header") = doc_ptr->GetObject(p_object)->GetDictionary().GetMap(),
+    Named("header") = doc_ptr->GetObject(object)->GetDictionary().GetMap(),
     Named("stream") = as_string);
   }
 }
@@ -202,21 +202,21 @@ List GetObjectFromString(const string& p_file_name, int p_object)
 // of two named values - the dictionary, as a named character vector, and the
 // decrypted / decompressed stream as a single string
 
-List GetObjectFromRaw(const vector<uint8_t>& p_raw_file, int p_object)
+List GetObjectFromRaw(const vector<uint8_t>& raw_file, int object)
 {
   // Create the Document
-  auto doc_ptr = make_shared<Document>(p_raw_file);
-  auto as_string = doc_ptr->GetObject(p_object)->GetStream();
+  auto doc_ptr = make_shared<Document>(raw_file);
+  auto as_string = doc_ptr->GetObject(object)->GetStream();
   std::vector<uint8_t> as_raw(as_string.begin(), as_string.end());
   // Fill an List with the requested object and return
   if(!IsAscii(as_string) && !as_raw.empty())
   {
   return List::create(
-    Named("header") = doc_ptr->GetObject(p_object)->GetDictionary().GetMap(),
+    Named("header") = doc_ptr->GetObject(object)->GetDictionary().GetMap(),
     Named("stream") = as_raw);
   } else {
   return List::create(
-    Named("header") = doc_ptr->GetObject(p_object)->GetDictionary().GetMap(),
+    Named("header") = doc_ptr->GetObject(object)->GetDictionary().GetMap(),
     Named("stream") = as_string);
   }
 }
@@ -226,20 +226,20 @@ List GetObjectFromRaw(const vector<uint8_t>& p_raw_file, int p_object)
 // from the Parser. It packages the dataframe with a vector of page
 // dimensions to allow plotting etc
 
-List GetSingleTextElements(shared_ptr<Page> p_page_ptr)
+List GetSingleTextElements(shared_ptr<Page> page_ptr)
 {
   // Create new Parser
-  Parser parser_object = Parser(p_page_ptr);
+  Parser parser_object = Parser(page_ptr);
 
   // Read page contents to Parser
-  Tokenizer(p_page_ptr->GetPageContents(), &parser_object);
+  Tokenizer(page_ptr->GetPageContents(), &parser_object);
 
   // Obtain output from Parser and transpose into a text table
   auto text_box = parser_object.Output();
   TextTable table(*text_box);
 
   // Ensure the static fontmap is cleared after use
-  p_page_ptr->ClearFontMap();
+  page_ptr->ClearFontMap();
 
   // Now create the data frame
   DataFrame db =  DataFrame::create(Named("text")   = table.GetText(),
@@ -252,19 +252,19 @@ List GetSingleTextElements(shared_ptr<Page> p_page_ptr)
                                     Named("stringsAsFactors") = false);
 
   // Return it as a list along with the page dimensions
-  return List::create(Named("Box") = p_page_ptr->GetMinbox()->Vector(),
+  return List::create(Named("Box") = page_ptr->GetMinbox()->Vector(),
                       Named("Elements") = move(db));
 }
 
 //---------------------------------------------------------------------------//
 
-List GetTextBoxes(shared_ptr<Page> p_page_ptr)
+List GetTextBoxes(shared_ptr<Page> page_ptr)
 {
   // Create new Parser
-  auto parser_object = new Parser(p_page_ptr);
+  auto parser_object = new Parser(page_ptr);
 
   // Read page contents to Parser
-  Tokenizer(p_page_ptr->GetPageContents(), parser_object);
+  Tokenizer(page_ptr->GetPageContents(), parser_object);
 
   // Group letters and words
   auto grouped_letters = new LetterGrouper(parser_object->Output());
@@ -277,7 +277,7 @@ List GetTextBoxes(shared_ptr<Page> p_page_ptr)
   delete WS;
   auto text_table = TextTable(linegrouper->Output());
   delete linegrouper;
-  p_page_ptr->ClearFontMap();
+  page_ptr->ClearFontMap();
   DataFrame db =  DataFrame::create(
                     Named("text")             = move(text_table.GetText()),
                     Named("left")             = move(text_table.GetLefts()),
@@ -288,21 +288,21 @@ List GetTextBoxes(shared_ptr<Page> p_page_ptr)
                     Named("size")             = move(text_table.GetSizes()),
                     Named("stringsAsFactors") = false);
 
-return List::create(Named("Box") = p_page_ptr->GetMinbox()->Vector(),
+return List::create(Named("Box") = page_ptr->GetMinbox()->Vector(),
                     Named("Elements") = move(db));
 }
 
 //---------------------------------------------------------------------------//
 
-List GetPdfPageFromString (const string& p_file_name,
-                                     int p_page_number,
-                                     bool p_each_glyph)
+List GetPdfPageFromString (const string& file_name,
+                                     int page_number,
+                                     bool each_glyph)
 {
   // Create the page object
-  auto page_ptr = GetPage(p_file_name, p_page_number);
+  auto page_ptr = GetPage(file_name, page_number);
 
   // Process the page if requested
-  if (!p_each_glyph) return GetTextBoxes(page_ptr);
+  if (!each_glyph) return GetTextBoxes(page_ptr);
 
   // Otherwise return a data frame of individual letters
   else return GetSingleTextElements(page_ptr);
@@ -310,15 +310,15 @@ List GetPdfPageFromString (const string& p_file_name,
 
 //---------------------------------------------------------------------------//
 
-List GetPdfPageFromRaw(const vector<uint8_t>& p_raw_file,
-                           int p_page_number,
-                           bool p_each_glyph)
+List GetPdfPageFromRaw(const vector<uint8_t>& raw_file,
+                           int page_number,
+                           bool each_glyph)
 {
   // Create the page object
-  auto page_ptr = GetPage(p_raw_file, p_page_number);
+  auto page_ptr = GetPage(raw_file, page_number);
 
   // Process the page if requested
-  if (!p_each_glyph) return GetTextBoxes(page_ptr);
+  if (!each_glyph) return GetTextBoxes(page_ptr);
 
   // Otherwise return a data frame of individual letters
   else return GetSingleTextElements(page_ptr);
@@ -326,9 +326,9 @@ List GetPdfPageFromRaw(const vector<uint8_t>& p_raw_file,
 
 //---------------------------------------------------------------------------//
 
-DataFrame PdfDocCommon(shared_ptr<Document> p_document_ptr)
+DataFrame PdfDocCommon(shared_ptr<Document> document_ptr)
 {
-  auto number_of_pages = p_document_ptr->GetPageObjectNumbers().size();
+  auto number_of_pages = document_ptr->GetPageObjectNumbers().size();
   vector<float> left, right, size, bottom;
   vector<string> glyph, font;
   vector<int> page_number_of_element;
@@ -337,7 +337,7 @@ DataFrame PdfDocCommon(shared_ptr<Document> p_document_ptr)
   for (size_t page_number = 0; page_number < number_of_pages; page_number++)
   {
     // Create a new page pbject
-    auto page_ptr = make_shared<Page>(p_document_ptr, page_number);
+    auto page_ptr = make_shared<Page>(document_ptr, page_number);
 
     // Create a new Parser object
     Parser parser_object(page_ptr);
@@ -389,10 +389,10 @@ DataFrame PdfDocCommon(shared_ptr<Document> p_document_ptr)
 // containing all of the text elements in a Document, including their location
 // and page number
 
-DataFrame GetPdfDocumentFromString(const string& p_file_name)
+DataFrame GetPdfDocumentFromString(const string& file_name)
 {
   // Simply create a new Document pointer from the file name
-  auto document_ptr = make_shared<Document>(p_file_name);
+  auto document_ptr = make_shared<Document>(file_name);
 
   // Feed the Document pointer to PdfDocCommon to get the whole Document as
   // an R data frame
@@ -405,10 +405,10 @@ DataFrame GetPdfDocumentFromString(const string& p_file_name)
 // data frame containing all of the text elements in a document, including their
 // location and page number.
 
-DataFrame GetPdfDocumentFromRaw(const vector<uint8_t>& p_raw_data)
+DataFrame GetPdfDocumentFromRaw(const vector<uint8_t>& raw_data)
 {
   // Simply create a new Document pointer from the raw data
-  auto document_ptr = make_shared<Document>(p_raw_data);
+  auto document_ptr = make_shared<Document>(raw_data);
 
   // Feed the Document pointer to PdfDocCommon to get the whole document as
   // an R data frame
@@ -419,44 +419,44 @@ DataFrame GetPdfDocumentFromRaw(const vector<uint8_t>& p_raw_data)
 // This exported function allows the page description program to be output to
 // the R console, given the pdf file as a path name
 
-string GetPageStringFromString(const string& p_file_name, int p_page_number)
+string GetPageStringFromString(const string& file_name, int page_number)
 {
   // Create the page object
-  auto page_ptr = GetPage(p_file_name, p_page_number);
+  auto page_ptr = GetPage(file_name, page_number);
 
   // Clear the static font map
   page_ptr->ClearFontMap();
 
   // Return a dereferenced pointer to the page contents
-  return *(page_ptr->GetPageContents());
+  return (page_ptr->GetPageContents());
 }
 
 //---------------------------------------------------------------------------//
 // This exported function allows the page description program to be output to
 // the R console, given the pdf file as a vector of bytes
 
-string GetPageStringFromRaw(const vector<uint8_t>& p_raw_file,
-                                int p_page_number)
+string GetPageStringFromRaw(const vector<uint8_t>& raw_file,
+                                int page_number)
 {
   // Create the page object
-  auto page_ptr = GetPage(p_raw_file, p_page_number);
+  auto page_ptr = GetPage(raw_file, page_number);
 
   // Clear the static font map
   page_ptr->ClearFontMap();
 
   // Return a dereferenced pointer to the page contents
-  return *(page_ptr->GetPageContents());
+  return (page_ptr->GetPageContents());
 }
 
 //---------------------------------------------------------------------------//
 
-DataFrame PdfBoxes(shared_ptr<Page> p_page_ptr)
+DataFrame PdfBoxes(shared_ptr<Page> page_ptr)
 {
   // Create an empty Parser object
-  Parser parser_object(p_page_ptr);
+  Parser parser_object(page_ptr);
 
   // Read the page contents into the Parser
-  Tokenizer(p_page_ptr->GetPageContents(), &parser_object);
+  Tokenizer(page_ptr->GetPageContents(), &parser_object);
 
   // Group individual letters into words
   LetterGrouper grouped_letters(move(parser_object.Output()));
@@ -486,7 +486,7 @@ DataFrame PdfBoxes(shared_ptr<Page> p_page_ptr)
   }
 
   // Clear the static font map
-  p_page_ptr->ClearFontMap();
+  page_ptr->ClearFontMap();
 
   // Build and return an R dataframe
   return DataFrame::create( Named("xmin")             = xmin,
@@ -500,11 +500,11 @@ DataFrame PdfBoxes(shared_ptr<Page> p_page_ptr)
 
 //---------------------------------------------------------------------------//
 
-DataFrame GetPdfBoxesFromString(const string& p_file_name,
-                                          int p_page_number)
+DataFrame GetPdfBoxesFromString(const string& file_name,
+                                          int page_number)
 {
   // Create the page object
-  auto page_ptr = GetPage(p_file_name, p_page_number);
+  auto page_ptr = GetPage(file_name, page_number);
 
   // Call on PdfBoxes to make our boxes dataframe
   return PdfBoxes(page_ptr);
@@ -512,11 +512,11 @@ DataFrame GetPdfBoxesFromString(const string& p_file_name,
 
 //---------------------------------------------------------------------------//
 
-DataFrame GetPdfBoxesFromRaw(const vector<uint8_t>& p_raw_data,
-                                       int p_page_number)
+DataFrame GetPdfBoxesFromRaw(const vector<uint8_t>& raw_data,
+                                       int page_number)
 {
   // Create the page object
-  auto page_ptr = GetPage(p_raw_data, p_page_number);
+  auto page_ptr = GetPage(raw_data, page_number);
 
   // Call on PdfBoxes to make our boxes dataframe
   return PdfBoxes(page_ptr);

@@ -18,8 +18,8 @@
 #include<map>
 #include "streams.h"
 
-std::string FlateDecode(std::string* p_message);
-std::string FlateDecode(const CharString& p_message);
+std::string FlateDecode(std::string* message);
+std::string FlateDecode(const CharString& message);
 
 //---------------------------------------------------------------------------//
 // This class reinvents the wheel in an attempt to free the library from
@@ -30,12 +30,12 @@ std::string FlateDecode(const CharString& p_message);
 
 class Deflate : public Stream
 {
-public:
+ public:
   // String and byte-vector constructors. The latter converts to a string.
   Deflate(const std::string*);
   Deflate(const CharString&);
 
-private:
+ private:
   bool is_last_block_;    // Flag so decompressor knows when to stop
 
   // The fixed literal and distance maps are used if compression used a
@@ -53,7 +53,7 @@ private:
   std::unordered_map<uint32_t, uint32_t> literal_map_;
   std::unordered_map<uint32_t, uint32_t> distance_map_;
 
-  void CheckHeader_();           // Read first two bytes to ensure valid Deflate
+  void CheckHeader_();             // Read first two bytes to ensure valid
   void ReadBlock_();               // Co-ordinates reading of a single block
   void BuildDynamicCodeTable_();   // Builds lookup tables for each block
   void ReadCodes_();               // Actual reading of compressed data

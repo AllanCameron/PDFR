@@ -13,8 +13,8 @@ const std::map<uint16_t, std::string> TTFont::unicode_specific_map_s = {
   {6, "Unicode Full"}};
 
 
-TTFont::TTFont(const std::string& p_stream) :
-stream_(p_stream),
+TTFont::TTFont(const std::string& input_stream) :
+stream_(input_stream),
 it_(stream_.begin())
 {
   ReadTables();
@@ -157,15 +157,15 @@ void TTFont::ReadCMap()
   }
 }
 
-void TTFont::HandleFormat0(CMapDirectory& p_entry)
+void TTFont::HandleFormat0(CMapDirectory& entry)
 {
   for (uint16_t i = 0; i < 256; ++i)
   {
-    p_entry.cmap_[i] = (uint16_t)(uint8_t) *it_++;
+    entry.cmap_[i] = (uint16_t)(uint8_t) *it_++;
   }
 }
 
-void TTFont::HandleFormat2(CMapDirectory& p_entry)
+void TTFont::HandleFormat2(CMapDirectory& entry)
 {
   std::vector<uint16_t> sub_header_keys;
   for (uint16_t i = 0; i < 256; ++i)
@@ -175,7 +175,7 @@ void TTFont::HandleFormat2(CMapDirectory& p_entry)
   }
 }
 
-void TTFont::HandleFormat4(CMapDirectory& p_entry)
+void TTFont::HandleFormat4(CMapDirectory& entry)
 {
   uint16_t seg_count = GetUint16() / 2;
   // search_range, entry_selector, range_shift are all unused here and
@@ -192,43 +192,43 @@ void TTFont::HandleFormat4(CMapDirectory& p_entry)
     if (end_code[i] == 0xffff) break;
     for (uint16_t j = start_code[i]; j <= end_code[i]; ++j)
     {
-      p_entry.cmap_[(j + id_delta[i]) % 65536] = j;
+      entry.cmap_[(j + id_delta[i]) % 65536] = j;
     }
   }
 
 }
 
-void TTFont::HandleFormat6(CMapDirectory& p_entry)
+void TTFont::HandleFormat6(CMapDirectory& entry)
 {
   auto first_entry = GetUint16();
   auto num_entries = GetUint16();
   for (uint16_t i = 0; i < num_entries; ++i )
   {
-    p_entry.cmap_[first_entry + i] = GetUint16();
+    entry.cmap_[first_entry + i] = GetUint16();
   }
 }
 
-void TTFont::HandleFormat8(CMapDirectory& p_entry)
+void TTFont::HandleFormat8(CMapDirectory& entry)
 {
 
 }
 
-void TTFont::HandleFormat10(CMapDirectory& p_entry)
+void TTFont::HandleFormat10(CMapDirectory& entry)
 {
 
 }
 
-void TTFont::HandleFormat12(CMapDirectory& p_entry)
+void TTFont::HandleFormat12(CMapDirectory& entry)
 {
 
 }
 
-void TTFont::HandleFormat13(CMapDirectory& p_entry)
+void TTFont::HandleFormat13(CMapDirectory& entry)
 {
 
 }
 
-void TTFont::HandleFormat14(CMapDirectory& p_entry)
+void TTFont::HandleFormat14(CMapDirectory& entry)
 {
 
 }

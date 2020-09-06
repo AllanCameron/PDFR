@@ -8,15 +8,6 @@ To keep the C++ codebase consistent, I will declare some coding conventions here
 
 ## Naming conventions
 - All variable names are written in `snake_case` with no capitals.
-- All variables passed as parameters to a function are prefixed with p_, thus 
-```cpp
-
-void PrintString(const std::string& p_print_this)
-{
-  std::cout << p_print_this << std::endl;
-}
-
-```
 - Aim for descriptive names over saving horizontal space e.g `temporary_byte_vector` is better than `tmpvec`
 - Prefer named iterators in a loop rather than `i`; e.g. `for (size_t entry = 0; entry < table.size(); ++entry)` unless there is no meaningful name to apply.
 - All private data members are suffixed with a single underscore: `private_member_`
@@ -31,19 +22,19 @@ The following code block demonstrates most of these naming conventions:
 //---------------------------------------------------------------------------//
 // Method to make things OK
 
-std::string MakeEverythingOK(std::string p_input)
+std::string MakeEverythingOK(std::string input_string)
 {
   std::string ok_suffix = " is OK";
-  p_input.append(ok_suffix);
-  return p_input;
+  input_string.append(ok_suffix);
+  return input_string;
 }
 
 //---------------------------------------------------------------------------//
 // Make the data member OK
 
-void MyClass::MakeAnOKMember_(const std::string& p_input)
+void MyClass::MakeAnOKMember_(const std::string& input_string)
 {
-  ok_data_member_ = MakeEverythingOK(p_input);
+  ok_data_member_ = MakeEverythingOK(input_string);
 }
 
 //---------------------------------------------------------------------------//

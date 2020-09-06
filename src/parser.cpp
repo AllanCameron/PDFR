@@ -45,8 +45,8 @@ std::unordered_map<std::string, FunctionPointer> Parser::function_map_ =
 // it to track state once instructions are passed to it. After these are set,
 // it does no work unless passed instructions by the tokenizer
 
-Parser::Parser(shared_ptr<Page> p_page_ptr) : // Long initializer list...
-  page_(p_page_ptr),                        // Pointer to page of interest
+Parser::Parser(shared_ptr<Page> page_ptr) : // Long initializer list...
+  page_(page_ptr),                        // Pointer to page of interest
   text_box_(unique_ptr<TextBox>(new TextBox(Box(*(page_->GetMinbox()))))),
   current_font_size_(0),                    // Pointsize of current font
   font_size_stack_({current_font_size_}),   // History of pointsize
@@ -283,8 +283,8 @@ void Parser::TJ_()
 // generated, the userspace and initial userspace to calculate the
 // glyphs, sizes and positions intended by the string in the page program
 
-void Parser::ProcessRawChar_(float& p_scale, Matrix& p_text_space,
-                             float& p_initial_x)
+void Parser::ProcessRawChar_(float& scale, Matrix& text_space,
+                             float& initial_x)
 {
   // Look up the RawChars in the font to get their Unicode values and widths
   vector<pair<Unicode, int>>&& glyph_pairs = working_font_->MapRawChar(raw_);
@@ -298,8 +298,8 @@ void Parser::ProcessRawChar_(float& p_scale, Matrix& p_text_space,
     // adjust for character spacing
     if (glyph_pair.first != 0x0020)
     {
-      left = p_text_space[6];
-      bottom = p_text_space[7];
+      left = text_space[6];
+      bottom = text_space[7];
       glyph_width = glyph_pair.second + tc_ * 1000 / current_font_size_;
     }
     else // if this is a space, just adjust word & char spacing
@@ -311,16 +311,16 @@ void Parser::ProcessRawChar_(float& p_scale, Matrix& p_text_space,
     kerning_ += glyph_width;
 
     // Move user space right by the (converted to user space) width of the char
-    p_text_space[6] =  kerning_ * p_scale / 1000 + p_initial_x;
+    text_space[6] =  kerning_ * scale / 1000 + initial_x;
 
     if (glyph_pair.first != 0x0020)
     {
       // record width of char taking Th (horizontal scaling) into account
-      width = p_scale * (glyph_width / 1000) * (th_ / 100);
+      width = scale * (glyph_width / 1000) * (th_ / 100);
       right = left + width;
       text_box_->emplace_back(make_shared<TextElement>
-                             (left, right, bottom + p_scale,
-                              bottom, p_scale, working_font_,
+                             (left, right, bottom + scale,
+                              bottom, scale, working_font_,
                               vector<Unicode>{glyph_pair.first}));
     }
   }
@@ -335,14 +335,14 @@ void Parser::ProcessRawChar_(float& p_scale, Matrix& p_text_space,
 // When an operator function is called, it takes the operands on the stack
 // as arguments.
 
-void Parser::Reader(const string& p_token, TokenState p_state)
+void Parser::Reader(const string& token, TokenState state)
 {
   // if it's an identifier, call the operator
-  if (p_state == IDENTIFIER)
+  if (state == IDENTIFIER)
   {
     // Pass any stored operands on the stack
-    auto finder = function_map_.find(p_token);
-    if (finder != function_map_.end()) (this->*function_map_[p_token])();
+    auto finder = function_map_.find(token);
+    if (finder != function_map_.end()) (this->*function_map_[token])();
 
     // Clear the stack since an operator has been called
     operand_types_.clear();
@@ -351,14 +351,14 @@ void Parser::Reader(const string& p_token, TokenState p_state)
   else
   {
     // Push operands and their types on stack, awaiting operator
-    operand_types_.push_back(p_state);
-    operands_.push_back(p_token);
+    operand_types_.push_back(state);
+    operands_.push_back(token);
   }
 }
 
 /*---------------------------------------------------------------------------*/
 // Can't inline this without including page.h in header
-shared_ptr<string> Parser::GetXObject(const string& p_inloop) const
+shared_ptr<string> Parser::GetXObject(const string& inloop) const
 {
-  return page_->GetXObject(p_inloop);
+  return page_->GetXObject(inloop);
 };

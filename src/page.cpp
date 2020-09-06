@@ -29,8 +29,8 @@ unordered_map<string, shared_ptr<Font>> Page::fontmap_;
 // The Page constructor calls private methods to build its data members after
 // its initializer list
 
-Page::Page(shared_ptr<Document> p_document_ptr, int p_page_number) :
-  document_(p_document_ptr), page_number_(p_page_number), rotate_(0)
+Page::Page(shared_ptr<Document> document_ptr, int page_number) :
+  document_(document_ptr), page_number_(page_number), rotate_(0)
 {
   ReadHeader_();      // find the page header
   ReadResources_();   // find the resource header
@@ -52,7 +52,7 @@ void Page::ReadBoxes_()
   // sometimes the box dimensions are inherited from an ancestor node of the
   // page header. We therefore need to look for the boxes in the page header,
   // then, if they are not found, iteratively search the parent nodes
-  Dictionary box_header = *header_;
+  Dictionary box_header = header_;
   vector<string> box_names {"/BleedBox", "/CropBox", "/MediaBox",
                            "/ArtBox", "/TrimBox"};
   vector<float> minbox;
@@ -88,7 +88,7 @@ void Page::ReadBoxes_()
   minbox_ = make_shared<Box>(minbox);
 
   // Get the "rotate" value - will need in future feature development
-  if (header_->HasKey("/Rotate")) rotate_ = header_->GetFloats("/Rotate")[0];
+  if (header_.HasKey("/Rotate")) rotate_ = header_.GetFloats("/Rotate")[0];
 }
 
 /*--------------------------------------------------------------------------*/
@@ -98,10 +98,10 @@ void Page::ReadBoxes_()
 void Page::ReadHeader_()
 {
   // uses public member of document class to get the appropriate header
-  header_ = make_shared<Dictionary>(document_->GetPageHeader(page_number_));
+  header_ = Dictionary(document_->GetPageHeader(page_number_));
 
   // if the header is not of /type /Page, throw an error
-  if (header_->GetString("/Type") != "/Page")
+  if (header_.GetString("/Type") != "/Page")
   {
     // create an error message in case of missing page
     string error_message("No header found for page ");
@@ -132,7 +132,7 @@ void Page::ReadFonts_()
   // We can now iterate through the font dictionary, which will be a sequence
   // of key:value pairs of fontname : font descriptor, where the font descriptor
   // is almost always a reference but can also be a direct dictionary
-  for (auto name_descriptor_pair : *fonts_)
+  for (auto name_descriptor_pair : fonts_)
   {
     auto& font_name = name_descriptor_pair.first;
     auto& font_descriptor = name_descriptor_pair.second;
@@ -141,20 +141,19 @@ void Page::ReadFonts_()
     // If the font is not in the fontmap, inserts it
     if (found_font == fontmap_.end())
     {
-      shared_ptr<Dictionary> font_dict;
+      Dictionary font_dict;
 
       // Handle the font descriptor being a direct dictionary
       if (font_descriptor.find("<<") != string::npos)
       {
-        font_dict = make_shared<Dictionary>(
-                      make_shared<string>(font_descriptor));
+        font_dict = Dictionary(make_shared<string>(font_descriptor));
       }
 
       // If it's not a direct dictionary, it must be a reference
       else
       {
-        auto font_reference = fonts_->GetReference(font_name);
-        font_dict = make_shared<Dictionary>(
+        auto font_reference = fonts_.GetReference(font_name);
+        font_dict = Dictionary(
           document_->GetObject(font_reference)->GetDictionary());
       }
 
@@ -174,7 +173,7 @@ void Page::ReadFonts_()
 void Page::ReadContents_()
 {
   // Call ExpandContents() to get page header object numbers
-  auto contents = ExpandContents_(header_->GetReferences("/Contents"));
+  auto contents = ExpandContents_(header_.GetReferences("/Contents"));
 
   // Get the contents from each object stream and paste them at the bottom
   // of the pagestring with a line break after each one
@@ -197,9 +196,9 @@ void Page::ReadXObjects_()
   string xobject_string {};
 
   // first find any xobject entries in the resource dictionary
-  if (resources_->HasKey("/XObject"))
+  if (resources_.HasKey("/XObject"))
   {
-    xobject_string = resources_->GetString("/XObject");
+    xobject_string = resources_.GetString("/XObject");
   }
 
   // Sanity check - the entry shouldn't be empty
@@ -213,9 +212,9 @@ void Page::ReadXObjects_()
   }
 
   // If the /XObject string is a reference, follow the reference to dictionary
-  else if (resources_->ContainsReferences("/XObject"))
+  else if (resources_.ContainsReferences("/XObject"))
   {
-    auto xobject_number = resources_->GetReference("/XObject");
+    auto xobject_number = resources_.GetReference("/XObject");
     xobject_dictionary = document_->GetObject(xobject_number)->GetDictionary();
   }
 
@@ -239,11 +238,11 @@ void Page::ReadXObjects_()
 // but it is possible to have nested content trees. In any case we only want
 // the leaves of the content tree, which are found by this algorithm.
 
-vector<int> Page::ExpandContents_(vector<int> p_object_numbers)
+vector<int> Page::ExpandContents_(vector<int> object_numbers)
 {
   // We copy our supplied vector to a list, as this is a better container for
   // multiple in-situ inserts
-  list<int> contents_list(p_object_numbers.begin(), p_object_numbers.end());
+  list<int> contents_list(object_numbers.begin(), object_numbers.end());
 
   // We need an iterator to insert / erase nodes from our list
   auto kid = contents_list.begin();
@@ -291,15 +290,15 @@ vector<int> Page::ExpandContents_(vector<int> p_object_numbers)
 
 vector<string> Page::GetFontNames()
 {
-  return this->fonts_->GetAllKeys();
+  return this->fonts_.GetAllKeys();
 }
 
 /*--------------------------------------------------------------------------*/
 // Simple getter for the content string of a Page
 
-shared_ptr<string> Page::GetPageContents()
+const string& Page::GetPageContents()
 {
-  return make_shared<string>(this->content_string_);
+  return this->content_string_;
 }
 
 /*--------------------------------------------------------------------------*/
@@ -321,13 +320,13 @@ shared_ptr<string> Page::GetXObject(const string& t_object_id)
 // The parser class needs to use fonts stored in the fontmap. This getter
 // will return a pointer to the requested font.
 
-shared_ptr<Font> Page::GetFont(const string& p_font_id)
+shared_ptr<Font> Page::GetFont(const string& font_id)
 {
   // If no fonts on the page, throw an error
   if (fontmap_.empty()) throw runtime_error("No fonts available for page");
 
   // If we can't find a specified font, return the first font in the map
-  auto font_finder = fontmap_.find(p_font_id);
+  auto font_finder = fontmap_.find(font_id);
   if (font_finder == fontmap_.end()) return fontmap_.begin()->second;
 
   // Otherwise we're all good and return the requested font
@@ -340,21 +339,19 @@ shared_ptr<Font> Page::GetFont(const string& p_font_id)
 // preventing this in iso 32000, though I haven't come across any multiple
 // indirections in sample pdfs yet.
 
-shared_ptr<Dictionary>
-Page::FollowToDictionary(shared_ptr<Dictionary> p_entry, const string& p_name)
+Dictionary Page::FollowToDictionary(Dictionary& entry, const string& name)
 {
   // If it isn't a dictionary
-  if (!p_entry->ContainsDictionary(p_name))
+  if (!entry.ContainsDictionary(name))
   {
     // It must be a reference - follow this to get the dictionary
-    if (p_entry->ContainsReferences(p_name))
+    if (entry.ContainsReferences(name))
     {
-      auto reference =  p_entry->GetReference(p_name);
-      return make_shared<Dictionary>(
-        document_->GetObject(reference)->GetDictionary());
+      auto reference =  entry.GetReference(name);
+      return Dictionary(document_->GetObject(reference)->GetDictionary());
     }
     else throw runtime_error("Couldn't find string in dictionary.");
   }
   // Otherwise, it is a dictionary, so we get the result
-  else return make_shared<Dictionary>(p_entry->GetDictionary(p_name));
+  else return Dictionary(entry.GetDictionary(name));
 }

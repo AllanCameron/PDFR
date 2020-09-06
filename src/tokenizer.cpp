@@ -22,10 +22,10 @@ std::string Tokenizer::in_loop_ = "none";
 /*---------------------------------------------------------------------------*/
 // constructor of Tokenizer - initializes members and starts tokenizing
 
-Tokenizer::Tokenizer(shared_ptr<string> p_input, Parser* p_interpreter)
-  : it_(p_input),
+Tokenizer::Tokenizer(const string& input, Parser* interpreter)
+  : it_(input),
     state_(NEWSYMBOL),
-    interpreter_(p_interpreter)
+    interpreter_(interpreter)
 {
   // Now cycle through each character, switching state as needed and writing
   // to the interpreter when a parsed symbol has been obtained.
@@ -65,7 +65,7 @@ void Tokenizer::HandleXObject_()
     shared_ptr<string> xobject = interpreter_->GetXObject(in_loop_);
 
     // Don't try to parse binary objects like images etc
-    if (IsAscii(*xobject)) Tokenizer(xobject, interpreter_);
+    if (IsAscii(*xobject)) Tokenizer(*xobject, interpreter_);
   }
 }
 
@@ -74,11 +74,11 @@ void Tokenizer::HandleXObject_()
 // to the instruction set, and clearing the buffer is very common in the
 // lexer. This function acts as a shorthand to prevent boilerplate
 
-void Tokenizer::PushBuffer_(const TokenState p_type, const TokenState p_state)
+void Tokenizer::PushBuffer_(const TokenState type, const TokenState state)
 {
-  if (it_ == "Do" && p_state == IDENTIFIER) HandleXObject_();
-  interpreter_->Reader(it_.Contents(), p_type); // make pair and push to result
-  NewToken_(p_state);
+  if (it_ == "Do" && state == IDENTIFIER) HandleXObject_();
+  interpreter_->Reader(it_.Contents(), type); // make pair and push to result
+  NewToken_(state);
 }
 
 

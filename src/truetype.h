@@ -36,7 +36,7 @@ struct CMapDirectory
 class TTFont
 {
 public:
-  TTFont(const std::string& p_stream);
+  TTFont(const std::string& input_stream);
 
   uint16_t GetUint16();
   uint32_t GetUint32();
