@@ -12,9 +12,9 @@ Encoding: UTF-8
 LazyData: true
 Imports: 
     Rcpp,
-    Rcpp11
+    Rcpp11,
+    ggplot2
 LinkingTo: Rcpp, Rcpp11, testthat
-Depends: ggplot2, httr
 RoxygenNote: 6.1.1
 SystemRequirements: C++11
 Suggests: 

@@ -38,36 +38,6 @@ testfiles <- list(
   tex        =  system.file("extdata", "tex.pdf",        package = "PDFR"),
   rcpp       =  system.file("extdata", "rcpp.pdf",       package = "PDFR"))
 
-##---------------------------------------------------------------------------##
-#' get a file from the internet
-#'
-#' Returns the character string or raw vector (depending on content) from
-#' a given url
-#'
-#' @param x a valid url
-#' @param filename a name for the locally stored file (if required)
-#'
-#' @return either a character string or a raw vector
-#' @export
-#'
-#' @examples internetFile("http://www.google.com")
-##---------------------------------------------------------------------------##
-internetFile <- function(x, filename = NULL)
-{
-  xloc <- tempfile();
-  if (!is.null(filename)) { xloc <-  filename }
-  writeBin(httr::GET(x)[[6]], xloc)
-  res <- readBin(xloc, "raw", file.size(xloc))
-  if (is.null(filename))
-  {
-    file.remove(xloc);
-    if (!any(res == 0)) return(rawToChar(res)) else return(res)
-  }
-  else
-  {
-    cat("file saved to ", path.expand("~/"), filename, "\n", collapse = "")
-  }
-}
 
 ##---------------------------------------------------------------------------##
 #' pdfpage
@@ -129,14 +99,7 @@ pdfpage <- function(pdf, page, atomic = FALSE, table_only = TRUE)
 ##---------------------------------------------------------------------------##
 get_xref <- function(pdf)
 {
-  if(class(pdf) == "raw")
-  {
-    return(.get_xrefraw(pdf));
-  }
-  else
-  {
-    return(.get_xref(pdf));
-  }
+  if(class(pdf) == "raw") .get_xrefraw(pdf) else .get_xref(pdf)
 }
 
 ##---------------------------------------------------------------------------##
@@ -156,14 +119,7 @@ get_xref <- function(pdf)
 ##---------------------------------------------------------------------------##
 get_object <- function(pdf, number)
 {
-  if(class(pdf) == "raw")
-  {
-    return(.get_objraw(pdf, number))
-  }
-  else
-  {
-    return(.get_obj(pdf, number))
-  }
+  if(class(pdf) == "raw") .get_objraw(pdf, number) else .get_obj(pdf, number)
 }
 
 ##---------------------------------------------------------------------------##
@@ -190,8 +146,8 @@ pdfplot <- function(pdf, page = 1, atomic = FALSE, boxes = FALSE, textsize = 1)
   y <- x$Elements
   y$midx <- (y$right + y$left) / 2
   y$midy <- (y$top + y$bottom) / 2
-  G <- ggplot2::ggplot(data = y, ggplot2::aes(x = y$midx, y = y$midy,
-                       size = I(textsize*170 * y$size / (x$Box[4] - x$Box[2]))),
+  G <- ggplot2::ggplot(data = y, ggplot2::aes(x = midx, y = midy,
+                       size = I(textsize*170 * size / (x$Box[4] - x$Box[2]))),
                        lims = x$Box
   ) + ggplot2::geom_rect(ggplot2::aes(xmin = x$Box[1], ymin = x$Box[2],
                                       xmax = x$Box[3], ymax = x$Box[4]),
@@ -200,19 +156,19 @@ pdfplot <- function(pdf, page = 1, atomic = FALSE, boxes = FALSE, textsize = 1)
   ) + ggplot2::scale_size_identity()
   if(boxes == TRUE)
   {
-    G <- G + ggplot2::geom_rect(ggplot2::aes(xmin = y$left, ymin = y$bottom,
-                                             xmax = y$right , ymax = y$top),
+    G <- G + ggplot2::geom_rect(ggplot2::aes(xmin = left, ymin = bottom,
+                                             xmax = right , ymax = top),
                                 fill = "grey", colour = "grey",
                                 size = 0.2, alpha = 0.2)
   }
   if(atomic == FALSE)
   {
-    G + ggplot2::geom_text(ggplot2::aes(label = y$text),
+    G + ggplot2::geom_text(ggplot2::aes(label = text),
                            hjust = 0.5, vjust = 0.5)
   }
   else
   {
-    G + ggplot2::geom_text(ggplot2::aes(label = y$text),
+    G + ggplot2::geom_text(ggplot2::aes(label = text),
                            hjust = 0.5, vjust = 0.5)
   }
 }
@@ -289,20 +245,20 @@ pdfdoc <- function(pdf)
   if((class(pdf) != "raw"       & class(pdf) != "character") |
      (class(pdf) == "character" & length(pdf) > 1)           |
      (class(pdf) == "character" & !grepl("[.]pdf$", pdf[1])) )
-  {
     stop("pdfdoc requires a single path to a valid pdf or a raw vector.")
-  }
+
   is_pdf <- grepl("[.]pdf$", pdf[1])
   valid_pdf_name <- (is.character(pdf) & length(pdf) == 1 & is_pdf)
   if (is.raw(pdf)) x <- .pdfdocraw(pdf)
   if (valid_pdf_name & !grepl("/", pdf[1])) pdf <- paste0(path.expand("~/"), pdf)
-  x <- .pdfdoc(pdf)
-  x <- x[order(x$page, -x$bottom, x$left),]
-  x$left <- round(x$left, 1)
-  x$right <- round(x$right, 1)
-  x$bottom <- round(x$bottom, 1)
-  x$size <- round(x$size, 1)
-  rownames(x) <- seq_along(x[[1]])
+
+  x                <- .pdfdoc(pdf)
+  x                <- x[order(x$page, -x$bottom, x$left),]
+  x$left           <- round(x$left, 1)
+  x$right          <- round(x$right, 1)
+  x$bottom         <- round(x$bottom, 1)
+  x$size           <- round(x$size, 1)
+  rownames(x)      <- seq_along(x[[1]])
   Encoding(x$text) <- "UTF-8"
   .stopCpp()
   return(x)
@@ -323,28 +279,28 @@ pdfdoc <- function(pdf)
 ##---------------------------------------------------------------------------##
 pdfboxes <- function(pdf, pagenum)
 {
-  if(class(pdf) == "raw")
-  {
-    x <- .pdfboxesRaw(pdf, pagenum)
-  }
-  if(class(pdf) == "character" & length(pdf) == 1 & grepl("[.]pdf$", pdf[1]) &
+  if(class(pdf) == "raw") x <- .pdfboxesRaw(pdf, pagenum)
+
+  if(class(pdf) == "character" &
+     length(pdf) == 1 &
+     grepl("[.]pdf$", pdf[1]) &
      !grepl("/", pdf[1]))
-  {
     x <- .pdfboxesString(paste0(path.expand("~/"), pdf), pagenum)
-  }
-  if(class(pdf) == "character" & length(pdf) == 1 & grepl("[.]pdf$", pdf[1]) &
-     grepl("/", pdf[1]))
-  {
-    x <- .pdfboxesString(pdf, pagenum)
-  }
+
+
+  if(class(pdf) == "character" &
+     length(pdf) == 1 &
+     grepl("[.]pdf$", pdf[1]) &
+     grepl("/", pdf[1])) x <- .pdfboxesString(pdf, pagenum)
+
   if((class(pdf) != "raw"       & class(pdf) != "character") |
      (class(pdf) == "character" & length(pdf) > 1)           |
      (class(pdf) == "character" & !grepl("[.]pdf$", pdf[1])) )
   {
     stop("pdfboxes requires a single path to a valid pdf or a raw vector.")
   }
-  ggplot(data = x, aes(xmin = x$xmin, ymin = x$ymin, xmax = x$xmax, ymax = x$ymax,
-                       fill = factor(x$box))) -> D
+  ggplot(data = x, aes(xmin = xmin, ymin = ymin, xmax = xmax, ymax = ymax,
+                       fill = factor(box))) -> D
   print(D + geom_rect(alpha = 0.5))
   .stopCpp()
   return(x)
