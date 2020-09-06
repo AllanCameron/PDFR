@@ -69,7 +69,7 @@ class DictionaryBuilder
 
   DictionaryBuilder(StringPointer dictionary_string_ptr);
   DictionaryBuilder(StringPointer dictionary_string_ptr, size_t start_position);
-  DictionaryBuilder(const CharString& p_charstring);
+  DictionaryBuilder(const CharString& charstring);
   DictionaryBuilder();
   std::unordered_map<std::string, std::string>&& Get();
 
@@ -102,24 +102,24 @@ class DictionaryBuilder
 
   // A couple of inlined functions to abbreviate common tasks
   char GetChar() const {return buf_.GetChar();}
-  bool CharIs(char p_char) const {return buf_.GetChar() == p_char;}
+  bool CharIs(char character) const {return buf_.GetChar() == character;}
 };
 
 /*---------------------------------------------------------------------------*/
 // Constructor. Takes a string pointer so big strings can be passed
 // cheaply. This version starts at the beginning of the given string
 
-DictionaryBuilder::DictionaryBuilder(shared_ptr<const string> p_ptr)
-  : bracket_(0), key_pending_(false), buf_(Reader(p_ptr)), state_(PREENTRY)
+DictionaryBuilder::DictionaryBuilder(shared_ptr<const string> ptr)
+  : bracket_(0), key_pending_(false), buf_(Reader(ptr)), state_(PREENTRY)
 {
   // Empty string -> empty dictionary
   // Otherwise use the lexer to build the dictionary
-  if (p_ptr->empty()) *this = DictionaryBuilder();
+  if (ptr->empty()) *this = DictionaryBuilder();
   else TokenizeDictionary_();
 }
 
-DictionaryBuilder::DictionaryBuilder(const CharString& p_charstr) :
-  bracket_(0), key_pending_(false), buf_(Reader(p_charstr)), state_(PREENTRY)
+DictionaryBuilder::DictionaryBuilder(const CharString& charstr) :
+  bracket_(0), key_pending_(false), buf_(Reader(charstr)), state_(PREENTRY)
 {
   TokenizeDictionary_();
 }
@@ -129,13 +129,13 @@ DictionaryBuilder::DictionaryBuilder(const CharString& p_charstr) :
 // This allows dictionaries to be read starting from the object locations
 // given in the cross-reference (xref) table
 
-DictionaryBuilder::DictionaryBuilder(StringPointer p_ptr, size_t p_offset)
+DictionaryBuilder::DictionaryBuilder(StringPointer ptr, size_t offset)
   : bracket_(0), key_pending_(false),
-    buf_(Reader(p_ptr, p_offset)), state_(PREENTRY)
+    buf_(Reader(ptr, offset)), state_(PREENTRY)
 {
   // Checks string isn't empty or smaller than the starting position
   // if it is, returns an empty dictionary
-  if (p_ptr->empty()) *this = DictionaryBuilder();
+  if (ptr->empty()) *this = DictionaryBuilder();
   else TokenizeDictionary_();
 }
 
@@ -186,7 +186,7 @@ void DictionaryBuilder::TokenizeDictionary_()
 // flag is flipped. Although this code is short, it is efficient and used a lot
 // so needs its own function.
 
-void DictionaryBuilder::SetKey_(DictionaryState p_state)
+void DictionaryBuilder::SetKey_(DictionaryState state)
 {
   // If no key is awaiting value, store name as a key
   if (!key_pending_) pending_key_ = buf_.Contents();
@@ -199,21 +199,21 @@ void DictionaryBuilder::SetKey_(DictionaryState p_state)
 
   // Set buffer and state as needed
   buf_.Clear();
-  state_  = p_state;
+  state_  = state;
 }
 
 /*---------------------------------------------------------------------------*/
 // The pattern of assigning a value to a waiting key name crops up often
 // enough to warrant this function to reduce duplication and error
 
-void DictionaryBuilder::AssignValue_(DictionaryState p_state)
+void DictionaryBuilder::AssignValue_(DictionaryState state)
 {
   map_[pending_key_] = buf_.Contents(); // Contents of buffer assigned to key
   key_pending_ = false;                 // No key pending - ready for a new key
 
   // Update buffer and state with given parameters
   buf_.Clear();
-  state_  = p_state;
+  state_  = state;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -429,22 +429,22 @@ DictionaryBuilder::DictionaryBuilder()
 // The Dictionary constructor takes a string pointer and uses it to make its
 // data member using a temporary DictionaryBuilder
 
-Dictionary::Dictionary(shared_ptr<const string> p_string_ptr)
+Dictionary::Dictionary(shared_ptr<const string> string_ptr)
 {
-  map_ = move(DictionaryBuilder(p_string_ptr).Get());
+  map_ = move(DictionaryBuilder(string_ptr).Get());
 }
 
-Dictionary::Dictionary(const CharString& p_charstring)
+Dictionary::Dictionary(const CharString& charstring)
 {
-  map_ = move(DictionaryBuilder(p_charstring).Get());
+  map_ = move(DictionaryBuilder(charstring).Get());
 }
 /*---------------------------------------------------------------------------*/
 // This alternative Dictionary constructor uses the same method as the normal
 // constructor, but starts at a given offset in the supplied string.
 
-Dictionary::Dictionary(shared_ptr<const string> p_string_ptr, size_t p_offset)
+Dictionary::Dictionary(shared_ptr<const string> string_ptr, size_t offset)
 {
-  map_ = move(DictionaryBuilder(p_string_ptr, p_offset).Get());
+  map_ = move(DictionaryBuilder(string_ptr, offset).Get());
 }
 
 
@@ -452,9 +452,9 @@ Dictionary::Dictionary(shared_ptr<const string> p_string_ptr, size_t p_offset)
 // Returns a single object number from any reference found in the
 // given key's value. Uses a global function from utilities.h
 
-int Dictionary::GetReference(const string& p_key) const
+int Dictionary::GetReference(const string& key) const
 {
-  vector<int> all_references = ParseReferences((*this)[p_key]);
+  vector<int> all_references = ParseReferences((*this)[key]);
   if (all_references.empty())
   {
     throw runtime_error("No reference found");
@@ -466,10 +466,10 @@ int Dictionary::GetReference(const string& p_key) const
 // This creates a new dictionary object on request if the value string contains
 // a subdictionary.
 
-Dictionary Dictionary::GetDictionary(const string& p_key) const
+Dictionary Dictionary::GetDictionary(const string& key) const
 {
   // Gets the value string
-  string possible_sub_dictionary = this->GetString(p_key);
+  string possible_sub_dictionary = this->GetString(key);
 
   // Tests that it is a dictionary
   if (possible_sub_dictionary.find("<<") != string::npos)
@@ -485,9 +485,9 @@ Dictionary Dictionary::GetDictionary(const string& p_key) const
 /*---------------------------------------------------------------------------*/
 // Mainly for debugging. Prints all key:value pairs to the console
 
-std::ostream& operator<<(std::ostream& p_os, const Dictionary& p_dict)
+std::ostream& operator<<(std::ostream& os, const Dictionary& dict)
 {
-  auto&& key_names = GetKeys(p_dict.GetMap());
-  for(auto key : key_names) p_os << key << " : " << p_dict[key] << endl;
-  return p_os;
+  auto&& key_names = GetKeys(dict.GetMap());
+  for(auto key : key_names) os << key << " : " << dict[key] << endl;
+  return os;
 }
