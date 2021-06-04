@@ -287,7 +287,7 @@ void Parser::ProcessRawChar_(float& scale, Matrix& text_space,
                              float& initial_x)
 {
   // Look up the RawChars in the font to get their Unicode values and widths
-  vector<pair<Unicode, int>>&& glyph_pairs = working_font_->MapRawChar(raw_);
+  vector<pair<Unicode, float>>&& glyph_pairs = working_font_->MapRawChar(raw_);
 
   // Now, for each character...
   for (auto& glyph_pair : glyph_pairs)

@@ -61,9 +61,9 @@ void Font::ReadFontName_()
 // as the input vector, containing a pair of {Unicode glyph, width} at each
 // position
 
-vector<pair<Unicode, int>> Font::MapRawChar(const vector<RawChar>& raw_vector)
+vector<pair<Unicode, float>> Font::MapRawChar(const vector<RawChar>& raw_vector)
 {
-  vector<pair<Unicode, int>> result;
+  vector<pair<Unicode, float>> result;
   result.reserve(raw_vector.size());
 
   for (const auto& raw_char : raw_vector)

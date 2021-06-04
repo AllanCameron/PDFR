@@ -56,7 +56,7 @@ using RawChar = uint16_t;
 // The GlyphMap is the main data member of the Font class. Although it is
 // constructed from standard library components, it needs a shorthand name
 
-typedef std::pair<Unicode, int> GlyphData;
+typedef std::pair<Unicode, float> GlyphData;
 typedef std::unordered_map<RawChar, GlyphData> GlyphMap;
 
 //---------------------------------------------------------------------------//

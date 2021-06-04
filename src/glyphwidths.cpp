@@ -37,7 +37,9 @@ GlyphWidths::GlyphWidths
     document_(document_ptr),
     base_font_(font_dictionary_.GetString("/BaseFont"))
 {
+
   ReadCoreFont_();
+;
   if (width_map_.empty()) ReadWidthTable_();
 }
 
@@ -130,6 +132,7 @@ void GlyphWidths::ParseDescendants_()
 
   // Extract its dictionary and its stream
   Dictionary descendant_dictionary = descendant_object->GetDictionary();
+
   string descendant_stream(descendant_object->GetStream());
 
   // Handle /Descendantfonts being just a reference to another object
@@ -200,7 +203,7 @@ void GlyphWidths::ReadCoreFont_()
 // Getter. Finds the width for a given character code. If it is not specified
 // returns the default width specified in the macro at the top of this file
 
-int GlyphWidths::GetWidth(const RawChar& raw)
+float GlyphWidths::GetWidth(const RawChar& raw)
 {
   // Look up the supplied rawChar
   auto found = width_map_.find(raw);
@@ -234,10 +237,10 @@ void GlyphWidths::ParseWidthArray_(const string& width_string)
 
   // These variables maintain state during the lexer process:
   WidthState state = NEWSYMB; // Uses enum to keep track of state of lexer
-  string buffer {};           // Stores strings waiting to be turned into ints
-  vector<int> number_buffer,  // Stores ints until we know what they are for
-              first_chars;    // A vector of the starting code points for widths
-  vector<vector<int>> result; // Each first_char has an int vector of widths
+  string buffer {};         // Stores strings waiting to be turned into numbers
+  int first_char;
+  int second_char;
+  float solo_width;
 
   // Main loop - Iterates through all the characters in t_width_string
   for (const auto& current_char : width_string)
@@ -245,44 +248,32 @@ void GlyphWidths::ParseWidthArray_(const string& width_string)
     // If opening of array not first character, simply wait for '['
     if (state == NEWSYMB)
     {
-      if (current_char == '[') state = INARRAY;
+      if (current_char == '[') state = READFIRSTCHAR;
       continue;
     }
 
     // Handle the main array. Either read a character code or find a subarray
-    if (state == INARRAY)
+    if (state == READFIRSTCHAR)
     {
       switch (GetSymbolType(current_char))
       {
       case 'D' : buffer += current_char; break;
 
       case '[' : state = INSUBARRAY;
-                 if (!buffer.empty())
-                 {
-                   number_buffer.push_back(stoi(buffer));
-                   if (number_buffer.size() == 1)
-                     first_chars.push_back(number_buffer[0]);
-                   else
-                     result.push_back(number_buffer);
-                 }
+                 if (buffer.empty())
+                   throw (string("Error parsing string ") + width_string);
+                 first_char = stoi(buffer);
                  buffer.clear();
-                 number_buffer.clear();
                  break;
 
-      case ' ' : if (!buffer.empty())
-                   number_buffer.push_back(stoi(buffer));
-                buffer.clear(); break;
+      case ' ' : state = READSECONDCHAR;
+                  if (buffer.empty())
+                    throw (string("Error parsing string ") + width_string);
+                 first_char = stoi(buffer);
+                 buffer.clear(); break;
 
       case ']': state = END;
-                if (!buffer.empty())
-                {
-                  number_buffer.push_back(stoi(buffer));
-                  if (number_buffer.size() == 1)
-                    first_chars.push_back(number_buffer[0]);
-                  else result.push_back(number_buffer);
-                }
                 buffer.clear();
-                number_buffer.clear();
                 break;
 
       default: throw (string("Error parsing string ") + width_string);
@@ -290,22 +281,72 @@ void GlyphWidths::ParseWidthArray_(const string& width_string)
       continue;
     }
 
+    if (state == READSECONDCHAR)
+    {
+      switch(GetSymbolType(current_char))
+      {
+      case 'D' : buffer += current_char; break;
+      case ' ' : state = READWIDTH;
+                 if (buffer.empty())
+                 throw (string("Error parsing string ") + width_string);
+                 second_char = stoi(buffer);
+                 buffer.clear(); break;
+      default: throw (string("Error parsing string ") + width_string);
+      }
+      continue;
+    }
+
+    if (state == READWIDTH)
+    {
+      switch(GetSymbolType(current_char))
+      {
+        case 'D' : buffer += current_char; break;
+        case '.' : buffer += current_char; break;
+        case ' ' : state = READFIRSTCHAR;
+                   solo_width = stof(buffer);
+                   if(second_char < first_char)
+                     throw (string("Error parsing string ") + width_string);
+                   for(int i = first_char; i <= second_char; i++)
+                   {
+                     width_map_[(RawChar) i] = solo_width;
+                   }
+                   buffer.clear(); break;
+        case ']' : state = END;
+                    solo_width = stof(buffer);
+                    if(second_char < first_char)
+                      throw (string("Error parsing string ") + width_string);
+                    for(int i = first_char; i <= second_char; i++)
+                    {
+                      width_map_[(RawChar) i] = solo_width;
+                    }
+                    buffer.clear(); break;
+        default: throw (string("Error parsing string ") + width_string);
+        }
+      continue;
+      }
+
     // Handle the insubarray state: read numbers as a vector of widths
     if (state == INSUBARRAY)
     {
       switch (GetSymbolType(current_char))
       {
-      case ' ': if (!buffer.empty()) number_buffer.push_back(stoi(buffer));
+      case '.' : buffer += current_char; break;
+      case 'D' : buffer += current_char; break; // read actual width number
+
+      case ' ': if (!buffer.empty())
+                {
+                  width_map_[(RawChar) first_char++] = stof(buffer);
+                }
                 buffer.clear();
                 break;
 
-      case ']': state = INARRAY;  // exited from subarray
-                if (!buffer.empty()) number_buffer.push_back(stoi(buffer));
-                result.push_back(number_buffer);
-                number_buffer.clear();
-                buffer.clear(); break;
-
-      case 'D': buffer += current_char; break; // read actual width number
+      case ']': state = READFIRSTCHAR;
+                if (!buffer.empty())
+                {
+                  width_map_[(RawChar) first_char++] = stof(buffer);
+                }
+                buffer.clear();
+                break;
 
       default: throw (string("Error parsing string ") + width_string);
       }
@@ -316,24 +357,4 @@ void GlyphWidths::ParseWidthArray_(const string& width_string)
     if (state == END) break;
   }
 
-  // We now parse the results of the lexer.
-  // First we make sure that the starting character codes are equal in length
-  // to the number of width arrays, and that neither is empty
-  if ((first_chars.size() == result.size()) && !first_chars.empty() )
-  {
-    // Now loops through the vectors and marries char codes to widths
-    for (size_t i = 0; i < first_chars.size(); ++i)
-    {
-      // Skips any character code that doesn't have an associated width array
-      if (!result[i].empty())
-      {
-        // Now for each member of the width array...
-        for (size_t j = 0; j < result[i].size(); j++)
-        {
-          // ...map sequential values of char codes to stated widths
-          width_map_[(RawChar) first_chars[i] + j] = (int) result[i][j];
-        }
-      }
-    }
-  }
 }

@@ -157,6 +157,7 @@ void Page::ReadFonts_()
           document_->GetObject(font_reference)->GetDictionary());
       }
 
+
       // We should now have a font dictionary from which to create a Font object
       auto font_ptr = make_shared<Font>(document_, font_dict, font_name);
       fontmap_[font_name] = font_ptr;

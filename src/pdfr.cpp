@@ -77,7 +77,8 @@ DataFrame GetGlyphMap(const string& file_name, int page_number)
   auto page_ptr = GetPage(file_name, page_number);
 
   // Declare containers for the R dataframe columns
-  vector<uint16_t> codepoint, unicode, width;
+  vector<uint16_t> codepoint, unicode;
+  vector<float> width;
   vector<string> font_names;
 
   // For each font string on the page...
