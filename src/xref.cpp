@@ -22,7 +22,7 @@ using namespace std;
 //---------------------------------------------------------------------------//
 // The XRefStream class is private a helper class for XRef. It contains
 // only private members and functions. Its functions could all sit in the XRef
-// class, but it has been seperated out to remove clutter and because it
+// class, but it has been separated out to remove clutter and because it
 // represents one encapsulated and complex task. Because it is only used to
 // help in the construction of an XRef object, it has no public interface. The
 // XRef class accesses it as a friend class so no-one needs to worry about it

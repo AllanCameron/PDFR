@@ -218,6 +218,7 @@ class Parser
 
   // Access results
   std::unique_ptr<TextBox> Output() {return std::move(this->text_box_);}
+  std::vector<Box> GetBoxes() {return this->rectangles_;}
 
   // To allow recursive parsing of form xobjects, the tokenizer needs to access
   // the name of the xobject. At the point when the "Do" identifier is read by
@@ -236,6 +237,7 @@ class Parser
   // Private data members
   std::shared_ptr<Page>           page_;              // Pointer to this page
   std::unique_ptr<TextBox>        text_box_;          // Main output structure
+  std::vector<Box>                rectangles_;        // Vector of rectangles
 
   // Variables used to maintain state between calls
   std::shared_ptr<Font>           working_font_;      // Pointer to working font
@@ -282,6 +284,7 @@ class Parser
   void ET_();              //  These functions use private
   void Tf_();              //  data members to maintain state
   void TJ_();              //
+  void re_();              //
   void Ap_();              //---------------------------------//
 
   // This is a helper function for the TJ method which otherwise would become

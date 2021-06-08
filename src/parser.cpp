@@ -37,7 +37,7 @@ std::unordered_map<std::string, FunctionPointer> Parser::function_map_ =
   {"Tf", &Parser::Tf_}, {"Td", &Parser::Td_}, {"Th", &Parser::TH_},
   {"Tw", &Parser::TW_}, {"Tc", &Parser::TC_}, {"TL", &Parser::TL_},
   {"T*", &Parser::T__}, {"TD", &Parser::TD_}, {"'", &Parser::Ap_},
-  {"TJ", &Parser::TJ_}, {"Tj", &Parser::TJ_}
+  {"TJ", &Parser::TJ_}, {"Tj", &Parser::TJ_}, {"re", &Parser::re_}
 };
 
 //---------------------------------------------------------------------------//
@@ -61,6 +61,19 @@ Parser::Parser(shared_ptr<Page> page_ptr) : // Long initializer list...
   th_(100),                                 // Horizontal scaling
   tc_(0)                                    // Character spacing
 {}
+
+/*---------------------------------------------------------------------------*/
+// re operator - defines a rectangle
+
+void Parser::re_()
+{
+  rectangles_.emplace_back(Box(std::stof(operands_[0]),
+                                std::stof(operands_[0]) +
+                                  std::stof(operands_[2]),
+                                std::stof(operands_[1]),
+                                std::stof(operands_[1]) +
+                                  std::stof(operands_[3])));
+}
 
 /*---------------------------------------------------------------------------*/
 // q operator - pushes a copy of the current graphics state to the stack

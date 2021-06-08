@@ -157,6 +157,12 @@ GetPdfBoxesFromString(const std::string& file_name, int page_number);
 Rcpp::DataFrame
 GetPdfBoxesFromRaw(const std::vector<uint8_t>& file_name, int page_number);
 
+// [[Rcpp::export]]
+Rcpp::DataFrame GetRectangles(const std::string& file_name,
+                        int page_number);
+
+// [[Rcpp::export]]
+Rcpp::List TestGraphic();
 
 //---------------------------------------------------------------------------//
 // This function can be called from R to stop the underlying C++ code. This can

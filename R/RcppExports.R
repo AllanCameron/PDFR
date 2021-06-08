@@ -53,6 +53,14 @@
     .Call(`_PDFR_GetPdfBoxesFromRaw`, file_name, page_number)
 }
 
+GetRectangles <- function(file_name, page_number) {
+    .Call(`_PDFR_GetRectangles`, file_name, page_number)
+}
+
+TestGraphic <- function() {
+    .Call(`_PDFR_TestGraphic`)
+}
+
 .stopCpp <- function() {
     invisible(.Call(`_PDFR_stopCpp`))
 }
