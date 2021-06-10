@@ -38,7 +38,8 @@ std::unordered_map<std::string, FunctionPointer> Parser::function_map_ =
   {"Tw", &Parser::TW_}, {"Tc", &Parser::TC_}, {"TL", &Parser::TL_},
   {"T*", &Parser::T__}, {"TD", &Parser::TD_}, {"'", &Parser::Ap_},
   {"TJ", &Parser::TJ_}, {"Tj", &Parser::TJ_}, {"re", &Parser::re_},
-  {"l",  &Parser::l_ }, {"m",  &Parser::m_ }, {"w",  &Parser::w_}
+  {"l",  &Parser::l_ }, {"m",  &Parser::m_ }, {"w",  &Parser::w_},
+  {"f", &Parser::f_}
 };
 
 //---------------------------------------------------------------------------//
@@ -112,6 +113,13 @@ void Parser::l_() {
 
 void Parser::w_() {
   this->current_width_ = std::stof(operands_[0]);
+}
+
+/*---------------------------------------------------------------------------*/
+// f operator fills the previous path
+
+void Parser::f_() {
+  graphics_.back().SetFilled(true);
 }
 
 /*---------------------------------------------------------------------------*/

@@ -520,7 +520,8 @@ List GetRectangles(const string& file_name,
   for(size_t i = 0; i < boxes.size(); i++)
   {
     result.push_back(List::create(Named("X") = boxes[i].GetX(),
-                                  Named("Y") = boxes[i].GetY()));
+                                  Named("Y") = boxes[i].GetY(),
+                                  Named("filled") = boxes[i].IsFilled()));
   }
 
   // Build and return an R dataframe
@@ -566,7 +567,8 @@ List TestPath()
                       Named("Colour") = G.GetColour(),
                       Named("IsClosed") = G.IsClosed(),
                       Named("Size") = G.GetSize(),
-                      Named("IsVisible") = G.IsVisible());
+                      Named("IsVisible") = G.IsVisible(),
+                      Named("IsFilled") = G.IsFilled());
 
   };
 

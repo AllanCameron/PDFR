@@ -40,6 +40,7 @@ public:
   void SetColour(std::string colour) {this->colour_ = colour;}
   void SetVisibility(bool visible) {this->is_visible_ = visible;}
   void SetClosed(bool is_closed) {this->is_closed_ = is_closed;}
+  void SetFilled(bool is_filled) {this->is_filled_ = is_filled;}
 
   std::vector<float> GetX() {return this->x_;}
   std::vector<float> GetY() {return this->y_;}
