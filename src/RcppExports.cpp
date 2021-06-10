@@ -160,7 +160,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // GetRectangles
-Rcpp::DataFrame GetRectangles(const std::string& file_name, int page_number);
+Rcpp::List GetRectangles(const std::string& file_name, int page_number);
 RcppExport SEXP _PDFR_GetRectangles(SEXP file_nameSEXP, SEXP page_numberSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
@@ -171,13 +171,13 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// TestGraphic
-Rcpp::List TestGraphic();
-RcppExport SEXP _PDFR_TestGraphic() {
+// TestPath
+Rcpp::List TestPath();
+RcppExport SEXP _PDFR_TestPath() {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    rcpp_result_gen = Rcpp::wrap(TestGraphic());
+    rcpp_result_gen = Rcpp::wrap(TestPath());
     return rcpp_result_gen;
 END_RCPP
 }
@@ -208,7 +208,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_PDFR_GetPdfBoxesFromString", (DL_FUNC) &_PDFR_GetPdfBoxesFromString, 2},
     {"_PDFR_GetPdfBoxesFromRaw", (DL_FUNC) &_PDFR_GetPdfBoxesFromRaw, 2},
     {"_PDFR_GetRectangles", (DL_FUNC) &_PDFR_GetRectangles, 2},
-    {"_PDFR_TestGraphic", (DL_FUNC) &_PDFR_TestGraphic, 0},
+    {"_PDFR_TestPath", (DL_FUNC) &_PDFR_TestPath, 0},
     {"_PDFR_stopCpp", (DL_FUNC) &_PDFR_stopCpp, 0},
     {"run_testthat_tests", (DL_FUNC) &run_testthat_tests, 0},
     {NULL, NULL, 0}

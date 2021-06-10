@@ -37,7 +37,8 @@ std::unordered_map<std::string, FunctionPointer> Parser::function_map_ =
   {"Tf", &Parser::Tf_}, {"Td", &Parser::Td_}, {"Th", &Parser::TH_},
   {"Tw", &Parser::TW_}, {"Tc", &Parser::TC_}, {"TL", &Parser::TL_},
   {"T*", &Parser::T__}, {"TD", &Parser::TD_}, {"'", &Parser::Ap_},
-  {"TJ", &Parser::TJ_}, {"Tj", &Parser::TJ_}, {"re", &Parser::re_}
+  {"TJ", &Parser::TJ_}, {"Tj", &Parser::TJ_}, {"re", &Parser::re_},
+  {"l",  &Parser::l_ }, {"m",  &Parser::m_ }, {"w",  &Parser::w_}
 };
 
 //---------------------------------------------------------------------------//
@@ -67,12 +68,50 @@ Parser::Parser(shared_ptr<Page> page_ptr) : // Long initializer list...
 
 void Parser::re_()
 {
-  rectangles_.emplace_back(Box(std::stof(operands_[0]),
-                                std::stof(operands_[0]) +
-                                  std::stof(operands_[2]),
-                                std::stof(operands_[1]),
-                                std::stof(operands_[1]) +
-                                  std::stof(operands_[3])));
+  graphics_.emplace_back(Path());
+
+  graphics_.back().SetX({std::stof(operands_[0]),
+                         std::stof(operands_[0]),
+                         std::stof(operands_[0]) + std::stof(operands_[2]),
+                         std::stof(operands_[0]) + std::stof(operands_[2]),
+                         std::stof(operands_[0])});
+
+  graphics_.back().SetY({std::stof(operands_[1]),
+                         std::stof(operands_[1]) + std::stof(operands_[3]),
+                         std::stof(operands_[1]) + std::stof(operands_[3]),
+                         std::stof(operands_[1]),
+                         std::stof(operands_[1])});
+
+
+  graphics_.back().SetClosed(true);
+}
+
+
+/*---------------------------------------------------------------------------*/
+// m operator moves the current graphics co-ordinate
+
+void Parser::m_() {
+  this->x_ = std::stof(operands_[0]);
+  this->y_ = std::stof(operands_[1]);
+  graphics_.emplace_back(Path());
+  graphics_.back().SetX({x_});
+  graphics_.back().SetY({y_});
+}
+
+/*---------------------------------------------------------------------------*/
+// l operator constructs a path segment
+
+void Parser::l_() {
+  graphics_.back().AppendX(std::stof(operands_[0]));
+  graphics_.back().AppendY(std::stof(operands_[1]));
+}
+
+
+/*---------------------------------------------------------------------------*/
+// m operator moves the current graphics co-ordinate
+
+void Parser::w_() {
+  this->current_width_ = std::stof(operands_[0]);
 }
 
 /*---------------------------------------------------------------------------*/

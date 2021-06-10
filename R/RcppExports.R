@@ -57,8 +57,8 @@ GetRectangles <- function(file_name, page_number) {
     .Call(`_PDFR_GetRectangles`, file_name, page_number)
 }
 
-TestGraphic <- function() {
-    .Call(`_PDFR_TestGraphic`)
+TestPath <- function() {
+    .Call(`_PDFR_TestPath`)
 }
 
 .stopCpp <- function() {

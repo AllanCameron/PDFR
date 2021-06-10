@@ -1,3 +1,20 @@
+//---------------------------------------------------------------------------//
+//                                                                           //
+//  PDFR Path header file                                                    //
+//                                                                           //
+//  Copyright (C) 2018 - 2021 by Allan Cameron                               //
+//                                                                           //
+//  Licensed under the MIT license - see https://mit-license.org             //
+//  or the LICENSE file in the project root directory                        //
+//                                                                           //
+//---------------------------------------------------------------------------//
+
+#ifndef PDFR_PATH
+
+//---------------------------------------------------------------------------//
+
+#define PDFR_PATH
+
 #include<utility>
 #include<string>
 #include<vector>
@@ -5,27 +22,20 @@
 
 /* This is a header-only implementation of a Graphics class, which is used to
  * store information about shapes extracted from the page description program.
- * Rather than having different subclasses of graphical object, we simply store
- * the type of shape as an enum. This allows shapes to be stored in a standard
- * way with standard data members and methods. If it turns out that there are
- * specific actions which can only apply to particular shapes then we may need
- * to switch this to a hierarchical class structure.
  *
  */
 
-
-enum GraphicType {RECTANGLE = 0, SEGMENT = 1, POLYGON = 2, LINES = 3, CIRCLE = 4};
-
-class Graphic
+class Path
 {
 public:
-  Graphic(GraphicType gt) : x_({0}), y_({0}), size_(1),
+  Path() : x_({0}), y_({0}), size_(1),
   colour_("black"), is_closed_(false), is_visible_(false),
-  is_filled_(false), fill_colour_("gray"),  type_(gt) {};
+  is_filled_(false), fill_colour_("gray") {};
 
   void SetX(std::vector<float> values) {this->x_ = values;}
   void SetY(std::vector<float> values) {this->y_ = values;}
-  void SetType(GraphicType value) {this->type_ = value;}
+  void AppendX(float value) { Concatenate(this->x_, {value});}
+  void AppendY(float value) { Concatenate(this->y_, {value});}
   void SetSize(float size) {this->size_ = size;}
   void SetColour(std::string colour) {this->colour_ = colour;}
   void SetVisibility(bool visible) {this->is_visible_ = visible;}
@@ -39,7 +49,6 @@ public:
   bool IsVisible() {return this->is_visible_;}
   bool IsFilled() {return this->is_filled_;}
   std::string GetFillColour() {return this->fill_colour_;}
-  GraphicType GetType() {return this->type_;}
 
   float Bottom() {return *std::min_element(this->y_.begin(), this->y_.end());}
   float Top()    {return *std::max_element(this->y_.begin(), this->y_.end());}
@@ -58,6 +67,11 @@ private:
   bool is_visible_;
   bool is_filled_;
   std::string fill_colour_;
-  GraphicType type_;
 
 };
+
+/*---------------------------------------------------------------------------*/
+
+#endif
+
+

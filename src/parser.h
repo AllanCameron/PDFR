@@ -50,6 +50,7 @@
 
 #include "textbox.h"
 #include "page.h"
+#include "path.h"
 
 
 using RawChar = uint16_t;
@@ -218,7 +219,7 @@ class Parser
 
   // Access results
   std::unique_ptr<TextBox> Output() {return std::move(this->text_box_);}
-  std::vector<Box> GetBoxes() {return this->rectangles_;}
+  std::vector<Path> GetGraphics() {return this->graphics_;}
 
   // To allow recursive parsing of form xobjects, the tokenizer needs to access
   // the name of the xobject. At the point when the "Do" identifier is read by
@@ -237,7 +238,7 @@ class Parser
   // Private data members
   std::shared_ptr<Page>           page_;              // Pointer to this page
   std::unique_ptr<TextBox>        text_box_;          // Main output structure
-  std::vector<Box>                rectangles_;        // Vector of rectangles
+  std::vector<Path>               graphics_;          // Vector of graphic objects
 
   // Variables used to maintain state between calls
   std::shared_ptr<Font>           working_font_;      // Pointer to working font
@@ -254,7 +255,10 @@ class Parser
   float                           tl_,                // Leading (line spacing)
                                   tw_,                // Word spacing
                                   th_,                // Horizontal scaling
-                                  tc_;                // Character spacing
+                                  tc_,                // Character spacing
+                                  x_,                 // Path x value
+                                  y_,                 // Path y value
+                                  current_width_;     // line width
   std::vector<RawChar>            raw_;               // RawChars for writing
 
   // This typedef allows us to create a map of function pointers
@@ -285,6 +289,9 @@ class Parser
   void Tf_();              //  data members to maintain state
   void TJ_();              //
   void re_();              //
+  void m_();               //
+  void w_();               //
+  void l_();               //
   void Ap_();              //---------------------------------//
 
   // This is a helper function for the TJ method which otherwise would become

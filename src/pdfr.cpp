@@ -24,7 +24,6 @@
 #include "line_grouper.h"
 #include "truetype.h"
 #include "pdfr.h"
-#include "graphics.h"
 
 //---------------------------------------------------------------------------//
 
@@ -502,7 +501,7 @@ DataFrame PdfBoxes(shared_ptr<Page> page_ptr)
 
 //---------------------------------------------------------------------------//
 
-DataFrame GetRectangles(const string& file_name,
+List GetRectangles(const string& file_name,
                          int page_number)
 {
   // Create the page object
@@ -514,29 +513,18 @@ DataFrame GetRectangles(const string& file_name,
   // Read the page contents into the Parser
   Tokenizer(page_ptr->GetPageContents(), &parser_object);
 
-  std::vector<Box> boxes = parser_object.GetBoxes();
+  std::vector<Path> boxes = parser_object.GetGraphics();
 
-  std::vector<float> lefts(boxes.size());
-  std::vector<float> rights(boxes.size());
-  std::vector<float> bottoms(boxes.size());
-  std::vector<float> tops(boxes.size());
+  auto result = List::create();
 
   for(size_t i = 0; i < boxes.size(); i++)
   {
-    lefts[i] = boxes[i].GetLeft();
-    rights[i] = boxes[i].GetRight();
-    tops[i] = boxes[i].GetTop();
-    bottoms[i] = boxes[i].GetBottom();
+    result.push_back(List::create(Named("X") = boxes[i].GetX(),
+                                  Named("Y") = boxes[i].GetY()));
   }
 
-
-
   // Build and return an R dataframe
-  return DataFrame::create( Named("left")            = lefts,
-                            Named("right")           = rights,
-                            Named("bottom")          = bottoms,
-                            Named("top")             = tops
-  );
+  return result;
 }
 
 //---------------------------------------------------------------------------//
@@ -563,9 +551,9 @@ DataFrame GetPdfBoxesFromRaw(const vector<uint8_t>& raw_data,
   return PdfBoxes(page_ptr);
 }
 
-List TestGraphic()
+List TestPath()
 {
-  auto G = Graphic(RECTANGLE);
+  auto G = Path();
   G.SetX({0, 1, 2, 3, 4, 5});
   G.SetY({6, 7, 8, 9, 10, 11});
   G.SetColour("Red");
@@ -573,11 +561,7 @@ List TestGraphic()
   G.SetSize(1.5);
   G.SetVisibility(true);
 
-  std::vector<std::string> types {"RECTANGLE", "SEGMENT", "POLYGON", "LINES",
-                                   "CIRCLE"};
-
-  return List::create(Named("Type") = types[(int) G.GetType()],
-                      Named("x") = G.GetX(),
+  return List::create(Named("x") = G.GetX(),
                       Named("y") = G.GetY(),
                       Named("Colour") = G.GetColour(),
                       Named("IsClosed") = G.IsClosed(),
