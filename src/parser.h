@@ -243,11 +243,15 @@ class Parser
   // Variables used to maintain state between calls
   std::shared_ptr<Font>           working_font_;      // Pointer to working font
   float                           current_font_size_; // Current font size
-  std::vector<float>              font_size_stack_;   // Stack of font size
+  std::vector<float>              font_size_stack_,   // Stack of font size
+                                  stroke_colour_,
+                                  fill_colour_;
   Matrix                          tm_state_,          // Text matrix state
                                   td_state_;          // Temp modification to Tm
   std::vector<Matrix>             graphics_state_;    // Stack of graphics state
-  std::string                     current_font_;      // Name of current font
+  std::string                     current_font_,
+                                  colorspace_stroke_,
+                                  colorspace_fill_;
   std::vector<std::string>        font_stack_,        // Stack of font history
                                   operands_;          // The actual data read
   std::vector<Token::TokenState>  operand_types_;     // The type of data read
@@ -293,6 +297,12 @@ class Parser
   void w_();               //
   void l_();               //
   void f_();               //
+  void s_();               //
+  void S_();               //
+  void CS_();              //
+  void cs_();              //
+  void sc_();              //
+  void SC_();              //
   void Ap_();              //---------------------------------//
 
   // This is a helper function for the TJ method which otherwise would become

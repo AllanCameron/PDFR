@@ -39,7 +39,9 @@ std::unordered_map<std::string, FunctionPointer> Parser::function_map_ =
   {"T*", &Parser::T__}, {"TD", &Parser::TD_}, {"'", &Parser::Ap_},
   {"TJ", &Parser::TJ_}, {"Tj", &Parser::TJ_}, {"re", &Parser::re_},
   {"l",  &Parser::l_ }, {"m",  &Parser::m_ }, {"w",  &Parser::w_},
-  {"f", &Parser::f_}
+  {"f", &Parser::f_}, {"F", &Parser::f_}, {"f*", &Parser::f_},
+  {"s", &Parser::s_}, {"S", &Parser::S_}, {"CS", &Parser::CS_},
+  {"cs", &Parser::cs_}, {"SC", &Parser::SC_}, {"sc", &Parser::sc_}
 };
 
 //---------------------------------------------------------------------------//
@@ -99,6 +101,71 @@ void Parser::m_() {
   graphics_.back().SetY({y_});
 }
 
+
+void Parser::CS_() {
+  this->colorspace_stroke_ = operands_[0];
+}
+
+void Parser::cs_() {
+  this->colorspace_fill_ = operands_[0];
+}
+
+void Parser::SC_() {
+
+  size_t n = operands_.size();
+
+  if(n == 1) {
+    float gray = std::stof(operands_[0]);
+    stroke_colour_ = {gray, gray, gray};
+  }
+
+  if(n == 3) {
+    stroke_colour_ = {std::stof(operands_[0]),
+                      std::stof(operands_[1]),
+                      std::stof(operands_[2])};
+  }
+
+  // CMYK approximation
+
+  if(n == 4) {
+    float black = 1 - std::stof(operands_[3]);
+
+    stroke_colour_ = {
+        (1 - std::stof(operands_[0])) * black,
+        (1 - std::stof(operands_[1])) * black,
+        (1 - std::stof(operands_[2])) * black
+    };
+  }
+}
+
+void Parser::sc_() {
+
+  size_t n = operands_.size();
+
+  if(n == 1) {
+    float gray = std::stof(operands_[0]);
+    fill_colour_ = {gray, gray, gray};
+  }
+
+  if(n == 3) {
+    fill_colour_ = {std::stof(operands_[0]),
+                      std::stof(operands_[1]),
+                      std::stof(operands_[2])};
+  }
+
+  // CMYK approximation
+
+  if(n == 4) {
+    float black = 1 - std::stof(operands_[3]);
+
+    fill_colour_ = {
+        (1 - std::stof(operands_[0])) * black,
+        (1 - std::stof(operands_[1])) * black,
+        (1 - std::stof(operands_[2])) * black
+    };
+  }
+}
+
 /*---------------------------------------------------------------------------*/
 // l operator constructs a path segment
 
@@ -120,7 +187,27 @@ void Parser::w_() {
 
 void Parser::f_() {
   graphics_.back().SetFilled(true);
+  graphics_.back().SetFillColour(fill_colour_);
 }
+
+/*---------------------------------------------------------------------------*/
+// S operator strokes the path
+
+void Parser::S_() {
+  graphics_.back().SetVisibility(true);
+  graphics_.back().SetColour(stroke_colour_);
+}
+
+
+/*---------------------------------------------------------------------------*/
+// s operator closes and strokes the path
+
+void Parser::s_() {
+  graphics_.back().SetClosed(true);
+  graphics_.back().SetVisibility(true);
+  graphics_.back().SetColour(stroke_colour_);
+}
+
 
 /*---------------------------------------------------------------------------*/
 // q operator - pushes a copy of the current graphics state to the stack
