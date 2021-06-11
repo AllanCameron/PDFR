@@ -199,6 +199,13 @@ class Matrix
     return data_[index];
   }
 
+  std::array<float, 2> transformXY(float x, float y)
+  {
+    std::array<float, 2> result = {data_[0] * x + data_[3] * y + data_[6],
+                                   data_[1] * x + data_[4] * y + data_[7]};
+    return result;
+  }
+
  private:
   std::array<float, 9> data_;   // The actual data member
 };
@@ -303,6 +310,9 @@ class Parser
   void cs_();              //
   void sc_();              //
   void SC_();              //
+  void h_();               //
+  void rg_();              //
+  void RG_();              //
   void Ap_();              //---------------------------------//
 
   // This is a helper function for the TJ method which otherwise would become

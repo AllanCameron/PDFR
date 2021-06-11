@@ -524,7 +524,8 @@ List GetRectangles(const string& file_name,
                                   Named("filled") = boxes[i].IsFilled(),
                                   Named("stroked") = boxes[i].IsVisible(),
                                   Named("colour") = boxes[i].GetColour(),
-                                  Named("fill") = boxes[i].GetFillColour()));
+                                  Named("fill") = boxes[i].GetFillColour(),
+                                  Named("size") = boxes[i].GetSize()));
   }
 
   // Build and return an R dataframe

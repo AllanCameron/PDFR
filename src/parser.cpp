@@ -41,7 +41,8 @@ std::unordered_map<std::string, FunctionPointer> Parser::function_map_ =
   {"l",  &Parser::l_ }, {"m",  &Parser::m_ }, {"w",  &Parser::w_},
   {"f", &Parser::f_}, {"F", &Parser::f_}, {"f*", &Parser::f_},
   {"s", &Parser::s_}, {"S", &Parser::S_}, {"CS", &Parser::CS_},
-  {"cs", &Parser::cs_}, {"SC", &Parser::SC_}, {"sc", &Parser::sc_}
+  {"cs", &Parser::cs_}, {"SC", &Parser::SC_}, {"sc", &Parser::sc_},
+  {"h", &Parser::h_}, {"rg", &Parser::rg_}, {"RG", &Parser::RG_}
 };
 
 //---------------------------------------------------------------------------//
@@ -66,6 +67,7 @@ Parser::Parser(shared_ptr<Page> page_ptr) : // Long initializer list...
   tc_(0)                                    // Character spacing
 {}
 
+
 /*---------------------------------------------------------------------------*/
 // re operator - defines a rectangle
 
@@ -73,18 +75,22 @@ void Parser::re_()
 {
   graphics_.emplace_back(Path());
 
-  graphics_.back().SetX({std::stof(operands_[0]),
-                         std::stof(operands_[0]),
-                         std::stof(operands_[0]) + std::stof(operands_[2]),
-                         std::stof(operands_[0]) + std::stof(operands_[2]),
-                         std::stof(operands_[0])});
+  float left  = std::stof(operands_[0]);
+  float width = std::stof(operands_[2]);
+  float right = left + width;
 
-  graphics_.back().SetY({std::stof(operands_[1]),
-                         std::stof(operands_[1]) + std::stof(operands_[3]),
-                         std::stof(operands_[1]) + std::stof(operands_[3]),
-                         std::stof(operands_[1]),
-                         std::stof(operands_[1])});
+  float bottom  = std::stof(operands_[1]);
+  float height  = std::stof(operands_[3]);
+  float top     = bottom + height;
 
+  auto lb = graphics_state_.back().transformXY(left, bottom);
+  auto rb = graphics_state_.back().transformXY(right, bottom);
+  auto lt = graphics_state_.back().transformXY(left, top);
+  auto rt = graphics_state_.back().transformXY(right, top);
+
+  graphics_.back().SetX({lb[0], lt[0], rt[0], rb[0], lb[0]});
+
+  graphics_.back().SetY({lb[1], lt[1], rt[1], rb[1], lb[1]});
 
   graphics_.back().SetClosed(true);
 }
@@ -94,21 +100,34 @@ void Parser::re_()
 // m operator moves the current graphics co-ordinate
 
 void Parser::m_() {
-  this->x_ = std::stof(operands_[0]);
-  this->y_ = std::stof(operands_[1]);
+
+  auto xy = graphics_state_.back().transformXY(std::stof(operands_[0]),
+                                             std::stof(operands_[1]));
+
+  this->x_ = xy[0];
+  this->y_ = xy[1];
+
   graphics_.emplace_back(Path());
   graphics_.back().SetX({x_});
   graphics_.back().SetY({y_});
 }
 
+/*---------------------------------------------------------------------------*/
+// CS operator sets current color space for strokes
 
 void Parser::CS_() {
   this->colorspace_stroke_ = operands_[0];
 }
 
+/*---------------------------------------------------------------------------*/
+// cs operator sets current color space for fills
+
 void Parser::cs_() {
   this->colorspace_fill_ = operands_[0];
 }
+
+/*---------------------------------------------------------------------------*/
+// SC operator sets stroke colour
 
 void Parser::SC_() {
 
@@ -137,6 +156,29 @@ void Parser::SC_() {
     };
   }
 }
+
+/*---------------------------------------------------------------------------*/
+// RG operator sets stroke colour
+
+void Parser::RG_() {
+
+  stroke_colour_ = {std::stof(operands_[0]),
+                  std::stof(operands_[1]),
+                  std::stof(operands_[2])};
+}
+
+/*---------------------------------------------------------------------------*/
+// rg operator sets fill colour
+
+void Parser::rg_() {
+
+    fill_colour_ = {std::stof(operands_[0]),
+                    std::stof(operands_[1]),
+                    std::stof(operands_[2])};
+}
+
+/*---------------------------------------------------------------------------*/
+// sc operator sets fill colour
 
 void Parser::sc_() {
 
@@ -170,15 +212,35 @@ void Parser::sc_() {
 // l operator constructs a path segment
 
 void Parser::l_() {
-  graphics_.back().AppendX(std::stof(operands_[0]));
-  graphics_.back().AppendY(std::stof(operands_[1]));
-}
 
+  auto xy = graphics_state_.back().transformXY(std::stof(operands_[0]),
+                                 std::stof(operands_[1]));
+
+  this->x_ = xy[0];
+  this->y_ = xy[1];
+
+  graphics_.back().AppendX(this->x_);
+  graphics_.back().AppendY(this->y_);
+  graphics_.back().SetVisibility(true);
+
+  }
 
 /*---------------------------------------------------------------------------*/
-// m operator moves the current graphics co-ordinate
+// h operator closes path
+
+void Parser::h_() {
+
+  graphics_.back().SetClosed(true);
+  graphics_.back().AppendX(graphics_.back().GetX()[0]);
+  graphics_.back().AppendY(graphics_.back().GetY()[0]);
+
+  }
+
+/*---------------------------------------------------------------------------*/
+// w operator sets line width
 
 void Parser::w_() {
+
   this->current_width_ = std::stof(operands_[0]);
 }
 
@@ -186,6 +248,7 @@ void Parser::w_() {
 // f operator fills the previous path
 
 void Parser::f_() {
+
   graphics_.back().SetFilled(true);
   graphics_.back().SetFillColour(fill_colour_);
 }
@@ -194,18 +257,25 @@ void Parser::f_() {
 // S operator strokes the path
 
 void Parser::S_() {
+
   graphics_.back().SetVisibility(true);
   graphics_.back().SetColour(stroke_colour_);
-}
+  graphics_.back().SetSize(this->current_width_);
 
+}
 
 /*---------------------------------------------------------------------------*/
 // s operator closes and strokes the path
 
 void Parser::s_() {
+
   graphics_.back().SetClosed(true);
   graphics_.back().SetVisibility(true);
   graphics_.back().SetColour(stroke_colour_);
+  graphics_.back().SetSize(this->current_width_);
+  graphics_.back().AppendX(graphics_.back().GetX()[0]);
+  graphics_.back().AppendY(graphics_.back().GetY()[0]);
+
 }
 
 
