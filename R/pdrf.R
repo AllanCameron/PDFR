@@ -308,3 +308,43 @@ pdfboxes <- function(pdf, pagenum)
   .stopCpp()
   return(x)
 }
+
+##---------------------------------------------------------------------------##
+#' pdfgraphics
+#'
+#' Plots the graphical elements of a pdf page as a ggplot
+#'
+#' @param file a valid pdf file location
+#' @param pagenum the page number to be plotted
+#'
+#' @return a ggplot
+#' @export
+#'
+#' @examples pdfgraphics(testfiles$leeds, 1)
+##---------------------------------------------------------------------------##
+
+pdfgraphics <- function(file, pagenum) {
+  a <- .GetPaths(file, pagenum)
+  dfs <- lapply(a, function(x) {
+    if(length(x$colour) == 0) x$colour <- c(0, 0, 0)
+    if(length(x$fill) == 0) {x$fill <- c(0, 0, 0); x$filled <- FALSE}
+    x$stroke <- rgb(x$colour[1], x$colour[2], x$colour[3], as.numeric(x$stroked))
+    x$fill <- rgb(x$fill[1], x$fill[2], x$fill[3], as.numeric(x$filled))
+    x$fill <- rep(x$fill, length(x$X))
+    x$stroke <- rep(x$stroke, length(x$X))
+    if(!x$stroked) x$size <- 0
+    x$size <- rep(abs(x$size), length(x$X))
+    as.data.frame(x[c("X", "Y", "stroke", "fill", "size")])
+  })
+  dfs <- dfs[!sapply(dfs, function(x) any(x$X > 800) | any(x$Y > 800))]
+  dfs <- mapply(function(x, y) {x$poly <- rep(y, length(x$X)); x},
+                dfs, seq_along(dfs), SIMPLIFY = FALSE)
+
+  ggplot2::ggplot(do.call(rbind, dfs),
+                  ggplot2::aes(X, Y, colour = stroke, fill = fill, group = poly, size = size)) +
+    ggplot2::geom_polygon() +
+    ggplot2::scale_fill_identity() +
+    ggplot2::scale_color_identity() +
+    ggplot2::scale_size_identity() +
+    ggplot2::coord_fixed()
+}

@@ -159,15 +159,15 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// GetRectangles
-Rcpp::List GetRectangles(const std::string& file_name, int page_number);
-RcppExport SEXP _PDFR_GetRectangles(SEXP file_nameSEXP, SEXP page_numberSEXP) {
+// GetPaths
+Rcpp::List GetPaths(const std::string& file_name, int page_number);
+RcppExport SEXP _PDFR_GetPaths(SEXP file_nameSEXP, SEXP page_numberSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const std::string& >::type file_name(file_nameSEXP);
     Rcpp::traits::input_parameter< int >::type page_number(page_numberSEXP);
-    rcpp_result_gen = Rcpp::wrap(GetRectangles(file_name, page_number));
+    rcpp_result_gen = Rcpp::wrap(GetPaths(file_name, page_number));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -207,7 +207,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_PDFR_GetPdfDocumentFromRaw", (DL_FUNC) &_PDFR_GetPdfDocumentFromRaw, 1},
     {"_PDFR_GetPdfBoxesFromString", (DL_FUNC) &_PDFR_GetPdfBoxesFromString, 2},
     {"_PDFR_GetPdfBoxesFromRaw", (DL_FUNC) &_PDFR_GetPdfBoxesFromRaw, 2},
-    {"_PDFR_GetRectangles", (DL_FUNC) &_PDFR_GetRectangles, 2},
+    {"_PDFR_GetPaths", (DL_FUNC) &_PDFR_GetPaths, 2},
     {"_PDFR_TestPath", (DL_FUNC) &_PDFR_TestPath, 0},
     {"_PDFR_stopCpp", (DL_FUNC) &_PDFR_stopCpp, 0},
     {"run_testthat_tests", (DL_FUNC) &run_testthat_tests, 0},

@@ -501,8 +501,7 @@ DataFrame PdfBoxes(shared_ptr<Page> page_ptr)
 
 //---------------------------------------------------------------------------//
 
-List GetRectangles(const string& file_name,
-                         int page_number)
+List GetPaths(const string& file_name, int page_number)
 {
   // Create the page object
   auto page_ptr = GetPage(file_name, page_number);

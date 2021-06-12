@@ -157,9 +157,8 @@ GetPdfBoxesFromString(const std::string& file_name, int page_number);
 Rcpp::DataFrame
 GetPdfBoxesFromRaw(const std::vector<uint8_t>& file_name, int page_number);
 
-// [[Rcpp::export]]
-Rcpp::List GetRectangles(const std::string& file_name,
-                        int page_number);
+// [[Rcpp::export(.GetPaths)]]
+Rcpp::List GetPaths(const std::string& file_name, int page_number);
 
 // [[Rcpp::export]]
 Rcpp::List TestPath();

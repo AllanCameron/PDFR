@@ -53,8 +53,8 @@
     .Call(`_PDFR_GetPdfBoxesFromRaw`, file_name, page_number)
 }
 
-GetRectangles <- function(file_name, page_number) {
-    .Call(`_PDFR_GetRectangles`, file_name, page_number)
+.GetPaths <- function(file_name, page_number) {
+    .Call(`_PDFR_GetPaths`, file_name, page_number)
 }
 
 TestPath <- function() {

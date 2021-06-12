@@ -42,7 +42,9 @@ std::unordered_map<std::string, FunctionPointer> Parser::function_map_ =
   {"f", &Parser::f_}, {"F", &Parser::f_}, {"f*", &Parser::f_},
   {"s", &Parser::s_}, {"S", &Parser::S_}, {"CS", &Parser::CS_},
   {"cs", &Parser::cs_}, {"SC", &Parser::SC_}, {"sc", &Parser::sc_},
-  {"h", &Parser::h_}, {"rg", &Parser::rg_}, {"RG", &Parser::RG_}
+  {"h", &Parser::h_}, {"rg", &Parser::rg_}, {"RG", &Parser::RG_},
+  {"G", &Parser::G_}, {"g", &Parser::g_}, {"scn", &Parser::scn_},
+  {"SCN", &Parser::SCN_}
 };
 
 //---------------------------------------------------------------------------//
@@ -55,6 +57,8 @@ Parser::Parser(shared_ptr<Page> page_ptr) : // Long initializer list...
   text_box_(unique_ptr<TextBox>(new TextBox(Box(*(page_->GetMinbox()))))),
   current_font_size_(0),                    // Pointsize of current font
   font_size_stack_({current_font_size_}),   // History of pointsize
+  stroke_colour_({0, 0, 0}),
+  fill_colour_({0, 0, 0}),
   tm_state_(Matrix()),                      // Transformation matrix
   td_state_(Matrix()),                      // Tm modifier
   graphics_state_({Matrix()}),              // Graphics state history
@@ -102,7 +106,7 @@ void Parser::re_()
 void Parser::m_() {
 
   auto xy = graphics_state_.back().transformXY(std::stof(operands_[0]),
-                                             std::stof(operands_[1]));
+                                               std::stof(operands_[1]));
 
   this->x_ = xy[0];
   this->y_ = xy[1];
@@ -133,16 +137,8 @@ void Parser::SC_() {
 
   size_t n = operands_.size();
 
-  if(n == 1) {
-    float gray = std::stof(operands_[0]);
-    stroke_colour_ = {gray, gray, gray};
-  }
-
-  if(n == 3) {
-    stroke_colour_ = {std::stof(operands_[0]),
-                      std::stof(operands_[1]),
-                      std::stof(operands_[2])};
-  }
+  if(n == 1) G_();
+  if(n == 3) RG_();
 
   // CMYK approximation
 
@@ -155,6 +151,22 @@ void Parser::SC_() {
         (1 - std::stof(operands_[2])) * black
     };
   }
+}
+
+/*---------------------------------------------------------------------------*/
+// SCN operator sets stroke colour or pattern
+
+void Parser::SCN_() {
+
+  SC_();
+}
+
+/*---------------------------------------------------------------------------*/
+// SCN operator sets fill colour or pattern
+
+void Parser::scn_() {
+
+  sc_();
 }
 
 /*---------------------------------------------------------------------------*/
@@ -178,22 +190,34 @@ void Parser::rg_() {
 }
 
 /*---------------------------------------------------------------------------*/
+// RG operator sets stroke colour
+
+void Parser::G_() {
+
+  stroke_colour_ = {std::stof(operands_[0]),
+                  std::stof(operands_[0]),
+                  std::stof(operands_[0])};
+}
+
+/*---------------------------------------------------------------------------*/
+// g operator sets fill colour
+
+void Parser::g_() {
+
+    fill_colour_ = {std::stof(operands_[0]),
+                    std::stof(operands_[0]),
+                    std::stof(operands_[0])};
+}
+/*---------------------------------------------------------------------------*/
 // sc operator sets fill colour
 
 void Parser::sc_() {
 
   size_t n = operands_.size();
 
-  if(n == 1) {
-    float gray = std::stof(operands_[0]);
-    fill_colour_ = {gray, gray, gray};
-  }
+  if(n == 1) g_();
 
-  if(n == 3) {
-    fill_colour_ = {std::stof(operands_[0]),
-                      std::stof(operands_[1]),
-                      std::stof(operands_[2])};
-  }
+  if(n == 3) rg_();
 
   // CMYK approximation
 
@@ -216,12 +240,13 @@ void Parser::l_() {
   auto xy = graphics_state_.back().transformXY(std::stof(operands_[0]),
                                  std::stof(operands_[1]));
 
+  graphics_.back().SetSize(current_width_ * graphics_state_.back()[0]);
+
   this->x_ = xy[0];
   this->y_ = xy[1];
 
   graphics_.back().AppendX(this->x_);
   graphics_.back().AppendY(this->y_);
-  graphics_.back().SetVisibility(true);
 
   }
 
@@ -242,6 +267,7 @@ void Parser::h_() {
 void Parser::w_() {
 
   this->current_width_ = std::stof(operands_[0]);
+
 }
 
 /*---------------------------------------------------------------------------*/
@@ -260,7 +286,7 @@ void Parser::S_() {
 
   graphics_.back().SetVisibility(true);
   graphics_.back().SetColour(stroke_colour_);
-  graphics_.back().SetSize(this->current_width_);
+  graphics_.back().SetSize(current_width_ * graphics_state_.back()[0]);
 
 }
 
@@ -269,12 +295,8 @@ void Parser::S_() {
 
 void Parser::s_() {
 
-  graphics_.back().SetClosed(true);
-  graphics_.back().SetVisibility(true);
-  graphics_.back().SetColour(stroke_colour_);
-  graphics_.back().SetSize(this->current_width_);
-  graphics_.back().AppendX(graphics_.back().GetX()[0]);
-  graphics_.back().AppendY(graphics_.back().GetY()[0]);
+  h_();
+  S_();
 
 }
 
