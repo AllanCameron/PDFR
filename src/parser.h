@@ -103,7 +103,7 @@ class Parser
 
   // Access results
   std::unique_ptr<TextBox> Output() {return std::move(this->text_box_);}
-  std::vector<Path> GetGraphics() {return this->graphics_;}
+  std::vector<GraphicObject> GetGraphics() {return this->graphics_;}
 
   // To allow recursive parsing of form xobjects, the tokenizer needs to access
   // the name of the xobject. At the point when the "Do" identifier is read by
@@ -124,31 +124,15 @@ class Parser
   // Private data members
   std::shared_ptr<Page>           page_;              // Pointer to this page
   std::unique_ptr<TextBox>        text_box_;          // Main output structure
-  std::vector<Path>               graphics_;          // Vector of graphic objects
+  std::vector<GraphicObject>               graphics_;          // Vector of graphic objects
 
   // Variables used to maintain state between calls
   std::shared_ptr<Font>           working_font_;      // Pointer to working font
-  float                           current_font_size_; // Current font size
-  std::vector<float>              font_size_stack_,   // Stack of font size
-                                  stroke_colour_,
-                                  fill_colour_;
-  Matrix                          tm_state_,          // Text matrix state
-                                  td_state_;          // Temp modification to Tm
-  std::vector<Matrix>             graphics_state_;    // Stack of graphics state
-  std::string                     current_font_,
-                                  colorspace_stroke_,
-                                  colorspace_fill_;
-  std::vector<std::string>        font_stack_,        // Stack of font history
-                                  operands_;          // The actual data read
+  std::vector<GraphicsState>      graphics_state_;    // Stack of graphics state
+  std::vector<std::string>        operands_;          // The actual data read
   std::vector<Token::TokenState>  operand_types_;     // The type of data read
+  Matrix tm_state_, td_state_;
   int                             kerning_;           // Current kerning state
-  float                           tl_,                // Leading (line spacing)
-                                  tw_,                // Word spacing
-                                  th_,                // Horizontal scaling
-                                  tc_,                // Character spacing
-                                  x_,                 // Path x value
-                                  y_,                 // Path y value
-                                  current_width_;     // line width
   std::vector<RawChar>            raw_;               // RawChars for writing
 
   // This typedef allows us to create a map of function pointers

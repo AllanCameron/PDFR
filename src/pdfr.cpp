@@ -512,7 +512,7 @@ List GetPaths(const string& file_name, int page_number)
   // Read the page contents into the Parser
   Tokenizer(page_ptr->GetPageContents(), &parser_object);
 
-  std::vector<Path> boxes = parser_object.GetGraphics();
+  std::vector<GraphicObject> boxes = parser_object.GetGraphics();
 
   auto result = List::create();
 
@@ -557,7 +557,7 @@ DataFrame GetPdfBoxesFromRaw(const vector<uint8_t>& raw_data,
 
 List TestPath()
 {
-  auto G = Path();
+  auto G = GraphicObject();
   G.SetX({0, 1, 2, 3, 4, 5});
   G.SetY({6, 7, 8, 9, 10, 11});
   G.SetColour({0.5, 0.5, 0.5});

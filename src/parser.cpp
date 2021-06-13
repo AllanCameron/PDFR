@@ -32,18 +32,18 @@ typedef void (Parser::*FunctionPointer)();
 
 std::unordered_map<std::string, FunctionPointer> Parser::function_map_ =
 {
-  {"Q",  &Parser::Q_ }, {"q",  &Parser::q_ }, {"BT", &Parser::BT_},
-  {"ET", &Parser::ET_}, {"cm", &Parser::cm_}, {"Tm", &Parser::Tm_},
-  {"Tf", &Parser::Tf_}, {"Td", &Parser::Td_}, {"Th", &Parser::TH_},
-  {"Tw", &Parser::TW_}, {"Tc", &Parser::TC_}, {"TL", &Parser::TL_},
-  {"T*", &Parser::T__}, {"TD", &Parser::TD_}, {"'", &Parser::Ap_},
-  {"TJ", &Parser::TJ_}, {"Tj", &Parser::TJ_}, {"re", &Parser::re_},
-  {"l",  &Parser::l_ }, {"m",  &Parser::m_ }, {"w",  &Parser::w_},
-  {"f", &Parser::f_}, {"F", &Parser::f_}, {"f*", &Parser::f_},
-  {"s", &Parser::s_}, {"S", &Parser::S_}, {"CS", &Parser::CS_},
-  {"cs", &Parser::cs_}, {"SC", &Parser::SC_}, {"sc", &Parser::sc_},
-  {"h", &Parser::h_}, {"rg", &Parser::rg_}, {"RG", &Parser::RG_},
-  {"G", &Parser::G_}, {"g", &Parser::g_}, {"scn", &Parser::scn_},
+  {"Q",   &Parser::Q_ }, {"q",  &Parser::q_ }, {"BT", &Parser::BT_},
+  {"ET",  &Parser::ET_}, {"cm", &Parser::cm_}, {"Tm", &Parser::Tm_},
+  {"Tf",  &Parser::Tf_}, {"Td", &Parser::Td_}, {"Th", &Parser::TH_},
+  {"Tw",  &Parser::TW_}, {"Tc", &Parser::TC_}, {"TL", &Parser::TL_},
+  {"T*",  &Parser::T__}, {"TD", &Parser::TD_}, {"'", &Parser::Ap_},
+  {"TJ",  &Parser::TJ_}, {"Tj", &Parser::TJ_}, {"re", &Parser::re_},
+  {"l",   &Parser::l_ }, {"m",  &Parser::m_ }, {"w",  &Parser::w_},
+  {"f",   &Parser::f_},  {"F", &Parser::f_},   {"f*", &Parser::f_},
+  {"s",   &Parser::s_},  {"S", &Parser::S_},   {"CS", &Parser::CS_},
+  {"cs",  &Parser::cs_}, {"SC", &Parser::SC_}, {"sc", &Parser::sc_},
+  {"h",   &Parser::h_},  {"rg", &Parser::rg_}, {"RG", &Parser::RG_},
+  {"G",   &Parser::G_},  {"g", &Parser::g_},   {"scn", &Parser::scn_},
   {"SCN", &Parser::SCN_}
 };
 
@@ -52,23 +52,13 @@ std::unordered_map<std::string, FunctionPointer> Parser::function_map_ =
 // it to track state once instructions are passed to it. After these are set,
 // it does no work unless passed instructions by the tokenizer
 
-Parser::Parser(shared_ptr<Page> page_ptr) : // Long initializer list...
-  page_(page_ptr),                        // Pointer to page of interest
+Parser::Parser(shared_ptr<Page> page_ptr) :
+  page_(page_ptr),
   text_box_(unique_ptr<TextBox>(new TextBox(Box(*(page_->GetMinbox()))))),
-  current_font_size_(0),                    // Pointsize of current font
-  font_size_stack_({current_font_size_}),   // History of pointsize
-  stroke_colour_({0, 0, 0}),
-  fill_colour_({0, 0, 0}),
-  tm_state_(Matrix()),                      // Transformation matrix
-  td_state_(Matrix()),                      // Tm modifier
-  graphics_state_({Matrix()}),              // Graphics state history
-  current_font_(""),                        // Name of current font
-  font_stack_({current_font_}),             // Font history
-  kerning_(0),                              // Kerning
-  tl_(1),                                   // Leading
-  tw_(0),                                   // Word spacing
-  th_(100),                                 // Horizontal scaling
-  tc_(0)                                    // Character spacing
+  graphics_state_({GraphicsState(page_ptr)}),  // Graphics state stack
+  tm_state_(Matrix()),
+  td_state_(Matrix()),
+  kerning_(0)
 {}
 
 
@@ -77,7 +67,7 @@ Parser::Parser(shared_ptr<Page> page_ptr) : // Long initializer list...
 
 void Parser::re_()
 {
-  graphics_.emplace_back(Path());
+  graphics_.emplace_back(GraphicObject());
 
   float left  = std::stof(operands_[0]);
   float width = std::stof(operands_[2]);
@@ -87,10 +77,10 @@ void Parser::re_()
   float height  = std::stof(operands_[3]);
   float top     = bottom + height;
 
-  auto lb = graphics_state_.back().transformXY(left, bottom);
-  auto rb = graphics_state_.back().transformXY(right, bottom);
-  auto lt = graphics_state_.back().transformXY(left, top);
-  auto rt = graphics_state_.back().transformXY(right, top);
+  auto lb = graphics_state_.back().CTM.transformXY(left, bottom);
+  auto rb = graphics_state_.back().CTM.transformXY(right, bottom);
+  auto lt = graphics_state_.back().CTM.transformXY(left, top);
+  auto rt = graphics_state_.back().CTM.transformXY(right, top);
 
   graphics_.back().SetX({lb[0], lt[0], rt[0], rb[0], lb[0]});
 
@@ -105,29 +95,26 @@ void Parser::re_()
 
 void Parser::m_() {
 
-  auto xy = graphics_state_.back().transformXY(std::stof(operands_[0]),
+  auto xy = graphics_state_.back().CTM.transformXY(std::stof(operands_[0]),
                                                std::stof(operands_[1]));
 
-  this->x_ = xy[0];
-  this->y_ = xy[1];
-
-  graphics_.emplace_back(Path());
-  graphics_.back().SetX({x_});
-  graphics_.back().SetY({y_});
+  graphics_.emplace_back(GraphicObject());
+  graphics_.back().SetX({xy[0]});
+  graphics_.back().SetY({xy[1]});
 }
 
 /*---------------------------------------------------------------------------*/
 // CS operator sets current color space for strokes
 
 void Parser::CS_() {
-  this->colorspace_stroke_ = operands_[0];
+  graphics_state_.back().colour_space_stroke = {operands_[0]};
 }
 
 /*---------------------------------------------------------------------------*/
 // cs operator sets current color space for fills
 
 void Parser::cs_() {
-  this->colorspace_fill_ = operands_[0];
+  graphics_state_.back().colour_space_fill  = {operands_[0]};
 }
 
 /*---------------------------------------------------------------------------*/
@@ -145,7 +132,7 @@ void Parser::SC_() {
   if(n == 4) {
     float black = 1 - std::stof(operands_[3]);
 
-    stroke_colour_ = {
+    graphics_state_.back().colour = {
         (1 - std::stof(operands_[0])) * black,
         (1 - std::stof(operands_[1])) * black,
         (1 - std::stof(operands_[2])) * black
@@ -174,9 +161,10 @@ void Parser::scn_() {
 
 void Parser::RG_() {
 
-  stroke_colour_ = {std::stof(operands_[0]),
-                  std::stof(operands_[1]),
-                  std::stof(operands_[2])};
+  graphics_state_.back().colour = { std::stof(operands_[0]),
+                                    std::stof(operands_[1]),
+                                    std::stof(operands_[2])
+                                  };
 }
 
 /*---------------------------------------------------------------------------*/
@@ -184,9 +172,10 @@ void Parser::RG_() {
 
 void Parser::rg_() {
 
-    fill_colour_ = {std::stof(operands_[0]),
-                    std::stof(operands_[1]),
-                    std::stof(operands_[2])};
+  graphics_state_.back().fill = { std::stof(operands_[0]),
+                                  std::stof(operands_[1]),
+                                  std::stof(operands_[2])
+                                };
 }
 
 /*---------------------------------------------------------------------------*/
@@ -194,9 +183,10 @@ void Parser::rg_() {
 
 void Parser::G_() {
 
-  stroke_colour_ = {std::stof(operands_[0]),
-                  std::stof(operands_[0]),
-                  std::stof(operands_[0])};
+  graphics_state_.back().colour = { std::stof(operands_[0]),
+                                    std::stof(operands_[0]),
+                                    std::stof(operands_[0])
+                                  };
 }
 
 /*---------------------------------------------------------------------------*/
@@ -204,9 +194,10 @@ void Parser::G_() {
 
 void Parser::g_() {
 
-    fill_colour_ = {std::stof(operands_[0]),
-                    std::stof(operands_[0]),
-                    std::stof(operands_[0])};
+  graphics_state_.back().fill = { std::stof(operands_[0]),
+                                  std::stof(operands_[0]),
+                                  std::stof(operands_[0])
+                                };
 }
 /*---------------------------------------------------------------------------*/
 // sc operator sets fill colour
@@ -224,7 +215,7 @@ void Parser::sc_() {
   if(n == 4) {
     float black = 1 - std::stof(operands_[3]);
 
-    fill_colour_ = {
+    graphics_state_.back().fill = {
         (1 - std::stof(operands_[0])) * black,
         (1 - std::stof(operands_[1])) * black,
         (1 - std::stof(operands_[2])) * black
@@ -237,16 +228,14 @@ void Parser::sc_() {
 
 void Parser::l_() {
 
-  auto xy = graphics_state_.back().transformXY(std::stof(operands_[0]),
-                                 std::stof(operands_[1]));
+  auto xy = graphics_state_.back().CTM.transformXY(std::stof(operands_[0]),
+                                                   std::stof(operands_[1]));
 
-  graphics_.back().SetSize(current_width_ * graphics_state_.back()[0]);
+  graphics_.back().SetSize(graphics_state_.back().line_width *
+                           graphics_state_.back().CTM[0]);
 
-  this->x_ = xy[0];
-  this->y_ = xy[1];
-
-  graphics_.back().AppendX(this->x_);
-  graphics_.back().AppendY(this->y_);
+  graphics_.back().AppendX(xy[0]);
+  graphics_.back().AppendY(xy[1]);
 
   }
 
@@ -266,7 +255,7 @@ void Parser::h_() {
 
 void Parser::w_() {
 
-  this->current_width_ = std::stof(operands_[0]);
+  graphics_state_.back().line_width = std::stof(operands_[0]);
 
 }
 
@@ -276,7 +265,7 @@ void Parser::w_() {
 void Parser::f_() {
 
   graphics_.back().SetFilled(true);
-  graphics_.back().SetFillColour(fill_colour_);
+  graphics_.back().SetFillColour(graphics_state_.back().fill);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -285,8 +274,9 @@ void Parser::f_() {
 void Parser::S_() {
 
   graphics_.back().SetVisibility(true);
-  graphics_.back().SetColour(stroke_colour_);
-  graphics_.back().SetSize(current_width_ * graphics_state_.back()[0]);
+  graphics_.back().SetColour(graphics_state_.back().colour);
+  graphics_.back().SetSize(graphics_state_.back().line_width *
+                           graphics_state_.back().CTM[0]);
 
 }
 
@@ -306,9 +296,7 @@ void Parser::s_() {
 
 void Parser::q_()
 {
-  graphics_state_.emplace_back(graphics_state_.back()); // Pushes tm matrix
-  font_stack_.emplace_back(current_font_);              // Pushes font name
-  font_size_stack_.emplace_back(current_font_size_);    // Pushes pointsize
+  graphics_state_.emplace_back(graphics_state_.back());
 }
 
 /*---------------------------------------------------------------------------*/
@@ -318,16 +306,6 @@ void Parser::Q_()
 {
   // Empty graphics state is undefined but graphics_state_[0] is identity
   if (graphics_state_.size() > 1) graphics_state_.pop_back();
-
-  if (font_stack_.size() > 1) // Empty font_stack_ is undefined
-  {
-    font_stack_.pop_back();
-    font_size_stack_.pop_back();         // Pop the font & fontsize stacks
-    current_font_ = font_stack_.back();  // Read the top font & size from stack
-    current_font_size_ = font_size_stack_.back();
-  }
-  // The top of stack is now working font
-  working_font_ = page_->GetFont(current_font_);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -353,7 +331,7 @@ void Parser::TD_()
 {
   Td_();
   // Set text leading to new value
-  tl_ = -ParseFloats(operands_[1])[0];
+  graphics_state_.back().text_state.tl = -ParseFloats(operands_[1])[0];
 }
 
 /*---------------------------------------------------------------------------*/
@@ -362,11 +340,12 @@ void Parser::TD_()
 void Parser::BT_()
 {
   // Reset text matrix to identity matrix
-  tm_state_ = td_state_ = Matrix();
+  tm_state_ = Matrix();
+  td_state_ = Matrix();
 
   // Reset word spacing and character spacing
-  tw_ = tc_ = 0;
-  th_ = 100; // reset horizontal spacing
+  graphics_state_.back().text_state.tw = graphics_state_.back().text_state.tc = 0;
+  graphics_state_.back().text_state.th = 100; // reset horizontal spacing
 }
 
 /*---------------------------------------------------------------------------*/
@@ -385,11 +364,9 @@ void Parser::Tf_()
   // Should be 2 operators: 1 is not defined
   if (operands_.size() > 1)
   {
-    current_font_ = operands_[0];                  // Read fontID
-    working_font_ = page_->GetFont(current_font_); // Get font from fontID
-    current_font_size_ = ParseFloats(operands_[1])[0];    // Get font size
-    font_size_stack_.back() = current_font_size_;  // Remember changes to state
-    font_stack_.back() = current_font_;            // Remember changes to state
+    graphics_state_.back().text_state.tf = operands_[0];
+    working_font_ = page_->GetFont(graphics_state_.back().text_state.tf);
+    graphics_state_.back().text_state.tfs = ParseFloats(operands_[1])[0];
   }
 }
 
@@ -399,7 +376,7 @@ void Parser::Tf_()
 void Parser::TH_()
 {
   // Reads operand as new horizontal spacing value
-  th_ = stof(operands_.at(0));
+  graphics_state_.back().text_state.th = stof(operands_.at(0));
 }
 
 /*---------------------------------------------------------------------------*/
@@ -408,7 +385,7 @@ void Parser::TH_()
 void Parser::TC_()
 {
   // Reads operand as new character spacing value
-  tc_ = stof(operands_.at(0));
+  graphics_state_.back().text_state.tc = stof(operands_.at(0));
 }
 
 /*---------------------------------------------------------------------------*/
@@ -417,7 +394,7 @@ void Parser::TC_()
 void Parser::TW_()
 {
   // Reads operand as new word spacing value
-  tw_ = stof(operands_.at(0));
+  graphics_state_.back().text_state.tw = stof(operands_.at(0));
 }
 
 /*---------------------------------------------------------------------------*/
@@ -426,7 +403,7 @@ void Parser::TW_()
 void Parser::TL_()
 {
   // Reads operand as new text leading value
-  tl_ = stof(operands_.at(0));
+  graphics_state_.back().text_state.tl = stof(operands_.at(0));
 }
 
 /*---------------------------------------------------------------------------*/
@@ -435,7 +412,8 @@ void Parser::TL_()
 void Parser::T__()
 {
   // Decrease y value of text matrix by amount specified by text leading param
-  td_state_[7] = td_state_[7] - tl_;
+  td_state_[7] = td_state_[7] -
+                                       graphics_state_.back().text_state.tl;
 
   // This also resets the kerning
   kerning_ = 0;
@@ -463,7 +441,7 @@ void Parser::cm_()
 {
   // Read the operands as a matrix, multiply by top of graphics state stack
   // and replace the top of the stack with the result
-  graphics_state_.back() *= Matrix(move(operands_));
+  graphics_state_.back().CTM *= Matrix(move(operands_));
 }
 
 /*---------------------------------------------------------------------------*/
@@ -473,7 +451,7 @@ void Parser::cm_()
 void Parser::Ap_()
 {
   // The "'" operator is the same as Tj except it moves to the next line first
-  td_state_[7] -= tl_;
+  td_state_[7] -= graphics_state_.back().text_state.tl;
   kerning_ = 0;
   TJ_();
 }
@@ -493,9 +471,11 @@ void Parser::TJ_()
 {
   // Creates text space that is the product of Tm, td and cm matrices
   // and sets the starting x value and scale of our string
-  Matrix text_space = graphics_state_.back() * tm_state_ * td_state_;
+  Matrix text_space = graphics_state_.back().CTM *
+                      tm_state_ *
+                      td_state_;
   float initial_x   = text_space[6],
-        scale       = current_font_size_ * text_space[0];
+        scale       = graphics_state_.back().text_state.tfs * text_space[0];
 
   // We now iterate through our operands and their associated types
   for (size_t index = 0; index < operand_types_.size(); index++)
@@ -539,11 +519,15 @@ void Parser::ProcessRawChar_(float& scale, Matrix& text_space,
     {
       left = text_space[6];
       bottom = text_space[7];
-      glyph_width = glyph_pair.second + tc_ * 1000 / current_font_size_;
+      glyph_width = glyph_pair.second + graphics_state_.back().text_state.tc * 1000 /
+                    graphics_state_.back().text_state.tfs;
     }
     else // if this is a space, just adjust word & char spacing
     {
-      glyph_width = glyph_pair.second + 1000 * (tc_ + tw_) / current_font_size_;
+      glyph_width = glyph_pair.second +
+                    1000 * (graphics_state_.back().text_state.tc +
+                    graphics_state_.back().text_state.tw) /
+                    graphics_state_.back().text_state.tfs;
     }
 
     // Adjust the kerning in text space by character width
@@ -555,7 +539,7 @@ void Parser::ProcessRawChar_(float& scale, Matrix& text_space,
     if (glyph_pair.first != 0x0020)
     {
       // record width of char taking Th (horizontal scaling) into account
-      width = scale * (glyph_width / 1000) * (th_ / 100);
+      width = scale * (glyph_width / 1000) * (graphics_state_.back().text_state.th / 100);
       right = left + width;
       text_box_->emplace_back(make_shared<TextElement>
                              (left, right, bottom + scale,

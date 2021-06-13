@@ -250,10 +250,13 @@ pdfdoc <- function(pdf)
   is_pdf <- grepl("[.]pdf$", pdf[1])
   valid_pdf_name <- (is.character(pdf) & length(pdf) == 1 & is_pdf)
   if (is.raw(pdf)) x <- .pdfdocraw(pdf)
-  if (valid_pdf_name & !grepl("/", pdf[1]))
+  if (is.character(pdf) & !grepl("/", pdf[1]))
   {
     pdf <- paste0(path.expand("~/"), pdf)
-    x   <- .pdfdoc(pdf)
+  }
+
+  if (is.character(pdf)) {
+    x <- .pdfdoc(pdf)
   }
 
   x                <- x[order(x$page, -x$bottom, x$left),]

@@ -150,10 +150,10 @@ class Matrix
  *
  */
 
-class Path
+class GraphicObject
 {
 public:
-  Path() : x_({0}), y_({0}), size_(1),
+  GraphicObject() : x_({0}), y_({0}), size_(1),
   colour_({0, 0, 0}), is_closed_(false), is_visible_(false),
   is_filled_(false), fill_colour_({0.5, 0.5, 0.5}) {};
 
@@ -202,17 +202,17 @@ private:
 class TextState
 {
 public:
-  float Tc,
-        Tw,
-        Th,
-        Tl;
-  std::string Tf;
-  float Tfs;
-  int Tmode;
-  float Trise;
+  float tc,
+        tw,
+        th,
+        tl;
+  std::string tf;
+  float tfs;
+  int tmode;
+  float trise;
 
-  TextState() : Tc(0), Tw(0), Th(100), Tl(0), Tf(""),
-                Tfs(0), Tmode(0), Trise(0) {}
+  TextState() : tc(0), tw(0), th(100), tl(0), tf(""),
+                tfs(0), tmode(0), trise(0) {}
 };
 
 //---------------------------------------------------------------------------//
@@ -221,11 +221,13 @@ class GraphicsState
 {
 public:
   Matrix CTM;
-  Path clipping_path;
-  std::vector<std::string> colour_space;
+  GraphicObject clipping_path;
+  std::vector<std::string> colour_space_stroke,
+                           colour_space_fill;
   std::vector<float> colour,
                      fill;
   TextState text_state;
+  Matrix tm_state, td_state;
   float line_width;
   int line_cap;
   int line_join;
@@ -239,10 +241,12 @@ public:
   bool  alpha_source;
 
   GraphicsState(std::shared_ptr<Page> p) :
-                    CTM(Matrix()), clipping_path(Path()),
-                    colour_space({"/DeviceGray"}),
+                    CTM(Matrix()), clipping_path(GraphicObject()),
+                    colour_space_stroke({"/DeviceGray"}),
+                    colour_space_fill({"/DeviceGray"}),
                     colour({0, 0, 0}), fill({0, 0, 0}),
-                    text_state(TextState()), line_width(1),
+                    text_state(TextState()), tm_state(Matrix()),
+                    td_state(Matrix()), line_width(1),
                     line_cap(0), line_join(0), miter_limit(10.0),
                     rendering_intent("/RelativeColorimetric"),
                     stroke_adjustment(false),
