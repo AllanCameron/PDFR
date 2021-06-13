@@ -124,14 +124,12 @@ class Parser
   // Private data members
   std::shared_ptr<Page>           page_;              // Pointer to this page
   std::unique_ptr<TextBox>        text_box_;          // Main output structure
-  std::vector<GraphicObject>               graphics_;          // Vector of graphic objects
+  std::vector<GraphicObject>      graphics_;          // Vector of graphic objects
 
   // Variables used to maintain state between calls
-  std::shared_ptr<Font>           working_font_;      // Pointer to working font
   std::vector<GraphicsState>      graphics_state_;    // Stack of graphics state
   std::vector<std::string>        operands_;          // The actual data read
   std::vector<Token::TokenState>  operand_types_;     // The type of data read
-  Matrix tm_state_, td_state_;
   int                             kerning_;           // Current kerning state
   std::vector<RawChar>            raw_;               // RawChars for writing
 
@@ -179,7 +177,7 @@ class Parser
   void rg_();              //
   void RG_();              //
   void scn_();             //
-  void SCN_();              //
+  void SCN_();             //
   void Ap_();              //---------------------------------//
 
   // This is a helper function for the TJ method which otherwise would become

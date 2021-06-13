@@ -56,8 +56,6 @@ Parser::Parser(shared_ptr<Page> page_ptr) :
   page_(page_ptr),
   text_box_(unique_ptr<TextBox>(new TextBox(Box(*(page_->GetMinbox()))))),
   graphics_state_({GraphicsState(page_ptr)}),  // Graphics state stack
-  tm_state_(Matrix()),
-  td_state_(Matrix()),
   kerning_(0)
 {}
 
@@ -318,7 +316,7 @@ void Parser::Td_()
   Tds[7] = ParseFloats(operands_[1])[0]; //---------------------------------
 
   // Multiply translation and text matrices
-  td_state_ *= Tds;
+  graphics_state_.back().td_state *= Tds;
 
   // Td resets kerning
   kerning_ = 0;
@@ -340,8 +338,8 @@ void Parser::TD_()
 void Parser::BT_()
 {
   // Reset text matrix to identity matrix
-  tm_state_ = Matrix();
-  td_state_ = Matrix();
+  graphics_state_.back().tm_state = Matrix();
+  graphics_state_.back().td_state = Matrix();
 
   // Reset word spacing and character spacing
   graphics_state_.back().text_state.tw = graphics_state_.back().text_state.tc = 0;
@@ -365,7 +363,8 @@ void Parser::Tf_()
   if (operands_.size() > 1)
   {
     graphics_state_.back().text_state.tf = operands_[0];
-    working_font_ = page_->GetFont(graphics_state_.back().text_state.tf);
+    graphics_state_.back().text_state.current_font =
+      page_->GetFont(graphics_state_.back().text_state.tf);
     graphics_state_.back().text_state.tfs = ParseFloats(operands_[1])[0];
   }
 }
@@ -412,7 +411,7 @@ void Parser::TL_()
 void Parser::T__()
 {
   // Decrease y value of text matrix by amount specified by text leading param
-  td_state_[7] = td_state_[7] -
+  graphics_state_.back().td_state[7] = graphics_state_.back().td_state[7] -
                                        graphics_state_.back().text_state.tl;
 
   // This also resets the kerning
@@ -425,10 +424,10 @@ void Parser::T__()
 void Parser::Tm_()
 {
   // Reads operands as a 3x3 matrix
-  tm_state_ = Matrix(move(operands_));
+  graphics_state_.back().tm_state = Matrix(operands_);
 
   // Reset the Td modifier matrix to identity matrix
-  td_state_ = Matrix();
+  graphics_state_.back().td_state = Matrix();
 
   // Reset the kerning
   kerning_ = 0;
@@ -451,7 +450,7 @@ void Parser::cm_()
 void Parser::Ap_()
 {
   // The "'" operator is the same as Tj except it moves to the next line first
-  td_state_[7] -= graphics_state_.back().text_state.tl;
+  graphics_state_.back().td_state[7] -= graphics_state_.back().text_state.tl;
   kerning_ = 0;
   TJ_();
 }
@@ -472,8 +471,8 @@ void Parser::TJ_()
   // Creates text space that is the product of Tm, td and cm matrices
   // and sets the starting x value and scale of our string
   Matrix text_space = graphics_state_.back().CTM *
-                      tm_state_ *
-                      td_state_;
+                      graphics_state_.back().tm_state *
+                      graphics_state_.back().td_state;
   float initial_x   = text_space[6],
         scale       = graphics_state_.back().text_state.tfs * text_space[0];
 
@@ -506,7 +505,8 @@ void Parser::ProcessRawChar_(float& scale, Matrix& text_space,
                              float& initial_x)
 {
   // Look up the RawChars in the font to get their Unicode values and widths
-  vector<pair<Unicode, float>>&& glyph_pairs = working_font_->MapRawChar(raw_);
+  vector<pair<Unicode, float>>&& glyph_pairs =
+    graphics_state_.back().text_state.current_font->MapRawChar(raw_);
 
   // Now, for each character...
   for (auto& glyph_pair : glyph_pairs)
@@ -539,11 +539,13 @@ void Parser::ProcessRawChar_(float& scale, Matrix& text_space,
     if (glyph_pair.first != 0x0020)
     {
       // record width of char taking Th (horizontal scaling) into account
-      width = scale * (glyph_width / 1000) * (graphics_state_.back().text_state.th / 100);
+      width = scale * (glyph_width / 1000) *
+              (graphics_state_.back().text_state.th / 100);
       right = left + width;
       text_box_->emplace_back(make_shared<TextElement>
                              (left, right, bottom + scale,
-                              bottom, scale, working_font_,
+                              bottom, scale,
+                              graphics_state_.back().text_state.current_font,
                               vector<Unicode>{glyph_pair.first}));
     }
   }

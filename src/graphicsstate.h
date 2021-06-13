@@ -20,6 +20,7 @@
 #include<vector>
 #include<memory>
 #include "page.h"
+#include "graphicobject.h"
 
 //---------------------------------------------------------------------------//
 // To define the position of elements on a page, the pdf page description
@@ -145,120 +146,70 @@ class Matrix
 
 
 /*---------------------------------------------------------------------------*/
-/* This is a header-only implementation of a Path class, which is used to
- * store information about shapes extracted from the page description program.
- *
- */
-
-class GraphicObject
-{
-public:
-  GraphicObject() : x_({0}), y_({0}), size_(1),
-  colour_({0, 0, 0}), is_closed_(false), is_visible_(false),
-  is_filled_(false), fill_colour_({0.5, 0.5, 0.5}) {};
-
-  void SetX(std::vector<float> values) {this->x_ = values;}
-  void SetY(std::vector<float> values) {this->y_ = values;}
-  void AppendX(float value) { Concatenate(this->x_, {value});}
-  void AppendY(float value) { Concatenate(this->y_, {value});}
-  void SetSize(float size) {this->size_ = size;}
-  void SetColour(std::vector<float> colour) {this->colour_ = colour;}
-  void SetFillColour(std::vector<float> colour) {this->fill_colour_ = colour;}
-  void SetVisibility(bool visible) {this->is_visible_ = visible;}
-  void SetClosed(bool is_closed) {this->is_closed_ = is_closed;}
-  void SetFilled(bool is_filled) {this->is_filled_ = is_filled;}
-
-  std::vector<float> GetX() {return this->x_;}
-  std::vector<float> GetY() {return this->y_;}
-  float GetSize() {return this->size_;}
-  std::vector<float> GetColour() {return this->colour_;}
-  bool IsClosed() {return this->is_closed_;}
-  bool IsVisible() {return this->is_visible_;}
-  bool IsFilled() {return this->is_filled_;}
-  std::vector<float> GetFillColour() {return this->fill_colour_;}
-
-  float Bottom() {return *std::min_element(this->y_.begin(), this->y_.end());}
-  float Top()    {return *std::max_element(this->y_.begin(), this->y_.end());}
-  float Left()   {return *std::min_element(this->x_.begin(), this->x_.end());}
-  float Right()  {return *std::max_element(this->x_.begin(), this->x_.end());}
-
-  float Width()  {return this->Right() - this->Left();}
-  float Height() {return this->Top() - this->Bottom();}
-
-private:
-  std::vector<float> x_;
-  std::vector<float> y_;
-  float size_;
-  std::vector<float> colour_;
-  bool is_closed_;
-  bool is_visible_;
-  bool is_filled_;
-  std::vector<float> fill_colour_;
-
-};
-
-/*---------------------------------------------------------------------------*/
 
 class TextState
 {
-public:
-  float tc,
-        tw,
-        th,
-        tl;
-  std::string tf;
-  float tfs;
-  int tmode;
-  float trise;
+  public:
+    float                 tc,     // Character spacing
+                          tw,     // Word spacing
+                          th,     // Horizontal scaling
+                          tl,     // Text leading
+                          tfs,    // Font size
+                          trise;  // Text rise
+    std::string           tf;     // Font name
+    int                   tmode;  // Text printing mode
+    std::shared_ptr<Font> current_font;
 
-  TextState() : tc(0), tw(0), th(100), tl(0), tf(""),
-                tfs(0), tmode(0), trise(0) {}
+    TextState() : tc(0), tw(0), th(100), tl(0),
+                  tfs(0), trise(0), tf(""), tmode(0) {}
 };
 
 //---------------------------------------------------------------------------//
 
 class GraphicsState
 {
-public:
-  Matrix CTM;
-  GraphicObject clipping_path;
-  std::vector<std::string> colour_space_stroke,
-                           colour_space_fill;
-  std::vector<float> colour,
-                     fill;
-  TextState text_state;
-  Matrix tm_state, td_state;
-  float line_width;
-  int line_cap;
-  int line_join;
-  float miter_limit;
-  std::string rendering_intent;
-  bool stroke_adjustment;
-  std::vector<int> dash_array;
-  std::vector<std::string> blending_mode;
-  std::string soft_mask;
-  float alpha_constant;
-  bool  alpha_source;
+  public:
+    Matrix                   CTM;
+    GraphicObject            clipping_path;
+    std::vector<std::string> colour_space_stroke,
+                             colour_space_fill;
+    std::vector<float>       colour,
+                             fill;
+    TextState                text_state;
+    Matrix                   tm_state,
+                             td_state;
+    float                    line_width;
+    int                      line_cap,
+                             line_join;
+    float                    miter_limit;
+    std::string              rendering_intent;
+    bool                     stroke_adjustment;
+    std::vector<int>         dash_array;
+    std::vector<std::string> blending_mode;
+    std::string              soft_mask;
+    float                    alpha_constant;
+    bool                     alpha_source;
 
-  GraphicsState(std::shared_ptr<Page> p) :
-                    CTM(Matrix()), clipping_path(GraphicObject()),
-                    colour_space_stroke({"/DeviceGray"}),
-                    colour_space_fill({"/DeviceGray"}),
-                    colour({0, 0, 0}), fill({0, 0, 0}),
-                    text_state(TextState()), tm_state(Matrix()),
-                    td_state(Matrix()), line_width(1),
-                    line_cap(0), line_join(0), miter_limit(10.0),
-                    rendering_intent("/RelativeColorimetric"),
-                    stroke_adjustment(false),
-                    dash_array({0}),
-                    blending_mode({"Normal"}), soft_mask("None"),
-                    alpha_constant(1.0), alpha_source(false) {
-    std::shared_ptr<Box> b = p->GetMinbox();
-    clipping_path.SetX({b->GetLeft(), b->GetLeft(), b->GetRight(),
-                        b->GetRight(), b->GetLeft()});
-    clipping_path.SetY({b->GetBottom(), b->GetTop(), b->GetTop(),
-                        b->GetBottom(), b->GetBottom()});
-  }
+    GraphicsState(std::shared_ptr<Page> p) :
+                      CTM(Matrix()), clipping_path(GraphicObject()),
+                      colour_space_stroke({"/DeviceGray"}),
+                      colour_space_fill({"/DeviceGray"}),
+                      colour({0, 0, 0}), fill({0, 0, 0}),
+                      text_state(TextState()), tm_state(Matrix()),
+                      td_state(Matrix()), line_width(1),
+                      line_cap(0), line_join(0), miter_limit(10.0),
+                      rendering_intent("/RelativeColorimetric"),
+                      stroke_adjustment(false),
+                      dash_array({0}),
+                      blending_mode({"Normal"}), soft_mask("None"),
+                      alpha_constant(1.0), alpha_source(false)
+    {
+      std::shared_ptr<Box> b = p->GetMinbox();
+      clipping_path.SetX({b->GetLeft(),   b->GetLeft(), b->GetRight(),
+                          b->GetRight(),  b->GetLeft()});
+      clipping_path.SetY({b->GetBottom(), b->GetTop(), b->GetTop(),
+                          b->GetBottom(), b->GetBottom()});
+    }
 
 };
 
