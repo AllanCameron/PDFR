@@ -65,7 +65,7 @@ Parser::Parser(shared_ptr<Page> page_ptr) :
 
 void Parser::re_()
 {
-  graphics_.emplace_back(GraphicObject());
+  graphics_.emplace_back(std::make_shared<Path>());
 
   float left  = std::stof(operands_[0]);
   float width = std::stof(operands_[2]);
@@ -80,11 +80,11 @@ void Parser::re_()
   auto lt = graphics_state_.back().CTM.transformXY(left, top);
   auto rt = graphics_state_.back().CTM.transformXY(right, top);
 
-  graphics_.back().SetX({lb[0], lt[0], rt[0], rb[0], lb[0]});
+  graphics_.back()->SetX({lb[0], lt[0], rt[0], rb[0], lb[0]});
 
-  graphics_.back().SetY({lb[1], lt[1], rt[1], rb[1], lb[1]});
+  graphics_.back()->SetY({lb[1], lt[1], rt[1], rb[1], lb[1]});
 
-  graphics_.back().SetClosed(true);
+  graphics_.back()->SetClosed(true);
 }
 
 
@@ -94,11 +94,11 @@ void Parser::re_()
 void Parser::m_() {
 
   auto xy = graphics_state_.back().CTM.transformXY(std::stof(operands_[0]),
-                                               std::stof(operands_[1]));
+                                                   std::stof(operands_[1]));
 
-  graphics_.emplace_back(GraphicObject());
-  graphics_.back().SetX({xy[0]});
-  graphics_.back().SetY({xy[1]});
+  graphics_.emplace_back(std::make_shared<Path>());
+  graphics_.back()->SetX({xy[0]});
+  graphics_.back()->SetY({xy[1]});
 }
 
 /*---------------------------------------------------------------------------*/
@@ -229,11 +229,11 @@ void Parser::l_() {
   auto xy = graphics_state_.back().CTM.transformXY(std::stof(operands_[0]),
                                                    std::stof(operands_[1]));
 
-  graphics_.back().SetSize(graphics_state_.back().line_width *
-                           graphics_state_.back().CTM[0]);
+  graphics_.back()->SetLineWidth(graphics_state_.back().line_width *
+                                graphics_state_.back().CTM[0]);
 
-  graphics_.back().AppendX(xy[0]);
-  graphics_.back().AppendY(xy[1]);
+  graphics_.back()->AppendX(xy[0]);
+  graphics_.back()->AppendY(xy[1]);
 
   }
 
@@ -242,9 +242,9 @@ void Parser::l_() {
 
 void Parser::h_() {
 
-  graphics_.back().SetClosed(true);
-  graphics_.back().AppendX(graphics_.back().GetX()[0]);
-  graphics_.back().AppendY(graphics_.back().GetY()[0]);
+  graphics_.back()->SetClosed(true);
+  graphics_.back()->AppendX(graphics_.back()->GetX()[0]);
+  graphics_.back()->AppendY(graphics_.back()->GetY()[0]);
 
   }
 
@@ -262,8 +262,8 @@ void Parser::w_() {
 
 void Parser::f_() {
 
-  graphics_.back().SetFilled(true);
-  graphics_.back().SetFillColour(graphics_state_.back().fill);
+  graphics_.back()->SetFilled(true);
+  graphics_.back()->SetFillColour(graphics_state_.back().fill);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -271,10 +271,10 @@ void Parser::f_() {
 
 void Parser::S_() {
 
-  graphics_.back().SetVisibility(true);
-  graphics_.back().SetColour(graphics_state_.back().colour);
-  graphics_.back().SetSize(graphics_state_.back().line_width *
-                           graphics_state_.back().CTM[0]);
+  graphics_.back()->SetStroke(true);
+  graphics_.back()->SetColour(graphics_state_.back().colour);
+  graphics_.back()->SetLineWidth(graphics_state_.back().line_width *
+                                graphics_state_.back().CTM[0]);
 
 }
 

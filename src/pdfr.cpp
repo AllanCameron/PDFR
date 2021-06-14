@@ -11,13 +11,11 @@
 
 #include "utilities.h"
 #include "dictionary.h"
-#include "xref.h"
 #include "object_class.h"
 #include "deflate.h"
 #include "document.h"
 #include "page.h"
 #include "tokenizer.h"
-#include "parser.h"
 #include "letter_grouper.h"
 #include "word_grouper.h"
 #include "whitespace.h"
@@ -512,19 +510,19 @@ List GetPaths(const string& file_name, int page_number)
   // Read the page contents into the Parser
   Tokenizer(page_ptr->GetPageContents(), &parser_object);
 
-  std::vector<GraphicObject> boxes = parser_object.GetGraphics();
+  std::vector<std::shared_ptr<GraphicObject>> boxes = parser_object.GetGraphics();
 
   auto result = List::create();
 
   for(size_t i = 0; i < boxes.size(); i++)
   {
-    result.push_back(List::create(Named("X") = boxes[i].GetX(),
-                                  Named("Y") = boxes[i].GetY(),
-                                  Named("filled") = boxes[i].IsFilled(),
-                                  Named("stroked") = boxes[i].IsVisible(),
-                                  Named("colour") = boxes[i].GetColour(),
-                                  Named("fill") = boxes[i].GetFillColour(),
-                                  Named("size") = boxes[i].GetSize()));
+    result.push_back(List::create(Named("X") = boxes[i]->GetX(),
+                                  Named("Y") = boxes[i]->GetY(),
+                                  Named("filled") = boxes[i]->IsFilled(),
+                                  Named("stroked") = boxes[i]->IsStroked(),
+                                  Named("colour") = boxes[i]->GetColour(),
+                                  Named("fill") = boxes[i]->GetFillColour(),
+                                  Named("size") = boxes[i]->GetSize()));
   }
 
   // Build and return an R dataframe
@@ -554,26 +552,6 @@ DataFrame GetPdfBoxesFromRaw(const vector<uint8_t>& raw_data,
   // Call on PdfBoxes to make our boxes dataframe
   return PdfBoxes(page_ptr);
 }
-
-List TestPath()
-{
-  auto G = GraphicObject();
-  G.SetX({0, 1, 2, 3, 4, 5});
-  G.SetY({6, 7, 8, 9, 10, 11});
-  G.SetColour({0.5, 0.5, 0.5});
-  G.SetClosed(true);
-  G.SetSize(1.5);
-  G.SetVisibility(true);
-
-  return List::create(Named("x") = G.GetX(),
-                      Named("y") = G.GetY(),
-                      Named("Colour") = G.GetColour(),
-                      Named("IsClosed") = G.IsClosed(),
-                      Named("Size") = G.GetSize(),
-                      Named("IsVisible") = G.IsVisible(),
-                      Named("IsFilled") = G.IsFilled());
-
-  };
 
 #ifdef PROFILER_PDFR
 void stopCpp(){TheNodeList::Instance().endprofiler(); }

@@ -57,10 +57,6 @@
     .Call(`_PDFR_GetPaths`, file_name, page_number)
 }
 
-TestPath <- function() {
-    .Call(`_PDFR_TestPath`)
-}
-
 .stopCpp <- function() {
     invisible(.Call(`_PDFR_stopCpp`))
 }

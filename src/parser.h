@@ -103,7 +103,9 @@ class Parser
 
   // Access results
   std::unique_ptr<TextBox> Output() {return std::move(this->text_box_);}
-  std::vector<GraphicObject> GetGraphics() {return this->graphics_;}
+  std::vector<std::shared_ptr<GraphicObject>> GetGraphics() {
+    return this->graphics_;
+  }
 
   // To allow recursive parsing of form xobjects, the tokenizer needs to access
   // the name of the xobject. At the point when the "Do" identifier is read by
@@ -122,16 +124,16 @@ class Parser
 
  private:
   // Private data members
-  std::shared_ptr<Page>           page_;              // Pointer to this page
-  std::unique_ptr<TextBox>        text_box_;          // Main output structure
-  std::vector<GraphicObject>      graphics_;          // Vector of graphic objects
+  std::shared_ptr<Page>                       page_;
+  std::unique_ptr<TextBox>                    text_box_;
+  std::vector<std::shared_ptr<GraphicObject>> graphics_;
 
   // Variables used to maintain state between calls
-  std::vector<GraphicsState>      graphics_state_;    // Stack of graphics state
-  std::vector<std::string>        operands_;          // The actual data read
-  std::vector<Token::TokenState>  operand_types_;     // The type of data read
-  int                             kerning_;           // Current kerning state
-  std::vector<RawChar>            raw_;               // RawChars for writing
+  std::vector<GraphicsState>                  graphics_state_;
+  std::vector<std::string>                    operands_;
+  std::vector<Token::TokenState>              operand_types_;
+  int                                         kerning_;
+  std::vector<RawChar>                        raw_;
 
   // This typedef allows us to create a map of function pointers
   typedef void (Parser::*FunctionPointer)();
