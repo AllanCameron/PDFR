@@ -32,20 +32,45 @@ typedef void (Parser::*FunctionPointer)();
 
 std::unordered_map<std::string, FunctionPointer> Parser::function_map_ =
 {
-  {"Q",   &Parser::Q_ }, {"q",  &Parser::q_ }, {"BT", &Parser::BT_},
-  {"ET",  &Parser::ET_}, {"cm", &Parser::cm_}, {"Tm", &Parser::Tm_},
-  {"Tf",  &Parser::Tf_}, {"Td", &Parser::Td_}, {"Th", &Parser::TH_},
-  {"Tw",  &Parser::TW_}, {"Tc", &Parser::TC_}, {"TL", &Parser::TL_},
-  {"T*",  &Parser::T__}, {"TD", &Parser::TD_}, {"'", &Parser::Ap_},
-  {"TJ",  &Parser::TJ_}, {"Tj", &Parser::TJ_}, {"re", &Parser::re_},
-  {"l",   &Parser::l_ }, {"m",  &Parser::m_ }, {"w",  &Parser::w_},
-  {"f",   &Parser::f_},  {"F", &Parser::f_},   {"f*", &Parser::f_},
-  {"s",   &Parser::s_},  {"S", &Parser::S_},   {"CS", &Parser::CS_},
-  {"cs",  &Parser::cs_}, {"SC", &Parser::SC_}, {"sc", &Parser::sc_},
-  {"h",   &Parser::h_},  {"rg", &Parser::rg_}, {"RG", &Parser::RG_},
-  {"G",   &Parser::G_},  {"g", &Parser::g_},   {"scn", &Parser::scn_},
-  {"SCN", &Parser::SCN_}
+  {"Q",   &Parser::Q_ },  {"q",  &Parser::q_ }, {"BT",  &Parser::BT_},
+  {"ET",  &Parser::ET_},  {"cm", &Parser::cm_}, {"Tm",  &Parser::Tm_},
+  {"Tf",  &Parser::Tf_},  {"Td", &Parser::Td_}, {"Th",  &Parser::TH_},
+  {"Tw",  &Parser::TW_},  {"Tc", &Parser::TC_}, {"TL",  &Parser::TL_},
+  {"T*",  &Parser::T__},  {"TD", &Parser::TD_}, {"'",   &Parser::Ap_},
+  {"TJ",  &Parser::TJ_},  {"Tj", &Parser::TJ_}, {"re",  &Parser::re_},
+  {"l",   &Parser::l_ },  {"m",  &Parser::m_ }, {"w",   &Parser::w_},
+  {"f",   &Parser::f_},   {"F",  &Parser::f_},  {"f*",  &Parser::f_},
+  {"s",   &Parser::s_},   {"S",  &Parser::S_},  {"CS",  &Parser::CS_},
+  {"cs",  &Parser::cs_},  {"SC", &Parser::SC_}, {"sc",  &Parser::sc_},
+  {"h",   &Parser::h_},   {"rg", &Parser::rg_}, {"RG",  &Parser::RG_},
+  {"G",   &Parser::G_},   {"g",  &Parser::g_},  {"scn", &Parser::scn_},
+  {"SCN", &Parser::SCN_}, {"K",  &Parser::K_},  {"k",   &Parser::k_},
+  {"c",   &Parser::c_}
 };
+
+//---------------------------------------------------------------------------//
+// Creates a 100 point Bezier interpolation for start point p1, end point p4
+// and control points p2 and p3. Used only in implementing Bezier operators.
+// This has to be used once for the x co-ordinates and once for the y
+// co-ordinates.
+
+std::vector<float> bezier(float p1, float p2, float p3, float p4) {
+
+  std::vector<float> result(100);
+
+  for(int i = 0; i < 100; i++)
+  {
+    float t1 = (i + 1) * 0.01;
+    float t2 = 1 - t1;
+    result[i] = 1 * t2 * t2 * t2 * p1 +
+                3 * t1 * t2 * t2 * p2 +
+                3 * t1 * t1 * t2 * p3 +
+                1 * t1 * t1 * t1 * p4;
+  }
+
+   return result;
+
+}
 
 //---------------------------------------------------------------------------//
 // The Parser constructor has to initialize many variables that allow
@@ -124,10 +149,18 @@ void Parser::SC_() {
 
   if(n == 1) G_();
   if(n == 3) RG_();
+  if(n == 4) K_();
+}
+
+
+/*---------------------------------------------------------------------------*/
+// SCN operator sets stroke colour via CMYK
+
+void Parser::K_() {
+
+  graphics_state_.back().colour_space_stroke = {"/DeviceCMYK"};
 
   // CMYK approximation
-
-  if(n == 4) {
     float black = 1 - std::stof(operands_[3]);
 
     graphics_state_.back().colour = {
@@ -135,7 +168,6 @@ void Parser::SC_() {
         (1 - std::stof(operands_[1])) * black,
         (1 - std::stof(operands_[2])) * black
     };
-  }
 }
 
 /*---------------------------------------------------------------------------*/
@@ -158,6 +190,7 @@ void Parser::scn_() {
 // RG operator sets stroke colour
 
 void Parser::RG_() {
+  graphics_state_.back().colour_space_stroke = {"/DeviceRGB"};
 
   graphics_state_.back().colour = { std::stof(operands_[0]),
                                     std::stof(operands_[1]),
@@ -169,7 +202,7 @@ void Parser::RG_() {
 // rg operator sets fill colour
 
 void Parser::rg_() {
-
+  graphics_state_.back().colour_space_fill = {"/DeviceRGB"};
   graphics_state_.back().fill = { std::stof(operands_[0]),
                                   std::stof(operands_[1]),
                                   std::stof(operands_[2])
@@ -180,7 +213,7 @@ void Parser::rg_() {
 // RG operator sets stroke colour
 
 void Parser::G_() {
-
+  graphics_state_.back().colour_space_stroke = {"/DeviceGray"};
   graphics_state_.back().colour = { std::stof(operands_[0]),
                                     std::stof(operands_[0]),
                                     std::stof(operands_[0])
@@ -191,7 +224,7 @@ void Parser::G_() {
 // g operator sets fill colour
 
 void Parser::g_() {
-
+  graphics_state_.back().colour_space_fill = {"/DeviceGray"};
   graphics_state_.back().fill = { std::stof(operands_[0]),
                                   std::stof(operands_[0]),
                                   std::stof(operands_[0])
@@ -208,17 +241,23 @@ void Parser::sc_() {
 
   if(n == 3) rg_();
 
-  // CMYK approximation
+  if(n == 4) k_();
+}
 
-  if(n == 4) {
-    float black = 1 - std::stof(operands_[3]);
+/*---------------------------------------------------------------------------*/
+// k operator sets fill colour
 
-    graphics_state_.back().fill = {
-        (1 - std::stof(operands_[0])) * black,
-        (1 - std::stof(operands_[1])) * black,
-        (1 - std::stof(operands_[2])) * black
-    };
-  }
+void::Parser::k_() {
+
+  graphics_state_.back().colour_space_fill = {"/DeviceCMYK"};
+
+  float black = 1 - std::stof(operands_[3]);
+
+  graphics_state_.back().fill = {
+      (1 - std::stof(operands_[0])) * black,
+      (1 - std::stof(operands_[1])) * black,
+      (1 - std::stof(operands_[2])) * black
+  };
 }
 
 /*---------------------------------------------------------------------------*/
@@ -236,6 +275,33 @@ void Parser::l_() {
   graphics_.back()->AppendY(xy[1]);
 
   }
+
+/*---------------------------------------------------------------------------*/
+// c operator constructs a bezier curve with two control points
+
+void Parser::c_() {
+
+    std::array<float, 2> xy0 = {graphics_.back()->GetX().back(),
+                                graphics_.back()->GetY().back()};
+
+    auto xy1 = graphics_state_.back().CTM.transformXY(std::stof(operands_[0]),
+                                                      std::stof(operands_[1]));
+    auto xy2 = graphics_state_.back().CTM.transformXY(std::stof(operands_[2]),
+                                                      std::stof(operands_[3]));
+    auto xy3 = graphics_state_.back().CTM.transformXY(std::stof(operands_[4]),
+                                                      std::stof(operands_[5]));
+    auto new_x = bezier(xy0[0], xy1[0], xy2[0], xy3[0]);
+    auto new_y = bezier(xy0[1], xy1[1], xy2[1], xy3[0]);
+
+    auto old_x = graphics_.back()->GetX();
+    auto old_y = graphics_.back()->GetY();
+
+    Concatenate(old_x, new_x);
+    Concatenate(old_y, new_y);
+
+    graphics_.back()->SetX(old_x);
+    graphics_.back()->SetY(old_y);
+}
 
 /*---------------------------------------------------------------------------*/
 // h operator closes path
