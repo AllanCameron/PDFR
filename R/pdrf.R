@@ -327,7 +327,8 @@ pdfboxes <- function(pdf, pagenum)
 ##---------------------------------------------------------------------------##
 
 pdfgraphics <- function(file, pagenum) {
-  a <- .GetPaths(file, pagenum)
+  x <- pdfpage(file, pagenum, FALSE, FALSE)
+  a <- PDFR:::.GetPaths(file, pagenum)
   dfs <- lapply(a, function(x) {
     if(length(x$colour) == 0) x$colour <- c(0, 0, 0)
     if(length(x$fill) == 0) {x$fill <- c(0, 0, 0); x$filled <- FALSE}
@@ -344,7 +345,11 @@ pdfgraphics <- function(file, pagenum) {
                 dfs, seq_along(dfs), SIMPLIFY = FALSE)
 
   ggplot2::ggplot(do.call(rbind, dfs),
-                  ggplot2::aes(X, Y, colour = stroke, fill = fill, group = poly, size = size)) +
+    ggplot2::aes(X, Y, colour = stroke, fill = fill, group = poly, size = size)) +
+    ggplot2::geom_rect(ggplot2::aes(xmin = x$Box[1], ymin = x$Box[2],
+                                    xmax = x$Box[3], ymax = x$Box[4]),
+                       fill = "white", colour = "black",
+                       inherit.aes = FALSE) +
     ggplot2::geom_polygon() +
     ggplot2::scale_fill_identity() +
     ggplot2::scale_color_identity() +

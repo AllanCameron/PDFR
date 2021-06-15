@@ -32,20 +32,20 @@ typedef void (Parser::*FunctionPointer)();
 
 std::unordered_map<std::string, FunctionPointer> Parser::function_map_ =
 {
-  {"Q",   &Parser::Q_ },  {"q",  &Parser::q_ }, {"BT",  &Parser::BT_},
-  {"ET",  &Parser::ET_},  {"cm", &Parser::cm_}, {"Tm",  &Parser::Tm_},
-  {"Tf",  &Parser::Tf_},  {"Td", &Parser::Td_}, {"Th",  &Parser::TH_},
-  {"Tw",  &Parser::TW_},  {"Tc", &Parser::TC_}, {"TL",  &Parser::TL_},
-  {"T*",  &Parser::T__},  {"TD", &Parser::TD_}, {"'",   &Parser::Ap_},
-  {"TJ",  &Parser::TJ_},  {"Tj", &Parser::TJ_}, {"re",  &Parser::re_},
-  {"l",   &Parser::l_ },  {"m",  &Parser::m_ }, {"w",   &Parser::w_},
-  {"f",   &Parser::f_},   {"F",  &Parser::f_},  {"f*",  &Parser::f_},
-  {"s",   &Parser::s_},   {"S",  &Parser::S_},  {"CS",  &Parser::CS_},
-  {"cs",  &Parser::cs_},  {"SC", &Parser::SC_}, {"sc",  &Parser::sc_},
-  {"h",   &Parser::h_},   {"rg", &Parser::rg_}, {"RG",  &Parser::RG_},
-  {"G",   &Parser::G_},   {"g",  &Parser::g_},  {"scn", &Parser::scn_},
-  {"SCN", &Parser::SCN_}, {"K",  &Parser::K_},  {"k",   &Parser::k_},
-  {"c",   &Parser::c_}
+  {"Q",   &Parser::Q_  }, {"q",  &Parser::q_ }, {"BT",  &Parser::BT_ },
+  {"ET",  &Parser::ET_ }, {"cm", &Parser::cm_}, {"Tm",  &Parser::Tm_ },
+  {"Tf",  &Parser::Tf_ }, {"Td", &Parser::Td_}, {"Th",  &Parser::TH_ },
+  {"Tw",  &Parser::TW_ }, {"Tc", &Parser::TC_}, {"TL",  &Parser::TL_ },
+  {"T*",  &Parser::T__ }, {"TD", &Parser::TD_}, {"'",   &Parser::Ap_ },
+  {"TJ",  &Parser::TJ_ }, {"Tj", &Parser::TJ_}, {"re",  &Parser::re_ },
+  {"l",   &Parser::l_  }, {"m",  &Parser::m_ }, {"w",   &Parser::w_  },
+  {"f",   &Parser::f_  }, {"F",  &Parser::f_ }, {"f*",  &Parser::f_  },
+  {"s",   &Parser::s_  }, {"S",  &Parser::S_ }, {"CS",  &Parser::CS_ },
+  {"cs",  &Parser::cs_ }, {"SC", &Parser::SC_}, {"sc",  &Parser::sc_ },
+  {"h",   &Parser::h_  }, {"rg", &Parser::rg_}, {"RG",  &Parser::RG_ },
+  {"G",   &Parser::G_  }, {"g",  &Parser::g_ }, {"scn", &Parser::scn_},
+  {"SCN", &Parser::SCN_}, {"K",  &Parser::K_ }, {"k",   &Parser::k_  },
+  {"c",   &Parser::c_  }, {"v",  &Parser::v_ }, {"y",   &Parser::y_  }
 };
 
 //---------------------------------------------------------------------------//
@@ -291,7 +291,7 @@ void Parser::c_() {
     auto xy3 = graphics_state_.back().CTM.transformXY(std::stof(operands_[4]),
                                                       std::stof(operands_[5]));
     auto new_x = bezier(xy0[0], xy1[0], xy2[0], xy3[0]);
-    auto new_y = bezier(xy0[1], xy1[1], xy2[1], xy3[0]);
+    auto new_y = bezier(xy0[1], xy1[1], xy2[1], xy3[1]);
 
     auto old_x = graphics_.back()->GetX();
     auto old_y = graphics_.back()->GetY();
@@ -301,6 +301,61 @@ void Parser::c_() {
 
     graphics_.back()->SetX(old_x);
     graphics_.back()->SetY(old_y);
+}
+
+/*---------------------------------------------------------------------------*/
+// v operator constructs a bezier curve with single control point (first point
+// also acting as control point)
+
+void Parser::v_() {
+
+  std::array<float, 2> xy0 = {graphics_.back()->GetX().back(),
+                              graphics_.back()->GetY().back()};
+
+  auto xy1 = xy0;
+  auto xy2 = graphics_state_.back().CTM.transformXY(std::stof(operands_[0]),
+                                  std::stof(operands_[1]));
+  auto xy3 = graphics_state_.back().CTM.transformXY(std::stof(operands_[2]),
+                                  std::stof(operands_[3]));
+  auto new_x = bezier(xy0[0], xy1[0], xy2[0], xy3[0]);
+  auto new_y = bezier(xy0[1], xy1[1], xy2[1], xy3[1]);
+
+  auto old_x = graphics_.back()->GetX();
+  auto old_y = graphics_.back()->GetY();
+
+  Concatenate(old_x, new_x);
+  Concatenate(old_y, new_y);
+
+  graphics_.back()->SetX(old_x);
+  graphics_.back()->SetY(old_y);
+}
+
+/*---------------------------------------------------------------------------*/
+// y operator constructs a bezier curve with single control point (last point
+// also acting as control point)
+
+void Parser::y_() {
+
+  std::array<float, 2> xy0 = {graphics_.back()->GetX().back(),
+                              graphics_.back()->GetY().back()};
+
+  auto xy1 = graphics_state_.back().CTM.transformXY(std::stof(operands_[0]),
+                                  std::stof(operands_[1]));
+  auto xy2 = graphics_state_.back().CTM.transformXY(std::stof(operands_[2]),
+                                  std::stof(operands_[3]));
+  auto xy3 = xy2;
+
+  auto new_x = bezier(xy0[0], xy1[0], xy2[0], xy3[0]);
+  auto new_y = bezier(xy0[1], xy1[1], xy2[1], xy3[1]);
+
+  auto old_x = graphics_.back()->GetX();
+  auto old_y = graphics_.back()->GetY();
+
+  Concatenate(old_x, new_x);
+  Concatenate(old_y, new_y);
+
+  graphics_.back()->SetX(old_x);
+  graphics_.back()->SetY(old_y);
 }
 
 /*---------------------------------------------------------------------------*/
