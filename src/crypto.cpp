@@ -380,42 +380,9 @@ vector<uint8_t> Crypto::ReadPassword_(const string& key)
 {
    // Get raw bytes of owner password hash
   string password(encryption_dictionary_[key]);
-  string temporary_password;
-  temporary_password.reserve(32);
 
-  auto iter = password.begin();
-  while (*iter != '(') ++iter;
-  ++iter;
-  // This loop removes backslash escapes.
-  while( iter != password.end())
-  {
-    if (*iter == '\\')
-    {
-      if (*(iter + 1) == '\\') temporary_password.push_back('\\');
-      if (*(iter + 1) == ')') temporary_password.push_back(')');
-      if (*(iter + 1) == 'r') temporary_password.push_back('\r');
-      if (*(iter + 1) == 'n') temporary_password.push_back('\n');
-      if (*(iter + 1) == 't') temporary_password.push_back('\t');
-      if (*(iter + 1) == 'b') temporary_password.push_back('\b');
-      if (*(iter + 1) == 'f') temporary_password.push_back('\f');
-      if (*(iter + 1) == '(') temporary_password.push_back('(');
-      iter++;
-    }
-    else temporary_password.push_back(*iter);
-
-    if (temporary_password.size() == 32)
-    {
-      swap(temporary_password, password);
-      break;
-    }
-    ++iter;
-  }
-
-  // The owner password should have 32 or more characters
-  //if (password.size() < 32) throw runtime_error("Corrupted password hash");
-
-  // Return first 32 bytes (skip the first char which is the opening bracket)
-  return vector<uint8_t>(password.begin(), password.end());
+  auto result = ParseID_(password);
+  return result;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -562,6 +529,7 @@ vector<uint8_t> Crypto::ParseID_(const string& id_string)
       it++;
       while (it != id_string.end() && *it != '>') temp_string += *it++;
       Concatenate(result, ConvertHexToBytes(temp_string));
+      break;
     }
     else
     {

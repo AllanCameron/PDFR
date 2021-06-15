@@ -76,7 +76,8 @@ class DictionaryBuilder
  private:
   enum DictionaryState  {PREENTRY, QUERYCLOSE, VALUE,    MAYBE,
                          START,    KEY,        PREVALUE, DSTRING,
-                         ARRAYVAL, QUERYDICT,  SUBDICT,  CLOSE,   THE_END};
+                         ARRAYVAL, QUERYDICT,  SUBDICT,  CLOSE,
+                         BYTEARRAY, THE_END};
 
   int bracket_;               // Stores the nesting level of angle brackets
   bool key_pending_;          // flag that indicates a key name has been read
@@ -98,6 +99,7 @@ class DictionaryBuilder
   void HandleString_();                         //
   void HandleQueryDictionary_();                //
   void HandleSubdictionary_();                  //
+  void HandleByteArray_();                      //
   void HandleClose_();                    //----//
 
   // A couple of inlined functions to abbreviate common tasks
@@ -167,6 +169,7 @@ void DictionaryBuilder::TokenizeDictionary_()
       case DSTRING:     HandleString_();                      break;
       case QUERYDICT:   HandleQueryDictionary_();             break;
       case SUBDICT:     HandleSubdictionary_();               break;
+      case BYTEARRAY:   HandleByteArray_();                   break;
       case QUERYCLOSE:  state_ = CharIs('>')? CLOSE : START;  break;
       case CLOSE:       HandleClose_();                       break;
       case THE_END:     return; // Stops the loop iff end state reached
@@ -336,6 +339,23 @@ void DictionaryBuilder::HandleString_()
 }
 
 /*---------------------------------------------------------------------------*/
+// The lexer is now in an angle-bracketed array of bytes.
+
+void DictionaryBuilder::HandleByteArray_()
+{
+  if (CharIs('>')) {
+    ++buf_;
+    map_[pending_key_] = buf_.Contents();
+    key_pending_ = false;
+
+  // Update buffer and state with given parameters
+  buf_.Clear();
+  state_  = START;
+  --buf_;
+  }
+}
+
+/*---------------------------------------------------------------------------*/
 // The lexer has come across an angle bracket and needs to decide whether it
 // is now in a subdictionary
 
@@ -348,8 +368,9 @@ void DictionaryBuilder::HandleQueryDictionary_()
   }                         // doesn't cause early halting of parser
   else
   {
+    --buf_;
     buf_.Clear();
-    state_ = START;         // Not a dictionary; start again
+    state_ = BYTEARRAY;
   }
 }
 
