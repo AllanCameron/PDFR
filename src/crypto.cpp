@@ -529,7 +529,8 @@ vector<uint8_t> Crypto::ParseID_(const string& id_string)
       it++;
       while (it != id_string.end() && *it != '>') temp_string += *it++;
       Concatenate(result, ConvertHexToBytes(temp_string));
-      break;
+
+      if(it + 1 == id_string.end())  break;
     }
     else
     {
@@ -552,6 +553,7 @@ vector<uint8_t> Crypto::ParseID_(const string& id_string)
         else result.push_back(*it);
         ++it;
       }
+      if(it + 1 == id_string.end())  break;
     }
   }
   return result;
