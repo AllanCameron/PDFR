@@ -57,6 +57,10 @@
     .Call(`_PDFR_GetPaths`, file_name, page_number)
 }
 
+.GetGrobs <- function(file_name, page_number) {
+    .Call(`_PDFR_GetGrobs`, file_name, page_number)
+}
+
 .stopCpp <- function() {
     invisible(.Call(`_PDFR_stopCpp`))
 }

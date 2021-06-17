@@ -160,6 +160,9 @@ GetPdfBoxesFromRaw(const std::vector<uint8_t>& file_name, int page_number);
 // [[Rcpp::export(.GetPaths)]]
 Rcpp::List GetPaths(const std::string& file_name, int page_number);
 
+// [[Rcpp::export(.GetGrobs)]]
+Rcpp::List GetGrobs(const std::string& file_name, int page_number);
+
 //---------------------------------------------------------------------------//
 // This function can be called from R to stop the underlying C++ code. This can
 // be handy in profiling etc.

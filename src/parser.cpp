@@ -669,6 +669,8 @@ void Parser::ProcessRawChar_(float& scale, Matrix& text_space,
                               graphics_state_.back().text_state.current_font,
                               vector<Unicode>{glyph_pair.first});
       graphics_.push_back(std::make_shared<Text>(te));
+      graphics_.back()->SetColour(graphics_state_.back().colour);
+      graphics_.back()->SetFillColour(graphics_state_.back().fill);
       text_box_->push_back(te);
     }
   }

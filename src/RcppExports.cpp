@@ -171,6 +171,18 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// GetGrobs
+Rcpp::List GetGrobs(const std::string& file_name, int page_number);
+RcppExport SEXP _PDFR_GetGrobs(SEXP file_nameSEXP, SEXP page_numberSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const std::string& >::type file_name(file_nameSEXP);
+    Rcpp::traits::input_parameter< int >::type page_number(page_numberSEXP);
+    rcpp_result_gen = Rcpp::wrap(GetGrobs(file_name, page_number));
+    return rcpp_result_gen;
+END_RCPP
+}
 // stopCpp
 void stopCpp();
 RcppExport SEXP _PDFR_stopCpp() {
@@ -198,6 +210,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_PDFR_GetPdfBoxesFromString", (DL_FUNC) &_PDFR_GetPdfBoxesFromString, 2},
     {"_PDFR_GetPdfBoxesFromRaw", (DL_FUNC) &_PDFR_GetPdfBoxesFromRaw, 2},
     {"_PDFR_GetPaths", (DL_FUNC) &_PDFR_GetPaths, 2},
+    {"_PDFR_GetGrobs", (DL_FUNC) &_PDFR_GetGrobs, 2},
     {"_PDFR_stopCpp", (DL_FUNC) &_PDFR_stopCpp, 0},
     {"run_testthat_tests", (DL_FUNC) &run_testthat_tests, 0},
     {NULL, NULL, 0}

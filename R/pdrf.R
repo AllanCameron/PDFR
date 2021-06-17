@@ -326,7 +326,7 @@ pdfboxes <- function(pdf, pagenum)
 #' @examples pdfgraphics(testfiles$leeds, 1)
 ##---------------------------------------------------------------------------##
 
-pdfgraphics <- function(file, pagenum) {
+pdfgraphics <- function(file, pagenum, scale = 1) {
   x <- pdfpage(file, pagenum, FALSE, FALSE)
   a <- PDFR:::.GetPaths(file, pagenum)
   dfs <- lapply(a, function(x) {
@@ -351,6 +351,7 @@ pdfgraphics <- function(file, pagenum) {
                 dfs, seq_along(dfs), SIMPLIFY = FALSE)
 
   d <- do.call(rbind, dfs)
+  Encoding(d$text) <- "UTF-8"
   ggplot2::ggplot(d[d$filled, ],
     ggplot2::aes(X, Y, colour = stroke, group = poly, size = size)) +
     ggplot2::geom_rect(ggplot2::aes(xmin = x$Box[1], ymin = x$Box[2],
@@ -359,10 +360,12 @@ pdfgraphics <- function(file, pagenum) {
                        inherit.aes = FALSE) +
     ggplot2::geom_polygon(ggplot2::aes(fill = fill)) +
     ggplot2::geom_path(data = d[!d$filled,]) +
-    ggplot2::geom_text(ggplot2::aes(label = text, size = size/3), data = d[d$hasText,],
+    ggplot2::geom_text(ggplot2::aes(label = text, size = scale * size/3),
+                       data = d[d$hasText,],
                        vjust = 0, hjust = 0) +
     ggplot2::scale_fill_identity() +
     ggplot2::scale_color_identity() +
     ggplot2::scale_size_identity() +
-    ggplot2::coord_fixed()
+    ggplot2::coord_fixed() +
+    ggplot2::theme_void()
 }

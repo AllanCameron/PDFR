@@ -554,6 +554,101 @@ DataFrame GetPdfBoxesFromRaw(const vector<uint8_t>& raw_data,
   return PdfBoxes(page_ptr);
 }
 
+//---------------------------------------------------------------------------//
+// A helper function to create npc units for drawing grobs
+
+NumericVector npc(NumericVector input) {
+  IntegerVector npc_ = IntegerVector::create(0);
+  CharacterVector cv = CharacterVector::create("simpleUnit", "unit", "unit_v2");
+  input.attr("unit") = npc_;
+  input.attr("class") = cv;
+
+  return input;
+}
+
+//---------------------------------------------------------------------------//
+// Converts a GraphicObject to a grid::grob in R
+
+List MakeGrobFromGraphics(std::shared_ptr<Page> page,
+                          std::shared_ptr<GraphicObject> go,
+                          std::string grob_name)
+{
+  std::shared_ptr<Box> minbox = page->GetMinbox();
+  float page_width = minbox->Width();
+  float page_height = minbox->Height();
+
+  List gp = List::create();
+  gp.attr("class") = CharacterVector::create("gpar");
+
+  CharacterVector classes;
+
+  std::vector<float> x_float = go->GetX();
+  std::vector<float> y_float = go->GetY();
+
+  for(auto i = x_float.begin(); i != x_float.end(); ++i) *i = *i / page_width;
+  for(auto i = y_float.begin(); i != y_float.end(); ++i) *i = *i / page_height;
+
+  List grob = List::create(Named("x") = npc(wrap(x_float)),
+                           Named("y") = npc(wrap(y_float)),
+                           Named("name") = grob_name,
+                           Named("gp") = gp,
+                           Named("vp") = R_NilValue);
+
+  if(go->GetText() == "" && !go->IsFilled()) {
+    classes = CharacterVector::create("lines", "grob", "gDesc");
+    grob.push_back(R_NilValue, "arrow");
+  }
+
+  if(go->GetText() == "" && go->IsFilled()) {
+    classes = CharacterVector::create("polygon", "grob", "gDesc");
+    grob.push_back(R_NilValue, "id");
+    grob.push_back(R_NilValue, "id.lengths");
+  }
+
+  if(go->GetText() != "") {
+    classes = CharacterVector::create("text", "grob", "gDesc");
+    grob.push_back(go->GetText(), "label");
+    grob.push_back(CharacterVector::create("centre"), "just");
+    grob.push_back(NumericVector::create(0), "hjust");
+    grob.push_back(NumericVector::create(0), "vjust");
+    grob.push_back(NumericVector::create(0), "rot");
+    grob.push_back(LogicalVector::create(false), "check.overlap");
+  }
+
+  grob.attr("class") = classes;
+
+  return grob;
+}
+
+//---------------------------------------------------------------------------//
+// Outputs a page's graphical content as grobs
+
+List GetGrobs(const string& file_name, int page_number)
+{
+  // Create the page object
+  auto page_ptr = GetPage(file_name, page_number);
+
+  // Create an empty Parser object
+  Parser parser_object(page_ptr);
+
+  // Read the page contents into the Parser
+  Tokenizer(page_ptr->GetPageContents(), &parser_object);
+
+  std::vector<std::shared_ptr<GraphicObject>> go_s = parser_object.GetGraphics();
+
+  auto result = List::create();
+
+  for(size_t i = 0; i < go_s.size(); i++)
+  {
+    std::string n = "GRID.Shape." + std::to_string(i);
+    result.push_back(MakeGrobFromGraphics(page_ptr, go_s[i], n));
+  }
+
+  // Build and return an R dataframe
+  return result;
+}
+
+
 #ifdef PROFILER_PDFR
 void stopCpp(){TheNodeList::Instance().endprofiler(); }
 #endif
