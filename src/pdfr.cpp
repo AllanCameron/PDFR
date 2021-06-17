@@ -22,6 +22,7 @@
 #include "line_grouper.h"
 #include "truetype.h"
 #include "pdfr.h"
+#include <iomanip>
 
 //---------------------------------------------------------------------------//
 
@@ -566,6 +567,32 @@ NumericVector npc(NumericVector input) {
   return input;
 }
 
+std::string rgb(std::vector<float> col) {
+  if(col.size() != 3) {
+    Rcpp::stop("rgb function needs a length-3 vector<float>");
+  }
+  float r = col[0];
+  float g = col[1];
+  float b = col[2];
+
+  if(r > 1.0 || g > 1.0 || b > 1.0) {
+    Rcpp::stop("Colour values must be in range 0 to 1");
+  }
+
+  int red = 255 * r;
+  int green = 255 * g;
+  int blue = 255 * b;
+
+  std::stringstream stream;
+  stream << "#" << std::setw(2) << std::setfill('0') << std::hex << red <<
+                   std::setw(2) << std::setfill('0') << std::hex << green <<
+                   std::setw(2) << std::setfill('0') << std::hex << blue;
+
+  std::string result( stream.str() );
+  return result;
+
+}
+
 //---------------------------------------------------------------------------//
 // Converts a GraphicObject to a grid::grob in R
 
@@ -577,7 +604,20 @@ List MakeGrobFromGraphics(std::shared_ptr<Page> page,
   float page_width = minbox->Width();
   float page_height = minbox->Height();
 
-  List gp = List::create();
+  CharacterVector fill = CharacterVector::create(R_NaString);
+  CharacterVector col = CharacterVector::create(R_NaString);
+  float lwd = std::abs(go->GetSize());
+
+  if(lwd > 2) lwd = 2;
+
+  if(go->IsFilled()) fill = CharacterVector::create(rgb(go->GetFillColour()));
+  if(go->IsStroked() || go->GetText() != "") col = rgb(go->GetColour());
+
+  List gp = List::create(Named("fill") = fill,
+                         Named("lwd")  = lwd,
+                         Named("col")  = col,
+                         Named("fontsize") = go->GetSize());
+
   gp.attr("class") = CharacterVector::create("gpar");
 
   CharacterVector classes;
@@ -620,6 +660,8 @@ List MakeGrobFromGraphics(std::shared_ptr<Page> page,
   return grob;
 }
 
+
+
 //---------------------------------------------------------------------------//
 // Outputs a page's graphical content as grobs
 
@@ -648,6 +690,7 @@ List GetGrobs(const string& file_name, int page_number)
   return result;
 }
 
+//---------------------------------------------------------------------------//
 
 #ifdef PROFILER_PDFR
 void stopCpp(){TheNodeList::Instance().endprofiler(); }
