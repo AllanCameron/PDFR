@@ -332,25 +332,35 @@ pdfgraphics <- function(file, pagenum) {
   dfs <- lapply(a, function(x) {
     if(length(x$colour) == 0) x$colour <- c(0, 0, 0)
     if(length(x$fill) == 0) {x$fill <- c(0, 0, 0); x$filled <- FALSE}
+    if(nchar(x$text) > 0)  x$stroked <- TRUE
     x$stroke <- rgb(x$colour[1], x$colour[2], x$colour[3], as.numeric(x$stroked))
     x$fill <- rgb(x$fill[1], x$fill[2], x$fill[3], as.numeric(x$filled))
     x$fill <- rep(x$fill, length(x$X))
+
     x$stroke <- rep(x$stroke, length(x$X))
-    if(!x$stroked) x$size <- 0
+    x$filled <- rep(x$filled, length(x$X))
+    x$text <- rep(x$text, length(x$X))
+    x$hasText <- nchar(x$text) > 0
+
     x$size <- rep(abs(x$size), length(x$X))
-    as.data.frame(x[c("X", "Y", "stroke", "fill", "size")])
+    as.data.frame(x[c("X", "Y", "stroke", "fill", "size",
+                      "filled", "hasText", "text")])
   })
   dfs <- dfs[!sapply(dfs, function(x) any(x$X > 800) | any(x$Y > 800))]
   dfs <- mapply(function(x, y) {x$poly <- rep(y, length(x$X)); x},
                 dfs, seq_along(dfs), SIMPLIFY = FALSE)
 
-  ggplot2::ggplot(do.call(rbind, dfs),
-    ggplot2::aes(X, Y, colour = stroke, fill = fill, group = poly, size = size)) +
+  d <- do.call(rbind, dfs)
+  ggplot2::ggplot(d[d$filled, ],
+    ggplot2::aes(X, Y, colour = stroke, group = poly, size = size)) +
     ggplot2::geom_rect(ggplot2::aes(xmin = x$Box[1], ymin = x$Box[2],
                                     xmax = x$Box[3], ymax = x$Box[4]),
                        fill = "white", colour = "black",
                        inherit.aes = FALSE) +
-    ggplot2::geom_polygon() +
+    ggplot2::geom_polygon(ggplot2::aes(fill = fill)) +
+    ggplot2::geom_path(data = d[!d$filled,]) +
+    ggplot2::geom_text(ggplot2::aes(label = text, size = size/3), data = d[d$hasText,],
+                       vjust = 0, hjust = 0) +
     ggplot2::scale_fill_identity() +
     ggplot2::scale_color_identity() +
     ggplot2::scale_size_identity() +

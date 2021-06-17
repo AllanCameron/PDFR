@@ -19,6 +19,7 @@
 #include<string>
 #include<vector>
 #include<memory>
+#include "text_element.h"
 
 
 /*---------------------------------------------------------------------------*/
@@ -57,14 +58,16 @@ public:
   virtual float Right()   { return 0;}
   virtual float Width()   { return 0;}
   virtual float Height()  { return 0;}
+  virtual std::string GetText() {return "";}
 
   // Getters
 
-  float GetSize() {return this->linewidth_;}
+  virtual float GetSize() {return this->linewidth_;}
   std::vector<float> GetColour() {return this->stroke_colour_;}
   bool IsStroked() {return this->is_stroked_;}
   bool IsFilled() {return this->is_filled_;}
   std::vector<float> GetFillColour() {return this->fill_colour_;}
+
 
 private:
   float linewidth_;
@@ -107,5 +110,17 @@ private:
   };
 
 /*---------------------------------------------------------------------------*/
+
+class Text : public GraphicObject {
+  public:
+  Text(std::shared_ptr<TextElement> text) : contents_(text) {}
+  std::string GetText() {return contents_->Utf();}
+  std::vector<float> GetX() {return {contents_->GetLeft()};}
+  std::vector<float> GetY() {return {contents_->GetBottom()};}
+  float GetSize() {return contents_->GetSize();}
+
+  private:
+  std::shared_ptr<TextElement> contents_;
+};
 
 #endif

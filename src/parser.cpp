@@ -663,11 +663,13 @@ void Parser::ProcessRawChar_(float& scale, Matrix& text_space,
       width = scale * (glyph_width / 1000) *
               (graphics_state_.back().text_state.th / 100);
       right = left + width;
-      text_box_->emplace_back(make_shared<TextElement>
+      auto te = make_shared<TextElement>
                              (left, right, bottom + scale,
                               bottom, scale,
                               graphics_state_.back().text_state.current_font,
-                              vector<Unicode>{glyph_pair.first}));
+                              vector<Unicode>{glyph_pair.first});
+      graphics_.push_back(std::make_shared<Text>(te));
+      text_box_->push_back(te);
     }
   }
   raw_.clear();

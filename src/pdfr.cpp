@@ -522,7 +522,8 @@ List GetPaths(const string& file_name, int page_number)
                                   Named("stroked") = boxes[i]->IsStroked(),
                                   Named("colour") = boxes[i]->GetColour(),
                                   Named("fill") = boxes[i]->GetFillColour(),
-                                  Named("size") = boxes[i]->GetSize()));
+                                  Named("size") = boxes[i]->GetSize(),
+                                  Named("text") = boxes[i]->GetText()));
   }
 
   // Build and return an R dataframe
