@@ -76,7 +76,7 @@ void Tokenizer::HandleXObject_()
 
 void Tokenizer::PushBuffer_(const TokenState type, const TokenState state)
 {
-  if (it_ == "Do" && state == IDENTIFIER) HandleXObject_();
+  if (it_ == "Do") HandleXObject_();
   interpreter_->Reader(it_.Contents(), type); // make pair and push to result
   NewToken_(state);
 }
