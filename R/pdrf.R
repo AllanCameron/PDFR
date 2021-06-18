@@ -369,3 +369,28 @@ pdfgraphics <- function(file, pagenum, scale = 1) {
     ggplot2::coord_fixed() +
     ggplot2::theme_void()
 }
+
+##---------------------------------------------------------------------------##
+#' pdfgrobs
+#'
+#' Plots the graphical elements of a pdf page as grobs
+#'
+#' @param file a valid pdf file location
+#' @param pagenum the page number to be plotted
+#'
+#' @return invisibly returns grobs as well as drawing them
+#' @export
+#'
+#' @examples pdfgrobs(testfiles$leeds, 1)
+##---------------------------------------------------------------------------##
+pdfgrobs <- function(file_name, pagenum, enc = "UTF-8")
+{
+  groblist <- PDFR:::.GetGrobs(file_name, pagenum)
+  for(i in seq_along(groblist))
+  {
+    if(!is.null(groblist[[i]]$label)) Encoding(groblist[[i]]$label) <- enc
+  }
+  grid::grid.newpage()
+  lapply(groblist, grid::grid.draw)
+  invisible(groblist)
+}
