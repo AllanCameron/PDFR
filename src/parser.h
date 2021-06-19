@@ -185,6 +185,9 @@ class Parser
   void c_();               //
   void v_();               //
   void y_();               //
+  void B_();               //
+  void b_();               //
+  void n_();               //
   void Ap_();              //---------------------------------//
 
   // This is a helper function for the TJ method which otherwise would become

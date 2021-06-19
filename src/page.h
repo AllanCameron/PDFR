@@ -43,6 +43,7 @@
 
 #include "font.h"
 #include "dictionary.h"
+#include "object_class.h"
 
 class Box;
 

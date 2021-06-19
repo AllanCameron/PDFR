@@ -61,11 +61,14 @@ void Tokenizer::HandleXObject_()
   string loop_name = interpreter_->GetOperand();
   if (loop_name != in_loop_)
   {
+    std::string last_loop = in_loop_;
     in_loop_ = loop_name;
+
     shared_ptr<string> xobject = interpreter_->GetXObject(in_loop_);
 
     // Don't try to parse binary objects like images etc
     if (IsAscii(*xobject)) Tokenizer(*xobject, interpreter_);
+    in_loop_ = last_loop;
   }
 }
 
@@ -144,7 +147,8 @@ void Tokenizer::IdentifierState_()
     case LET:                                                   break;
     case DIG:                                                   break;
     case SPC: if (it_ == "BI") state_ = WAIT;
-              else PushBuffer_(IDENTIFIER, NEWSYMBOL);          break;
+              else PushBuffer_(IDENTIFIER, NEWSYMBOL);
+                                                                break;
     case FSL: PushBuffer_(IDENTIFIER, RESOURCE); it_.Clear();   break;
     case LSB: PushBuffer_(IDENTIFIER, NEWSYMBOL);               break;
     case LCB: PushBuffer_(IDENTIFIER, STRING); Skip_();         break;

@@ -46,9 +46,9 @@ public:
 
   virtual void SetX(std::vector<float> values) {}
   virtual void SetY(std::vector<float> values) {}
-  virtual void SetClosed(bool is_closed) {}
-  virtual void AppendX(float value) {}
-  virtual void AppendY(float value) {}
+  virtual void CloseSubpath() {}
+  virtual void AppendX(std::vector<float> value) {}
+  virtual void AppendY(std::vector<float> value) {}
   virtual std::vector<float> GetX() {return {0};}
   virtual std::vector<float> GetY() {return {0};}
   virtual bool IsClosed() { return false;}
@@ -59,17 +59,19 @@ public:
   virtual float Width()   { return 0;}
   virtual float Height()  { return 0;}
   virtual std::string GetText() {return "";}
+  virtual float GetFontSize() {return 0;}
+  virtual std::vector<int> GetSubpaths() {return {0};}
 
   // Getters
 
-  virtual float GetSize() {return this->linewidth_;}
+  virtual float GetLineWidth() {return this->linewidth_;}
   virtual std::vector<float> GetColour() {return this->stroke_colour_;}
   bool IsStroked() {return this->is_stroked_;}
   bool IsFilled() {return this->is_filled_;}
   std::vector<float> GetFillColour() {return this->fill_colour_;}
 
 
-private:
+ private:
   float linewidth_;
   std::vector<float> stroke_colour_;
   bool is_stroked_;
@@ -81,17 +83,39 @@ private:
 /*---------------------------------------------------------------------------*/
 
 class Path : public GraphicObject {
-public:
-  Path(): path_x_({0}), path_y_({0}), is_closed_(false) {}
+ public:
+  Path(): path_x_({}), path_y_({}), current_subpath_(0), is_closed_({false}) {}
 
   void SetX(std::vector<float> values) {this->path_x_ = values;}
   void SetY(std::vector<float> values) {this->path_y_ = values;}
-  void SetClosed(bool is_closed) {this->is_closed_ = is_closed;}
-  void AppendX(float value) { Concatenate(this->path_x_, {value});}
-  void AppendY(float value) { Concatenate(this->path_y_, {value});}
+
+  void CloseSubpath() {
+    is_closed_.back() = true;
+    int pos = std::find(subpaths_.begin(), subpaths_.end(), current_subpath_) -
+              subpaths_.begin();
+    path_x_.push_back(path_x_[pos]);
+    path_y_.push_back(path_y_[pos]);
+    subpaths_.push_back(subpaths_.back());
+  }
+
+  void AppendX(std::vector<float> value) {
+    Concatenate(this->path_x_, {value});
+    while(subpaths_.size() < path_x_.size()){
+      subpaths_.push_back(current_subpath_);
+    }
+  }
+
+  void AppendY(std::vector<float> value) {
+    Concatenate(this->path_y_, {value});
+    while(subpaths_.size() < path_x_.size()){
+      subpaths_.push_back(current_subpath_);
+    }
+  }
+
   std::vector<float> GetX() {return this->path_x_;}
   std::vector<float> GetY() {return this->path_y_;}
-  bool IsClosed() { return this->is_closed_;}
+  bool IsClosed() { return this->is_closed_.back();}
+
   float Bottom()  { return *std::min_element(this->path_y_.begin(),
                                              this->path_y_.end());}
   float Top()     { return *std::max_element(this->path_y_.begin(),
@@ -102,26 +126,30 @@ public:
                                              this->path_x_.end());}
   float Width()   { return this->Right() - this->Left();}
   float Height()  { return this->Top() - this->Bottom();}
+  std::vector<int> GetSubpaths() {return subpaths_;}
 
-private:
+ private:
   std::vector<float> path_x_;
   std::vector<float> path_y_;
-  bool is_closed_;
+  int current_subpath_;
+  std::vector<int> subpaths_;
+  std::vector<bool> is_closed_;
   };
 
 /*---------------------------------------------------------------------------*/
 
 class Text : public GraphicObject {
-  public:
+
+ public:
   Text(std::shared_ptr<TextElement> text) : contents_(text) {}
   std::string GetText() {return contents_->Utf();}
   std::vector<float> GetColour() {return this->GetFillColour();}
   std::vector<float> GetX() {return {contents_->GetLeft()};}
   std::vector<float> GetY() {return {contents_->GetBottom()};}
-  float GetSize() {return contents_->GetSize();}
+  float GetFontSize() {return contents_->GetSize();}
 
 
-  private:
+ private:
   std::shared_ptr<TextElement> contents_;
 };
 

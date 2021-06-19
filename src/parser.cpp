@@ -45,7 +45,9 @@ std::unordered_map<std::string, FunctionPointer> Parser::function_map_ =
   {"h",   &Parser::h_  }, {"rg", &Parser::rg_}, {"RG",  &Parser::RG_ },
   {"G",   &Parser::G_  }, {"g",  &Parser::g_ }, {"scn", &Parser::scn_},
   {"SCN", &Parser::SCN_}, {"K",  &Parser::K_ }, {"k",   &Parser::k_  },
-  {"c",   &Parser::c_  }, {"v",  &Parser::v_ }, {"y",   &Parser::y_  }
+  {"c",   &Parser::c_  }, {"v",  &Parser::v_ }, {"y",   &Parser::y_  },
+  {"B",   &Parser::B_  }, {"B*", &Parser::B_ }, {"b",   &Parser::b_  },
+  {"b*",  &Parser::b_  }, {"n",  &Parser::n_ }
 };
 
 //---------------------------------------------------------------------------//
@@ -105,11 +107,11 @@ void Parser::re_()
   auto lt = graphics_state_.back().CTM.transformXY(left, top);
   auto rt = graphics_state_.back().CTM.transformXY(right, top);
 
-  graphics_.back()->SetX({lb[0], lt[0], rt[0], rb[0], lb[0]});
+  graphics_.back()->AppendX({lb[0], lt[0], rt[0], rb[0]});
 
-  graphics_.back()->SetY({lb[1], lt[1], rt[1], rb[1], lb[1]});
+  graphics_.back()->AppendY({lb[1], lt[1], rt[1], rb[1]});
 
-  graphics_.back()->SetClosed(true);
+  graphics_.back()->CloseSubpath();
 }
 
 
@@ -121,9 +123,8 @@ void Parser::m_() {
   auto xy = graphics_state_.back().CTM.transformXY(std::stof(operands_[0]),
                                                    std::stof(operands_[1]));
 
-  graphics_.emplace_back(std::make_shared<Path>());
-  graphics_.back()->SetX({xy[0]});
-  graphics_.back()->SetY({xy[1]});
+  graphics_.back()->AppendX({xy[0]});
+  graphics_.back()->AppendY({xy[1]});
 }
 
 /*---------------------------------------------------------------------------*/
@@ -260,6 +261,16 @@ void::Parser::k_() {
   };
 }
 
+void Parser::B_() {
+  graphics_.back()->SetFilled(true);
+  graphics_.back()->SetFillColour(graphics_state_.back().fill);
+  S_();
+}
+
+void Parser::b_() {
+  h_();
+  B_();
+}
 /*---------------------------------------------------------------------------*/
 // l operator constructs a path segment
 
@@ -271,8 +282,8 @@ void Parser::l_() {
   graphics_.back()->SetLineWidth(graphics_state_.back().line_width *
                                 graphics_state_.back().CTM[0]);
 
-  graphics_.back()->AppendX(xy[0]);
-  graphics_.back()->AppendY(xy[1]);
+  graphics_.back()->AppendX({xy[0]});
+  graphics_.back()->AppendY({xy[1]});
 
   }
 
@@ -293,14 +304,8 @@ void Parser::c_() {
     auto new_x = bezier(xy0[0], xy1[0], xy2[0], xy3[0]);
     auto new_y = bezier(xy0[1], xy1[1], xy2[1], xy3[1]);
 
-    auto old_x = graphics_.back()->GetX();
-    auto old_y = graphics_.back()->GetY();
-
-    Concatenate(old_x, new_x);
-    Concatenate(old_y, new_y);
-
-    graphics_.back()->SetX(old_x);
-    graphics_.back()->SetY(old_y);
+  graphics_.back()->AppendX(new_x);
+  graphics_.back()->AppendY(new_y);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -320,14 +325,8 @@ void Parser::v_() {
   auto new_x = bezier(xy0[0], xy1[0], xy2[0], xy3[0]);
   auto new_y = bezier(xy0[1], xy1[1], xy2[1], xy3[1]);
 
-  auto old_x = graphics_.back()->GetX();
-  auto old_y = graphics_.back()->GetY();
-
-  Concatenate(old_x, new_x);
-  Concatenate(old_y, new_y);
-
-  graphics_.back()->SetX(old_x);
-  graphics_.back()->SetY(old_y);
+  graphics_.back()->AppendX(new_x);
+  graphics_.back()->AppendY(new_y);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -348,14 +347,8 @@ void Parser::y_() {
   auto new_x = bezier(xy0[0], xy1[0], xy2[0], xy3[0]);
   auto new_y = bezier(xy0[1], xy1[1], xy2[1], xy3[1]);
 
-  auto old_x = graphics_.back()->GetX();
-  auto old_y = graphics_.back()->GetY();
-
-  Concatenate(old_x, new_x);
-  Concatenate(old_y, new_y);
-
-  graphics_.back()->SetX(old_x);
-  graphics_.back()->SetY(old_y);
+  graphics_.back()->AppendX(new_x);
+  graphics_.back()->AppendY(new_y);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -363,9 +356,7 @@ void Parser::y_() {
 
 void Parser::h_() {
 
-  graphics_.back()->SetClosed(true);
-  graphics_.back()->AppendX(graphics_.back()->GetX()[0]);
-  graphics_.back()->AppendY(graphics_.back()->GetY()[0]);
+  graphics_.back()->CloseSubpath();
 
   }
 
@@ -385,6 +376,11 @@ void Parser::f_() {
 
   graphics_.back()->SetFilled(true);
   graphics_.back()->SetFillColour(graphics_state_.back().fill);
+  graphics_.push_back(std::make_shared<Path>());
+}
+
+void Parser::n_() {
+  graphics_.push_back(std::make_shared<Path>());
 }
 
 /*---------------------------------------------------------------------------*/
@@ -396,6 +392,7 @@ void Parser::S_() {
   graphics_.back()->SetColour(graphics_state_.back().colour);
   graphics_.back()->SetLineWidth(graphics_state_.back().line_width *
                                 graphics_state_.back().CTM[0]);
+  graphics_.push_back(std::make_shared<Path>());
 
 }
 
@@ -473,6 +470,7 @@ void Parser::BT_()
 void Parser::ET_()
 {
   BT_();
+  graphics_.push_back(std::make_shared<Path>());
 }
 
 /*---------------------------------------------------------------------------*/

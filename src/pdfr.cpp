@@ -523,7 +523,7 @@ List GetPaths(const string& file_name, int page_number)
                                   Named("stroked") = boxes[i]->IsStroked(),
                                   Named("colour") = boxes[i]->GetColour(),
                                   Named("fill") = boxes[i]->GetFillColour(),
-                                  Named("size") = boxes[i]->GetSize(),
+                                  Named("size") = boxes[i]->GetLineWidth(),
                                   Named("text") = boxes[i]->GetText()));
   }
 
@@ -606,7 +606,7 @@ List MakeGrobFromGraphics(std::shared_ptr<Page> page,
 
   CharacterVector fill = CharacterVector::create(R_NaString);
   CharacterVector col = CharacterVector::create(R_NaString);
-  float lwd = std::abs(go->GetSize());
+  float lwd = std::abs(go->GetLineWidth());
 
   if(lwd > 2) lwd = 2;
 
@@ -616,7 +616,7 @@ List MakeGrobFromGraphics(std::shared_ptr<Page> page,
   List gp = List::create(Named("fill") = fill,
                          Named("lwd")  = lwd,
                          Named("col")  = col,
-                         Named("fontsize") = go->GetSize());
+                         Named("fontsize") = go->GetFontSize());
 
   gp.attr("class") = CharacterVector::create("gpar");
 
@@ -624,6 +624,17 @@ List MakeGrobFromGraphics(std::shared_ptr<Page> page,
 
   std::vector<float> x_float = go->GetX();
   std::vector<float> y_float = go->GetY();
+
+  if(x_float.size() == 0) {
+    classes = CharacterVector::create("null", "grob", "gDesc");
+    List nullgrob = List::create(Named("x") = npc(0.5),
+                                 Named("y") = npc(0.5),
+                                 Named("name") = grob_name,
+                                 Named("gp") = R_NilValue,
+                                 Named("vp") = R_NilValue);
+    nullgrob.attr("class") = classes;
+    return nullgrob;
+  }
 
   for(auto i = x_float.begin(); i != x_float.end(); ++i) *i = *i / page_width;
   for(auto i = y_float.begin(); i != y_float.end(); ++i) *i = *i / page_height;
@@ -641,7 +652,7 @@ List MakeGrobFromGraphics(std::shared_ptr<Page> page,
 
   if(go->GetText() == "" && go->IsFilled()) {
     classes = CharacterVector::create("polygon", "grob", "gDesc");
-    grob.push_back(R_NilValue, "id");
+    grob.push_back(go->GetSubpaths(), "id");
     grob.push_back(R_NilValue, "id.lengths");
   }
 
@@ -685,6 +696,8 @@ List GetGrobs(const string& file_name, int page_number)
     std::string n = "GRID.Shape." + std::to_string(i);
     result.push_back(MakeGrobFromGraphics(page_ptr, go_s[i], n));
   }
+
+  page_ptr->ClearFontMap();
 
   // Build and return an R dataframe
   return result;
