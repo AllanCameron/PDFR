@@ -226,20 +226,21 @@ void Page::ReadXObjects_()
   {
     vector<int> xobjects = xobject_dictionary.GetReferences(entry.first);
 
-    // map xobject numbers to the xobject names
+  // map xobject numbers to the xobject names in a list of pairs
     if (!xobjects.empty())
     {
       xobject_list.push_back({entry.first, xobjects[0]});
     }
   }
 
-  auto i = xobject_list.begin();
-  while(i != xobject_list.end())
+  // iterate through the xobject <name, object_number> list, adding newly
+  // discovered nested xobjects to the end of the list as we find them
+
+  for(auto i = xobject_list.begin(); i != xobject_list.end(); ++i)
   {
     xobjects_[i->first] = document_->GetObject(i->second)->GetStream();
     std::list<std::pair<std::string, int>> subobjects = SubXobjects(i->second);
     for(auto j : subobjects) xobject_list.push_back(j);
-    ++i;
   }
 }
 

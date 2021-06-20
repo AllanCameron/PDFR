@@ -386,11 +386,24 @@ pdfgraphics <- function(file, pagenum, scale = 1) {
 pdfgrobs <- function(file_name, pagenum, enc = "UTF-8")
 {
   groblist <- PDFR:::.GetGrobs(file_name, pagenum)
+  x <- pdfpage(file_name, pagenum, FALSE, FALSE)
+
+  width  <- x$Box[3] - x$Box[1]
+  height <- x$Box[4] - x$Box[2]
+
+  if(width >= height) {height <- height / width; width <- 1;}
+  if(width <  height) {width  <- width / height; height <- 1;}
+
   for(i in seq_along(groblist))
   {
     if(!is.null(groblist[[i]]$label)) Encoding(groblist[[i]]$label) <- enc
   }
   grid::grid.newpage()
+  grid::grid.draw(grid::grid.rect( gp = grid::gpar(fill = "gray")))
+
+  grid::pushViewport(grid::viewport(width = width, height = height,
+                                    default.units = "snpc"))
+  grid::grid.draw(grid::grid.rect())
   lapply(groblist, grid::grid.draw)
   invisible(groblist)
 }
