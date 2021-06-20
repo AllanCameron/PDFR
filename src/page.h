@@ -44,6 +44,7 @@
 #include "font.h"
 #include "dictionary.h"
 #include "object_class.h"
+#include<list>
 
 class Box;
 
@@ -93,6 +94,8 @@ class Page
 
   // Allows a dictionary to be returned either directly or via reference
   Dictionary FollowToDictionary(Dictionary&,  const std::string&);
+
+  std::list<std::pair<std::string, int>> SubXobjects(int xobj_num);
 
  private:
   std::shared_ptr<Document>   document_;        // Pointer to main document

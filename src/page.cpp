@@ -196,6 +196,8 @@ void Page::ReadXObjects_()
 {
   string xobject_string {};
 
+  std::list<std::pair<std::string, int>> xobject_list;
+
   // first find any xobject entries in the resource dictionary
   if (resources_.HasKey("/XObject"))
   {
@@ -224,12 +226,72 @@ void Page::ReadXObjects_()
   {
     vector<int> xobjects = xobject_dictionary.GetReferences(entry.first);
 
+    // map xobject numbers to the xobject names
+    if (!xobjects.empty())
+    {
+      xobject_list.push_back({entry.first, xobjects[0]});
+    }
+  }
+
+  auto i = xobject_list.begin();
+  while(i != xobject_list.end())
+  {
+    xobjects_[i->first] = document_->GetObject(i->second)->GetStream();
+    std::list<std::pair<std::string, int>> subobjects = SubXobjects(i->second);
+    for(auto j : subobjects) xobject_list.push_back(j);
+    ++i;
+  }
+}
+
+std::list<std::pair<std::string, int>>
+  Page::SubXobjects(int xobj_num)
+{
+  std::list<std::pair<std::string, int>> result;
+
+  std::shared_ptr<Object> xobj_ptr = document_->GetObject(xobj_num);
+
+  Dictionary xobject_dict = xobj_ptr->GetDictionary();
+
+  if (!xobject_dict.HasKey("/Resources"))
+  {
+    return result;
+  }
+
+  Dictionary resources = FollowToDictionary(xobject_dict, "/Resources");
+
+  if (!resources.HasKey("/XObject"))
+  {
+    return result;
+  }
+
+  string xobject_string = resources.GetString("/XObject");
+
+
+  Dictionary xobject_dictionary;
+  if (xobject_string.find("<<") != string::npos)
+  {
+    xobject_dictionary = Dictionary(make_shared<string>(xobject_string));
+  }
+
+  else if (resources.ContainsReferences("/XObject"))
+  {
+    auto xobject_number = resources.GetReference("/XObject");
+    xobject_dictionary = document_->GetObject(xobject_number)->GetDictionary();
+  }
+
+  for (auto& entry : xobject_dictionary)
+  {
+
+    vector<int> xobjects = xobject_dictionary.GetReferences(entry.first);
+
     // map xobject strings to the xobject names
     if (!xobjects.empty())
     {
-      xobjects_[entry.first] = document_->GetObject(xobjects[0])->GetStream();
+      result.push_back({entry.first, xobjects[0]});
     }
   }
+
+  return result;
 }
 
 /*---------------------------------------------------------------------------*/
