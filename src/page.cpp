@@ -37,7 +37,7 @@ Page::Page(shared_ptr<Document> document_ptr, int page_number) :
   ReadXObjects_();    // identify, parse and store XObjects
   ReadFonts_();       // find the fonts dictionaries and build the fontmap
   ReadContents_();    // Find the contents entries and build the content string
-  ReadBoxes_();       // Find the bouding box of the page
+  ReadBoxes_();       // Find the bounding box of the page
 }
 
 /*---------------------------------------------------------------------------*/

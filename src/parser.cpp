@@ -84,7 +84,9 @@ Parser::Parser(shared_ptr<Page> page_ptr) :
   text_box_(unique_ptr<TextBox>(new TextBox(Box(*(page_->GetMinbox()))))),
   graphics_state_({GraphicsState(page_ptr)}),  // Graphics state stack
   kerning_(0)
-{}
+{
+  graphics_.emplace_back(std::make_shared<Path>());
+}
 
 
 /*---------------------------------------------------------------------------*/
@@ -92,7 +94,7 @@ Parser::Parser(shared_ptr<Page> page_ptr) :
 
 void Parser::re_()
 {
-  graphics_.emplace_back(std::make_shared<Path>());
+  graphics_.back()->NewSubpath();
 
   float left  = std::stof(operands_[0]);
   float width = std::stof(operands_[2]);
@@ -119,6 +121,8 @@ void Parser::re_()
 // m operator moves the current graphics co-ordinate
 
 void Parser::m_() {
+
+  graphics_.back()->NewSubpath();
 
   auto xy = graphics_state_.back().CTM.transformXY(std::stof(operands_[0]),
                                                    std::stof(operands_[1]));

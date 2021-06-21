@@ -383,7 +383,7 @@ pdfgraphics <- function(file, pagenum, scale = 1) {
 #'
 #' @examples pdfgrobs(testfiles$leeds, 1)
 ##---------------------------------------------------------------------------##
-pdfgrobs <- function(file_name, pagenum, enc = "UTF-8")
+pdfgrobs <- function(file_name, pagenum, scale = dev.size()[2]/10, enc = "UTF-8")
 {
   groblist <- PDFR:::.GetGrobs(file_name, pagenum)
   x <- pdfpage(file_name, pagenum, FALSE, FALSE)
@@ -396,14 +396,18 @@ pdfgrobs <- function(file_name, pagenum, enc = "UTF-8")
 
   for(i in seq_along(groblist))
   {
-    if(!is.null(groblist[[i]]$label)) Encoding(groblist[[i]]$label) <- enc
+    if(!is.null(groblist[[i]]$label)) {
+      Encoding(groblist[[i]]$label) <- enc
+      groblist[[i]]$gp$fontsize <- scale * groblist[[i]]$gp$fontsize
+    }
   }
+
   grid::grid.newpage()
   grid::grid.draw(grid::grid.rect( gp = grid::gpar(fill = "gray")))
 
   grid::pushViewport(grid::viewport(width = width, height = height,
                                     default.units = "snpc"))
-  grid::grid.draw(grid::grid.rect())
+  grid::grid.draw(grid::grid.rect(gp = grid::gpar(fill = "white")))
   lapply(groblist, grid::grid.draw)
   invisible(groblist)
 }

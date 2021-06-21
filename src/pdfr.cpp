@@ -646,8 +646,10 @@ List MakeGrobFromGraphics(std::shared_ptr<Page> page,
                            Named("vp") = R_NilValue);
 
   if(go->GetText() == "" && !go->IsFilled()) {
-    classes = CharacterVector::create("lines", "grob", "gDesc");
+    classes = CharacterVector::create("polyline", "grob", "gDesc");
     grob.push_back(R_NilValue, "arrow");
+    grob.push_back(go->GetSubpaths(), "id");
+    grob.push_back(R_NilValue, "id.lengths");
   }
 
   if(go->GetText() == "" && go->IsFilled()) {

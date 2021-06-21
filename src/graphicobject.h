@@ -43,7 +43,7 @@ public:
   void SetFilled(bool is_filled) {this->is_filled_ = is_filled;}
 
   // virtual functions allow type-specific behaviour in derived classes
-
+  virtual void NewSubpath() {}
   virtual void SetX(std::vector<float> values) {}
   virtual void SetY(std::vector<float> values) {}
   virtual void CloseSubpath() {}
@@ -89,6 +89,7 @@ class Path : public GraphicObject {
   void SetX(std::vector<float> values) {this->path_x_ = values;}
   void SetY(std::vector<float> values) {this->path_y_ = values;}
 
+  void NewSubpath() {++current_subpath_;}
   void CloseSubpath() {
     is_closed_.back() = true;
     int pos = std::find(subpaths_.begin(), subpaths_.end(), current_subpath_) -
