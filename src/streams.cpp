@@ -52,17 +52,6 @@ uint32_t Stream::GetByte()
   return (uint8_t) *input_position_++;
 }
 
-uint64_t Stream::GetEightBytes()
-{
-  auto distance_from_end = input_.end() - input_position_;
-  if (distance_from_end > 8) distance_from_end = 8;
-  uint64_t result = 0;
-  while(distance_from_end > 0)
-  {
-    result += (uint64_t) *(input_position_++) << (8 * distance_from_end--);
-  }
-  return result;
-}
 
 /*---------------------------------------------------------------------------*/
 
