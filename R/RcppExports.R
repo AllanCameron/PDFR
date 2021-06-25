@@ -65,3 +65,27 @@
     invisible(.Call(`_PDFR_stopCpp`))
 }
 
+ReadFontTable <- function(raw) {
+    .Call(`_PDFR_ReadFontTable`, raw)
+}
+
+GetHeader <- function(raw) {
+    .Call(`_PDFR_GetHeader`, raw)
+}
+
+GetCMap <- function(raw) {
+    .Call(`_PDFR_GetCMap`, raw)
+}
+
+GetMaxp <- function(raw) {
+    .Call(`_PDFR_GetMaxp`, raw)
+}
+
+GetLoca <- function(raw) {
+    .Call(`_PDFR_GetLoca`, raw)
+}
+
+GetGlyph <- function(raw, glyph) {
+    .Call(`_PDFR_GetGlyph`, raw, glyph)
+}
+
