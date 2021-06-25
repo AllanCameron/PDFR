@@ -164,7 +164,6 @@ void Parser::SC_() {
 void Parser::K_() {
 
   graphics_state_.back().colour_space_stroke = {"/DeviceCMYK"};
-
   // CMYK approximation
     float black = 1 - std::stof(operands_[3]);
 
@@ -279,7 +278,6 @@ void Parser::b_() {
 // l operator constructs a path segment
 
 void Parser::l_() {
-
   auto xy = graphics_state_.back().CTM.transformXY(std::stof(operands_[0]),
                                                    std::stof(operands_[1]));
 
@@ -288,14 +286,12 @@ void Parser::l_() {
 
   graphics_.back()->AppendX({xy[0]});
   graphics_.back()->AppendY({xy[1]});
-
   }
 
 /*---------------------------------------------------------------------------*/
 // c operator constructs a bezier curve with two control points
 
 void Parser::c_() {
-
     std::array<float, 2> xy0 = {graphics_.back()->GetX().back(),
                                 graphics_.back()->GetY().back()};
 
@@ -317,7 +313,6 @@ void Parser::c_() {
 // also acting as control point)
 
 void Parser::v_() {
-
   std::array<float, 2> xy0 = {graphics_.back()->GetX().back(),
                               graphics_.back()->GetY().back()};
 
@@ -353,6 +348,7 @@ void Parser::y_() {
 
   graphics_.back()->AppendX(new_x);
   graphics_.back()->AppendY(new_y);
+
 }
 
 /*---------------------------------------------------------------------------*/
@@ -563,7 +559,7 @@ void Parser::cm_()
 {
   // Read the operands as a matrix, multiply by top of graphics state stack
   // and replace the top of the stack with the result
-  graphics_state_.back().CTM *= Matrix(move(operands_));
+  graphics_state_.back().CTM *= Matrix(operands_);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -692,6 +688,7 @@ void Parser::Reader(const string& token, TokenState state)
   // if it's an identifier, call the operator
   if (state == IDENTIFIER)
   {
+
     // Pass any stored operands on the stack
     auto finder = function_map_.find(token);
     if (finder != function_map_.end()) (this->*function_map_[token])();

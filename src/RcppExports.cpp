@@ -183,6 +183,73 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// ReadFontTable
+Rcpp::DataFrame ReadFontTable(Rcpp::RawVector raw);
+RcppExport SEXP _PDFR_ReadFontTable(SEXP rawSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::RawVector >::type raw(rawSEXP);
+    rcpp_result_gen = Rcpp::wrap(ReadFontTable(raw));
+    return rcpp_result_gen;
+END_RCPP
+}
+// GetFontFileHeader
+Rcpp::List GetFontFileHeader(Rcpp::RawVector raw);
+RcppExport SEXP _PDFR_GetFontFileHeader(SEXP rawSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::RawVector >::type raw(rawSEXP);
+    rcpp_result_gen = Rcpp::wrap(GetFontFileHeader(raw));
+    return rcpp_result_gen;
+END_RCPP
+}
+// GetFontFileCMap
+Rcpp::List GetFontFileCMap(Rcpp::RawVector raw);
+RcppExport SEXP _PDFR_GetFontFileCMap(SEXP rawSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::RawVector >::type raw(rawSEXP);
+    rcpp_result_gen = Rcpp::wrap(GetFontFileCMap(raw));
+    return rcpp_result_gen;
+END_RCPP
+}
+// GetFontFileMaxp
+Rcpp::List GetFontFileMaxp(Rcpp::RawVector raw);
+RcppExport SEXP _PDFR_GetFontFileMaxp(SEXP rawSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::RawVector >::type raw(rawSEXP);
+    rcpp_result_gen = Rcpp::wrap(GetFontFileMaxp(raw));
+    return rcpp_result_gen;
+END_RCPP
+}
+// GetFontFileLoca
+Rcpp::DataFrame GetFontFileLoca(Rcpp::RawVector raw);
+RcppExport SEXP _PDFR_GetFontFileLoca(SEXP rawSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::RawVector >::type raw(rawSEXP);
+    rcpp_result_gen = Rcpp::wrap(GetFontFileLoca(raw));
+    return rcpp_result_gen;
+END_RCPP
+}
+// GetFontFileGlyph
+Rcpp::List GetFontFileGlyph(Rcpp::RawVector raw, uint16_t glyph);
+RcppExport SEXP _PDFR_GetFontFileGlyph(SEXP rawSEXP, SEXP glyphSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::RawVector >::type raw(rawSEXP);
+    Rcpp::traits::input_parameter< uint16_t >::type glyph(glyphSEXP);
+    rcpp_result_gen = Rcpp::wrap(GetFontFileGlyph(raw, glyph));
+    return rcpp_result_gen;
+END_RCPP
+}
 // stopCpp
 void stopCpp();
 RcppExport SEXP _PDFR_stopCpp() {
@@ -190,73 +257,6 @@ BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
     stopCpp();
     return R_NilValue;
-END_RCPP
-}
-// ReadFontTable
-DataFrame ReadFontTable(RawVector raw);
-RcppExport SEXP _PDFR_ReadFontTable(SEXP rawSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< RawVector >::type raw(rawSEXP);
-    rcpp_result_gen = Rcpp::wrap(ReadFontTable(raw));
-    return rcpp_result_gen;
-END_RCPP
-}
-// GetHeader
-List GetHeader(RawVector raw);
-RcppExport SEXP _PDFR_GetHeader(SEXP rawSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< RawVector >::type raw(rawSEXP);
-    rcpp_result_gen = Rcpp::wrap(GetHeader(raw));
-    return rcpp_result_gen;
-END_RCPP
-}
-// GetCMap
-List GetCMap(RawVector raw);
-RcppExport SEXP _PDFR_GetCMap(SEXP rawSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< RawVector >::type raw(rawSEXP);
-    rcpp_result_gen = Rcpp::wrap(GetCMap(raw));
-    return rcpp_result_gen;
-END_RCPP
-}
-// GetMaxp
-List GetMaxp(RawVector raw);
-RcppExport SEXP _PDFR_GetMaxp(SEXP rawSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< RawVector >::type raw(rawSEXP);
-    rcpp_result_gen = Rcpp::wrap(GetMaxp(raw));
-    return rcpp_result_gen;
-END_RCPP
-}
-// GetLoca
-DataFrame GetLoca(RawVector raw);
-RcppExport SEXP _PDFR_GetLoca(SEXP rawSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< RawVector >::type raw(rawSEXP);
-    rcpp_result_gen = Rcpp::wrap(GetLoca(raw));
-    return rcpp_result_gen;
-END_RCPP
-}
-// GetGlyph
-List GetGlyph(RawVector raw, uint16_t glyph);
-RcppExport SEXP _PDFR_GetGlyph(SEXP rawSEXP, SEXP glyphSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< RawVector >::type raw(rawSEXP);
-    Rcpp::traits::input_parameter< uint16_t >::type glyph(glyphSEXP);
-    rcpp_result_gen = Rcpp::wrap(GetGlyph(raw, glyph));
-    return rcpp_result_gen;
 END_RCPP
 }
 
@@ -278,13 +278,13 @@ static const R_CallMethodDef CallEntries[] = {
     {"_PDFR_GetPdfBoxesFromRaw", (DL_FUNC) &_PDFR_GetPdfBoxesFromRaw, 2},
     {"_PDFR_GetPaths", (DL_FUNC) &_PDFR_GetPaths, 2},
     {"_PDFR_GetGrobs", (DL_FUNC) &_PDFR_GetGrobs, 2},
-    {"_PDFR_stopCpp", (DL_FUNC) &_PDFR_stopCpp, 0},
     {"_PDFR_ReadFontTable", (DL_FUNC) &_PDFR_ReadFontTable, 1},
-    {"_PDFR_GetHeader", (DL_FUNC) &_PDFR_GetHeader, 1},
-    {"_PDFR_GetCMap", (DL_FUNC) &_PDFR_GetCMap, 1},
-    {"_PDFR_GetMaxp", (DL_FUNC) &_PDFR_GetMaxp, 1},
-    {"_PDFR_GetLoca", (DL_FUNC) &_PDFR_GetLoca, 1},
-    {"_PDFR_GetGlyph", (DL_FUNC) &_PDFR_GetGlyph, 2},
+    {"_PDFR_GetFontFileHeader", (DL_FUNC) &_PDFR_GetFontFileHeader, 1},
+    {"_PDFR_GetFontFileCMap", (DL_FUNC) &_PDFR_GetFontFileCMap, 1},
+    {"_PDFR_GetFontFileMaxp", (DL_FUNC) &_PDFR_GetFontFileMaxp, 1},
+    {"_PDFR_GetFontFileLoca", (DL_FUNC) &_PDFR_GetFontFileLoca, 1},
+    {"_PDFR_GetFontFileGlyph", (DL_FUNC) &_PDFR_GetFontFileGlyph, 2},
+    {"_PDFR_stopCpp", (DL_FUNC) &_PDFR_stopCpp, 0},
     {"run_testthat_tests", (DL_FUNC) &run_testthat_tests, 0},
     {NULL, NULL, 0}
 };

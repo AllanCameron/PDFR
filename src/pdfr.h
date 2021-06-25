@@ -163,6 +163,24 @@ Rcpp::List GetPaths(const std::string& file_name, int page_number);
 // [[Rcpp::export(.GetGrobs)]]
 Rcpp::List GetGrobs(const std::string& file_name, int page_number);
 
+// [[Rcpp::export]]
+Rcpp::DataFrame ReadFontTable(Rcpp::RawVector raw);
+
+// [[Rcpp::export]]
+Rcpp::List GetFontFileHeader(Rcpp::RawVector raw);
+
+// [[Rcpp::export]]
+Rcpp::List GetFontFileCMap(Rcpp::RawVector raw);
+
+// [[Rcpp::export]]
+Rcpp::List GetFontFileMaxp(Rcpp::RawVector raw);
+
+// [[Rcpp::export]]
+Rcpp::DataFrame GetFontFileLoca(Rcpp::RawVector raw);
+
+// [[Rcpp::export]]
+Rcpp::List GetFontFileGlyph(Rcpp::RawVector raw, uint16_t glyph);
+
 //---------------------------------------------------------------------------//
 // This function can be called from R to stop the underlying C++ code. This can
 // be handy in profiling etc.

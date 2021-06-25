@@ -159,13 +159,15 @@ Fword TTFont::GetFword()
 
 /*---------------------------------------------------------------------------*/
 
-Fixed TTFont::GetFixed() {
+Fixed TTFont::GetFixed()
+{
   return GetInt32() / (1 << 16);
 }
 
 /*---------------------------------------------------------------------------*/
 
-Date_type TTFont::GetDate() {
+Date_type TTFont::GetDate()
+{
   int64_t macTime = GetUint32() * 0x100000000 + GetUint32();
   int64_t utcTime = macTime * 1000 - 2080166400000;
   return utcTime;
@@ -200,14 +202,17 @@ uint32_t TTFont::GetUint32()
 
 void TTFont::ReadTables()
 {
-  scalar_type_ = GetUint32();
-  num_tables_ = GetUint16();
-  search_range_ = GetUint16();
+  scalar_type_    = GetUint32();
+  num_tables_     = GetUint16();
+  search_range_   = GetUint16();
   entry_selector_ = GetUint16();
-  range_shift_ = GetUint16();
+  range_shift_    = GetUint16();
+
   for(unsigned i = 0; i < num_tables_; ++i)
     table_of_tables_.push_back(GetTTRow());
+
   std::string::const_iterator it_store = it_;
+
   for(unsigned i = 0; i < table_of_tables_.size(); ++i)
   {
     TTFRow this_table = table_of_tables_[i];
@@ -228,23 +233,24 @@ void TTFont::ReadTables()
 
 /*---------------------------------------------------------------------------*/
 
-void TTFont::ReadMaxp() {
+void TTFont::ReadMaxp()
+{
   GoToTable("maxp");
-  maxp_.version_ = GetFixed();
-  maxp_.numGlyphs_ = GetUint16();
-  maxp_.maxPoints_ = GetUint16();
-  maxp_.maxContours_ = GetUint16();
-  maxp_.maxComponentPoints_ = GetUint16();
-  maxp_.maxComponentContours_ = GetUint16();
-  maxp_.maxZones_ = GetUint16();
-  maxp_.maxTwilightPoints_ = GetUint16();
-  maxp_.maxStorage_ = GetUint16();
-  maxp_.maxFunctionDefs_ = GetUint16();
-  maxp_.maxInstructionDefs_ = GetUint16();
-  maxp_.maxStackElements_ = GetUint16();
+  maxp_.version_               = GetFixed();
+  maxp_.numGlyphs_             = GetUint16();
+  maxp_.maxPoints_             = GetUint16();
+  maxp_.maxContours_           = GetUint16();
+  maxp_.maxComponentPoints_    = GetUint16();
+  maxp_.maxComponentContours_  = GetUint16();
+  maxp_.maxZones_              = GetUint16();
+  maxp_.maxTwilightPoints_     = GetUint16();
+  maxp_.maxStorage_            = GetUint16();
+  maxp_.maxFunctionDefs_       = GetUint16();
+  maxp_.maxInstructionDefs_    = GetUint16();
+  maxp_.maxStackElements_      = GetUint16();
   maxp_.maxSizeOfInstructions_ = GetUint16();
-  maxp_.maxComponentElements_ = GetUint16();
-  maxp_.maxComponentDepth_ = GetUint16();
+  maxp_.maxComponentElements_  = GetUint16();
+  maxp_.maxComponentDepth_     = GetUint16();
 };
 
 /*---------------------------------------------------------------------------*/
@@ -255,34 +261,37 @@ TTFRow TTFont::GetTTRow()
   res.table_name_ = std::string(it_, it_ + 4);
   it_ += 4;
   res.checksum_ = GetUint32();
-  res.offset_ = GetUint32();
-  res.length_ = GetUint32();
+  res.offset_   = GetUint32();
+  res.length_   = GetUint32();
   return res;
 }
 
 /*---------------------------------------------------------------------------*/
 
-void TTFont::ReadHeadTable() {
+void TTFont::ReadHeadTable()
+{
     GoToTable("head");
-    head_.version = GetFixed();
-    head_.fontRevision = GetFixed();
+
+    head_.version            = GetFixed();
+    head_.fontRevision       = GetFixed();
     head_.checksumAdjustment = GetUint32();
-    head_.magicNumber = GetUint32();
+    head_.magicNumber        = GetUint32();
+    head_.flags              = GetUint16();
+    head_.unitsPerEm         = GetUint16();
+    head_.created            = GetDate();
+    head_.modified           = GetDate();
+    head_.xMin               = GetFword();
+    head_.yMin               = GetFword();
+    head_.xMax               = GetFword();
+    head_.yMax               = GetFword();
+    head_.macStyle           = GetUint16();
+    head_.lowestRecPPEM      = GetUint16();
+    head_.fontDirectionHint  = GetInt16();
+    head_.indexToLocFormat   = GetInt16();
+    head_.glyphDataFormat    = GetInt16();
+
     if(head_.magicNumber != 0x5f0f3cf5)
       throw std::runtime_error("Incorrect magic number in font header");
-    head_.flags = GetUint16();
-    head_.unitsPerEm = GetUint16();
-    head_.created = GetDate();
-    head_.modified = GetDate();
-    head_.xMin = GetFword();
-    head_.yMin = GetFword();
-    head_.xMax = GetFword();
-    head_.yMax = GetFword();
-    head_.macStyle = GetUint16();
-    head_.lowestRecPPEM = GetUint16();
-    head_.fontDirectionHint = GetInt16();
-    head_.indexToLocFormat = GetInt16();
-    head_.glyphDataFormat = GetInt16();
 }
 
 /*---------------------------------------------------------------------------*/
@@ -292,6 +301,7 @@ void TTFont::ReadLoca()
   GoToTable("loca");
   uint16_t n_entries = maxp_.numGlyphs_ + 1;
   uint16_t format = head_.indexToLocFormat;
+
   if(format == 0)
   {
     for(uint16_t i = 0; i < n_entries; i++)
@@ -302,7 +312,6 @@ void TTFont::ReadLoca()
       if(i > 1) loca_.length_.push_back(next_offset - loca_.offset_.back());
       loca_.offset_.push_back(next_offset);
     }
-
   }
 
   if(format == 1)
@@ -321,6 +330,7 @@ void TTFont::ReadLoca()
   {
     throw std::runtime_error("Invalid format number in loca table");
   }
+
   loca_.length_.push_back(0);
 }
 
@@ -475,11 +485,12 @@ void TTFont::HandleFormat14(CMapDirectory& entry)
 
 /*---------------------------------------------------------------------------*/
 
-DataFrame TTFont::GetTable() {
+DataFrame TTFont::GetTable()
+{
     CharacterVector table;
-    NumericVector offset;
-    NumericVector checksum;
-    NumericVector length;
+    NumericVector   offset;
+    NumericVector   checksum;
+    NumericVector   length;
 
     for(size_t i = 0; i < table_of_tables_.size(); i++)
     {
@@ -490,17 +501,18 @@ DataFrame TTFont::GetTable() {
     }
 
     DataFrame result = Rcpp::DataFrame::create(
-      Named("table") = table,
-      Named("offset") = offset,
-      Named("length") = length,
-      Named("checksum") = checksum
-    );
+                        Named("table")    = table,
+                        Named("offset")   = offset,
+                        Named("length")   = length,
+                        Named("checksum") = checksum);
+
     return result;
   };
 
 /*---------------------------------------------------------------------------*/
 
-List TTFont::GetHead() {
+List TTFont::GetHead()
+{
     return List::create(Named("checksumAdjustment") = head_.checksumAdjustment,
                         Named("created") = head_.created,
                         Named("flags") = head_.flags,
@@ -522,7 +534,8 @@ List TTFont::GetHead() {
 
 /*---------------------------------------------------------------------------*/
 
-List TTFont::GetCMap() {
+List TTFont::GetCMap()
+{
   List result = List::create();
   for(auto j : cmap_directory_)
   {
@@ -541,117 +554,32 @@ List TTFont::GetCMap() {
 
 /*---------------------------------------------------------------------------*/
 
-List TTFont::GetMaxp(){
-  return List::create(Named("version") = maxp_.version_,
-                      Named("numGlyphs") = maxp_.numGlyphs_,
-                      Named("maxPoints") = maxp_.maxPoints_,
-                      Named("maxContours") = maxp_.maxContours_,
-                      Named("maxComponentPoints") = maxp_.maxComponentPoints_,
-                      Named("maxComponentContours") = maxp_.maxComponentContours_,
-                      Named("maxZones") = maxp_.maxZones_,
-                      Named("maxTwilightPoints") = maxp_.maxTwilightPoints_,
-                      Named("maxStorage") = maxp_.maxStorage_,
-                      Named("maxFunctionDefs") = maxp_.maxFunctionDefs_,
-                      Named("maxInstructionDefs") = maxp_.maxInstructionDefs_,
-                      Named("maxStackElements") = maxp_.maxStackElements_,
-                      Named("maxSizeOfInstructions") = maxp_.maxSizeOfInstructions_,
-                      Named("maxComponentElements") = maxp_.maxComponentElements_,
-                      Named("maxComponentDepth") = maxp_.maxComponentDepth_);
+List TTFont::GetMaxp()
+{
+  return List::create(
+    Named("version")               = maxp_.version_,
+    Named("numGlyphs")             = maxp_.numGlyphs_,
+    Named("maxPoints")             = maxp_.maxPoints_,
+    Named("maxContours")           = maxp_.maxContours_,
+    Named("maxComponentPoints")    = maxp_.maxComponentPoints_,
+    Named("maxComponentContours")  = maxp_.maxComponentContours_,
+    Named("maxZones")              = maxp_.maxZones_,
+    Named("maxTwilightPoints")     = maxp_.maxTwilightPoints_,
+    Named("maxStorage")            = maxp_.maxStorage_,
+    Named("maxFunctionDefs")       = maxp_.maxFunctionDefs_,
+    Named("maxInstructionDefs")    = maxp_.maxInstructionDefs_,
+    Named("maxStackElements")      = maxp_.maxStackElements_,
+    Named("maxSizeOfInstructions") = maxp_.maxSizeOfInstructions_,
+    Named("maxComponentElements")  = maxp_.maxComponentElements_,
+    Named("maxComponentDepth")     = maxp_.maxComponentDepth_);
 }
 
 /*---------------------------------------------------------------------------*/
 
 DataFrame TTFont::GetLoca()
 {
-  return DataFrame::create(Named("glyph") = loca_.glyph_,
+  return DataFrame::create(Named("glyph")  = loca_.glyph_,
                            Named("offset") = loca_.offset_,
                            Named("length") = loca_.length_);
 }
 
-/*---------------------------------------------------------------------------*/
-// [[Rcpp::export]]
-
-DataFrame ReadFontTable(RawVector raw)
-{
-  std::vector<uint8_t> fontfile = Rcpp::as<std::vector<uint8_t>>(raw);
-  std::string fontstring(fontfile.begin(), fontfile.end());
-  TTFont ttf(fontstring);
-  return ttf.GetTable();
-}
-
-/*---------------------------------------------------------------------------*/
-// [[Rcpp::export]]
-
-List GetHeader(RawVector raw)
-{
-  std::vector<uint8_t> fontfile = Rcpp::as<std::vector<uint8_t>>(raw);
-  std::string fontstring(fontfile.begin(), fontfile.end());
-  TTFont ttf(fontstring);
-  return ttf.GetHead();
-}
-
-/*---------------------------------------------------------------------------*/
-// [[Rcpp::export]]
-
-List GetCMap(RawVector raw)
-{
-    std::vector<uint8_t> fontfile = Rcpp::as<std::vector<uint8_t>>(raw);
-  std::string fontstring(fontfile.begin(), fontfile.end());
-  TTFont ttf(fontstring);
-  return ttf.GetCMap();
-
-}
-
-/*---------------------------------------------------------------------------*/
-// [[Rcpp::export]]
-
-List GetMaxp(RawVector raw)
-{
-  std::vector<uint8_t> fontfile = Rcpp::as<std::vector<uint8_t>>(raw);
-  std::string fontstring(fontfile.begin(), fontfile.end());
-  TTFont ttf(fontstring);
-  return ttf.GetMaxp();
-};
-
-/*---------------------------------------------------------------------------*/
-// [[Rcpp::export]]
-
-DataFrame GetLoca(RawVector raw)
-{
-  std::vector<uint8_t> fontfile = Rcpp::as<std::vector<uint8_t>>(raw);
-  std::string fontstring(fontfile.begin(), fontfile.end());
-  TTFont ttf(fontstring);
-  return ttf.GetLoca();
-};
-
-/*---------------------------------------------------------------------------*/
-// [[Rcpp::export]]
-
-List GetGlyph(RawVector raw, uint16_t glyph)
-{
-  std::vector<uint8_t> fontfile = Rcpp::as<std::vector<uint8_t>>(raw);
-  std::string fontstring(fontfile.begin(), fontfile.end());
-  TTFont ttf(fontstring);
-  Glyf g = ttf.ReadGlyf(glyph);
-
-  if(g.numberOfContours_ < 1) {
-      return List::create(Named("Glyph") = glyph,
-               Named("N_Contours") = g.numberOfContours_,
-               Named("xmin") = g.xMin_,
-               Named("xmax") = g.xMax_,
-               Named("ymin") = g.yMin_,
-               Named("ymax") = g.yMax_,
-               Named("instructions") = g.instructions_,
-               Named("endPtsOfContours") = g.endPtsOfContours_);
-  }
-
-  return List::create(Named("Glyph") = glyph,
-               Named("N_Contours") = g.numberOfContours_,
-               Named("xmin") = g.xMin_,
-               Named("xmax") = g.xMax_,
-               Named("ymin") = g.yMin_,
-               Named("ymax") = g.yMax_,
-               Named("instructions") = g.instructions_,
-               Named("endPtsOfContours") = g.endPtsOfContours_,
-               Named("Contours") = g.contours_.GetContours());
-}

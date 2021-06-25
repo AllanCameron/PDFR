@@ -61,31 +61,31 @@
     .Call(`_PDFR_GetGrobs`, file_name, page_number)
 }
 
-.stopCpp <- function() {
-    invisible(.Call(`_PDFR_stopCpp`))
-}
-
 ReadFontTable <- function(raw) {
     .Call(`_PDFR_ReadFontTable`, raw)
 }
 
-GetHeader <- function(raw) {
-    .Call(`_PDFR_GetHeader`, raw)
+GetFontFileHeader <- function(raw) {
+    .Call(`_PDFR_GetFontFileHeader`, raw)
 }
 
-GetCMap <- function(raw) {
-    .Call(`_PDFR_GetCMap`, raw)
+GetFontFileCMap <- function(raw) {
+    .Call(`_PDFR_GetFontFileCMap`, raw)
 }
 
-GetMaxp <- function(raw) {
-    .Call(`_PDFR_GetMaxp`, raw)
+GetFontFileMaxp <- function(raw) {
+    .Call(`_PDFR_GetFontFileMaxp`, raw)
 }
 
-GetLoca <- function(raw) {
-    .Call(`_PDFR_GetLoca`, raw)
+GetFontFileLoca <- function(raw) {
+    .Call(`_PDFR_GetFontFileLoca`, raw)
 }
 
-GetGlyph <- function(raw, glyph) {
-    .Call(`_PDFR_GetGlyph`, raw, glyph)
+GetFontFileGlyph <- function(raw, glyph) {
+    .Call(`_PDFR_GetFontFileGlyph`, raw, glyph)
+}
+
+.stopCpp <- function() {
+    invisible(.Call(`_PDFR_stopCpp`))
 }
 

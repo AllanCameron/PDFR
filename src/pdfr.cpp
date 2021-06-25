@@ -705,6 +705,90 @@ List GetGrobs(const string& file_name, int page_number)
   return result;
 }
 
+/*---------------------------------------------------------------------------*/
+
+DataFrame ReadFontTable(RawVector raw)
+{
+  std::vector<uint8_t> fontfile = Rcpp::as<std::vector<uint8_t>>(raw);
+  std::string fontstring(fontfile.begin(), fontfile.end());
+  TTFont ttf(fontstring);
+  return ttf.GetTable();
+}
+
+/*---------------------------------------------------------------------------*/
+
+List GetFontFileHeader(RawVector raw)
+{
+  std::vector<uint8_t> fontfile = Rcpp::as<std::vector<uint8_t>>(raw);
+  std::string fontstring(fontfile.begin(), fontfile.end());
+  TTFont ttf(fontstring);
+  return ttf.GetHead();
+}
+
+/*---------------------------------------------------------------------------*/
+
+List GetFontFileCMap(RawVector raw)
+{
+  std::vector<uint8_t> fontfile = Rcpp::as<std::vector<uint8_t>>(raw);
+  std::string fontstring(fontfile.begin(), fontfile.end());
+  TTFont ttf(fontstring);
+  return ttf.GetCMap();
+
+}
+
+/*---------------------------------------------------------------------------*/
+
+List GetFontFileMaxp(RawVector raw)
+{
+  std::vector<uint8_t> fontfile = Rcpp::as<std::vector<uint8_t>>(raw);
+  std::string fontstring(fontfile.begin(), fontfile.end());
+  TTFont ttf(fontstring);
+  return ttf.GetMaxp();
+};
+
+/*---------------------------------------------------------------------------*/
+
+DataFrame GetFontFileLoca(RawVector raw)
+{
+  std::vector<uint8_t> fontfile = Rcpp::as<std::vector<uint8_t>>(raw);
+  std::string fontstring(fontfile.begin(), fontfile.end());
+  TTFont ttf(fontstring);
+  return ttf.GetLoca();
+};
+
+/*---------------------------------------------------------------------------*/
+
+List GetFontFileGlyph(RawVector raw, uint16_t glyph)
+{
+  std::vector<uint8_t> fontfile = Rcpp::as<std::vector<uint8_t>>(raw);
+  std::string fontstring(fontfile.begin(), fontfile.end());
+  TTFont ttf(fontstring);
+  Glyf g = ttf.ReadGlyf(glyph);
+
+  if(g.numberOfContours_ < 1) {
+    return List::create(Named("Glyph") = glyph,
+                        Named("N_Contours") = g.numberOfContours_,
+                        Named("xmin") = g.xMin_,
+                        Named("xmax") = g.xMax_,
+                        Named("ymin") = g.yMin_,
+                        Named("ymax") = g.yMax_,
+                        Named("instructions") = g.instructions_,
+                        Named("endPtsOfContours") = g.endPtsOfContours_);
+  }
+
+  return List::create(Named("Glyph") = glyph,
+                      Named("N_Contours") = g.numberOfContours_,
+                      Named("xmin") = g.xMin_,
+                      Named("xmax") = g.xMax_,
+                      Named("ymin") = g.yMin_,
+                      Named("ymax") = g.yMax_,
+                      Named("instructions") = g.instructions_,
+                      Named("endPtsOfContours") = g.endPtsOfContours_,
+                      Named("Contours") = g.contours_.GetContours());
+}
+
+
+
 //---------------------------------------------------------------------------//
 
 #ifdef PROFILER_PDFR
