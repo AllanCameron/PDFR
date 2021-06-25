@@ -28,17 +28,36 @@ Glyf TTFont::ReadGlyf(uint16_t glyf_num)
   result.xMax_ =  GetInt16();
   result.yMax_ =  GetInt16();
 
+  if(result.numberOfContours_ < 0)
+    ReadCompoundGlyph(result);
+  else
+    ReadSimpleGlyph(result);
+
+  return result;
+}
+
+/*---------------------------------------------------------------------------*/
+
+void TTFont::ReadCompoundGlyph(Glyf& result)
+{
+  throw std::runtime_error("Composite glyph");
+}
+
+/*---------------------------------------------------------------------------*/
+
+void TTFont::ReadSimpleGlyph(Glyf& result)
+{
   for(uint16_t i = 0; i < result.numberOfContours_; i++)
   {
     result.endPtsOfContours_.push_back(GetUint16());
   }
 
   result.instructionLength_ = GetUint16();
+
   for(uint16_t i = 0; i < result.instructionLength_; i++)
   {
     result.instructions_.push_back(GetUint8());
   }
-
   uint16_t shape_no = 1;
 
   for(uint16_t i = 0; i < result.endPtsOfContours_.size(); i++)
@@ -72,11 +91,11 @@ Glyf TTFont::ReadGlyf(uint16_t glyf_num)
 
     if((flag & X_SHORT_VECTOR) == X_SHORT_VECTOR)
     {
-      if((flag & X_MODIFIER) ==
-           X_MODIFIER)
-      new_x += (int16_t) GetUint8();
+      if((flag & X_MODIFIER) == X_MODIFIER) new_x += (int16_t) GetUint8();
       else new_x -= (int16_t) GetUint8();
-    } else {
+    }
+    else
+    {
       if((flag & X_MODIFIER) != X_MODIFIER) new_x += GetInt16();
     }
     result.contours_.xcoords.push_back(new_x);
@@ -88,18 +107,17 @@ Glyf TTFont::ReadGlyf(uint16_t glyf_num)
 
     if((flag & Y_SHORT_VECTOR) == Y_SHORT_VECTOR)
     {
-      if((flag & Y_MODIFIER) ==
-           Y_MODIFIER)
-      new_y += (int16_t) GetUint8();
+      if((flag & Y_MODIFIER) == Y_MODIFIER) new_y += (int16_t) GetUint8();
       else new_y -= (int16_t) GetUint8();
-    } else {
+    }
+    else
+    {
       if((flag & Y_MODIFIER) != Y_MODIFIER) new_y += GetInt16();
     }
     result.contours_.ycoords.push_back(new_y);
   }
 
   result.contours_.smooth();
-  return result;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -119,6 +137,18 @@ void TTFont::GoToTable(std::string table_name) {
   it_ = stream_.begin() + index;
 }
 
+bool TTFont::TableExists(std::string table_name) {
+  int index = -1;
+  for(size_t i = 0; i < table_of_tables_.size(); ++i)
+  {
+    if(table_of_tables_[i].table_name_ == table_name)
+    {
+      index = table_of_tables_[i].offset_;
+    }
+  }
+  if(index == -1) return false;
+  return true;
+}
 /*---------------------------------------------------------------------------*/
 
 uint8_t TTFont::GetUint8()
@@ -338,63 +368,76 @@ void TTFont::ReadLoca()
 
 void TTFont::ReadCMap()
 {
-  GoToTable("cmap");
-
-  auto cmap_begin = it_;
-
-  if (GetUint16() != 0) throw std::runtime_error("cmap version not set to zero.");
-  uint16_t n_tables = GetUint16();
-
-  for (uint16_t i = 0; i < n_tables; ++i)
+  if(TableExists("cmap"))
   {
-    std::string encoding;
-    uint16_t platform = GetUint16();
-    uint16_t id = GetUint16();
-    if (platform == 0)
+    GoToTable("cmap");
+
+    auto cmap_begin = it_;
+
+    if (GetUint16() != 0)
+      throw std::runtime_error("cmap version not set to zero.");
+
+    uint16_t n_tables = GetUint16();
+
+    for (uint16_t i = 0; i < n_tables; ++i)
     {
-      auto entry = unicode_specific_map_s.find(id);
-      if (entry != unicode_specific_map_s.end()) encoding = entry->second;
+      std::string encoding;
+      uint16_t platform = GetUint16();
+      uint16_t id = GetUint16();
+      if (platform == 0)
+      {
+        auto entry = unicode_specific_map_s.find(id);
+        if (entry != unicode_specific_map_s.end()) encoding = entry->second;
+      }
+      if (platform == 3)
+      {
+        auto entry = windows_specific_map_s.find(id);
+        if (entry != windows_specific_map_s.end()) encoding = entry->second;
+      }
+      if (platform == 1) encoding = "Mac";
+      if (platform == 2 || platform > 3)
+      {
+        throw std::runtime_error("Unrecognised encoding in cmap directory.");
+      }
+      uint16_t offset = GetUint32();
+      cmap_directory_.emplace_back(CMapDirectory(platform, id, offset, encoding));
     }
-    if (platform == 3)
+
+    for (auto& entry : cmap_directory_)
     {
-      auto entry = windows_specific_map_s.find(id);
-      if (entry != windows_specific_map_s.end()) encoding = entry->second;
+      it_ = cmap_begin + entry.offset_;
+      entry.format_ = GetUint16();
+      if (entry.format_ > 7)
+      {
+        if (GetUint16() != 0) throw std::runtime_error("Unknown cmap table format.");
+      }
+      entry.length_ = GetUint16();
+      uint16_t language = GetUint16();
+      if (language) language = 0; // Language is unused variable - removes warning
+
+      switch(entry.format_)
+      {
+        case 0 : HandleFormat0(entry); break;
+        case 2 :  HandleFormat2(entry); break;
+        case 4 : HandleFormat4(entry); break;
+        case 6 : HandleFormat6(entry); break;
+        case 8 : HandleFormat8(entry); break;
+        case 10 : HandleFormat10(entry); break;
+        case 12 : HandleFormat12(entry); break;
+        case 13 : HandleFormat13(entry); break;
+        case 14 : HandleFormat14(entry); break;
+        default : throw std::runtime_error("Unknown subtable format in cmap.");
+      }
+
     }
-    if (platform == 1) encoding = "Mac";
-    if (platform == 2 || platform > 3)
-    {
-      throw std::runtime_error("Unrecognised encoding in cmap directory.");
-    }
-    uint16_t offset = GetUint32();
-    cmap_directory_.emplace_back(CMapDirectory(platform, id, offset, encoding));
   }
-
-  for (auto& entry : cmap_directory_)
+  else
   {
-    it_ = cmap_begin + entry.offset_;
-    entry.format_ = GetUint16();
-    if (entry.format_ > 7)
+    cmap_directory_.emplace_back(CMapDirectory(0, 0, 0, "Unicode Default"));
+    for (uint16_t j = 0; j <= 256; ++j)
     {
-      if (GetUint16() != 0) throw std::runtime_error("Unknown cmap table format.");
+      cmap_directory_.back().cmap_[j] = j;
     }
-    entry.length_ = GetUint16();
-    uint16_t language = GetUint16();
-    if (language) language = 0; // Language is unused variable - removes warning
-
-    switch(entry.format_)
-    {
-      case 0 : HandleFormat0(entry); break;
-      case 2 :  HandleFormat2(entry); break;
-      case 4 : HandleFormat4(entry); break;
-      case 6 : HandleFormat6(entry); break;
-      case 8 : HandleFormat8(entry); break;
-      case 10 : HandleFormat10(entry); break;
-      case 12 : HandleFormat12(entry); break;
-      case 13 : HandleFormat13(entry); break;
-      case 14 : HandleFormat14(entry); break;
-      default : throw std::runtime_error("Unknown subtable format in cmap.");
-    }
-
   }
 }
 
