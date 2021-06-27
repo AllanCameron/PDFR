@@ -27,6 +27,7 @@ Glyf TTFont::ReadGlyf(uint16_t glyf_num)
   result.yMin_ =  GetInt16();
   result.xMax_ =  GetInt16();
   result.yMax_ =  GetInt16();
+  result.contours_.push_back(Contour());
 
   if(result.numberOfContours_ < 0)
     ReadCompoundGlyph(result);
@@ -40,7 +41,92 @@ Glyf TTFont::ReadGlyf(uint16_t glyf_num)
 
 void TTFont::ReadCompoundGlyph(Glyf& result)
 {
-  throw std::runtime_error("Composite glyph");
+  uint16_t flags = MORE_COMPONENTS;
+
+  while((flags & MORE_COMPONENTS) == MORE_COMPONENTS)
+  {
+
+    flags = GetUint16();
+    uint16_t index = GetUint16();
+    auto store = it_;
+
+    Glyf component = ReadGlyf(index);
+
+    it_ = store;
+
+    double a = 1.0;
+    double d = 1.0;
+    double b = 0.0;
+    double c = 0.0;
+    double e = 0.0;
+    double f = 0.0;
+
+    if((flags & ARG_1_AND_2_ARE_WORDS) == ARG_1_AND_2_ARE_WORDS)
+    {
+      if((flags & ARGS_ARE_XY_VALUES) == ARGS_ARE_XY_VALUES)
+      {
+        e = GetInt16();
+        f = GetInt16();
+      }
+      else
+      {
+        if(result.contours_.size() == 0) throw std::runtime_error("I don't understand");
+        uint16_t this_compound_index = GetUint16();
+        uint16_t comp_index = GetUint16();
+        e = component.contours_[0].xcoords[comp_index];
+        f = component.contours_[0].ycoords[comp_index];
+      }
+    }
+    else
+    {
+      if((flags & ARGS_ARE_XY_VALUES) == ARGS_ARE_XY_VALUES)
+      {
+        uint16_t arg1and2 = GetInt16();
+        e = ((int8_t)(arg1and2 >> 8));
+        f = (int8_t) (arg1and2 & 0xff);
+      }
+      else
+      {
+        if(result.contours_.size() == 0) throw std::runtime_error("I don't understand");
+        uint8_t this_compound_index = GetUint8();
+        uint8_t comp_index = GetUint8();
+        e = component.contours_[0].xcoords[comp_index];
+        f = component.contours_[0].ycoords[comp_index];
+      }
+
+    }
+
+    if((flags & WE_HAVE_A_SCALE) == WE_HAVE_A_SCALE)
+    {
+      a = GetF2Dot14();
+      d = a;
+    }
+    else if((flags & WE_HAVE_AN_X_AND_Y_SCALE) ==  WE_HAVE_AN_X_AND_Y_SCALE)
+    {
+      a =  GetF2Dot14();
+      d =  GetF2Dot14();
+    }
+    else if((flags & WE_HAVE_A_TWO_BY_TWO) == WE_HAVE_A_TWO_BY_TWO)
+    {
+      a =  GetF2Dot14();
+      b =  GetF2Dot14();
+      c =  GetF2Dot14();
+      d =  GetF2Dot14();
+    }
+
+    double m = std::max(std::fabs(a), std::fabs(b));
+    double n = std::max(std::fabs(c), std::fabs(d));
+    if(std::fabs(std::fabs(a) - std::fabs(c)) < double(33)/double(65536))
+    {
+      m = 2 * m;
+    }
+    if(std::fabs(std::fabs(b) - std::fabs(d)) < double(33)/double(65536))
+    {
+      n = 2 * n;
+    }
+    component.contours_[0].transform(a, b, c, d, e, f, m, n);
+    result.contours_.push_back(component.contours_[0]);
+  }
 }
 
 /*---------------------------------------------------------------------------*/
@@ -62,32 +148,32 @@ void TTFont::ReadSimpleGlyph(Glyf& result)
 
   for(uint16_t i = 0; i < result.endPtsOfContours_.size(); i++)
   {
-    while(result.contours_.shape.size() <
+    while(result.contours_[0].shape.size() <
           ((size_t) result.endPtsOfContours_[i] + 1))
     {
-      result.contours_.shape.push_back(shape_no);
+      result.contours_[0].shape.push_back(shape_no);
     }
     shape_no++;
   }
 
-  while(result.contours_.flags.size() < result.contours_.shape.size())
+  while(result.contours_[0].flags.size() < result.contours_[0].shape.size())
   {
     uint8_t flag = GetUint8();
-    result.contours_.flags.push_back(flag);
+    result.contours_[0].flags.push_back(flag);
 
     if((flag & REPEAT_FLAG) == REPEAT_FLAG)
     {
       uint8_t n_repeats = GetUint8();
-      while(n_repeats-- != 0) result.contours_.flags.push_back(flag);
+      while(n_repeats-- != 0) result.contours_[0].flags.push_back(flag);
     }
   }
 
   int16_t new_x = 0;
   int16_t new_y = 0;
 
-  while(result.contours_.xcoords.size() <  result.contours_.shape.size())
+  while(result.contours_[0].xcoords.size() <  result.contours_[0].shape.size())
   {
-    uint8_t flag = result.contours_.flags[result.contours_.xcoords.size()];
+    uint8_t flag = result.contours_[0].flags[result.contours_[0].xcoords.size()];
 
     if((flag & X_SHORT_VECTOR) == X_SHORT_VECTOR)
     {
@@ -98,12 +184,12 @@ void TTFont::ReadSimpleGlyph(Glyf& result)
     {
       if((flag & X_MODIFIER) != X_MODIFIER) new_x += GetInt16();
     }
-    result.contours_.xcoords.push_back(new_x);
+    result.contours_[0].xcoords.push_back(new_x);
   }
 
-  while(result.contours_.ycoords.size() <  result.contours_.shape.size())
+  while(result.contours_[0].ycoords.size() <  result.contours_[0].shape.size())
   {
-    uint8_t flag = result.contours_.flags[result.contours_.ycoords.size()];
+    uint8_t flag = result.contours_[0].flags[result.contours_[0].ycoords.size()];
 
     if((flag & Y_SHORT_VECTOR) == Y_SHORT_VECTOR)
     {
@@ -114,10 +200,10 @@ void TTFont::ReadSimpleGlyph(Glyf& result)
     {
       if((flag & Y_MODIFIER) != Y_MODIFIER) new_y += GetInt16();
     }
-    result.contours_.ycoords.push_back(new_y);
+    result.contours_[0].ycoords.push_back(new_y);
   }
 
-  result.contours_.smooth();
+  result.contours_[0].smooth();
 }
 
 /*---------------------------------------------------------------------------*/
@@ -192,6 +278,16 @@ Fword TTFont::GetFword()
 Fixed TTFont::GetFixed()
 {
   return GetInt32() / (1 << 16);
+}
+
+/*---------------------------------------------------------------------------*/
+
+double TTFont::GetF2Dot14()
+{
+  uint16_t num = GetInt16();
+   int integer = num >> 14;
+   double fraction = ((double) (num & 0x3fff)) / ((double) 0x4000);
+   return integer + fraction;
 }
 
 /*---------------------------------------------------------------------------*/

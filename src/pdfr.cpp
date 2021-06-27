@@ -766,14 +766,17 @@ List GetFontFileGlyph(RawVector raw, uint16_t glyph)
   Glyf g = ttf.ReadGlyf(glyph);
 
   if(g.numberOfContours_ < 1) {
+
+    Rcpp::List contours = Rcpp::List::create(g.contours_[0].GetContours());
+    for(size_t i = 1; i < g.contours_.size(); i++)
+      contours.push_back(g.contours_[i].GetContours());
     return List::create(Named("Glyph") = glyph,
                         Named("N_Contours") = g.numberOfContours_,
                         Named("xmin") = g.xMin_,
                         Named("xmax") = g.xMax_,
                         Named("ymin") = g.yMin_,
                         Named("ymax") = g.yMax_,
-                        Named("instructions") = g.instructions_,
-                        Named("endPtsOfContours") = g.endPtsOfContours_);
+                        Named("Contours") = contours);
   }
 
   return List::create(Named("Glyph") = glyph,
@@ -784,7 +787,7 @@ List GetFontFileGlyph(RawVector raw, uint16_t glyph)
                       Named("ymax") = g.yMax_,
                       Named("instructions") = g.instructions_,
                       Named("endPtsOfContours") = g.endPtsOfContours_,
-                      Named("Contours") = g.contours_.GetContours());
+                      Named("Contours") = g.contours_[0].GetContours());
 }
 
 

@@ -411,3 +411,53 @@ pdfgrobs <- function(file_name, pagenum, scale = dev.size()[2]/10, enc = "UTF-8"
   lapply(groblist, grid::grid.draw)
   invisible(groblist)
 }
+
+##---------------------------------------------------------------------------##
+#' draw_glyph
+#'
+#' Draws glyphs from a truetype font as grid grobs
+#'
+#' @param fontfile a raw vector representing a font file
+#' @param glyph the character to be drawn. Can be text or an integer
+#'
+#' @return no return
+#' @export
+#'
+#' @examples draw_glyph(ttf, "a")
+##---------------------------------------------------------------------------##
+draw_glyph <- function(fontfile, glyph)
+{
+  cmap <- PDFR::GetFontFileCMap(fontfile)
+  formats <- sapply(cmap, function(x) x$format)
+  if(4 %in% formats) cmap <- cmap[[which(formats == 4)[1]]]
+  else if(0 %in% formats) cmap <- cmap[[which(formats == 0)[1]]]
+  else stop("Can't find appropriate cmap")
+
+  if(is.character(glyph)) glyph <- as.numeric(charToRaw(substr(glyph, 1, 1)))
+
+  index <- which(cmap$first == glyph)
+  if(length(index) == 0) stop("Glyph not found")
+  glyph <- cmap$second[index[1]]
+
+  glyph <- PDFR::GetFontFileGlyph(fontfile, glyph)
+  grid::grid.newpage()
+  dfs <- glyph$Contours
+  if(is.data.frame(dfs)) dfs <- list(dfs)
+  for(df in dfs)
+  {
+
+  if(nrow(df) == 0) next
+
+  xrange <- glyph$xmax - glyph$xmin
+  yrange <- glyph$ymax - glyph$ymin
+
+  shrink_by <- if(xrange > yrange) xrange else yrange
+
+  df$xcoords <- (df$xcoords - glyph$xmin)/(shrink_by * 2) + 0.25
+  df$ycoords <- (df$ycoords - glyph$ymin)/(shrink_by * 2) + 0.25
+
+  grid::grid.path(df$xcoords, df$ycoords, id = df$shape,
+                  gp = grid::gpar(fill = "black"), rule = "winding")
+  }
+}
+

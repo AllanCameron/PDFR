@@ -241,6 +241,16 @@ struct Contour
     shape = shape_c;
   }
 
+  void transform(double a, double b, double c, double d, double e, double f,
+                 double m, double n)
+  {
+    for(size_t i = 0; i < xcoords.size(); i++)
+    {
+      xcoords[i] = m * (xcoords[i] * a/m + ycoords[i] * c/m + e);
+      ycoords[i] = n * (xcoords[i] * b/n + ycoords[i] * d/n + f);
+    }
+  }
+
   Rcpp::DataFrame GetContours()
   {
     return Rcpp::DataFrame::create(
@@ -259,11 +269,26 @@ struct Glyf
   Fword                 yMin_;
   Fword                 xMax_;
   Fword                 yMax_;
+
+
   std::vector<uint16_t> endPtsOfContours_;
   uint16_t              instructionLength_;
   std::vector<uint8_t>  instructions_;
-  Contour               contours_;
-  Rcpp::List GetOutlines(){return Rcpp::List::create(contours_.GetContours());}
+  std::vector<Contour>  contours_;
+
+  Rcpp::List GetOutlines()
+  {
+
+    auto output = Rcpp::List::create(contours_[0].GetContours());
+    if(contours_.size() > 0)
+    {
+      for(size_t i = 1; i < contours_.size(); i++)
+      {
+        output.push_back(contours_[i].GetContours());
+      }
+    }
+    return output;
+  }
 };
 
 /*---------------------------------------------------------------------------*/
@@ -291,6 +316,7 @@ class TTFont
   uint32_t  GetUint32();
   int16_t   GetInt16();
   int32_t   GetInt32();
+  double    GetF2Dot14();
   Fword     GetFword();
   Date_type GetDate();
   Fixed     GetFixed();
