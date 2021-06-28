@@ -23,9 +23,9 @@
 
 
 /*---------------------------------------------------------------------------*/
-/* This is a header-only implementation of a GraphicObject class, which is used to
- * store information about shapes extracted from the page description program.
- *
+/* This is a header-only implementation of a GraphicObject class, which is used
+ * to store information about shapes extracted from the page description
+ * program.
  */
 
 class GraphicObject

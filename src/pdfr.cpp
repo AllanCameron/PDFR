@@ -712,7 +712,28 @@ DataFrame ReadFontTable(RawVector raw)
   std::vector<uint8_t> fontfile = Rcpp::as<std::vector<uint8_t>>(raw);
   std::string fontstring(fontfile.begin(), fontfile.end());
   TTFont ttf(fontstring);
-  return ttf.GetTable();
+  auto  table_of_tables = ttf.GetTable();
+
+  CharacterVector table;
+  NumericVector   offset;
+  NumericVector   checksum;
+  NumericVector   length;
+
+  for(size_t i = 0; i < table_of_tables.size(); i++)
+  {
+    table.push_back(table_of_tables[i].table_name_);
+    offset.push_back(table_of_tables[i].offset_);
+    checksum.push_back(table_of_tables[i].checksum_);
+    length.push_back(table_of_tables[i].length_);
+  }
+
+  DataFrame result = Rcpp::DataFrame::create(
+    Named("table")    = table,
+    Named("offset")   = offset,
+    Named("length")   = length,
+    Named("checksum") = checksum);
+
+  return result;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -722,17 +743,52 @@ List GetFontFileHeader(RawVector raw)
   std::vector<uint8_t> fontfile = Rcpp::as<std::vector<uint8_t>>(raw);
   std::string fontstring(fontfile.begin(), fontfile.end());
   TTFont ttf(fontstring);
-  return ttf.GetHead();
+
+  HeadTable head = ttf.GetHead();
+
+  return Rcpp::List::create(
+    Rcpp::Named("checksumAdjustment") = head.checksumAdjustment,
+    Rcpp::Named("created") = head.created,
+    Rcpp::Named("flags") = head.flags,
+    Rcpp::Named("fontDirectionHint") = head.fontDirectionHint,
+    Rcpp::Named("fontRevision") = head.fontRevision,
+    Rcpp::Named("glyphDataFormat") = head.glyphDataFormat,
+    Rcpp::Named("indexToLocFormat") = head.indexToLocFormat,
+    Rcpp::Named("lowestRecPPEM") = head.lowestRecPPEM,
+    Rcpp::Named("macStyle") = head.macStyle,
+    Rcpp::Named("magicNumber") = head.magicNumber,
+    Rcpp::Named("modified") = head.modified,
+    Rcpp::Named("unitsPerEm") = head.unitsPerEm,
+    Rcpp::Named("version") = head.version,
+    Rcpp::Named("xMax") = head.xMax,
+    Rcpp::Named("xMin") = head.xMin,
+    Rcpp::Named("yMax") = head.yMax,
+    Rcpp::Named("yMin") = head.yMin);
 }
 
 /*---------------------------------------------------------------------------*/
 
-List GetFontFileCMap(RawVector raw)
+Rcpp::List GetFontFileCMap(RawVector raw)
 {
   std::vector<uint8_t> fontfile = Rcpp::as<std::vector<uint8_t>>(raw);
   std::string fontstring(fontfile.begin(), fontfile.end());
   TTFont ttf(fontstring);
-  return ttf.GetCMap();
+  std::vector<CMapDirectory> cmaps = ttf.GetCMap();
+
+  Rcpp::List result = List::create();
+  for(auto j : cmaps)
+  {
+    std::vector<uint16_t> key, value;
+    for(auto i : j.cmap_)
+    {
+      key.push_back(i.first);
+      value.push_back(i.second);
+    }
+    result.push_back(List::create(Named("format") = j.format_,
+                                  Named("first")  = key,
+                                  Named("second") = value));
+  }
+  return result;
 
 }
 
@@ -743,17 +799,37 @@ List GetFontFileMaxp(RawVector raw)
   std::vector<uint8_t> fontfile = Rcpp::as<std::vector<uint8_t>>(raw);
   std::string fontstring(fontfile.begin(), fontfile.end());
   TTFont ttf(fontstring);
-  return ttf.GetMaxp();
+  auto maxp = ttf.GetMaxp();
+
+  return List::create(
+    Named("version")               = maxp.version_,
+    Named("numGlyphs")             = maxp.numGlyphs_,
+    Named("maxPoints")             = maxp.maxPoints_,
+    Named("maxContours")           = maxp.maxContours_,
+    Named("maxComponentPoints")    = maxp.maxComponentPoints_,
+    Named("maxComponentContours")  = maxp.maxComponentContours_,
+    Named("maxZones")              = maxp.maxZones_,
+    Named("maxTwilightPoints")     = maxp.maxTwilightPoints_,
+    Named("maxStorage")            = maxp.maxStorage_,
+    Named("maxFunctionDefs")       = maxp.maxFunctionDefs_,
+    Named("maxInstructionDefs")    = maxp.maxInstructionDefs_,
+    Named("maxStackElements")      = maxp.maxStackElements_,
+    Named("maxSizeOfInstructions") = maxp.maxSizeOfInstructions_,
+    Named("maxComponentElements")  = maxp.maxComponentElements_,
+    Named("maxComponentDepth")     = maxp.maxComponentDepth_);
 };
 
 /*---------------------------------------------------------------------------*/
 
-DataFrame GetFontFileLoca(RawVector raw)
+Rcpp::DataFrame GetFontFileLoca(RawVector raw)
 {
   std::vector<uint8_t> fontfile = Rcpp::as<std::vector<uint8_t>>(raw);
   std::string fontstring(fontfile.begin(), fontfile.end());
   TTFont ttf(fontstring);
-  return ttf.GetLoca();
+  Loca loca = ttf.GetLoca();
+  return Rcpp::DataFrame::create(Named("glyph")  = loca.glyph_,
+                                 Named("offset") = loca.offset_,
+                                 Named("length") = loca.length_);
 };
 
 /*---------------------------------------------------------------------------*/
@@ -765,31 +841,32 @@ List GetFontFileGlyph(RawVector raw, uint16_t glyph)
   TTFont ttf(fontstring);
   Glyf g = ttf.ReadGlyf(glyph);
 
-  if(g.numberOfContours_ < 1) {
+  Rcpp::List contours = Rcpp::List::create(
+    Rcpp::DataFrame::create(
+      Rcpp::Named("xcoords") = g.contours_[0].xcoords,
+      Rcpp::Named("ycoords") = g.contours_[0].ycoords,
+      Rcpp::Named("shape")   = g.contours_[0].shape)
+  );
 
-    Rcpp::List contours = Rcpp::List::create(g.contours_[0].GetContours());
+  if(g.numberOfContours_ < 1)
+  {
     for(size_t i = 1; i < g.contours_.size(); i++)
-      contours.push_back(g.contours_[i].GetContours());
-    return List::create(Named("Glyph") = glyph,
-                        Named("N_Contours") = g.numberOfContours_,
-                        Named("xmin") = g.xMin_,
-                        Named("xmax") = g.xMax_,
-                        Named("ymin") = g.yMin_,
-                        Named("ymax") = g.yMax_,
-                        Named("Contours") = contours);
+    {
+      Rcpp::DataFrame df = Rcpp::DataFrame::create(
+        Rcpp::Named("xcoords") = g.contours_[i].xcoords,
+        Rcpp::Named("ycoords") = g.contours_[i].ycoords,
+        Rcpp::Named("shape")   = g.contours_[i].shape);
+      contours.push_back(df);
+    }
   }
-
-  return List::create(Named("Glyph") = glyph,
+  return List::create(Named("Glyph")      = glyph,
                       Named("N_Contours") = g.numberOfContours_,
-                      Named("xmin") = g.xMin_,
-                      Named("xmax") = g.xMax_,
-                      Named("ymin") = g.yMin_,
-                      Named("ymax") = g.yMax_,
-                      Named("instructions") = g.instructions_,
-                      Named("endPtsOfContours") = g.endPtsOfContours_,
-                      Named("Contours") = g.contours_[0].GetContours());
+                      Named("xmin")       = g.xMin_,
+                      Named("xmax")       = g.xMax_,
+                      Named("ymin")       = g.yMin_,
+                      Named("ymax")       = g.yMax_,
+                      Named("Contours")   = contours);
 }
-
 
 
 //---------------------------------------------------------------------------//

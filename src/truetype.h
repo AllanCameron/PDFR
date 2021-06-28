@@ -1,24 +1,47 @@
+//---------------------------------------------------------------------------//
+//                                                                           //
+//  PDFR TrueType header file                                                //
+//                                                                           //
+//  Copyright (C) 2018 - 2021 by Allan Cameron                               //
+//                                                                           //
+//  Licensed under the MIT license - see https://mit-license.org             //
+//  or the LICENSE file in the project root directory                        //
+//                                                                           //
+//---------------------------------------------------------------------------//
 
 #ifndef PDFR_TTF
+
 /*---------------------------------------------------------------------------*/
+
 #define PDFR_TTF
 
-#include<Rcpp.h>
+/* The TrueType class allows extraction of glyphs from font files, which are
+ * often stored as compressed streams inside pdf files. This allows us to get
+ * the actual outlines of the glyphs. Some fontfiles also have internal cmap
+ * tables that allow a code point to be translated into a particular glyph, so
+ * they may have some role in text parsing if there is no external cmap or
+ * other mechanism for looking up code points.
+ */
+
 #include<map>
 #include<vector>
-#include<numeric>
-#include<algorithm>
-#include<iostream>
-#include <stdint.h>
-#include <stdexcept>
+#include<string>
+
 
 /*---------------------------------------------------------------------------*/
+/* The docs for TrueType use particular names for common data types; it makes
+ * writing the code easier to stick to these conventions by defining some
+ * type aliases.
+ */
 
 typedef int16_t Fword;
 typedef float Fixed;
 typedef int64_t Date_type;
 
 /*---------------------------------------------------------------------------*/
+/* Reading the x and y coordinates of a simple glyph requires the interpretation
+ * of a preceding flag byte. These flags are defined directly from the docs.
+ */
 
 enum flagbits {
   ON_CURVE_POINT = 0x01,
@@ -30,7 +53,13 @@ enum flagbits {
   OVERLAP_SIMPLE = 0x40
 };
 
-enum composites {
+/*---------------------------------------------------------------------------*/
+/* Reading compound glyphs is even more complex than reading simple glyphs. It
+ * has a 2-byte long set of flags that must be read. Again, these are taken
+ * directly from the docs.
+ */
+
+enum compound_flags {
   ARG_1_AND_2_ARE_WORDS    = 0x01,
   ARGS_ARE_XY_VALUES       = 0x02,
   ROUND_XY_TO_GRID         = 0x04,
@@ -45,16 +74,25 @@ enum composites {
 };
 
 /*---------------------------------------------------------------------------*/
+/* Each TrueType file has a directory or "contents page" at the start, which
+ * tells us where to get each data table in the file. This "table of tables"
+ * is specified row-wise and can be defined with the following simple struct:
+ * */
 
 struct TTFRow
 {
-  std::string table_name_;
-  uint32_t    checksum_;
-  uint32_t    offset_;
-  uint32_t    length_;
+  std::string table_name_; // A four-character long table name
+  uint32_t    checksum_;   // Allows us to ensure the table isn't corrupted
+  uint32_t    offset_;     // The table's position in the font file
+  uint32_t    length_;     // The length of the table in bytes.
 };
 
 /*---------------------------------------------------------------------------*/
+/* The head table gives various types of data about the font, perhaps most
+ * importantly for our purposes the maximum bounding box and the units per Em of
+ * the font. It is a list of scalars of different types so we give it its own
+ * struct to represent and store it.
+ */
 
 struct HeadTable
 {
@@ -78,17 +116,15 @@ struct HeadTable
 };
 
 /*---------------------------------------------------------------------------*/
+/* The character map (or maps) is the set of mappings available. It allows the
+ * lookup of code points to the actual glyphs in the file, as well as some
+ * information that allows the correct set of mappings to be selected.
+ */
 
 struct CMapDirectory
 {
-  CMapDirectory(uint16_t    platform_id,
-                uint16_t    specific_id,
-                uint32_t    offset,
-                std::string encoding) :
-    platform_id_(platform_id),
-    specific_id_(specific_id),
-    offset_(offset),
-    encoding_(encoding){};
+  CMapDirectory(uint16_t p, uint16_t s, uint32_t o, std::string e) :
+                  platform_id_(p), specific_id_(s), offset_(o), encoding_(e) {};
 
   uint16_t                     platform_id_;
   uint16_t                     specific_id_;
@@ -96,277 +132,190 @@ struct CMapDirectory
   std::string                  encoding_;
   uint16_t                     format_;
   uint16_t                     length_;
-  std::map<uint16_t, uint16_t> cmap_;
+  std::map<uint16_t, uint16_t> cmap_;        // The actual lookup mapping
 };
 
 /*---------------------------------------------------------------------------*/
+/* The maxp table gives us the total number of glyphs in the font, as well as
+ * information about the maximum value certain data points will have in the
+ * font file.
+ */
 
 struct Maxp
 {
   Fixed 	  version_;
-  uint16_t 	numGlyphs_; 	// the number of glyphs in the font
-  uint16_t 	maxPoints_; 	// points in non-compound glyph
-  uint16_t 	maxContours_; 	// contours in non-compound glyph
-  uint16_t 	maxComponentPoints_; // 	points in compound glyph
-  uint16_t 	maxComponentContours_; // contours in compound glyph
-  uint16_t 	maxZones_; // 	set to 2
-  uint16_t 	maxTwilightPoints_; 	// points used in Twilight Zone (Z0)
-  uint16_t 	maxStorage_; // 	number of Storage Area locations
-  uint16_t 	maxFunctionDefs_; //	number of FDEFs
-  uint16_t 	maxInstructionDefs_; //	number of IDEFs
-  uint16_t 	maxStackElements_;	// maximum stack depth
-  uint16_t 	maxSizeOfInstructions_;	// byte count for glyph instructions
-  uint16_t 	maxComponentElements_; // number of glyphs referenced at top level
-  uint16_t 	maxComponentDepth_; // levels of recursion
+  uint16_t 	numGlyphs_;             // The number of glyphs in the font
+  uint16_t 	maxPoints_;             // Points in non-compound glyph
+  uint16_t 	maxContours_;           // Contours in non-compound glyph
+  uint16_t 	maxComponentPoints_;    // Points in compound glyph
+  uint16_t 	maxComponentContours_;  // Contours in compound glyph
+  uint16_t 	maxZones_;              // Set to 2
+  uint16_t 	maxTwilightPoints_; 	  // Points used in Twilight Zone (Z0)
+  uint16_t 	maxStorage_;            // Number of Storage Area locations
+  uint16_t 	maxFunctionDefs_;       // Number of FDEFs
+  uint16_t 	maxInstructionDefs_;    // Number of IDEFs
+  uint16_t 	maxStackElements_;	    // Maximum stack depth
+  uint16_t 	maxSizeOfInstructions_;	// Byte count for glyph instructions
+  uint16_t 	maxComponentElements_;  // Number of glyphs referenced at top level
+  uint16_t 	maxComponentDepth_;     // Levels of recursion
 };
 
 /*---------------------------------------------------------------------------*/
+/* The loca table is what we use to look up the description of a particular
+ * glyph, given its order in the glyf table.
+ */
 
 struct Loca
 {
-  std::vector<uint16_t> glyph_;
-  std::vector<uint32_t> offset_;
-  std::vector<uint32_t> length_;
+  std::vector<uint16_t> glyph_;   // The index of the glyph in the glyf table
+  std::vector<uint32_t> offset_;  // The offset in bytes of the start of the
+                                  // glyph relative to the start of the glyf
+                                  // table
+  std::vector<uint32_t> length_;  // Length in bytes of glyph description
 };
 
 /*---------------------------------------------------------------------------*/
+/* The Contour struct contains 4 equal-length vectors that describe the
+ * paths making up a simple (i.e. non-compound) glyph. Compound glyphs will
+ * have multiple Contour entries.
+ *
+ * Contour objects have two functions: one that allows them to be smoothed by
+ * calculating the quadratic curves implied by their x and y co-ordinates and
+ * their "ON_CURVE_POINT" flag; and another to apply affine transformations.
+ */
 
 struct Contour
 {
-  std::vector<uint8_t>  flags;
-  std::vector<int16_t>  xcoords;
-  std::vector<int16_t>  ycoords;
-  std::vector<uint16_t> shape;
+  std::vector<uint8_t>  flags;   // Important only for creating Contours
+  std::vector<int16_t>  xcoords; // The actual x coordinates of the paths
+  std::vector<int16_t>  ycoords; // The actual y coordinates of the paths
+  std::vector<uint16_t> shape;   // Labels each x, y to let us know which
+                                 // "piece" of the glyph it is on.
 
-  void smooth()
-  {
-    std::vector<uint8_t>  flags_b;
-    std::vector<int16_t>  xcoords_b;
-    std::vector<int16_t>  ycoords_b;
-    std::vector<uint16_t> shape_b;
+  void smooth();                 // Interpolates and applies quadratic Bezier
 
-    for(size_t i = 0; i < flags.size(); i++)
-    {
-      if((flags[i] & 0x01) == 0x01)
-      {
-        flags_b.push_back(1);
-        xcoords_b.push_back(xcoords[i]);
-        ycoords_b.push_back(ycoords[i]);
-        shape_b.push_back(shape[i]);
-      }
-      else
-      {
-        if(i == 0 || flags_b.back() == 1)
-        {
-          flags_b.push_back(0);
-          xcoords_b.push_back(xcoords[i]);
-          ycoords_b.push_back(ycoords[i]);
-          shape_b.push_back(shape[i]);
-        }
-        else
-        {
-          flags_b.push_back(1);
-          xcoords_b.push_back((xcoords[i] + xcoords[i-1])/2);
-          ycoords_b.push_back((ycoords[i] + ycoords[i-1])/2);
-          shape_b.push_back(shape[i]);
 
-          flags_b.push_back(0);
-          xcoords_b.push_back(xcoords[i]);
-          ycoords_b.push_back(ycoords[i]);
-          shape_b.push_back(shape[i]);
-        }
-      }
-
-      if(i == flags.size() - 1 || shape[i] != shape[i + 1])
-      {
-        size_t shape_index = 0;
-        while(shape_index < i)
-        {
-          if(shape[shape_index] == shape_b.back()) break;
-          shape_index++;
-        }
-
-        flags_b.push_back(1);
-        xcoords_b.push_back(xcoords[shape_index]);
-        ycoords_b.push_back(ycoords[shape_index]);
-        shape_b.push_back(shape[shape_index]);
-      }
-    }
-
-    std::vector<int16_t>  xcoords_c;
-    std::vector<int16_t>  ycoords_c;
-    std::vector<uint16_t> shape_c;
-
-    for(size_t i = 0; i < (flags_b.size() - 1); i++)
-    {
-      if(flags_b[i] == 1 && flags_b[i + 1] == 1)
-      {
-          xcoords_c.push_back(xcoords_b[i]);
-          ycoords_c.push_back(ycoords_b[i]);
-          shape_c.push_back(shape_b[i]);
-      }
-
-      if(flags_b[i] == 1 && flags_b[i + 1] == 0)
-      {
-        int p1x = xcoords_b[i];
-        int p2x = xcoords_b[i + 1];
-        int p3x = xcoords_b[i + 2];
-        int p1y = ycoords_b[i];
-        int p2y = ycoords_b[i + 1];
-        int p3y = ycoords_b[i + 2];
-        std::vector<float> frac;
-        float filler = 0.1;
-        while(filler < 1)
-        {
-          frac.push_back(filler);
-          filler += 0.1;
-        }
-        for(size_t j = 0; j < frac.size(); j++)
-        {
-          float t = frac[j];
-          xcoords_c.push_back((int) ((1 - t) * (1 - t) * p1x +
-                                     2 * t * (1 - t) * p2x +
-                                     t * t * p3x));
-          ycoords_c.push_back((int) ((1 - t) * (1 - t) * p1y +
-                                     2 * t * (1 - t) * p2y +
-                                     t * t * p3y));
-          shape_c.push_back(shape_b[i]);
-        }
-        i++;
-      }
-    }
-
-    xcoords = xcoords_c;
-    ycoords = ycoords_c;
-    shape = shape_c;
-  }
-
+  // Performs affine transformation according to 8 entries extracted during
+  // the reading of compound glyphs.
   void transform(double a, double b, double c, double d, double e, double f,
-                 double m, double n)
-  {
-    for(size_t i = 0; i < xcoords.size(); i++)
-    {
-      xcoords[i] = m * (xcoords[i] * a/m + ycoords[i] * c/m + e);
-      ycoords[i] = n * (xcoords[i] * b/n + ycoords[i] * d/n + f);
-    }
-  }
-
-  Rcpp::DataFrame GetContours()
-  {
-    return Rcpp::DataFrame::create(
-      Rcpp::Named("xcoords") = xcoords,
-      Rcpp::Named("ycoords") = ycoords,
-      Rcpp::Named("shape")   = shape);
-  }
+                 double m, double n);
 };
 
 /*---------------------------------------------------------------------------*/
+/* The Glyf struct is a store for one or more set of Contour objects, and also
+ * contains information about the number of contours as well as the side of the
+ * glyf's bouding box. Simple glyphs also contain a short piece of binary code
+ * to allow grid fitting and hinting.
+ */
 
 struct Glyf
 {
-  int16_t               numberOfContours_;
-  Fword                 xMin_;
-  Fword                 yMin_;
-  Fword                 xMax_;
-  Fword                 yMax_;
+  int16_t               numberOfContours_; // If < 0 this is a compound glyph;
+                                           // Otherwise it represents the
+                                           // number of path pieces making up
+                                           // a simple glyph
 
+  Fword                 xMin_;             //---------------------------------//
+  Fword                 yMin_;             // These give the four corners of
+  Fword                 xMax_;             // the glyph's bounding box.
+  Fword                 yMax_;             //---------------------------------//
 
   std::vector<uint16_t> endPtsOfContours_;
   uint16_t              instructionLength_;
   std::vector<uint8_t>  instructions_;
   std::vector<Contour>  contours_;
-
-  Rcpp::List GetOutlines()
-  {
-
-    auto output = Rcpp::List::create(contours_[0].GetContours());
-    if(contours_.size() > 0)
-    {
-      for(size_t i = 1; i < contours_.size(); i++)
-      {
-        output.push_back(contours_[i].GetContours());
-      }
-    }
-    return output;
-  }
 };
 
 /*---------------------------------------------------------------------------*/
+/* This is the class that does the job of reading, co-ordinating and storing
+ * the various tables in the font file. A TTF object is created by supplying
+ * the font file, after which its various tables can be accessed.
+ */
 
 class TTFont
 {
  public:
   TTFont(const std::string& input_stream);
-  Rcpp::DataFrame GetTable(); // Rcpp
-  Rcpp::List GetHead(); // Rcpp
-  Rcpp::List GetCMap(); // Rcpp
-  Rcpp::List GetMaxp(); // Rcpp
-  Rcpp::DataFrame GetLoca(); // Rcpp
+  std::vector<TTFRow> GetTable() {return this->table_of_tables_;};
+  HeadTable GetHead() {return this->head_;};
+  std::vector<CMapDirectory> GetCMap() {return this->cmap_dir_;};
+  Maxp GetMaxp() {return this->maxp_;}
+  Loca GetLoca() {return this->loca_;};
   Glyf ReadGlyf(uint16_t);
 
  private:
-  void      GoToTable(std::string table_name);
-  void      ReadCMap();
-  void      ReadTables();
-  void      ReadHeadTable();
-  void      ReadMaxp();
-  void      ReadLoca();
-  uint8_t   GetUint8();
-  uint16_t  GetUint16();
-  uint32_t  GetUint32();
-  int16_t   GetInt16();
-  int32_t   GetInt32();
-  double    GetF2Dot14();
-  Fword     GetFword();
-  Date_type GetDate();
-  Fixed     GetFixed();
+
+  // Private methods ---------------------------------------------------------//
+
+  // Data reading functions:
+
+  uint8_t   GetUint8();   //--------------------------------------------------//
+  uint16_t  GetUint16();  //
+  uint32_t  GetUint32();  // These private functions all read the input stream
+  int16_t   GetInt16();   // as various different types and then advance the
+  int32_t   GetInt32();   // stream iterator appropriately
+  double    GetF2Dot14(); //
+  Fword     GetFword();   //
+  Date_type GetDate();    //
+  Fixed     GetFixed();   //--------------------------------------------------//
+
+
+  // Table reading functions:
+
   TTFRow    GetTTRow();
-  void      ReadSimpleGlyph(Glyf&);
-  void      ReadCompoundGlyph(Glyf&);
-  void      HandleFormat0(CMapDirectory&);
-  void      HandleFormat2(CMapDirectory&);
-  void      HandleFormat4(CMapDirectory&);
-  void      HandleFormat6(CMapDirectory&);
-  void      HandleFormat8(CMapDirectory&);
-  void      HandleFormat10(CMapDirectory&);
-  void      HandleFormat12(CMapDirectory&);
-  void      HandleFormat13(CMapDirectory&);
-  void      HandleFormat14(CMapDirectory&);
-  bool      TableExists(std::string table_name);
+  void      ReadTables();
 
-  std::string stream_;
-  std::string::const_iterator it_;
-  std::vector<TTFRow> table_of_tables_;
-  HeadTable head_;
-  Maxp maxp_;
-  std::vector<CMapDirectory> cmap_directory_;
+  bool      TableExists(std::string);       // Checks a named table exists
+  void      GoToTable(std::string);         // Goes to the named table
 
-  uint32_t scalar_type_;
-  uint16_t num_tables_;
-  uint16_t search_range_;
-  uint16_t entry_selector_;
-  uint16_t range_shift_;
-  Loca loca_;
+  void      ReadHeadTable();                // Reads "head" table
+  void      ReadMaxp();                     // Reads "maxp" table
+  void      ReadLoca();                     // Reads "loca" table
+  void      ReadCMap();                     // Reads "cmap" table
 
-  const std::map<uint16_t, std::string> windows_specific_map_s = {
-  {0, "Windows Symbol"}, {1, "Windows Unicode (BMP only)"},
-  {2, "Windows Shift-JIS"}, {3, "Windows PRC"}, {4, "Windows BigFive"},
-  {5, "Windows Johab"}, {10, "Windows Unicode UCS-4"}};
+     // Cmap reading helper functions:
 
-  const std::map<uint16_t, std::string> unicode_specific_map_s = {
-  {0, "Unicode Default"}, {1, "Unicode v1.1" }, {2, "Unicode ISO 10646" },
-  {3, "Unicode v2 BMP only"},   {4, "Unicode v2" },   {5, "Unicode Variations"},
-  {6, "Unicode Full"}};
+      void  HandleFormat0(CMapDirectory&);  //--------------------------------//
+      void  HandleFormat2(CMapDirectory&);  // There are different formats of
+      void  HandleFormat4(CMapDirectory&);  // cmap table, and each of these is
+      void  HandleFormat6(CMapDirectory&);  // read differently. After figuring
+      void  HandleFormat8(CMapDirectory&);  // out which format a cmap is stored
+      void  HandleFormat10(CMapDirectory&); // in, the cmap builder picks the
+      void  HandleFormat12(CMapDirectory&); // correct HandleFormatxx function
+      void  HandleFormat13(CMapDirectory&); // to read the cmap table.
+      void  HandleFormat14(CMapDirectory&); //--------------------------------//
+
+  // Glyph reading functions:
+
+  void      ReadSimpleGlyph(Glyf&);         // These two helpers are only called
+  void      ReadCompoundGlyph(Glyf&);       // when a particular glyph is read
+
+
+  // Private data members ----------------------------------------------------//
+
+    // Reading the file:
+
+    std::string stream_;                    // The actual font file being read
+    std::string::const_iterator it_;        // Iterator reading the font file
+
+    // Font header information:
+
+    uint32_t scalar_type_;                  //--------------------------------//
+    uint16_t num_tables_;                   // These fields are included in the
+    uint16_t search_range_;                 // font file header to help us
+    uint16_t entry_selector_;               // navigate the file
+    uint16_t range_shift_;                  //--------------------------------//
+
+    // Storing the contents of the tables:
+
+    std::vector<TTFRow> table_of_tables_;   // The directory of tables
+    HeadTable head_;                        // The "head" table's contents
+    Maxp maxp_;                             // The "maxp" table's contents
+    std::vector<CMapDirectory> cmap_dir_;   // The "cmap" table's contents
+    Loca loca_;                             // The "loca" table's contents
 };
 
 /*---------------------------------------------------------------------------*/
 
-
-
-/*---------------------------------------------------------------------------*/
-
-
-
-/*---------------------------------------------------------------------------*/
 
 #endif

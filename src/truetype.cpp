@@ -1,7 +1,137 @@
+//---------------------------------------------------------------------------//
+//                                                                           //
+//  PDFR TrueType implementation file                                        //
+//                                                                           //
+//  Copyright (C) 2018 - 2021 by Allan Cameron                               //
+//                                                                           //
+//  Licensed under the MIT license - see https://mit-license.org             //
+//  or the LICENSE file in the project root directory                        //
+//                                                                           //
+//---------------------------------------------------------------------------//
+
+#include<cmath>
+#include <stdexcept>
 #include "truetype.h"
 
-using namespace std;
-using namespace Rcpp;
+
+/*---------------------------------------------------------------------------*/
+
+void Contour::smooth()
+{
+  std::vector<uint8_t>  flags_b;
+  std::vector<int16_t>  xcoords_b;
+  std::vector<int16_t>  ycoords_b;
+  std::vector<uint16_t> shape_b;
+
+  for(size_t i = 0; i < flags.size(); i++)
+  {
+    if((flags[i] & 0x01) == 0x01)
+    {
+      flags_b.push_back(1);
+      xcoords_b.push_back(xcoords[i]);
+      ycoords_b.push_back(ycoords[i]);
+      shape_b.push_back(shape[i]);
+    }
+    else
+    {
+      if(i == 0 || flags_b.back() == 1)
+      {
+        flags_b.push_back(0);
+        xcoords_b.push_back(xcoords[i]);
+        ycoords_b.push_back(ycoords[i]);
+        shape_b.push_back(shape[i]);
+      }
+      else
+      {
+        flags_b.push_back(1);
+        xcoords_b.push_back((xcoords[i] + xcoords[i-1])/2);
+        ycoords_b.push_back((ycoords[i] + ycoords[i-1])/2);
+        shape_b.push_back(shape[i]);
+
+        flags_b.push_back(0);
+        xcoords_b.push_back(xcoords[i]);
+        ycoords_b.push_back(ycoords[i]);
+        shape_b.push_back(shape[i]);
+      }
+    }
+
+    if(i == flags.size() - 1 || shape[i] != shape[i + 1])
+    {
+      size_t shape_index = 0;
+      while(shape_index < i)
+      {
+        if(shape[shape_index] == shape_b.back()) break;
+        shape_index++;
+      }
+
+      flags_b.push_back(1);
+      xcoords_b.push_back(xcoords[shape_index]);
+      ycoords_b.push_back(ycoords[shape_index]);
+      shape_b.push_back(shape[shape_index]);
+    }
+  }
+
+  std::vector<int16_t>  xcoords_c;
+  std::vector<int16_t>  ycoords_c;
+  std::vector<uint16_t> shape_c;
+
+  for(size_t i = 0; i < (flags_b.size() - 1); i++)
+  {
+    if(flags_b[i] == 1 && flags_b[i + 1] == 1)
+    {
+      xcoords_c.push_back(xcoords_b[i]);
+      ycoords_c.push_back(ycoords_b[i]);
+      shape_c.push_back(shape_b[i]);
+    }
+
+    if(flags_b[i] == 1 && flags_b[i + 1] == 0)
+    {
+      int p1x = xcoords_b[i];
+      int p2x = xcoords_b[i + 1];
+      int p3x = xcoords_b[i + 2];
+      int p1y = ycoords_b[i];
+      int p2y = ycoords_b[i + 1];
+      int p3y = ycoords_b[i + 2];
+      std::vector<float> frac;
+      float filler = 0.1;
+      while(filler < 1)
+      {
+        frac.push_back(filler);
+        filler += 0.1;
+      }
+      for(size_t j = 0; j < frac.size(); j++)
+      {
+        float t = frac[j];
+        xcoords_c.push_back((int) ((1 - t) * (1 - t) * p1x +
+          2 * t * (1 - t) * p2x +
+          t * t * p3x));
+        ycoords_c.push_back((int) ((1 - t) * (1 - t) * p1y +
+          2 * t * (1 - t) * p2y +
+          t * t * p3y));
+        shape_c.push_back(shape_b[i]);
+      }
+      i++;
+    }
+  }
+
+  xcoords = xcoords_c;
+  ycoords = ycoords_c;
+  shape = shape_c;
+}
+
+/*---------------------------------------------------------------------------*/
+
+void Contour::transform(double a, double b, double c, double d, double e,
+                        double f, double m, double n)
+{
+  for(size_t i = 0; i < xcoords.size(); i++)
+  {
+    xcoords[i] = m * (xcoords[i] * a/m + ycoords[i] * c/m + e);
+    ycoords[i] = n * (xcoords[i] * b/n + ycoords[i] * d/n + f);
+  }
+}
+
+/*---------------------------------------------------------------------------*/
 
 TTFont::TTFont(const std::string& input_stream) :
   stream_(input_stream),
@@ -70,7 +200,8 @@ void TTFont::ReadCompoundGlyph(Glyf& result)
       }
       else
       {
-        if(result.contours_.size() == 0) throw std::runtime_error("I don't understand");
+        if(result.contours_.size() == 0)
+          throw std::runtime_error("I don't understand");
         uint16_t this_compound_index = GetUint16();
         uint16_t comp_index = GetUint16();
         e = component.contours_[0].xcoords[comp_index];
@@ -87,7 +218,8 @@ void TTFont::ReadCompoundGlyph(Glyf& result)
       }
       else
       {
-        if(result.contours_.size() == 0) throw std::runtime_error("I don't understand");
+        if(result.contours_.size() == 0)
+          throw std::runtime_error("I don't understand");
         uint8_t this_compound_index = GetUint8();
         uint8_t comp_index = GetUint8();
         e = component.contours_[0].xcoords[comp_index];
@@ -223,6 +355,8 @@ void TTFont::GoToTable(std::string table_name) {
   it_ = stream_.begin() + index;
 }
 
+/*---------------------------------------------------------------------------*/
+
 bool TTFont::TableExists(std::string table_name) {
   int index = -1;
   for(size_t i = 0; i < table_of_tables_.size(); ++i)
@@ -235,6 +369,7 @@ bool TTFont::TableExists(std::string table_name) {
   if(index == -1) return false;
   return true;
 }
+
 /*---------------------------------------------------------------------------*/
 
 uint8_t TTFont::GetUint8()
@@ -475,6 +610,16 @@ void TTFont::ReadCMap()
 
     uint16_t n_tables = GetUint16();
 
+    const std::map<uint16_t, std::string> windows_specific_map = {
+      {0, "Windows Symbol"}, {1, "Windows Unicode (BMP only)"},
+      {2, "Windows Shift-JIS"}, {3, "Windows PRC"}, {4, "Windows BigFive"},
+      {5, "Windows Johab"}, {10, "Windows Unicode UCS-4"}};
+
+    const std::map<uint16_t, std::string> unicode_specific_map = {
+      {0, "Unicode Default"}, {1, "Unicode v1.1" }, {2, "Unicode ISO 10646" },
+      {3, "Unicode v2 BMP only"},   {4, "Unicode v2" },
+      {5, "Unicode Variations"}, {6, "Unicode Full"}};
+
     for (uint16_t i = 0; i < n_tables; ++i)
     {
       std::string encoding;
@@ -482,13 +627,13 @@ void TTFont::ReadCMap()
       uint16_t id = GetUint16();
       if (platform == 0)
       {
-        auto entry = unicode_specific_map_s.find(id);
-        if (entry != unicode_specific_map_s.end()) encoding = entry->second;
+        auto entry = unicode_specific_map.find(id);
+        if (entry != unicode_specific_map.end()) encoding = entry->second;
       }
       if (platform == 3)
       {
-        auto entry = windows_specific_map_s.find(id);
-        if (entry != windows_specific_map_s.end()) encoding = entry->second;
+        auto entry = windows_specific_map.find(id);
+        if (entry != windows_specific_map.end()) encoding = entry->second;
       }
       if (platform == 1) encoding = "Mac";
       if (platform == 2 || platform > 3)
@@ -496,16 +641,17 @@ void TTFont::ReadCMap()
         throw std::runtime_error("Unrecognised encoding in cmap directory.");
       }
       uint16_t offset = GetUint32();
-      cmap_directory_.emplace_back(CMapDirectory(platform, id, offset, encoding));
+      cmap_dir_.emplace_back(CMapDirectory(platform, id, offset, encoding));
     }
 
-    for (auto& entry : cmap_directory_)
+    for (auto& entry : cmap_dir_)
     {
       it_ = cmap_begin + entry.offset_;
       entry.format_ = GetUint16();
       if (entry.format_ > 7)
       {
-        if (GetUint16() != 0) throw std::runtime_error("Unknown cmap table format.");
+        if (GetUint16() != 0)
+          throw std::runtime_error("Unknown cmap table format.");
       }
       entry.length_ = GetUint16();
       uint16_t language = GetUint16();
@@ -529,10 +675,10 @@ void TTFont::ReadCMap()
   }
   else
   {
-    cmap_directory_.emplace_back(CMapDirectory(0, 0, 0, "Unicode Default"));
+    cmap_dir_.emplace_back(CMapDirectory(0, 0, 0, "Unicode Default"));
     for (uint16_t j = 0; j <= 256; ++j)
     {
-      cmap_directory_.back().cmap_[j] = j;
+      cmap_dir_.back().cmap_[j] = j;
     }
   }
 }
@@ -597,25 +743,35 @@ void TTFont::HandleFormat6(CMapDirectory& entry)
   }
 }
 
+/*---------------------------------------------------------------------------*/
+
 void TTFont::HandleFormat8(CMapDirectory& entry)
 {
 
 }
+
+/*---------------------------------------------------------------------------*/
 
 void TTFont::HandleFormat10(CMapDirectory& entry)
 {
 
 }
 
+/*---------------------------------------------------------------------------*/
+
 void TTFont::HandleFormat12(CMapDirectory& entry)
 {
 
 }
 
+/*---------------------------------------------------------------------------*/
+
 void TTFont::HandleFormat13(CMapDirectory& entry)
 {
 
 }
+
+/*---------------------------------------------------------------------------*/
 
 void TTFont::HandleFormat14(CMapDirectory& entry)
 {
@@ -623,102 +779,4 @@ void TTFont::HandleFormat14(CMapDirectory& entry)
 }
 
 /*---------------------------------------------------------------------------*/
-
-DataFrame TTFont::GetTable()
-{
-    CharacterVector table;
-    NumericVector   offset;
-    NumericVector   checksum;
-    NumericVector   length;
-
-    for(size_t i = 0; i < table_of_tables_.size(); i++)
-    {
-      table.push_back(table_of_tables_[i].table_name_);
-      offset.push_back(table_of_tables_[i].offset_);
-      checksum.push_back(table_of_tables_[i].checksum_);
-      length.push_back(table_of_tables_[i].length_);
-    }
-
-    DataFrame result = Rcpp::DataFrame::create(
-                        Named("table")    = table,
-                        Named("offset")   = offset,
-                        Named("length")   = length,
-                        Named("checksum") = checksum);
-
-    return result;
-  };
-
-/*---------------------------------------------------------------------------*/
-
-List TTFont::GetHead()
-{
-    return List::create(Named("checksumAdjustment") = head_.checksumAdjustment,
-                        Named("created") = head_.created,
-                        Named("flags") = head_.flags,
-                        Named("fontDirectionHint") = head_.fontDirectionHint,
-                        Named("fontRevision") = head_.fontRevision,
-                        Named("glyphDataFormat") = head_.glyphDataFormat,
-                        Named("indexToLocFormat") = head_.indexToLocFormat,
-                        Named("lowestRecPPEM") = head_.lowestRecPPEM,
-                        Named("macStyle") = head_.macStyle,
-                        Named("magicNumber") = head_.magicNumber,
-                        Named("modified") = head_.modified,
-                        Named("unitsPerEm") = head_.unitsPerEm,
-                        Named("version") = head_.version,
-                        Named("xMax") = head_.xMax,
-                        Named("xMin") = head_.xMin,
-                        Named("yMax") = head_.yMax,
-                        Named("yMin") = head_.yMin);
-};
-
-/*---------------------------------------------------------------------------*/
-
-List TTFont::GetCMap()
-{
-  List result = List::create();
-  for(auto j : cmap_directory_)
-  {
-    std::vector<uint16_t> key, value;
-    for(auto i : j.cmap_)
-    {
-      key.push_back(i.first);
-      value.push_back(i.second);
-    }
-    result.push_back(List::create(Named("format") = j.format_,
-                                  Named("first") = key,
-                                  Named("second") = value));
-  }
-  return result;
-}
-
-/*---------------------------------------------------------------------------*/
-
-List TTFont::GetMaxp()
-{
-  return List::create(
-    Named("version")               = maxp_.version_,
-    Named("numGlyphs")             = maxp_.numGlyphs_,
-    Named("maxPoints")             = maxp_.maxPoints_,
-    Named("maxContours")           = maxp_.maxContours_,
-    Named("maxComponentPoints")    = maxp_.maxComponentPoints_,
-    Named("maxComponentContours")  = maxp_.maxComponentContours_,
-    Named("maxZones")              = maxp_.maxZones_,
-    Named("maxTwilightPoints")     = maxp_.maxTwilightPoints_,
-    Named("maxStorage")            = maxp_.maxStorage_,
-    Named("maxFunctionDefs")       = maxp_.maxFunctionDefs_,
-    Named("maxInstructionDefs")    = maxp_.maxInstructionDefs_,
-    Named("maxStackElements")      = maxp_.maxStackElements_,
-    Named("maxSizeOfInstructions") = maxp_.maxSizeOfInstructions_,
-    Named("maxComponentElements")  = maxp_.maxComponentElements_,
-    Named("maxComponentDepth")     = maxp_.maxComponentDepth_);
-}
-
-/*---------------------------------------------------------------------------*/
-
-DataFrame TTFont::GetLoca()
-{
-  return DataFrame::create(Named("glyph")  = loca_.glyph_,
-                           Named("offset") = loca_.offset_,
-                           Named("length") = loca_.length_);
-}
 
