@@ -933,6 +933,23 @@ Rcpp::List GetFontFilePostTable(RawVector raw)
             Named("MaxMemType1") = post.MaxMemType1,
             Named("Map") = df);
 }
+
+//---------------------------------------------------------------------------//
+
+Rcpp::DataFrame GetFontFileNameTable(Rcpp::RawVector raw)
+{
+  std::vector<uint8_t> fontfile = Rcpp::as<std::vector<uint8_t>>(raw);
+  std::string fontstring(fontfile.begin(), fontfile.end());
+  TTFont ttf(fontstring);
+  Name name = ttf.GetName();
+  return Rcpp::DataFrame::create(
+    Named("platformID") = name.platformID,
+    Named("platformSpecificID") = name.platformSpecificID,
+    Named("languageID") = name.languageID,
+    Named("nameID") = name.nameID,
+    Named("text") = name.text);
+}
+
 //---------------------------------------------------------------------------//
 
 #ifdef PROFILER_PDFR

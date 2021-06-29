@@ -223,6 +223,17 @@ struct Post
 };
 
 /*---------------------------------------------------------------------------*/
+
+struct Name
+{
+  std::vector<uint16_t> platformID;
+  std::vector<uint16_t> platformSpecificID;
+  std::vector<uint16_t> languageID;
+  std::vector<uint16_t> nameID;
+  std::vector<std::string> text;
+};
+
+/*---------------------------------------------------------------------------*/
 /* The Glyf struct is a store for one or more set of Contour objects, and also
  * contains information about the number of contours as well as the side of the
  * glyf's bouding box. Simple glyphs also contain a short piece of binary code
@@ -264,6 +275,7 @@ class TTFont
   Maxp                       GetMaxp()  { return this->maxp_;}
   Loca                       GetLoca()  { return this->loca_;}
   Post                       GetPost()  { return this->post_;}
+  Name                       GetName()  { return this->name_;}
   Glyf                       ReadGlyf(uint16_t);
 
  private:
@@ -297,6 +309,7 @@ class TTFont
   void      ReadLoca();                     // Reads "loca" table
   void      ReadCMap();                     // Reads "cmap" table
   void      ReadPost();                     // Reads "post" table
+  void      ReadName();                     // Reads "name" table
 
      // Cmap reading helper functions:
 
@@ -339,6 +352,7 @@ class TTFont
     std::vector<CMapDirectory> cmap_dir_;   // The "cmap" table's contents
     Loca loca_;                             // The "loca" table's contents
     Post post_;                             // The "post" table's contents
+    Name name_;                             // The "name" table's contents
 };
 
 /*---------------------------------------------------------------------------*/

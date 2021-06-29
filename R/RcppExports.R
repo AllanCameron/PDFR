@@ -89,6 +89,10 @@ GetFontFilePostTable <- function(raw) {
     .Call(`_PDFR_GetFontFilePostTable`, raw)
 }
 
+GetFontFileNameTable <- function(raw) {
+    .Call(`_PDFR_GetFontFileNameTable`, raw)
+}
+
 .stopCpp <- function() {
     invisible(.Call(`_PDFR_stopCpp`))
 }

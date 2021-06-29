@@ -261,6 +261,17 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// GetFontFileNameTable
+Rcpp::DataFrame GetFontFileNameTable(Rcpp::RawVector raw);
+RcppExport SEXP _PDFR_GetFontFileNameTable(SEXP rawSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::RawVector >::type raw(rawSEXP);
+    rcpp_result_gen = Rcpp::wrap(GetFontFileNameTable(raw));
+    return rcpp_result_gen;
+END_RCPP
+}
 // stopCpp
 void stopCpp();
 RcppExport SEXP _PDFR_stopCpp() {
@@ -296,6 +307,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_PDFR_GetFontFileLoca", (DL_FUNC) &_PDFR_GetFontFileLoca, 1},
     {"_PDFR_GetFontFileGlyph", (DL_FUNC) &_PDFR_GetFontFileGlyph, 2},
     {"_PDFR_GetFontFilePostTable", (DL_FUNC) &_PDFR_GetFontFilePostTable, 1},
+    {"_PDFR_GetFontFileNameTable", (DL_FUNC) &_PDFR_GetFontFileNameTable, 1},
     {"_PDFR_stopCpp", (DL_FUNC) &_PDFR_stopCpp, 0},
     {"run_testthat_tests", (DL_FUNC) &run_testthat_tests, 0},
     {NULL, NULL, 0}

@@ -406,6 +406,7 @@ TTFont::TTFont(const std::string& input_stream) :
   ReadMaxp();
   ReadLoca();
   ReadPost();
+  ReadName();
 };
 
 /*---------------------------------------------------------------------------*/
@@ -1084,10 +1085,33 @@ void TTFont::ReadPost()
       {
         if(indexes[i] > 255)
           post_.mapping[indexes[i] - 256] = GetPascalString();
-        else
-          post_.mapping[indexes[i]] = GetPascalString();
       }
     }
   }
 }
 
+/*---------------------------------------------------------------------------*/
+
+void TTFont::ReadName()
+{
+  if(TableExists("name"))
+  {
+    GoToTable("name");
+    auto table_start = it_;
+    uint16_t format = GetUint16();
+    uint16_t count  = GetUint16();
+    uint16_t string_offset = GetUint16();
+
+    for(uint16_t i = 0; i < count; i++)
+    {
+      name_.platformID.push_back(GetUint16());
+      name_.platformSpecificID.push_back(GetUint16());
+      name_.languageID.push_back(GetUint16());
+      name_.nameID.push_back(GetUint16());
+      uint16_t length = GetUint16();
+      uint16_t offset = GetUint16();
+      auto begin = table_start + string_offset + offset;
+      name_.text.push_back(std::string(begin, begin + length));
+    }
+  }
+}
