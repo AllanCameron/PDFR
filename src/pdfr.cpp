@@ -871,6 +871,70 @@ List GetFontFileGlyph(RawVector raw, uint16_t glyph)
 
 //---------------------------------------------------------------------------//
 
+Rcpp::List GetFontFilePostTable(RawVector raw)
+{
+  std::vector<uint8_t> fontfile = Rcpp::as<std::vector<uint8_t>>(raw);
+  std::string fontstring(fontfile.begin(), fontfile.end());
+  TTFont ttf(fontstring);
+  Post post = ttf.GetPost();
+  auto cmap_dir = ttf.GetCMap();
+  std::vector<uint16_t> glyph_number;
+  std::vector<uint16_t> code_point;
+  std::vector<std::string> glyph_name;
+  std::map<uint16_t, uint16_t> cmap;
+  for(uint16_t i = 0; i < 256; i++) cmap[i] = i;
+  bool cmap_found = false;
+  for(uint16_t i = 0; i < cmap_dir.size(); i++)
+  {
+    if(cmap_dir[i].format_ == 4) {
+      cmap = cmap_dir[i].cmap_;
+      cmap_found = true;
+      break;
+    }
+  }
+  if(!cmap_found)
+  {
+    for(uint16_t i = 0; i < cmap_dir.size(); i++)
+    {
+      if(cmap_dir[i].format_ == 0) {
+        cmap = cmap_dir[i].cmap_;
+        break;
+      }
+    }
+  }
+
+  for(auto i = post.mapping.begin(); i != post.mapping.end(); i++)
+  {
+    for(auto j = cmap.begin(); j != cmap.end(); j++)
+    {
+      if(j->second == i->first)
+      {
+        code_point.push_back(j->first);
+        glyph_number.push_back(i->first);
+        glyph_name.push_back(i->second);
+      }
+    }
+
+
+  }
+  auto df = Rcpp::DataFrame::create(Named("code_point")   = code_point,
+                                    Named("glyph_number") = glyph_number,
+                                    Named("glyph_name")   = glyph_name);
+
+  return Rcpp::List::create(
+            Named("version") = post.version,
+            Named("italic_angle") = post.italic_angle,
+            Named("UnderlinePosition") = post.UnderlinePosition,
+            Named("UnderlineThickness") = post.UnderlineThickness,
+            Named("IsFixedPitch") = post.IsFixedPitch,
+            Named("MinMemType42") = post.MinMemType42,
+            Named("MaxMemType42") = post.MaxMemType42,
+            Named("MinMemType1") = post.MinMemType1,
+            Named("MaxMemType1") = post.MaxMemType1,
+            Named("Map") = df);
+}
+//---------------------------------------------------------------------------//
+
 #ifdef PROFILER_PDFR
 void stopCpp(){TheNodeList::Instance().endprofiler(); }
 #endif

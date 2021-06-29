@@ -202,6 +202,27 @@ struct Contour
 };
 
 /*---------------------------------------------------------------------------*/
+/* The Post struct stores the contents of the Post table, which gives info
+ * to help postscript printers. However, it also allows a clearer named
+ * mapping of glyphnames to names.
+ */
+
+struct Post
+{
+  uint32_t version;
+  Fixed    italic_angle;
+  Fword    UnderlinePosition;
+  Fword    UnderlineThickness;
+  uint32_t IsFixedPitch;
+  uint32_t MinMemType42;
+  uint32_t MaxMemType42;
+  uint32_t MinMemType1;
+  uint32_t MaxMemType1;
+
+  std::map<uint16_t, std::string> mapping;
+};
+
+/*---------------------------------------------------------------------------*/
 /* The Glyf struct is a store for one or more set of Contour objects, and also
  * contains information about the number of contours as well as the side of the
  * glyf's bouding box. Simple glyphs also contain a short piece of binary code
@@ -236,12 +257,14 @@ class TTFont
 {
  public:
   TTFont(const std::string& input_stream);
-  std::vector<TTFRow> GetTable() {return this->table_of_tables_;};
-  HeadTable GetHead() {return this->head_;};
-  std::vector<CMapDirectory> GetCMap() {return this->cmap_dir_;};
-  Maxp GetMaxp() {return this->maxp_;}
-  Loca GetLoca() {return this->loca_;};
-  Glyf ReadGlyf(uint16_t);
+
+  std::vector<TTFRow>        GetTable() { return this->table_of_tables_;}
+  HeadTable                  GetHead()  { return this->head_;}
+  std::vector<CMapDirectory> GetCMap()  { return this->cmap_dir_;}
+  Maxp                       GetMaxp()  { return this->maxp_;}
+  Loca                       GetLoca()  { return this->loca_;}
+  Post                       GetPost()  { return this->post_;}
+  Glyf                       ReadGlyf(uint16_t);
 
  private:
 
@@ -257,6 +280,7 @@ class TTFont
   double    GetF2Dot14(); //
   Fword     GetFword();   //
   Date_type GetDate();    //
+  std::string GetPascalString();
   Fixed     GetFixed();   //--------------------------------------------------//
 
 
@@ -272,6 +296,7 @@ class TTFont
   void      ReadMaxp();                     // Reads "maxp" table
   void      ReadLoca();                     // Reads "loca" table
   void      ReadCMap();                     // Reads "cmap" table
+  void      ReadPost();                     // Reads "post" table
 
      // Cmap reading helper functions:
 
@@ -313,6 +338,7 @@ class TTFont
     Maxp maxp_;                             // The "maxp" table's contents
     std::vector<CMapDirectory> cmap_dir_;   // The "cmap" table's contents
     Loca loca_;                             // The "loca" table's contents
+    Post post_;                             // The "post" table's contents
 };
 
 /*---------------------------------------------------------------------------*/
