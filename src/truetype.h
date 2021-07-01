@@ -260,6 +260,34 @@ struct Glyf
 };
 
 /*---------------------------------------------------------------------------*/
+
+struct OS2
+{
+  uint16_t version;
+  int16_t xAvgCharWidth;
+  uint16_t usWeightClass;
+  uint16_t usWidthClass;
+  int16_t fsType;
+  int16_t ySubscriptXSize;
+  int16_t ySubscriptYSize;
+  int16_t ySubscriptXOffset;
+  int16_t ySubscriptYOffset;
+  int16_t ySuperscriptXSize;
+  int16_t ySuperscriptYSize;
+  int16_t ySuperscriptXOffset;
+  int16_t ySuperscriptYOffset;
+  int16_t yStrikeoutSize;
+  int16_t yStrikeoutPosition;
+  int16_t sFamilyClass;
+  std::vector<uint8_t> panose;
+  std::vector<uint32_t> ulUnicodeRange;
+  std::string achVendID;
+  uint16_t fsSelection;
+  uint16_t fsFirstCharIndex;
+  uint16_t fsLastCharIndex;
+}
+
+/*---------------------------------------------------------------------------*/
 /* This is the class that does the job of reading, co-ordinating and storing
  * the various tables in the font file. A TTF object is created by supplying
  * the font file, after which its various tables can be accessed.

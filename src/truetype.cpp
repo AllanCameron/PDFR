@@ -761,7 +761,7 @@ void TTFont::ReadTables()
   	  while (nLongs-- > 0) sum += GetUint32();
   	  if (sum != this_table.checksum_)
   	  {
-  	    throw std::runtime_error("Invalid checksum in font file.");
+  	    //throw std::runtime_error("Invalid checksum in font file.");
   	  }
     }
     it_ = it_store;

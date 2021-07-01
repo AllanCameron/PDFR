@@ -431,8 +431,8 @@ draw_glyph <- function(fontfile, glyph)
 
   formats <- sapply(cmap, function(x) x$format)
   if(6 %in% formats) cmap <- cmap[[which(formats == 6)[1]]]
-  else if(4 %in% formats) cmap <- cmap[[which(formats == 4)[1]]]
   else if(0 %in% formats) cmap <- cmap[[which(formats == 0)[1]]]
+  else if(4 %in% formats) cmap <- cmap[[which(formats == 4)[1]]]
   else stop("Can't find appropriate cmap")
 
   if(is.character(glyph)) glyph <- as.numeric(charToRaw(substr(glyph, 1, 1)))
