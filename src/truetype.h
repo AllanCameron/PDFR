@@ -24,6 +24,7 @@
  */
 
 #include<map>
+#include<unordered_map>
 #include<vector>
 #include<string>
 
@@ -209,7 +210,7 @@ struct Contour
 
 struct Post
 {
-  uint32_t version;
+  float    version;
   Fixed    italic_angle;
   Fword    UnderlinePosition;
   Fword    UnderlineThickness;
@@ -353,6 +354,8 @@ class TTFont
     Loca loca_;                             // The "loca" table's contents
     Post post_;                             // The "post" table's contents
     Name name_;                             // The "name" table's contents
+
+    static const std::unordered_map<uint16_t, std::string> unicode_to_adobe;
 };
 
 /*---------------------------------------------------------------------------*/

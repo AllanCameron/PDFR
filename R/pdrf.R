@@ -428,8 +428,10 @@ pdfgrobs <- function(file_name, pagenum, scale = dev.size()[2]/10, enc = "UTF-8"
 draw_glyph <- function(fontfile, glyph)
 {
   cmap <- PDFR::GetFontFileCMap(fontfile)
+
   formats <- sapply(cmap, function(x) x$format)
-  if(4 %in% formats) cmap <- cmap[[which(formats == 4)[1]]]
+  if(6 %in% formats) cmap <- cmap[[which(formats == 6)[1]]]
+  else if(4 %in% formats) cmap <- cmap[[which(formats == 4)[1]]]
   else if(0 %in% formats) cmap <- cmap[[which(formats == 0)[1]]]
   else stop("Can't find appropriate cmap")
 

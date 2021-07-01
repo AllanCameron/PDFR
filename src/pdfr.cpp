@@ -785,6 +785,9 @@ Rcpp::List GetFontFileCMap(RawVector raw)
       value.push_back(i.second);
     }
     result.push_back(List::create(Named("format") = j.format_,
+                                  Named("platform_id") = j.platform_id_,
+                                  Named("specific_id") = j.specific_id_,
+                                  Named("encoding") = j.encoding_,
                                   Named("first")  = key,
                                   Named("second") = value));
   }

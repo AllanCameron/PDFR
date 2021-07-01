@@ -1061,7 +1061,7 @@ void TTFont::ReadPost()
   if(TableExists("post"))
   {
     GoToTable("post");
-    post_.version = GetUint32();
+    uint32_t version = GetUint32();
     post_.italic_angle = GetFixed();
     post_.UnderlinePosition = GetFword();
     post_.UnderlineThickness = GetFword();
@@ -1070,10 +1070,16 @@ void TTFont::ReadPost()
     post_.MaxMemType42 = GetUint32();
     post_.MinMemType1  = GetUint32();
     post_.MaxMemType1  = GetUint32();
-    post_.mapping = postscript_glyphs;
 
-    if(post_.version == 0x00020000)
+    if(version == 0x00010000)
     {
+      post_.version = 1.0;
+      post_.mapping = postscript_glyphs;
+    }
+
+    if(version == 0x00020000)
+    {
+      post_.version = 2.0;
       uint16_t n_glyphs = GetUint16();
       std::vector<uint16_t> indexes;
 
@@ -1083,9 +1089,32 @@ void TTFont::ReadPost()
       }
       for(uint16_t i = 0; i < n_glyphs; i++)
       {
-        if(indexes[i] > 255)
-          post_.mapping[indexes[i] - 256] = GetPascalString();
+        if(indexes[i] > 257)
+          post_.mapping[indexes[i] - 258] = GetPascalString();
+        else post_.mapping[indexes[i]] = postscript_glyphs[indexes[i]];
       }
+    }
+
+    if(version == 0x00025000)
+    {
+      post_.version = 2.5;
+      uint16_t n_glyphs = GetUint16();
+      for(uint16_t i = 0; i < n_glyphs; i++)
+      {
+        post_.mapping[i] = postscript_glyphs[i + (int8_t) GetUint8()];
+      }
+    }
+
+    if(version == 0x00030000)
+    {
+      post_.version = 3.0;
+      post_.mapping[0] = ".notdef";
+    }
+
+    if(version == 0x00040000)
+    {
+      post_.version = 4.0;
+      throw std::runtime_error("Format 4 post table fonts are not supported.");
     }
   }
 }
