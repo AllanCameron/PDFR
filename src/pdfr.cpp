@@ -746,9 +746,17 @@ List GetFontFileHeader(RawVector raw)
 
   HeadTable head = ttf.GetHead();
 
+  Rcpp::NumericVector created =  Rcpp::NumericVector::create(head.created - 2082844800);
+  created.attr("tzone") = "UTC";
+  created.attr("class") = Rcpp::CharacterVector::create("POSIXct", "POSIXt");
+
+  Rcpp::NumericVector modified = Rcpp::NumericVector::create(head.modified - 2082844800);
+  modified.attr("tzone") = "UTC";
+  modified.attr("class") = Rcpp::CharacterVector::create("POSIXct", "POSIXt");
+
   return Rcpp::List::create(
     Rcpp::Named("checksumAdjustment") = head.checksumAdjustment,
-    Rcpp::Named("created") = head.created,
+    Rcpp::Named("created") = created,
     Rcpp::Named("flags") = head.flags,
     Rcpp::Named("fontDirectionHint") = head.fontDirectionHint,
     Rcpp::Named("fontRevision") = head.fontRevision,
@@ -757,7 +765,7 @@ List GetFontFileHeader(RawVector raw)
     Rcpp::Named("lowestRecPPEM") = head.lowestRecPPEM,
     Rcpp::Named("macStyle") = head.macStyle,
     Rcpp::Named("magicNumber") = head.magicNumber,
-    Rcpp::Named("modified") = head.modified,
+    Rcpp::Named("modified") = modified,
     Rcpp::Named("unitsPerEm") = head.unitsPerEm,
     Rcpp::Named("version") = head.version,
     Rcpp::Named("xMax") = head.xMax,
@@ -953,6 +961,77 @@ Rcpp::DataFrame GetFontFileNameTable(Rcpp::RawVector raw)
     Named("text") = name.text);
 }
 
+//---------------------------------------------------------------------------//
+
+Rcpp::List GetFontFileOS2Table(Rcpp::RawVector raw)
+{
+  std::vector<uint8_t> fontfile = Rcpp::as<std::vector<uint8_t>>(raw);
+  std::string fontstring(fontfile.begin(), fontfile.end());
+  TTFont ttf(fontstring);
+
+  OS2 OS2_obj = ttf.GetOS2();
+  std::vector<std::string> formats = {
+    "italic",
+    "underscore",
+    "negative",
+    "outlined",
+    "strikeout",
+    "bold",
+    "regular",
+    "use typography metrics",
+    "wws",
+    "oblique"
+  };
+
+  std::string format = "unrecognised";
+
+  for(int i = 0; i < 9; i++)
+  {
+    if((OS2_obj.fsSelection >> i) == 1) format = formats[i];
+  }
+
+  std::string permissions = "unrecognised";
+
+  switch(OS2_obj.fsType)
+  {
+    case 0 : permissions = "Installable embedding"; break;
+    case 2 : permissions = "Restricted licence embedding"; break;
+    case 4 : permissions = "Preview & print embedding"; break;
+    case 8 : permissions = "Editable embedding"; break;
+    case 0x0100 : permissions = "No subset embedding"; break;
+    case 0x0200 : permissions = "Bitmap embedding only"; break;
+    default : permissions = "Unrecognised";
+  }
+
+  Rcpp::List result = Rcpp::List::create(
+    Named("version") = OS2_obj.version,
+    Named("xAvgCharWidth") = OS2_obj.xAvgCharWidth,
+    Named("usWeightClass") = OS2_obj.usWeightClass,
+    Named("usWidthClass") = OS2_obj.usWidthClass,
+    Named("fsType") = permissions,
+    Named("ySubscriptXSize") = OS2_obj.ySubscriptXSize,
+    Named("ySubscriptYSize") = OS2_obj.ySubscriptYSize,
+    Named("ySubscriptXOffset") = OS2_obj.ySubscriptXOffset,
+    Named("ySubscriptYOffset") = OS2_obj.ySubscriptYOffset,
+    Named("ySuperscriptXSize") = OS2_obj.ySuperscriptXSize,
+    Named("ySuperscriptYSize") = OS2_obj.ySuperscriptYSize,
+    Named("ySuperscriptXOffset") = OS2_obj.ySuperscriptXOffset,
+    Named("ySuperscriptYOffset") = OS2_obj.ySuperscriptYOffset,
+    Named("yStrikeoutSize") = OS2_obj.yStrikeoutSize,
+    Named("yStrikeoutPosition") = OS2_obj.yStrikeoutPosition,
+    Named("sFamilyClass") = OS2_obj.sFamilyClass,
+    Named("panose") = Rcpp::wrap(OS2_obj.panose),
+    Named("ulUnicodeRange") = Rcpp::wrap(OS2_obj.ulUnicodeRange),
+    Named("achVendID") = Rcpp::wrap(OS2_obj.achVendID));
+
+    result.push_back(format, "fsSelection");
+
+    result.push_back(OS2_obj.fsFirstCharIndex, "fsFirstCharIndex");
+
+    result.push_back(OS2_obj.fsLastCharIndex, "fsLastCharIndex");
+    return result;
+
+}
 //---------------------------------------------------------------------------//
 
 #ifdef PROFILER_PDFR

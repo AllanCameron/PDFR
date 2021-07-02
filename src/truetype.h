@@ -285,7 +285,7 @@ struct OS2
   uint16_t fsSelection;
   uint16_t fsFirstCharIndex;
   uint16_t fsLastCharIndex;
-}
+};
 
 /*---------------------------------------------------------------------------*/
 /* This is the class that does the job of reading, co-ordinating and storing
@@ -305,6 +305,7 @@ class TTFont
   Loca                       GetLoca()  { return this->loca_;}
   Post                       GetPost()  { return this->post_;}
   Name                       GetName()  { return this->name_;}
+  OS2                        GetOS2()   { return this->OS2_;}
   Glyf                       ReadGlyf(uint16_t);
 
  private:
@@ -339,6 +340,7 @@ class TTFont
   void      ReadCMap();                     // Reads "cmap" table
   void      ReadPost();                     // Reads "post" table
   void      ReadName();                     // Reads "name" table
+  void      ReadOS2();                      // Reads "OS/2" table
 
      // Cmap reading helper functions:
 
@@ -382,6 +384,7 @@ class TTFont
     Loca loca_;                             // The "loca" table's contents
     Post post_;                             // The "post" table's contents
     Name name_;                             // The "name" table's contents
+    OS2  OS2_;                              // The "OS/2" table's contents
 
     static const std::unordered_map<uint16_t, std::string> unicode_to_adobe;
 };

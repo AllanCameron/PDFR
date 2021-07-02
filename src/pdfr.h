@@ -187,6 +187,9 @@ Rcpp::List GetFontFilePostTable(Rcpp::RawVector raw);
 // [[Rcpp::export]]
 Rcpp::DataFrame GetFontFileNameTable(Rcpp::RawVector raw);
 
+// [[Rcpp::export]]
+Rcpp::List GetFontFileOS2Table(Rcpp::RawVector raw);
+
 //---------------------------------------------------------------------------//
 // This function can be called from R to stop the underlying C++ code. This can
 // be handy in profiling etc.

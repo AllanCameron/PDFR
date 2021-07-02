@@ -407,6 +407,7 @@ TTFont::TTFont(const std::string& input_stream) :
   ReadLoca();
   ReadPost();
   ReadName();
+  ReadOS2();
 };
 
 /*---------------------------------------------------------------------------*/
@@ -694,9 +695,9 @@ double TTFont::GetF2Dot14()
 
 Date_type TTFont::GetDate()
 {
-  int64_t macTime = GetUint32() * 0x100000000 + GetUint32();
-  int64_t utcTime = macTime * 1000 - 2080166400000;
-  return utcTime;
+  int64_t macTime = GetUint32() << 32;
+  macTime |= GetUint32();
+  return macTime;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -1127,7 +1128,8 @@ void TTFont::ReadName()
   {
     GoToTable("name");
     auto table_start = it_;
-    uint16_t format = GetUint16();
+    // skip format which isn't used (2 bytes)
+    it_ += 2;
     uint16_t count  = GetUint16();
     uint16_t string_offset = GetUint16();
 
@@ -1142,5 +1144,39 @@ void TTFont::ReadName()
       auto begin = table_start + string_offset + offset;
       name_.text.push_back(std::string(begin, begin + length));
     }
+  }
+}
+
+
+void TTFont::ReadOS2()
+{
+  if(TableExists("OS/2"))
+  {
+    GoToTable("OS/2");
+    OS2_.version = GetUint16();
+    OS2_.xAvgCharWidth = GetInt16();
+    OS2_.usWeightClass = GetUint16();
+    OS2_.usWidthClass = GetUint16();
+    OS2_.fsType = GetInt16();
+    OS2_.ySubscriptXSize = GetInt16();
+    OS2_.ySubscriptYSize = GetInt16();
+    OS2_.ySubscriptXOffset = GetInt16();
+    OS2_.ySubscriptYOffset = GetInt16();
+    OS2_.ySuperscriptXSize = GetInt16();
+    OS2_.ySuperscriptYSize = GetInt16();
+    OS2_.ySuperscriptXOffset = GetInt16();
+    OS2_.ySuperscriptYOffset = GetInt16();
+    OS2_.yStrikeoutSize = GetInt16();
+    OS2_.yStrikeoutPosition = GetInt16();
+    OS2_.sFamilyClass = GetInt16();
+
+    for(int i = 0; i < 10; i++) OS2_.panose.push_back(GetUint8());
+    for(int i = 0; i < 4;  i++) OS2_.ulUnicodeRange.push_back(GetUint32());
+
+    OS2_.achVendID = std::string(it_, it_ + 4);
+    it_ += 4;
+    OS2_.fsSelection = GetUint16();
+    OS2_.fsFirstCharIndex = GetUint16();
+    OS2_.fsLastCharIndex = GetUint16();
   }
 }

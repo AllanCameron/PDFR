@@ -93,6 +93,10 @@ GetFontFileNameTable <- function(raw) {
     .Call(`_PDFR_GetFontFileNameTable`, raw)
 }
 
+GetFontFileOS2Table <- function(raw) {
+    .Call(`_PDFR_GetFontFileOS2Table`, raw)
+}
+
 .stopCpp <- function() {
     invisible(.Call(`_PDFR_stopCpp`))
 }
