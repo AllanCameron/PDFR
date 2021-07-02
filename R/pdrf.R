@@ -427,6 +427,8 @@ pdfgrobs <- function(file_name, pagenum, scale = dev.size()[2]/10, enc = "UTF-8"
 ##---------------------------------------------------------------------------##
 draw_glyph <- function(fontfile, glyph)
 {
+  header <- GetFontFileHeader(fontfile)
+
   cmap <- PDFR::GetFontFileCMap(fontfile)
 
   formats <- sapply(cmap, function(x) x$format)
@@ -437,6 +439,8 @@ draw_glyph <- function(fontfile, glyph)
 
   if(is.character(glyph)) glyph <- as.numeric(charToRaw(substr(glyph, 1, 1)))
 
+
+
   index <- which(cmap$first == glyph)
   if(length(index) == 0) stop("Glyph not found")
   glyph <- cmap$second[index[1]]
@@ -444,21 +448,28 @@ draw_glyph <- function(fontfile, glyph)
   glyph <- PDFR::GetFontFileGlyph(fontfile, glyph)
   grid::grid.newpage()
   dfs <- glyph$Contours
+
+  grid::pushViewport(
+    grid::viewport(width = xrange/shrink_by, height = yrange/shrink_by))
+  xrange <- header$xMax - header$xMin
+  yrange <- header$yMax - header$yMin
+
+  shrink_by <- if(xrange > yrange) xrange else yrange
+
   if(is.data.frame(dfs)) dfs <- list(dfs)
+
+
   for(df in dfs)
   {
 
   if(nrow(df) == 0) next
 
-  xrange <- glyph$xmax - glyph$xmin
-  yrange <- glyph$ymax - glyph$ymin
+  df$xcoords <- (df$xcoords - header$xMin)/(shrink_by) + 0.25
+  df$ycoords <- (df$ycoords - header$yMin)/(shrink_by) + 0.25
 
-  shrink_by <- if(xrange > yrange) xrange else yrange
 
-  df$xcoords <- (df$xcoords - glyph$xmin)/(shrink_by * 2) + 0.25
-  df$ycoords <- (df$ycoords - glyph$ymin)/(shrink_by * 2) + 0.25
 
-  grid::grid.path(df$xcoords, df$ycoords, id = df$shape,
+  grid::grid.path(df$xcoords, df$ycoords, id = df$shape, default.units = "snpc",
                   gp = grid::gpar(fill = "black"), rule = "winding")
   }
 }

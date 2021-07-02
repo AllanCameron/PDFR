@@ -17,6 +17,106 @@
 
 /*---------------------------------------------------------------------------*/
 
+uint8_t TTFont::GetUint8()
+{
+  if (it_ == stream_.end())
+    throw std::runtime_error("Insufficient bytes for GetUint8()");
+  return (uint8_t) *it_++;
+}
+
+/*---------------------------------------------------------------------------*/
+
+uint16_t TTFont::GetUint16()
+{
+  if (stream_.end() - it_ < 2)
+    throw std::runtime_error("Insufficient bytes for GetUint16()");
+  uint16_t res = 0;
+  res += 256 * ((uint16_t) (uint8_t) *it_++);
+  res += (uint16_t) (uint8_t) *it_++;
+  return res;
+};
+
+/*---------------------------------------------------------------------------*/
+
+int16_t TTFont::GetInt16()
+{
+  if (stream_.end() - it_ < 2)
+    throw std::runtime_error("Insufficient bytes for GetInt16()");
+
+  return (int16_t) GetUint16();
+};
+
+/*---------------------------------------------------------------------------*/
+
+Fword TTFont::GetFword()
+{
+  return GetInt16();
+}
+
+/*---------------------------------------------------------------------------*/
+
+Fixed TTFont::GetFixed()
+{
+  return GetInt32() / (1 << 16);
+}
+
+/*---------------------------------------------------------------------------*/
+
+double TTFont::GetF2Dot14()
+{
+  uint16_t num = GetInt16();
+  int integer = num >> 14;
+  double fraction = ((double) (num & 0x3fff)) / ((double) 0x4000);
+  return integer + fraction;
+}
+
+/*---------------------------------------------------------------------------*/
+
+Date_type TTFont::GetDate()
+{
+  int64_t macTime = ((int64_t) GetUint32()) << 32;
+  macTime |= GetUint32();
+  return macTime;
+}
+
+/*---------------------------------------------------------------------------*/
+
+int32_t TTFont::GetInt32()
+{
+  if (stream_.end() - it_ < 4)
+    throw std::runtime_error("Insufficient bytes for GetInt32()");
+  int32_t res = 0;
+  res = res | *it_++ << 24;
+  res = res | *it_++ << 16;
+  res = res | *it_++ << 8;
+  res = res | *it_++;
+  return res;
+};
+
+/*---------------------------------------------------------------------------*/
+
+uint32_t TTFont::GetUint32()
+{
+  if (stream_.end() - it_ < 4)
+    throw std::runtime_error("Insufficient bytes for GetUint32()");
+  uint32_t res = GetUint16() << 16;
+  res += GetUint16();
+  return res;
+};
+
+/*---------------------------------------------------------------------------*/
+
+std::string TTFont::GetPascalString()
+{
+  uint8_t end = GetUint8();
+
+  std::string result(it_, it_ + end);
+  it_ += end;
+  return result;
+}
+
+/*---------------------------------------------------------------------------*/
+
 std::map<uint16_t, std::string> postscript_glyphs = {
   {0, ".notdef"},
   {1, ".null"},
@@ -401,7 +501,8 @@ TTFont::TTFont(const std::string& input_stream) :
   it_(stream_.begin())
 {
   ReadTables();
-  ReadHeadTable();
+
+  ReadHead();
   ReadCMap();
   ReadMaxp();
   ReadLoca();
@@ -415,19 +516,30 @@ TTFont::TTFont(const std::string& input_stream) :
 Glyf TTFont::ReadGlyf(uint16_t glyf_num)
 {
   GoToTable("glyf");
-
   it_ += loca_.offset_[glyf_num];
   Glyf result;
-  result.numberOfContours_ = GetInt16();
-  result.xMin_ =  GetInt16();
-  result.yMin_ =  GetInt16();
-  result.xMax_ =  GetInt16();
-  result.yMax_ =  GetInt16();
-  result.contours_.push_back(Contour());
+  if(loca_.length_[glyf_num] == 0)
+  {
+    result.numberOfContours_ = 0;
+    result.xMin_ = 0;
+    result.yMin_ = 0;
+    result.xMax_ = 0;
+    result.yMax_ = 0;
+    result.contours_ = {Contour()};
+  }
+  else
+  {
+    result.numberOfContours_ = GetInt16();
+    result.xMin_ =  GetInt16();
+    result.yMin_ =  GetInt16();
+    result.xMax_ =  GetInt16();
+    result.yMax_ =  GetInt16();
+    result.contours_.push_back(Contour());
+  }
 
   if(result.numberOfContours_ < 0)
     ReadCompoundGlyph(result);
-  else
+  else if(result.numberOfContours_ > 0)
     ReadSimpleGlyph(result);
 
   return result;
@@ -638,103 +750,7 @@ bool TTFont::TableExists(std::string table_name) {
 
 /*---------------------------------------------------------------------------*/
 
-uint8_t TTFont::GetUint8()
-{
-  if (it_ == stream_.end())
-    throw std::runtime_error("Insufficient bytes for GetUint8()");
-  return (uint8_t) *it_++;
-}
 
-/*---------------------------------------------------------------------------*/
-
-uint16_t TTFont::GetUint16()
-{
-  if (stream_.end() - it_ < 2)
-    throw std::runtime_error("Insufficient bytes for GetUint16()");
-  uint16_t res = 0;
-  res += 256 * ((uint16_t) (uint8_t) *it_++);
-  res += (uint16_t) (uint8_t) *it_++;
-  return res;
-};
-
-/*---------------------------------------------------------------------------*/
-
-int16_t TTFont::GetInt16()
-{
-  if (stream_.end() - it_ < 2)
-    throw std::runtime_error("Insufficient bytes for GetInt16()");
-
-  return (int16_t) GetUint16();
-};
-
-/*---------------------------------------------------------------------------*/
-
-Fword TTFont::GetFword()
-{
-  return GetInt16();
-}
-
-/*---------------------------------------------------------------------------*/
-
-Fixed TTFont::GetFixed()
-{
-  return GetInt32() / (1 << 16);
-}
-
-/*---------------------------------------------------------------------------*/
-
-double TTFont::GetF2Dot14()
-{
-  uint16_t num = GetInt16();
-   int integer = num >> 14;
-   double fraction = ((double) (num & 0x3fff)) / ((double) 0x4000);
-   return integer + fraction;
-}
-
-/*---------------------------------------------------------------------------*/
-
-Date_type TTFont::GetDate()
-{
-  int64_t macTime = GetUint32() << 32;
-  macTime |= GetUint32();
-  return macTime;
-}
-
-/*---------------------------------------------------------------------------*/
-
-int32_t TTFont::GetInt32()
-{
-  if (stream_.end() - it_ < 4)
-    throw std::runtime_error("Insufficient bytes for GetInt32()");
-  int32_t res = 0;
-  res = res | *it_++ << 24;
-  res = res | *it_++ << 16;
-  res = res | *it_++ << 8;
-  res = res | *it_++;
-  return res;
-};
-
-/*---------------------------------------------------------------------------*/
-
-uint32_t TTFont::GetUint32()
-{
-  if (stream_.end() - it_ < 4)
-    throw std::runtime_error("Insufficient bytes for GetUint32()");
-  uint32_t res = GetUint16() << 16;
-  res += GetUint16();
-  return res;
-};
-
-/*---------------------------------------------------------------------------*/
-
-std::string TTFont::GetPascalString()
-{
-  uint8_t end = GetUint8();
-
-  std::string result(it_, it_ + end);
-  it_ += end;
-  return result;
-}
 
 /*---------------------------------------------------------------------------*/
 
@@ -806,7 +822,7 @@ TTFRow TTFont::GetTTRow()
 
 /*---------------------------------------------------------------------------*/
 
-void TTFont::ReadHeadTable()
+void TTFont::ReadHead()
 {
     GoToTable("head");
 
@@ -917,6 +933,7 @@ void TTFont::ReadCMap()
       {
         throw std::runtime_error("Unrecognised encoding in cmap directory.");
       }
+
       uint16_t offset = GetUint32();
       cmap_dir_.emplace_back(CMapDirectory(platform, id, offset, encoding));
     }
@@ -1128,8 +1145,8 @@ void TTFont::ReadName()
   {
     GoToTable("name");
     auto table_start = it_;
-    // skip format which isn't used (2 bytes)
-    it_ += 2;
+
+    it_ += 2; // skip format which isn't used (2 bytes)
     uint16_t count  = GetUint16();
     uint16_t string_offset = GetUint16();
 
@@ -1147,35 +1164,87 @@ void TTFont::ReadName()
   }
 }
 
+/*---------------------------------------------------------------------------*/
 
 void TTFont::ReadOS2()
 {
   if(TableExists("OS/2"))
   {
     GoToTable("OS/2");
+
     OS2_.version = GetUint16();
     OS2_.xAvgCharWidth = GetInt16();
     OS2_.usWeightClass = GetUint16();
-    OS2_.usWidthClass = GetUint16();
-    OS2_.fsType = GetInt16();
-    OS2_.ySubscriptXSize = GetInt16();
-    OS2_.ySubscriptYSize = GetInt16();
-    OS2_.ySubscriptXOffset = GetInt16();
-    OS2_.ySubscriptYOffset = GetInt16();
-    OS2_.ySuperscriptXSize = GetInt16();
-    OS2_.ySuperscriptYSize = GetInt16();
+    uint16_t width_index = GetUint16();
+
+    std::vector<std::string> widths = { "Ultra-condensed",
+                                        "Extra-condensed",
+                                        "Condensed",
+                                        "Semi-condensed",
+                                        "Medium (normal)",
+                                        "Semi-expanded",
+                                        "Expanded",
+                                        "Extra-expanded",
+                                        "Ultra-expanded"
+                                      };
+
+    std::string width = "Unknown";
+
+    if(width_index > 0 && width_index < 10)
+    {
+      OS2_.usWidthClass = widths[width_index - 1];
+    }
+
+    switch(GetUint16())
+    {
+      case 0x0000 : OS2_.fsType = "Installable embedding";        break;
+      case 0x0002 : OS2_.fsType = "Restricted licence embedding"; break;
+      case 0x0004 : OS2_.fsType = "Preview & print embedding";    break;
+      case 0x0008 : OS2_.fsType = "Editable embedding";           break;
+      case 0x0100 : OS2_.fsType = "No subset embedding";          break;
+      case 0x0200 : OS2_.fsType = "Bitmap embedding only";        break;
+      default     : OS2_.fsType = "Unknown";                      break;
+    }
+
+    OS2_.ySubscriptXSize     = GetInt16();
+    OS2_.ySubscriptYSize     = GetInt16();
+    OS2_.ySubscriptXOffset   = GetInt16();
+    OS2_.ySubscriptYOffset   = GetInt16();
+    OS2_.ySuperscriptXSize   = GetInt16();
+    OS2_.ySuperscriptYSize   = GetInt16();
     OS2_.ySuperscriptXOffset = GetInt16();
     OS2_.ySuperscriptYOffset = GetInt16();
-    OS2_.yStrikeoutSize = GetInt16();
-    OS2_.yStrikeoutPosition = GetInt16();
-    OS2_.sFamilyClass = GetInt16();
+    OS2_.yStrikeoutSize      = GetInt16();
+    OS2_.yStrikeoutPosition  = GetInt16();
+    OS2_.sFamilyClass        = GetInt16();
 
     for(int i = 0; i < 10; i++) OS2_.panose.push_back(GetUint8());
     for(int i = 0; i < 4;  i++) OS2_.ulUnicodeRange.push_back(GetUint32());
 
     OS2_.achVendID = std::string(it_, it_ + 4);
     it_ += 4;
-    OS2_.fsSelection = GetUint16();
+
+     std::vector<std::string> formats = {  "italic",
+                                           "underscore",
+                                           "negative",
+                                           "outlined",
+                                           "strikeout",
+                                           "bold",
+                                           "regular",
+                                           "use typography metrics",
+                                           "wws",
+                                           "oblique"
+                                        };
+
+     OS2_.fsSelection = "Unknown";
+
+     uint16_t format = GetUint16();
+
+     for(int i = 0; i < 9; i++)
+     {
+       if((format >> i) == 1) OS2_.fsSelection = formats[i];
+     }
+
     OS2_.fsFirstCharIndex = GetUint16();
     OS2_.fsLastCharIndex = GetUint16();
   }

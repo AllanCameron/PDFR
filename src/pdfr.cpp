@@ -970,45 +970,13 @@ Rcpp::List GetFontFileOS2Table(Rcpp::RawVector raw)
   TTFont ttf(fontstring);
 
   OS2 OS2_obj = ttf.GetOS2();
-  std::vector<std::string> formats = {
-    "italic",
-    "underscore",
-    "negative",
-    "outlined",
-    "strikeout",
-    "bold",
-    "regular",
-    "use typography metrics",
-    "wws",
-    "oblique"
-  };
-
-  std::string format = "unrecognised";
-
-  for(int i = 0; i < 9; i++)
-  {
-    if((OS2_obj.fsSelection >> i) == 1) format = formats[i];
-  }
-
-  std::string permissions = "unrecognised";
-
-  switch(OS2_obj.fsType)
-  {
-    case 0 : permissions = "Installable embedding"; break;
-    case 2 : permissions = "Restricted licence embedding"; break;
-    case 4 : permissions = "Preview & print embedding"; break;
-    case 8 : permissions = "Editable embedding"; break;
-    case 0x0100 : permissions = "No subset embedding"; break;
-    case 0x0200 : permissions = "Bitmap embedding only"; break;
-    default : permissions = "Unrecognised";
-  }
 
   Rcpp::List result = Rcpp::List::create(
     Named("version") = OS2_obj.version,
     Named("xAvgCharWidth") = OS2_obj.xAvgCharWidth,
     Named("usWeightClass") = OS2_obj.usWeightClass,
     Named("usWidthClass") = OS2_obj.usWidthClass,
-    Named("fsType") = permissions,
+    Named("fsType") = OS2_obj.fsType,
     Named("ySubscriptXSize") = OS2_obj.ySubscriptXSize,
     Named("ySubscriptYSize") = OS2_obj.ySubscriptYSize,
     Named("ySubscriptXOffset") = OS2_obj.ySubscriptXOffset,
@@ -1024,7 +992,7 @@ Rcpp::List GetFontFileOS2Table(Rcpp::RawVector raw)
     Named("ulUnicodeRange") = Rcpp::wrap(OS2_obj.ulUnicodeRange),
     Named("achVendID") = Rcpp::wrap(OS2_obj.achVendID));
 
-    result.push_back(format, "fsSelection");
+    result.push_back(OS2_obj.fsSelection, "fsSelection");
 
     result.push_back(OS2_obj.fsFirstCharIndex, "fsFirstCharIndex");
 

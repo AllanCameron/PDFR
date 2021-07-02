@@ -266,8 +266,8 @@ struct OS2
   uint16_t version;
   int16_t xAvgCharWidth;
   uint16_t usWeightClass;
-  uint16_t usWidthClass;
-  int16_t fsType;
+  std::string usWidthClass;
+  std::string fsType;
   int16_t ySubscriptXSize;
   int16_t ySubscriptYSize;
   int16_t ySubscriptXOffset;
@@ -282,7 +282,7 @@ struct OS2
   std::vector<uint8_t> panose;
   std::vector<uint32_t> ulUnicodeRange;
   std::string achVendID;
-  uint16_t fsSelection;
+  std::string fsSelection;
   uint16_t fsFirstCharIndex;
   uint16_t fsLastCharIndex;
 };
@@ -295,6 +295,7 @@ struct OS2
 
 class TTFont
 {
+
  public:
   TTFont(const std::string& input_stream);
 
@@ -314,16 +315,16 @@ class TTFont
 
   // Data reading functions:
 
-  uint8_t   GetUint8();   //--------------------------------------------------//
-  uint16_t  GetUint16();  //
-  uint32_t  GetUint32();  // These private functions all read the input stream
-  int16_t   GetInt16();   // as various different types and then advance the
-  int32_t   GetInt32();   // stream iterator appropriately
-  double    GetF2Dot14(); //
-  Fword     GetFword();   //
-  Date_type GetDate();    //
-  std::string GetPascalString();
-  Fixed     GetFixed();   //--------------------------------------------------//
+  uint8_t   GetUint8();          //-------------------------------------------//
+  uint16_t  GetUint16();         //
+  uint32_t  GetUint32();         // These methods all read the input stream
+  int16_t   GetInt16();          // as various different types and then advance
+  int32_t   GetInt32();          // the stream iterator an appropriate number
+  double    GetF2Dot14();        // of bytes
+  Fword     GetFword();          //
+  Date_type GetDate();           //
+  std::string GetPascalString(); //
+  Fixed     GetFixed();          //-------------------------------------------//
 
 
   // Table reading functions:
@@ -334,7 +335,7 @@ class TTFont
   bool      TableExists(std::string);       // Checks a named table exists
   void      GoToTable(std::string);         // Goes to the named table
 
-  void      ReadHeadTable();                // Reads "head" table
+  void      ReadHead();                     // Reads "head" table
   void      ReadMaxp();                     // Reads "maxp" table
   void      ReadLoca();                     // Reads "loca" table
   void      ReadCMap();                     // Reads "cmap" table
