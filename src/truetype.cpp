@@ -455,13 +455,17 @@ void Contour::smooth()
       int p1y = ycoords_b[i];
       int p2y = ycoords_b[i + 1];
       int p3y = ycoords_b[i + 2];
+
       std::vector<float> frac;
+
       float filler = 0.1;
+
       while(filler < 1)
       {
         frac.push_back(filler);
         filler += 0.1;
       }
+
       for(size_t j = 0; j < frac.size(); j++)
       {
         float t = frac[j];
@@ -479,7 +483,7 @@ void Contour::smooth()
 
   xcoords = xcoords_c;
   ycoords = ycoords_c;
-  shape = shape_c;
+  shape   = shape_c;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -516,31 +520,31 @@ TTFont::TTFont(const std::string& input_stream) :
 Glyf TTFont::ReadGlyf(uint16_t glyf_num)
 {
   GoToTable("glyf");
+
   it_ += loca_.offset_[glyf_num];
   Glyf result;
+
   if(loca_.length_[glyf_num] == 0)
   {
     result.numberOfContours_ = 0;
-    result.xMin_ = 0;
-    result.yMin_ = 0;
-    result.xMax_ = 0;
-    result.yMax_ = 0;
-    result.contours_ = {Contour()};
+    result.xMin_             = 0;
+    result.yMin_             = 0;
+    result.xMax_             = 0;
+    result.yMax_             = 0;
+    result.contours_         = {Contour()};
   }
   else
   {
     result.numberOfContours_ = GetInt16();
-    result.xMin_ =  GetInt16();
-    result.yMin_ =  GetInt16();
-    result.xMax_ =  GetInt16();
-    result.yMax_ =  GetInt16();
+    result.xMin_             = GetInt16();
+    result.yMin_             = GetInt16();
+    result.xMax_             = GetInt16();
+    result.yMax_             = GetInt16();
     result.contours_.push_back(Contour());
   }
 
-  if(result.numberOfContours_ < 0)
-    ReadCompoundGlyph(result);
-  else if(result.numberOfContours_ > 0)
-    ReadSimpleGlyph(result);
+  if(result.numberOfContours_ < 0) ReadCompoundGlyph(result);
+  else if(result.numberOfContours_ > 0) ReadSimpleGlyph(result);
 
   return result;
 }
@@ -603,7 +607,6 @@ void TTFont::ReadCompoundGlyph(Glyf& result)
         e = component.contours_[0].xcoords[comp_index];
         f = component.contours_[0].ycoords[comp_index];
       }
-
     }
 
     if((flags & WE_HAVE_A_SCALE) == WE_HAVE_A_SCALE)
@@ -626,14 +629,17 @@ void TTFont::ReadCompoundGlyph(Glyf& result)
 
     double m = std::max(std::fabs(a), std::fabs(b));
     double n = std::max(std::fabs(c), std::fabs(d));
-    if(std::fabs(std::fabs(a) - std::fabs(c)) < double(33)/double(65536))
+
+    if(std::fabs(std::fabs(a) - std::fabs(c)) < double(33) / double(65536))
     {
       m = 2 * m;
     }
-    if(std::fabs(std::fabs(b) - std::fabs(d)) < double(33)/double(65536))
+
+    if(std::fabs(std::fabs(b) - std::fabs(d)) < double(33) / double(65536))
     {
       n = 2 * n;
     }
+
     component.contours_[0].transform(a, b, c, d, e, f, m, n);
     result.contours_.push_back(component.contours_[0]);
   }
@@ -750,10 +756,6 @@ bool TTFont::TableExists(std::string table_name) {
 
 /*---------------------------------------------------------------------------*/
 
-
-
-/*---------------------------------------------------------------------------*/
-
 void TTFont::ReadTables()
 {
   scalar_type_    = GetUint32();
@@ -813,10 +815,12 @@ TTFRow TTFont::GetTTRow()
 {
   TTFRow res;
   res.table_name_ = std::string(it_, it_ + 4);
+
   it_ += 4;
-  res.checksum_ = GetUint32();
-  res.offset_   = GetUint32();
-  res.length_   = GetUint32();
+  res.checksum_   = GetUint32();
+  res.offset_     = GetUint32();
+  res.length_     = GetUint32();
+
   return res;
 }
 
@@ -913,63 +917,60 @@ void TTFont::ReadCMap()
       {3, "Unicode v2 BMP only"},   {4, "Unicode v2" },
       {5, "Unicode Variations"}, {6, "Unicode Full"}};
 
+    auto left_off = it_;
+
     for (uint16_t i = 0; i < n_tables; ++i)
     {
-      std::string encoding;
+      it_ = left_off;
+      CMap entry;
       uint16_t platform = GetUint16();
-      uint16_t id = GetUint16();
+      uint16_t id       = GetUint16();
       if (platform == 0)
       {
-        auto entry = unicode_specific_map.find(id);
-        if (entry != unicode_specific_map.end()) encoding = entry->second;
+        auto found = unicode_specific_map.find(id);
+        if (found != unicode_specific_map.end()) entry.encoding_ = found->second;
       }
       if (platform == 3)
       {
-        auto entry = windows_specific_map.find(id);
-        if (entry != windows_specific_map.end()) encoding = entry->second;
+        auto found = windows_specific_map.find(id);
+        if (found != windows_specific_map.end()) entry.encoding_ = found->second;
       }
-      if (platform == 1) encoding = "Mac";
+      if (platform == 1) entry.encoding_ = "Mac";
       if (platform == 2 || platform > 3)
       {
         throw std::runtime_error("Unrecognised encoding in cmap directory.");
       }
 
       uint16_t offset = GetUint32();
-      cmap_dir_.emplace_back(CMapDirectory(platform, id, offset, encoding));
-    }
+      left_off = it_;
 
-    for (auto& entry : cmap_dir_)
-    {
-      it_ = cmap_begin + entry.offset_;
-      entry.format_ = GetUint16();
-      if (entry.format_ > 7)
-      {
-        if (GetUint16() != 0)
-          throw std::runtime_error("Unknown cmap table format.");
-      }
-      entry.length_ = GetUint16();
-      uint16_t language = GetUint16();
-      if (language) language = 0; // Language is unused variable - removes warning
+      it_ = cmap_begin + offset;
+      entry.format_   = GetUint16();
+
 
       switch(entry.format_)
       {
-        case 0 : HandleFormat0(entry); break;
-        case 2 :  HandleFormat2(entry); break;
-        case 4 : HandleFormat4(entry); break;
-        case 6 : HandleFormat6(entry); break;
-        case 8 : HandleFormat8(entry); break;
+        case 0  : HandleFormat0(entry);  break;
+        case 2  : HandleFormat2(entry);  break;
+        case 4  : HandleFormat4(entry);  break;
+        case 6  : HandleFormat6(entry);  break;
+        case 8  : HandleFormat8(entry);  break;
         case 10 : HandleFormat10(entry); break;
         case 12 : HandleFormat12(entry); break;
         case 13 : HandleFormat13(entry); break;
         case 14 : HandleFormat14(entry); break;
+
         default : throw std::runtime_error("Unknown subtable format in cmap.");
       }
-
+      cmap_dir_.push_back(entry);
     }
   }
   else
   {
-    cmap_dir_.emplace_back(CMapDirectory(0, 0, 0, "Unicode Default"));
+    cmap_dir_.emplace_back(CMap());
+
+    cmap_dir_.back().encoding_ = "Unicode Default";
+    cmap_dir_.back().format_   = 0;
     for (uint16_t j = 0; j <= 256; ++j)
     {
       cmap_dir_.back().cmap_[j] = j;
@@ -979,8 +980,10 @@ void TTFont::ReadCMap()
 
 /*---------------------------------------------------------------------------*/
 
-void TTFont::HandleFormat0(CMapDirectory& entry)
+void TTFont::HandleFormat0(CMap& entry)
 {
+  it_ += 4; // skip unused length and language variables
+
   for (uint16_t i = 0; i < 256; ++i)
   {
     entry.cmap_[i] = (uint16_t)(uint8_t) *it_++;
@@ -989,24 +992,47 @@ void TTFont::HandleFormat0(CMapDirectory& entry)
 
 /*---------------------------------------------------------------------------*/
 
-void TTFont::HandleFormat2(CMapDirectory& entry)
+void TTFont::HandleFormat2(CMap& entry)
 {
-  std::vector<uint16_t> sub_header_keys;
+  it_ += 4; // Skip 2 unused variables
+
+  std::vector<uint16_t> subheaderKeys;
+
+  for (uint16_t i = 0; i < 256; ++i) subheaderKeys.push_back(GetUint16());
+
+  auto subheaders_start = it_;
+
   for (uint16_t i = 0; i < 256; ++i)
   {
-    uint16_t k = GetUint16()/8;
-    if (k) k = 0; // Unused variable - this kills warnings
+    it_ = subheaders_start + subheaderKeys[i];
+
+    uint16_t firstCode     = GetUint16();
+	  uint16_t entryCount    = GetUint16();
+	  int16_t  idDelta       = GetInt16();
+	  uint16_t idRangeOffset = GetUint16();
+
+	  for(uint16_t j = 0; j < entryCount - firstCode; j++)
+	  {
+	    uint8_t p = (uint8_t)*(it_ + idRangeOffset + j);
+	    uint16_t glyphid = (p + idDelta) % 65536;
+	    entry.cmap_[i << 8 | (firstCode + j)] = glyphid;
+	  }
   }
+
 }
 
 /*---------------------------------------------------------------------------*/
 
-void TTFont::HandleFormat4(CMapDirectory& entry)
+void TTFont::HandleFormat4(CMap& entry)
 {
+  it_ += 4; // Skip 2 unused variables
+
   uint16_t seg_count = GetUint16() / 2;
+
   // search_range, entry_selector, range_shift are all unused here and
   // therefore we just skip on 6 bytes
   it_ += 6;
+
   std::vector<uint16_t> end_code, start_code, id_delta, range_offset;
   for (uint16_t i = 0; i < seg_count; ++i) end_code.push_back(GetUint16());
   if(GetUint16() != 0) throw std::runtime_error("Reserve pad != 0.");
@@ -1027,10 +1053,13 @@ void TTFont::HandleFormat4(CMapDirectory& entry)
 
 /*---------------------------------------------------------------------------*/
 
-void TTFont::HandleFormat6(CMapDirectory& entry)
+void TTFont::HandleFormat6(CMap& entry)
 {
+  it_ += 4; // Skip 2 unused variables
+
   auto first_entry = GetUint16();
   auto num_entries = GetUint16();
+
   for (uint16_t i = 0; i < num_entries; ++i )
   {
     entry.cmap_[first_entry + i] = GetUint16();
@@ -1039,35 +1068,74 @@ void TTFont::HandleFormat6(CMapDirectory& entry)
 
 /*---------------------------------------------------------------------------*/
 
-void TTFont::HandleFormat8(CMapDirectory& entry)
+void TTFont::HandleFormat8(CMap& entry)
 {
+  it_ += 10; // two reserved bytes plus 2 unused uint32_t
 
+  // **Unimplemented**
 }
 
 /*---------------------------------------------------------------------------*/
 
-void TTFont::HandleFormat10(CMapDirectory& entry)
+void TTFont::HandleFormat10(CMap& entry)
 {
+  it_ += 10; // two reserved bytes plus 2 unused uint32_t
 
+  uint32_t start_char = GetUint32();
+  uint32_t num_chars  = GetUint32();
+
+  for (uint32_t i = 0; i < num_chars; ++i )
+  {
+    entry.cmap_[start_char + i] = GetUint32();
+  }
 }
 
 /*---------------------------------------------------------------------------*/
 
-void TTFont::HandleFormat12(CMapDirectory& entry)
+void TTFont::HandleFormat12(CMap& entry)
 {
+  it_ += 10; // two reserved bytes plus 2 unused uint32_t
 
+  uint32_t nGroups  = GetUint32();
+
+  for(uint32_t i = 0; i < nGroups; i++)
+  {
+    uint32_t startCode  = GetUint32();
+    uint32_t endCode    = GetUint32();
+    uint32_t startGlyph = GetUint32();
+
+    for(uint32_t j = 0; j <= (endCode - startCode); j++)
+    {
+      entry.cmap_[startCode + j] = startGlyph + j;
+    }
+
+  }
 }
 
 /*---------------------------------------------------------------------------*/
 
-void TTFont::HandleFormat13(CMapDirectory& entry)
+void TTFont::HandleFormat13(CMap& entry)
 {
+  it_ += 10; // two reserved bytes plus 2 unused uint32_t
 
+  uint32_t nGroups  = GetUint32();
+
+  for(uint32_t i = 0; i < nGroups; i++)
+  {
+    uint32_t startCode  = GetUint32();
+    uint32_t endCode    = GetUint32();
+    uint32_t startGlyph = GetUint32();
+
+    for(uint32_t j = 0; j <= (endCode - startCode); j++)
+    {
+      entry.cmap_[startCode + j] = startGlyph;
+    }
+  }
 }
 
 /*---------------------------------------------------------------------------*/
 
-void TTFont::HandleFormat14(CMapDirectory& entry)
+void TTFont::HandleFormat14(CMap& entry)
 {
 
 }
@@ -1246,6 +1314,6 @@ void TTFont::ReadOS2()
      }
 
     OS2_.fsFirstCharIndex = GetUint16();
-    OS2_.fsLastCharIndex = GetUint16();
+    OS2_.fsLastCharIndex  = GetUint16();
   }
 }

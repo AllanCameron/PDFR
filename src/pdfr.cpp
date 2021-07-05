@@ -781,7 +781,7 @@ Rcpp::List GetFontFileCMap(RawVector raw)
   std::vector<uint8_t> fontfile = Rcpp::as<std::vector<uint8_t>>(raw);
   std::string fontstring(fontfile.begin(), fontfile.end());
   TTFont ttf(fontstring);
-  std::vector<CMapDirectory> cmaps = ttf.GetCMap();
+  std::vector<CMap> cmaps = ttf.GetCMap();
 
   Rcpp::List result = List::create();
   for(auto j : cmaps)
@@ -792,12 +792,10 @@ Rcpp::List GetFontFileCMap(RawVector raw)
       key.push_back(i.first);
       value.push_back(i.second);
     }
-    result.push_back(List::create(Named("format") = j.format_,
-                                  Named("platform_id") = j.platform_id_,
-                                  Named("specific_id") = j.specific_id_,
-                                  Named("encoding") = j.encoding_,
-                                  Named("first")  = key,
-                                  Named("second") = value));
+    result.push_back(DataFrame::create(Named("first")  = key,
+                                       Named("second") = value),
+                                       j.encoding_
+                                  );
   }
   return result;
 

@@ -122,17 +122,10 @@ struct HeadTable
  * information that allows the correct set of mappings to be selected.
  */
 
-struct CMapDirectory
+struct CMap
 {
-  CMapDirectory(uint16_t p, uint16_t s, uint32_t o, std::string e) :
-                  platform_id_(p), specific_id_(s), offset_(o), encoding_(e) {};
-
-  uint16_t                     platform_id_;
-  uint16_t                     specific_id_;
-  uint32_t                     offset_;
   std::string                  encoding_;
   uint16_t                     format_;
-  uint16_t                     length_;
   std::map<uint16_t, uint16_t> cmap_;        // The actual lookup mapping
 };
 
@@ -301,7 +294,7 @@ class TTFont
 
   std::vector<TTFRow>        GetTable() { return this->table_of_tables_;}
   HeadTable                  GetHead()  { return this->head_;}
-  std::vector<CMapDirectory> GetCMap()  { return this->cmap_dir_;}
+  std::vector<CMap>          GetCMap()  { return this->cmap_dir_;}
   Maxp                       GetMaxp()  { return this->maxp_;}
   Loca                       GetLoca()  { return this->loca_;}
   Post                       GetPost()  { return this->post_;}
@@ -345,15 +338,15 @@ class TTFont
 
      // Cmap reading helper functions:
 
-      void  HandleFormat0(CMapDirectory&);  //--------------------------------//
-      void  HandleFormat2(CMapDirectory&);  // There are different formats of
-      void  HandleFormat4(CMapDirectory&);  // cmap table, and each of these is
-      void  HandleFormat6(CMapDirectory&);  // read differently. After figuring
-      void  HandleFormat8(CMapDirectory&);  // out which format a cmap is stored
-      void  HandleFormat10(CMapDirectory&); // in, the cmap builder picks the
-      void  HandleFormat12(CMapDirectory&); // correct HandleFormatxx function
-      void  HandleFormat13(CMapDirectory&); // to read the cmap table.
-      void  HandleFormat14(CMapDirectory&); //--------------------------------//
+      void  HandleFormat0(CMap&);  //--------------------------------//
+      void  HandleFormat2(CMap&);  // There are different formats of
+      void  HandleFormat4(CMap&);  // cmap table, and each of these is
+      void  HandleFormat6(CMap&);  // read differently. After figuring
+      void  HandleFormat8(CMap&);  // out which format a cmap is stored
+      void  HandleFormat10(CMap&); // in, the cmap builder picks the
+      void  HandleFormat12(CMap&); // correct HandleFormatxx function
+      void  HandleFormat13(CMap&); // to read the cmap table.
+      void  HandleFormat14(CMap&); //--------------------------------//
 
   // Glyph reading functions:
 
@@ -381,7 +374,7 @@ class TTFont
     std::vector<TTFRow> table_of_tables_;   // The directory of tables
     HeadTable head_;                        // The "head" table's contents
     Maxp maxp_;                             // The "maxp" table's contents
-    std::vector<CMapDirectory> cmap_dir_;   // The "cmap" table's contents
+    std::vector<CMap> cmap_dir_;   // The "cmap" table's contents
     Loca loca_;                             // The "loca" table's contents
     Post post_;                             // The "post" table's contents
     Name name_;                             // The "name" table's contents

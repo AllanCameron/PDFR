@@ -431,10 +431,12 @@ draw_glyph <- function(fontfile, glyph)
 
   cmap <- PDFR::GetFontFileCMap(fontfile)
 
-  formats <- sapply(cmap, function(x) x$format)
-  if(6 %in% formats) cmap <- cmap[[which(formats == 6)[1]]]
-  else if(0 %in% formats) cmap <- cmap[[which(formats == 0)[1]]]
-  else if(4 %in% formats) cmap <- cmap[[which(formats == 4)[1]]]
+  enc <- names(cmap)
+  if("Mac" %in% enc) cmap <- cmap[[which(enc == "Mac")[1]]]
+  else if("Unicode v2 BMP only" %in% enc)
+    cmap <- cmap[[which(enc == "Unicode v2 BMP only" )[1]]]
+  else if("Windows Unicode (BMP only)" %in% enc)
+    cmap <- cmap[[which(enc == "Windows Unicode (BMP only)" )[1]]]
   else stop("Can't find appropriate cmap")
 
   if(is.character(glyph)) glyph <- as.numeric(charToRaw(substr(glyph, 1, 1)))
@@ -446,15 +448,18 @@ draw_glyph <- function(fontfile, glyph)
   glyph <- cmap$second[index[1]]
 
   glyph <- PDFR::GetFontFileGlyph(fontfile, glyph)
+
   grid::grid.newpage()
+
   dfs <- glyph$Contours
 
-  grid::pushViewport(
-    grid::viewport(width = xrange/shrink_by, height = yrange/shrink_by))
   xrange <- header$xMax - header$xMin
   yrange <- header$yMax - header$yMin
 
   shrink_by <- if(xrange > yrange) xrange else yrange
+
+  grid::pushViewport(
+    grid::viewport(width = xrange/shrink_by, height = yrange/shrink_by))
 
   if(is.data.frame(dfs)) dfs <- list(dfs)
 
