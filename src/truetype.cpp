@@ -1033,20 +1033,38 @@ void TTFont::HandleFormat4(CMap& entry)
   // therefore we just skip on 6 bytes
   it_ += 6;
 
-  std::vector<uint16_t> end_code, start_code, id_delta, range_offset;
+  std::vector<uint16_t> end_code, start_code;
+  std::vector<int16_t> id_delta;
   for (uint16_t i = 0; i < seg_count; ++i) end_code.push_back(GetUint16());
   if(GetUint16() != 0) throw std::runtime_error("Reserve pad != 0.");
   for (uint16_t i = 0; i < seg_count; ++i) start_code.push_back(GetUint16());
-  for (uint16_t i = 0; i < seg_count; ++i) id_delta.push_back(GetUint16());
-  for (uint16_t i = 0; i < seg_count; ++i) range_offset.push_back(GetUint16());
+  for (uint16_t i = 0; i < seg_count; ++i) id_delta.push_back(GetInt16());
 
-  for (uint16_t i = 0; i < start_code.size(); ++i)
+  for (uint16_t i = 0; i < seg_count; ++i)
   {
-    if (end_code[i] == 0xffff) break;
-    for (uint16_t j = start_code[i]; j <= end_code[i]; ++j)
+    if(end_code[i] == 0xffff) break;
+    uint16_t range_offset = GetUint16();
+
+    if(range_offset == 0)
     {
-      entry.cmap_[j] = (j + id_delta[i]) % 65536;
+      for (uint16_t j = start_code[i]; j <= end_code[i]; ++j)
+      {
+        entry.cmap_[j] = (j + id_delta[i]) % 65536;
+      }
     }
+    else
+    {
+      auto it_store = it_;
+
+      it_ += (range_offset - 2);
+
+      for (uint16_t j = start_code[i]; j <= end_code[i]; ++j)
+      {
+        entry.cmap_[j] = GetUint16();
+      }
+      it_ = it_store;
+    }
+
   }
 
 }

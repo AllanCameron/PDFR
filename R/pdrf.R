@@ -432,16 +432,15 @@ draw_glyph <- function(fontfile, glyph)
   cmap <- PDFR::GetFontFileCMap(fontfile)
 
   enc <- names(cmap)
-  if("Mac" %in% enc) cmap <- cmap[[which(enc == "Mac")[1]]]
-  else if("Unicode v2 BMP only" %in% enc)
+
+  if("Unicode v2 BMP only" %in% enc)
     cmap <- cmap[[which(enc == "Unicode v2 BMP only" )[1]]]
   else if("Windows Unicode (BMP only)" %in% enc)
     cmap <- cmap[[which(enc == "Windows Unicode (BMP only)" )[1]]]
+  else if("Mac" %in% enc) cmap <- cmap[[which(enc == "Mac")[1]]]
   else stop("Can't find appropriate cmap")
 
   if(is.character(glyph)) glyph <- as.numeric(charToRaw(substr(glyph, 1, 1)))
-
-
 
   index <- which(cmap$first == glyph)
   if(length(index) == 0) stop("Glyph not found")
