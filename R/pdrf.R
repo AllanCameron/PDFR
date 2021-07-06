@@ -433,12 +433,13 @@ draw_glyph <- function(fontfile, glyph)
 
   enc <- names(cmap)
 
-  if("Unicode v2 BMP only" %in% enc)
+  if("Unicode v2 BMP only" %in% enc) {
     cmap <- cmap[[which(enc == "Unicode v2 BMP only" )[1]]]
-  else if("Windows Unicode (BMP only)" %in% enc)
+  } else if("Windows Unicode (BMP only)" %in% enc) {
     cmap <- cmap[[which(enc == "Windows Unicode (BMP only)" )[1]]]
-  else if("Mac" %in% enc) cmap <- cmap[[which(enc == "Mac")[1]]]
-  else stop("Can't find appropriate cmap")
+  } else if("Mac" %in% enc) {
+    cmap <- cmap[[which(enc == "Mac")[1]]]
+  } else stop("Can't find appropriate cmap")
 
   if(is.character(glyph)) glyph <- as.numeric(charToRaw(substr(glyph, 1, 1)))
 
@@ -452,10 +453,11 @@ draw_glyph <- function(fontfile, glyph)
 
   dfs <- glyph$Contours
 
-  xrange <- header$xMax - header$xMin
-  yrange <- header$yMax - header$yMin
+  xrange <- glyph$xmax - glyph$xmin
+  yrange <- glyph$ymax - glyph$ymin
 
   shrink_by <- if(xrange > yrange) xrange else yrange
+  shrink_by <- 1.2 * shrink_by
 
   grid::pushViewport(
     grid::viewport(width = xrange/shrink_by, height = yrange/shrink_by))
@@ -468,9 +470,8 @@ draw_glyph <- function(fontfile, glyph)
 
   if(nrow(df) == 0) next
 
-  df$xcoords <- (df$xcoords - header$xMin)/(shrink_by) + 0.25
-  df$ycoords <- (df$ycoords - header$yMin)/(shrink_by) + 0.25
-
+  df$xcoords <- (df$xcoords - glyph$xmin)/(shrink_by) + 0.25
+  df$ycoords <- (df$ycoords - glyph$ymin)/(shrink_by) + 0.25
 
 
   grid::grid.path(df$xcoords, df$ycoords, id = df$shape, default.units = "snpc",
