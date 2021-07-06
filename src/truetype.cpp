@@ -386,6 +386,17 @@ void Contour::smooth()
   std::vector<int16_t>  ycoords_b;
   std::vector<uint16_t> shape_b;
 
+  if(shape.size() > 2)
+  {
+    if(shape.back() != shape[shape.size() - 2])
+    {
+      flags.pop_back();
+      shape.pop_back();
+      xcoords.pop_back();
+      ycoords.pop_back();
+    }
+  }
+
   for(size_t i = 0; i < flags.size(); i++)
   {
     if((flags[i] & 0x01) == 0x01)
