@@ -14,6 +14,8 @@
 #include "glyphwidths.h"
 #include "encoding.h"
 #include "font.h"
+#include "object_class.h"
+#include "document.h"
 
 //---------------------------------------------------------------------------//
 
@@ -33,6 +35,25 @@ Font::Font(shared_ptr<Document> document_ptr,
 {
   ReadFontName_();
   MakeGlyphTable_();
+  GetFontFile_();
+}
+
+/*---------------------------------------------------------------------------*/
+// Obtains the font's relevant TrueType file
+
+void Font::GetFontFile_()
+{
+  if(font_dictionary_.ContainsReferences("/FontDescriptor"))
+  {
+    int descriptor_ref = font_dictionary_.GetReference("/FontDescriptor");
+    std::shared_ptr<Object> descriptor = document_->GetObject(descriptor_ref);
+    if(descriptor->GetDictionary().ContainsReferences("/FontFile2"))
+    {
+      int fontfile_ref = descriptor->GetDictionary().GetReference("/FontFile2");
+      std::shared_ptr<Object> font_obj = document_->GetObject(fontfile_ref);
+      fontfile_ = font_obj->GetStream();
+    }
+  }
 }
 
 /*---------------------------------------------------------------------------*/

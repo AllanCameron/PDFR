@@ -86,13 +86,15 @@ private:
   std::shared_ptr<Document> document_;  // - Pointer to the containing document
   Dictionary& font_dictionary_;         // - The main font dictionary
   std::string font_id_,                 // - The name the font as used in PDF
-              font_name_;               // - The actual name of the font
+              font_name_,               // - The actual name of the font
+              fontfile_;                // - The bytes making up the font
   GlyphMap glyph_map_;                  // - Main data member, mapping RawChar
                                         //   to a {Unicode, width} pair.
 
   // private methods
   void ReadFontName_();                  // Finds the postscript font name
   void MakeGlyphTable_();                // Co-ordinates font construction
+  void GetFontFile_();                   // Gets TTF data
 };
 
 //---------------------------------------------------------------------------//
