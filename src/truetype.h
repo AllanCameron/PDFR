@@ -27,6 +27,7 @@
 #include<unordered_map>
 #include<vector>
 #include<string>
+#include<memory>
 
 
 /*---------------------------------------------------------------------------*/
@@ -379,6 +380,8 @@ class TTFont
     Post post_;                             // The "post" table's contents
     Name name_;                             // The "name" table's contents
     OS2  OS2_;                              // The "OS/2" table's contents
+
+    std::unordered_map<uint16_t, std::shared_ptr<Glyf>> glyf_cache_;
 
     static const std::unordered_map<uint16_t, std::string> unicode_to_adobe;
 };

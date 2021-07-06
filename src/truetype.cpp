@@ -530,34 +530,40 @@ TTFont::TTFont(const std::string& input_stream) :
 
 Glyf TTFont::ReadGlyf(uint16_t glyf_num)
 {
+  if(glyf_cache_.find(glyf_num) != glyf_cache_.end())
+    return *(glyf_cache_[glyf_num]);
+
   GoToTable("glyf");
 
   it_ += loca_.offset_[glyf_num];
-  Glyf result;
+  glyf_cache_[glyf_num] = std::make_shared<Glyf>();
 
   if(loca_.length_[glyf_num] == 0)
   {
-    result.numberOfContours_ = 0;
-    result.xMin_             = 0;
-    result.yMin_             = 0;
-    result.xMax_             = 0;
-    result.yMax_             = 0;
-    result.contours_         = {Contour()};
+    glyf_cache_[glyf_num]->numberOfContours_ = 0;
+    glyf_cache_[glyf_num]->xMin_             = 0;
+    glyf_cache_[glyf_num]->yMin_             = 0;
+    glyf_cache_[glyf_num]->xMax_             = 0;
+    glyf_cache_[glyf_num]->yMax_             = 0;
+    glyf_cache_[glyf_num]->contours_         = {Contour()};
   }
   else
   {
-    result.numberOfContours_ = GetInt16();
-    result.xMin_             = GetInt16();
-    result.yMin_             = GetInt16();
-    result.xMax_             = GetInt16();
-    result.yMax_             = GetInt16();
-    result.contours_.push_back(Contour());
+    glyf_cache_[glyf_num]->numberOfContours_ = GetInt16();
+    glyf_cache_[glyf_num]->xMin_             = GetInt16();
+    glyf_cache_[glyf_num]->yMin_             = GetInt16();
+    glyf_cache_[glyf_num]->xMax_             = GetInt16();
+    glyf_cache_[glyf_num]->yMax_             = GetInt16();
+    glyf_cache_[glyf_num]->contours_.push_back(Contour());
   }
 
-  if(result.numberOfContours_ < 0) ReadCompoundGlyph(result);
-  else if(result.numberOfContours_ > 0) ReadSimpleGlyph(result);
+  if(glyf_cache_[glyf_num]->numberOfContours_ < 0)
+    ReadCompoundGlyph(*glyf_cache_[glyf_num]);
 
-  return result;
+  else if(glyf_cache_[glyf_num]->numberOfContours_ > 0)
+    ReadSimpleGlyph(*glyf_cache_[glyf_num]);
+
+  return *(glyf_cache_[glyf_num]);
 }
 
 /*---------------------------------------------------------------------------*/

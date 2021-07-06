@@ -36,6 +36,7 @@ Font::Font(shared_ptr<Document> document_ptr,
   ReadFontName_();
   MakeGlyphTable_();
   GetFontFile_();
+  if(fontfile_.size() > 0) font_data_ = std::make_shared<TTFont>(fontfile_);
 }
 
 /*---------------------------------------------------------------------------*/

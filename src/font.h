@@ -45,6 +45,7 @@
 #include<vector>
 #include<unordered_map>
 #include<memory>
+#include "truetype.h"
 
 class Dictionary;
 class Document;
@@ -90,6 +91,7 @@ private:
               fontfile_;                // - The bytes making up the font
   GlyphMap glyph_map_;                  // - Main data member, mapping RawChar
                                         //   to a {Unicode, width} pair.
+  std::shared_ptr<TTFont> font_data_;
 
   // private methods
   void ReadFontName_();                  // Finds the postscript font name
