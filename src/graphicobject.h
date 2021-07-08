@@ -15,7 +15,7 @@
 
 #define PDFR_GO
 
-#include<utility>
+#include "utilities.h"
 #include<string>
 #include<vector>
 #include<memory>
@@ -98,6 +98,8 @@ class Path : public GraphicObject {
     path_y_.push_back(path_y_[pos]);
     subpaths_.push_back(subpaths_.back());
   }
+
+  void SetSubpaths(std::vector<int> value) { subpaths_ = value;}
 
   void AppendX(std::vector<float> value) {
     Concatenate(this->path_x_, {value});

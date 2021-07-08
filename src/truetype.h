@@ -28,6 +28,7 @@
 #include<vector>
 #include<string>
 #include<memory>
+#include "graphicobject.h"
 
 
 /*---------------------------------------------------------------------------*/
@@ -194,6 +195,21 @@ struct Contour
   // the reading of compound glyphs.
   void transform(double a, double b, double c, double d, double e, double f,
                  double m, double n);
+
+  Path as_path() {
+    std::vector<float> new_x;
+    std::vector<float> new_y;
+    std::vector<int>   new_paths;
+    for(auto i : xcoords) new_x.push_back(i);
+    for(auto i : ycoords) new_y.push_back(i);
+    for(auto i : shape)   new_paths.push_back(i);
+
+    Path p = Path();
+    p.SetX(new_x);
+    p.SetY(new_y);
+    p.SetSubpaths(new_paths);
+    return p;
+  }
 };
 
 /*---------------------------------------------------------------------------*/
@@ -251,6 +267,12 @@ struct Glyf
   uint16_t              instructionLength_;
   std::vector<uint8_t>  instructions_;
   std::vector<Contour>  contours_;
+
+  std::vector<Path> AsPath() const {
+    std::vector<Path> result;
+    for(auto i : contours_) result.push_back(i.as_path());
+    return result;
+    }
 };
 
 /*---------------------------------------------------------------------------*/
