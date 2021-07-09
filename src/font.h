@@ -93,6 +93,20 @@ private:
                                         //   to a {Unicode, width} pair.
   std::shared_ptr<TTFont> font_data_;
 
+  std::vector<Path> GetGlyphPath(RawChar ch, float x_scale, float y_scale,
+                                 float x_offset, float y_offset) {
+    return font_data_->ReadGlyf(ch).AsPath(x_scale, y_scale,
+                                           x_offset, y_offset);
+  }
+
+  std::vector<Path> GetGlyphPath(RawChar ch, float x_scale, float y_scale) {
+    return font_data_->ReadGlyf(ch).AsPath(x_scale, y_scale);
+  }
+
+  std::vector<Path> GetGlyphPath(RawChar ch, float scale) {
+    return font_data_->ReadGlyf(ch).AsPath(scale, scale);
+  }
+
   // private methods
   void ReadFontName_();                  // Finds the postscript font name
   void MakeGlyphTable_();                // Co-ordinates font construction

@@ -196,12 +196,12 @@ struct Contour
   void transform(double a, double b, double c, double d, double e, double f,
                  double m, double n);
 
-  Path as_path() {
+  Path as_path(float x_scale, float y_scale, float x_offset, float y_offset) {
     std::vector<float> new_x;
     std::vector<float> new_y;
     std::vector<int>   new_paths;
-    for(auto i : xcoords) new_x.push_back(i);
-    for(auto i : ycoords) new_y.push_back(i);
+    for(auto i : xcoords) new_x.push_back(i * x_scale + x_offset);
+    for(auto i : ycoords) new_y.push_back(i * y_scale + y_offset);
     for(auto i : shape)   new_paths.push_back(i);
 
     Path p = Path();
@@ -268,11 +268,21 @@ struct Glyf
   std::vector<uint8_t>  instructions_;
   std::vector<Contour>  contours_;
 
-  std::vector<Path> AsPath() const {
+  std::vector<Path> AsPath(float x_scale,  float y_scale,
+                           float x_offset, float y_offset) const {
     std::vector<Path> result;
-    for(auto i : contours_) result.push_back(i.as_path());
+    for(auto i : contours_) result.push_back(i.as_path(x_scale, y_scale,
+                                             x_offset, y_offset));
     return result;
     }
+
+  std::vector<Path> AsPath(float x_scale,  float y_scale) const {
+     return AsPath(x_scale, y_scale, 0, 0);
+  }
+
+  std::vector<Path> AsPath() const {
+    return AsPath(1, 1, 0, 0);
+  }
 };
 
 /*---------------------------------------------------------------------------*/
