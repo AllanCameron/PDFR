@@ -10,3 +10,7 @@ working.R
 .gitignore
 ^\.github
 headerMap.txt
+^data-raw$
+^LICENSE\.md$
+^codemeta\.json$
+^README\.Rmd$

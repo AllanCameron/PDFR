@@ -1,45 +1,4 @@
 ##---------------------------------------------------------------------------##
-##                                                                           ##
-##  PDFR main R file                                                         ##
-##                                                                           ##
-##  Copyright (C) 2018 - 2019 by Allan Cameron                               ##
-##                                                                           ##
-##  Licensed under the MIT license - see https://mit-license.org             ##
-##  or the LICENSE file in the project root directory                        ##
-##                                                                           ##
-##---------------------------------------------------------------------------##
-
-##---------------------------------------------------------------------------##
-#' Paths to test pdfs
-#'
-#' A list of paths to locally stored test pdfs
-#'
-#' @format A list of 9 pdf files
-#' \describe{
-#'   \item{barcodes}{a pdf constructed in Rstudio}
-#'   \item{chestpain}{a flow-chart for chest pain management}
-#'   \item{pdfinfo}{information about the pdf format}
-#'   \item{adobe}{an official adobe document}
-#'   \item{leeds}{a table-rich local government document}
-#'   \item{sams}{a document based on svg}
-#'   \item{testreader}{a simple pdf test}
-#'   \item{tex}{a simple tex test}
-#'   \item{rcpp}{a CRAN package vignette}
-#' }
-##---------------------------------------------------------------------------##
-testfiles <- list(
-  barcodes   =  system.file("extdata", "barcodes.pdf",   package = "PDFR"),
-  chestpain  =  system.file("extdata", "chestpain.pdf",  package = "PDFR"),
-  pdfinfo    =  system.file("extdata", "pdfinfo.pdf",    package = "PDFR"),
-  adobe      =  system.file("extdata", "adobe.pdf",      package = "PDFR"),
-  leeds      =  system.file("extdata", "leeds.pdf",      package = "PDFR"),
-  sams       =  system.file("extdata", "sams.pdf",       package = "PDFR"),
-  testreader =  system.file("extdata", "testreader.pdf", package = "PDFR"),
-  tex        =  system.file("extdata", "tex.pdf",        package = "PDFR"),
-  rcpp       =  system.file("extdata", "rcpp.pdf",       package = "PDFR"))
-
-
-##---------------------------------------------------------------------------##
 #' pdfpage
 #'
 #' Returns contents of a pdf page
@@ -54,8 +13,12 @@ testfiles <- list(
 #'
 #' @examples pdfpage(testfiles$leeds, 1, FALSE)
 ##---------------------------------------------------------------------------##
-pdfpage <- function(pdf, page, atomic = FALSE, table_only = TRUE)
+pdfpage <- function(pdf, page = 1, atomic = FALSE, table_only = TRUE)
 {
+  if (length(page) > 1) {
+
+  }
+
   if(class(pdf) == "raw")
   {
     x <- .pdfpageraw(pdf, page, atomic)
@@ -116,6 +79,7 @@ get_xref <- function(pdf)
 #' @export
 #'
 #' @examples get_object(testfiles$leeds, 1)
+
 ##---------------------------------------------------------------------------##
 get_object <- function(pdf, number)
 {
@@ -319,22 +283,28 @@ pdfboxes <- function(pdf, pagenum)
 #'
 #' @param file a valid pdf file location
 #' @param pagenum the page number to be plotted
-#'
+#' @param scale Scale used for linewidth and text size. Passed to
+#'   `ggplot2::geom_text()` size parameter as scale * size/3
 #' @return a ggplot
 #' @export
 #'
 #' @examples pdfgraphics(testfiles$leeds, 1)
+#'
+#' @importFrom ggplot2 ggplot aes geom_rect geom_polygon geom_path geom_text
+#'   scale_fill_identity scale_color_identity scale_size_identity coord_fixed
+#'   theme_void
+#' @importFrom grDevices rgb
 ##---------------------------------------------------------------------------##
 
 pdfgraphics <- function(file, pagenum, scale = 1) {
   x <- pdfpage(file, pagenum, FALSE, FALSE)
-  a <- PDFR:::.GetPaths(file, pagenum)
+  a <- .GetPaths(file, pagenum)
   dfs <- lapply(a, function(x) {
     if(length(x$colour) == 0) x$colour <- c(0, 0, 0)
     if(length(x$fill) == 0) {x$fill <- c(0, 0, 0); x$filled <- FALSE}
     if(nchar(x$text) > 0)  x$stroked <- TRUE
-    x$stroke <- rgb(x$colour[1], x$colour[2], x$colour[3], as.numeric(x$stroked))
-    x$fill <- rgb(x$fill[1], x$fill[2], x$fill[3], as.numeric(x$filled))
+    x$stroke <- grDevices::rgb(x$colour[1], x$colour[2], x$colour[3], as.numeric(x$stroked))
+    x$fill <- grDevices::rgb(x$fill[1], x$fill[2], x$fill[3], as.numeric(x$filled))
     x$fill <- rep(x$fill, length(x$X))
 
     x$stroke <- rep(x$stroke, length(x$X))
@@ -375,17 +345,21 @@ pdfgraphics <- function(file, pagenum, scale = 1) {
 #'
 #' Plots the graphical elements of a pdf page as grobs
 #'
-#' @param file a valid pdf file location
+#' @param file_name a valid pdf file location
 #' @param pagenum the page number to be plotted
+#' @param scale Document scale. Defaults to `dev.size()[2]/10`
+#' @param enc Document encoding. Defaults to "UTF-8"
 #'
 #' @return invisibly returns grobs as well as drawing them
 #' @export
 #'
 #' @examples pdfgrobs(testfiles$leeds, 1)
+#' @importFrom grid grid.newpage grid.draw grid.rect gpar pushViewport viewport
+#' @importFrom grDevices dev.size
 ##---------------------------------------------------------------------------##
 pdfgrobs <- function(file_name, pagenum, scale = dev.size()[2]/10, enc = "UTF-8")
 {
-  groblist <- PDFR:::.GetGrobs(file_name, pagenum)
+  groblist <- .GetGrobs(file_name, pagenum)
   x <- pdfpage(file_name, pagenum, FALSE, FALSE)
 
   width  <- x$Box[3] - x$Box[1]
@@ -423,13 +397,20 @@ pdfgrobs <- function(file_name, pagenum, scale = dev.size()[2]/10, enc = "UTF-8"
 #' @return no return
 #' @export
 #'
-#' @examples draw_glyph(ttf, "a")
+#' @examples
+#' \dontrun{
+#' if(interactive()){
+#'  # FIXME: ttf is not available
+#'  draw_glyph(ttf, "a")
+#'  }
+#' }
+#' @importFrom grid grid.newpage pushViewport viewport grid.path gpar
 ##---------------------------------------------------------------------------##
 draw_glyph <- function(fontfile, glyph)
 {
   header <- GetFontFileHeader(fontfile)
 
-  cmap <- PDFR::GetFontFileCMap(fontfile)
+  cmap <- GetFontFileCMap(fontfile)
 
   enc <- names(cmap)
 
@@ -447,7 +428,7 @@ draw_glyph <- function(fontfile, glyph)
   if(length(index) == 0) stop("Glyph not found")
   glyph <- cmap$second[index[1]]
 
-  glyph <- PDFR::GetFontFileGlyph(fontfile, glyph)
+  glyph <- GetFontFileGlyph(fontfile, glyph)
 
   grid::grid.newpage()
 
