@@ -4,7 +4,8 @@
 
 ## usethis namespace: start
 #' @importFrom Rcpp evalCpp
-#' @importFrom httr GET
-#' @importFrom ggplot2 ggplot aes geom_rect geom_text coord_equal scale_size_identity
+#' @importFrom cli cli_abort
+#' @importFrom rlang is_character is_true is_false is_raw check_installed
+#'   has_length abort caller_env
 ## usethis namespace: end
 NULL

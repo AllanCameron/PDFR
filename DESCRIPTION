@@ -17,17 +17,16 @@ BugReports: https://github.com/AllanCameron/PDFR/issues
 Depends: 
     R (>= 2.10)
 Imports: 
-    ggplot2,
+    cli,
     grDevices,
     grid,
-    httr,
-    Rcpp
+    Rcpp,
+    rlang
 Suggests: 
-    Rcpp11,
+    ggplot2,
     testthat
 LinkingTo: 
     Rcpp,
-    Rcpp11,
     testthat
 Encoding: UTF-8
 LazyData: true
