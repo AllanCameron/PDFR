@@ -18,5 +18,5 @@ a ggplot
 Plots the bounding boxes of text elements from a page as a ggplot.
 }
 \examples{
-pdfboxes(testfiles$leeds, 1)
+pdfboxes(pdfr_paths$leeds, 1)
 }

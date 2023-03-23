@@ -20,5 +20,5 @@ in a specified object. It also contains any stream data associated with
 the object.
 }
 \examples{
-get_object(testfiles$leeds, 1)
+get_object(pdfr_paths$leeds, 1)
 }

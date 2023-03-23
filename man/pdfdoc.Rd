@@ -16,5 +16,5 @@ a data frame of all text elements in a document
 Returns contents of all pdf pages
 }
 \examples{
-pdfdoc(testfiles$leeds)
+pdfdoc(pdfr_paths$leeds)
 }

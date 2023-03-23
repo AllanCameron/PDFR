@@ -22,5 +22,9 @@ a list containing data frames
 Returns contents of a pdf page
 }
 \examples{
-pdfpage(testfiles$leeds, 1, FALSE)
+
+head(pdfpage(pdfr_paths$leeds, page = 1))
+
+head(pdfpage(pdfr_paths$chestpain, page = c(1:2)))
+
 }

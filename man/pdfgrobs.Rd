@@ -22,5 +22,5 @@ invisibly returns grobs as well as drawing them
 Plots the graphical elements of a pdf page as grobs
 }
 \examples{
-pdfgrobs(testfiles$leeds, 1)
+pdfgrobs(pdfr_paths$leeds, 1)
 }

@@ -20,7 +20,7 @@ Draws glyphs from a truetype font as grid grobs
 \examples{
 \dontrun{
 if(interactive()){
- # FIXME: ttf is not available
+ # ttf <- "raw vector with font file"
  draw_glyph(ttf, "a")
  }
 }

@@ -16,5 +16,5 @@ a data frame showing the bytewise positions of each object in the pdf
 Get a pdf's xref table as an R dataframe
 }
 \examples{
-get_xref(testfiles$leeds)
+get_xref(pdfr_paths$leeds)
 }

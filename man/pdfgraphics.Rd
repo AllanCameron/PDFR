@@ -21,6 +21,6 @@ a ggplot
 Plots the graphical elements of a pdf page as a ggplot
 }
 \examples{
-pdfgraphics(testfiles$leeds, 1)
+pdfgraphics(pdfr_paths$leeds, 1)
 
 }

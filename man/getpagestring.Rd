@@ -18,5 +18,5 @@ a single string containing the page description program
 Returns contents of a pdf page description program
 }
 \examples{
-getpagestring(testfiles$leeds, 1)
+getpagestring(pdfr_paths$leeds, 1)
 }

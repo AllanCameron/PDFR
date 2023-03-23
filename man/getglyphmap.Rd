@@ -20,5 +20,5 @@ each byte that may be used as a glyph. It shows the unicode number of
 each interpreted glyph, as well as its width in text space.
 }
 \examples{
-getglyphmap(testfiles$leeds, 1)
+getglyphmap(pdfr_paths$leeds, 1)
 }
