@@ -1,4 +1,4 @@
-testfiles <- list(
+pdfr_paths <- list(
   barcodes   =  system.file("extdata", "barcodes.pdf",   package = "PDFR"),
   chestpain  =  system.file("extdata", "chestpain.pdf",  package = "PDFR"),
   pdfinfo    =  system.file("extdata", "pdfinfo.pdf",    package = "PDFR"),
@@ -10,4 +10,4 @@ testfiles <- list(
   rcpp       =  system.file("extdata", "rcpp.pdf",       package = "PDFR")
 )
 
-usethis::use_data(testfiles, overwrite = TRUE)
+usethis::use_data(pdfr_paths, overwrite = TRUE)
