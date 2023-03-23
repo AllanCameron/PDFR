@@ -34,12 +34,12 @@ pak::pkg_install("AllanCameron/PDFR")
 The main function used to extract all data from a pdf page to an R data
 frame is `pdfpage()`. This accepts either the path to a pdf or a raw
 data vector representing a pdf. For example, this is how you extract all
-text from page 1 of the barcodes PDF from `testfiles`:
+text from page 1 of the barcodes PDF from `pdfr_paths`:
 
 ``` r
 library(PDFR)
 
-pdfpage(testfiles$barcodes, 1)
+pdfpage(pdfr_paths$barcodes, 1)
 #>                               text  left right bottom   top    font size
 #> 1                             None  53.5  74.4  774.2 782.2 Courier    8
 #> 2                   Acute medicine 187.4 255.9  774.2 782.2 Courier    8
