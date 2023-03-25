@@ -1,45 +1,4 @@
 ##---------------------------------------------------------------------------##
-##                                                                           ##
-##  PDFR main R file                                                         ##
-##                                                                           ##
-##  Copyright (C) 2018 - 2019 by Allan Cameron                               ##
-##                                                                           ##
-##  Licensed under the MIT license - see https://mit-license.org             ##
-##  or the LICENSE file in the project root directory                        ##
-##                                                                           ##
-##---------------------------------------------------------------------------##
-
-##---------------------------------------------------------------------------##
-#' Paths to test pdfs
-#'
-#' A list of paths to locally stored test pdfs
-#'
-#' @format A list of 9 pdf files
-#' \describe{
-#'   \item{barcodes}{a pdf constructed in Rstudio}
-#'   \item{chestpain}{a flow-chart for chest pain management}
-#'   \item{pdfinfo}{information about the pdf format}
-#'   \item{adobe}{an official adobe document}
-#'   \item{leeds}{a table-rich local government document}
-#'   \item{sams}{a document based on svg}
-#'   \item{testreader}{a simple pdf test}
-#'   \item{tex}{a simple tex test}
-#'   \item{rcpp}{a CRAN package vignette}
-#' }
-##---------------------------------------------------------------------------##
-testfiles <- list(
-  barcodes   =  system.file("extdata", "barcodes.pdf",   package = "PDFR"),
-  chestpain  =  system.file("extdata", "chestpain.pdf",  package = "PDFR"),
-  pdfinfo    =  system.file("extdata", "pdfinfo.pdf",    package = "PDFR"),
-  adobe      =  system.file("extdata", "adobe.pdf",      package = "PDFR"),
-  leeds      =  system.file("extdata", "leeds.pdf",      package = "PDFR"),
-  sams       =  system.file("extdata", "sams.pdf",       package = "PDFR"),
-  testreader =  system.file("extdata", "testreader.pdf", package = "PDFR"),
-  tex        =  system.file("extdata", "tex.pdf",        package = "PDFR"),
-  rcpp       =  system.file("extdata", "rcpp.pdf",       package = "PDFR"))
-
-
-##---------------------------------------------------------------------------##
 #' pdfpage
 #'
 #' Returns contents of a pdf page
@@ -52,30 +11,41 @@ testfiles <- list(
 #' @return a list containing data frames
 #' @export
 #'
-#' @examples pdfpage(testfiles$leeds, 1, FALSE)
+#' @examples
+#'
+#' head(pdfpage(pdfr_paths$leeds, page = 1))
+#'
+#' head(pdfpage(pdfr_paths$chestpain, page = c(1:2)))
+#'
 ##---------------------------------------------------------------------------##
-pdfpage <- function(pdf, page, atomic = FALSE, table_only = TRUE)
+pdfpage <- function(pdf, page = 1, atomic = FALSE, table_only = TRUE)
 {
-  if(class(pdf) == "raw")
+  if (is_min_length(page, 2)) {
+    pages <- lapply(page, function(x) {
+      cbind(
+        pdfpage(pdf, x, atomic, table_only),
+        data.frame("page" = x)
+      )
+    })
+
+    return(do.call(rbind, pages))
+  }
+
+  if(is_raw(pdf))
   {
     x <- .pdfpageraw(pdf, page, atomic)
   }
-  if(class(pdf) == "character" & length(pdf) == 1 & grepl("[.]pdf$", pdf[1]) &
-     !grepl("/", pdf[1]))
+  if(is_character(pdf, 1) & is_pdf_fileext(pdf[1]) & !is_fsep_path(pdf[1]))
   {
     x <- .pdfpage(paste0(path.expand("~/"), pdf), page, atomic)
   }
-  if(class(pdf) == "character" & length(pdf) == 1 & grepl("[.]pdf$", pdf[1]) &
-     grepl("/", pdf[1]))
+  if(is_character(pdf, 1) & is_pdf_fileext(pdf[1]) & is_fsep_path(pdf[1]))
   {
     x <- .pdfpage(pdf, page, atomic)
   }
-  if((class(pdf) != "raw"       & class(pdf) != "character") |
-     (class(pdf) == "character" & length(pdf) > 1)           |
-     (class(pdf) == "character" & !grepl("[.]pdf$", pdf[1])) )
-  {
-    stop("pdfpage requires a single path to a valid pdf or a raw vector.")
-  }
+
+  check_pdf(pdf, call)
+
   Encoding(x$Elements$text) <- "UTF-8"
   x$Elements <- x$Elements[order(-x$Elements$bottom, x$Elements$left),]
   x$Elements$left <- round(x$Elements$left, 1)
@@ -84,7 +54,7 @@ pdfpage <- function(pdf, page, atomic = FALSE, table_only = TRUE)
   x$Elements$size <- round(x$Elements$size, 1)
   rownames(x$Elements) <- seq_along(x$Elements[[1]])
   .stopCpp()
-  if(table_only == FALSE) return(x) else return(x$Elements)
+  if(is_false(table_only)) return(x) else return(x$Elements)
 }
 
 ##---------------------------------------------------------------------------##
@@ -95,11 +65,11 @@ pdfpage <- function(pdf, page, atomic = FALSE, table_only = TRUE)
 #' @return a data frame showing the bytewise positions of each object in the pdf
 #' @export
 #'
-#' @examples get_xref(testfiles$leeds)
+#' @examples get_xref(pdfr_paths$leeds)
 ##---------------------------------------------------------------------------##
 get_xref <- function(pdf)
 {
-  if(class(pdf) == "raw") .get_xrefraw(pdf) else .get_xref(pdf)
+  if(is_raw(pdf)) .get_xrefraw(pdf) else .get_xref(pdf)
 }
 
 ##---------------------------------------------------------------------------##
@@ -115,11 +85,12 @@ get_xref <- function(pdf)
 #' @return a named vector of the dictionary and stream of the pdf object
 #' @export
 #'
-#' @examples get_object(testfiles$leeds, 1)
+#' @examples get_object(pdfr_paths$leeds, 1)
+
 ##---------------------------------------------------------------------------##
 get_object <- function(pdf, number)
 {
-  if(class(pdf) == "raw") .get_objraw(pdf, number) else .get_obj(pdf, number)
+  if(is_raw(pdf)) .get_objraw(pdf, number) else .get_obj(pdf, number)
 }
 
 ##---------------------------------------------------------------------------##
@@ -138,10 +109,11 @@ get_object <- function(pdf, number)
 #' @return a ggplot
 #' @export
 #'
-#' @examples pdfplot(testfiles$leeds, 1)
+#' @examples pdfplot(pdfr_paths$leeds, 1)
 ##---------------------------------------------------------------------------##
 pdfplot <- function(pdf, page = 1, atomic = FALSE, boxes = FALSE, textsize = 1)
 {
+  check_installed("ggplot2")
   x <- pdfpage(pdf, page, atomic, FALSE)
   y <- x$Elements
   y$midx <- (y$right + y$left) / 2
@@ -154,14 +126,14 @@ pdfplot <- function(pdf, page = 1, atomic = FALSE, boxes = FALSE, textsize = 1)
                          fill = "white", colour = "black", size = 0.2
   ) + ggplot2::coord_equal(
   ) + ggplot2::scale_size_identity()
-  if(boxes == TRUE)
+  if(is_true(boxes))
   {
     G <- G + ggplot2::geom_rect(ggplot2::aes(xmin = left, ymin = bottom,
                                              xmax = right , ymax = top),
                                 fill = "grey", colour = "grey",
                                 size = 0.2, alpha = 0.2)
   }
-  if(atomic == FALSE)
+  if(is_false(atomic))
   {
     G + ggplot2::geom_text(ggplot2::aes(label = text),
                            hjust = 0.5, vjust = 0.5)
@@ -186,7 +158,7 @@ pdfplot <- function(pdf, page = 1, atomic = FALSE, boxes = FALSE, textsize = 1)
 #' @return a dataframe of all entries of font encoding tables with width mapping
 #' @export
 #'
-#' @examples getglyphmap(testfiles$leeds, 1)
+#' @examples getglyphmap(pdfr_paths$leeds, 1)
 ##---------------------------------------------------------------------------##
 getglyphmap <- function(pdf, page = 1)
 {
@@ -205,24 +177,21 @@ getglyphmap <- function(pdf, page = 1)
 #' @return a single string containing the page description program
 #' @export
 #'
-#' @examples getpagestring(testfiles$leeds, 1)
+#' @examples getpagestring(pdfr_paths$leeds, 1)
 ##---------------------------------------------------------------------------##
 getpagestring <- function(pdf, page)
 {
-  if(class(pdf) == "raw")
+  if(is_raw(pdf))
   {
     x <- .pagestringraw(pdf, page)
   }
-  if(class(pdf) == "character" & length(pdf) == 1 & grepl("[.]pdf$", pdf[1]))
+  if(is_character(pdf, 1) & is_pdf_fileext(pdf[1]))
   {
     x <- .pagestring(pdf, page)
   }
-  if((class(pdf) != "raw"       & class(pdf) != "character") |
-     (class(pdf) == "character" & length(pdf) > 1)           |
-     (class(pdf) == "character" & !grepl("[.]pdf$", pdf[1])) )
-  {
-    stop("pdfpage requires a single path to a valid pdf or a raw vector.")
-  }
+
+  check_pdf(pdf, call)
+
   .stopCpp()
   return(x)
 }
@@ -238,24 +207,21 @@ getpagestring <- function(pdf, page)
 #' @return a data frame of all text elements in a document
 #' @export
 #'
-#' @examples pdfdoc(testfiles$leeds)
+#' @examples pdfdoc(pdfr_paths$leeds)
 ##---------------------------------------------------------------------------##
 pdfdoc <- function(pdf)
 {
-  if((class(pdf) != "raw"       & class(pdf) != "character") |
-     (class(pdf) == "character" & length(pdf) > 1)           |
-     (class(pdf) == "character" & !grepl("[.]pdf$", pdf[1])) )
-    stop("pdfdoc requires a single path to a valid pdf or a raw vector.")
+  check_pdf(pdf)
 
-  is_pdf <- grepl("[.]pdf$", pdf[1])
-  valid_pdf_name <- (is.character(pdf) & length(pdf) == 1 & is_pdf)
-  if (is.raw(pdf)) x <- .pdfdocraw(pdf)
-  if (is.character(pdf) & !grepl("/", pdf[1]))
+  is_pdf <- is_pdf_fileext(pdf[1])
+  valid_pdf_name <- (is_character(pdf) & length(pdf) == 1 & is_pdf)
+  if (is_raw(pdf)) x <- .pdfdocraw(pdf)
+  if (is_character(pdf) & !is_fsep_path(pdf[1]))
   {
     pdf <- paste0(path.expand("~/"), pdf)
   }
 
-  if (is.character(pdf)) {
+  if (is_character(pdf)) {
     x <- .pdfdoc(pdf)
   }
 
@@ -281,33 +247,34 @@ pdfdoc <- function(pdf)
 #' @return a ggplot
 #' @export
 #'
-#' @examples pdfboxes(testfiles$leeds, 1)
+#' @examples pdfboxes(pdfr_paths$leeds, 1)
 ##---------------------------------------------------------------------------##
 pdfboxes <- function(pdf, pagenum)
 {
-  if(class(pdf) == "raw") x <- .pdfboxesRaw(pdf, pagenum)
+  if(is_raw(pdf)) x <- .pdfboxesRaw(pdf, pagenum)
 
-  if(class(pdf) == "character" &
-     length(pdf) == 1 &
-     grepl("[.]pdf$", pdf[1]) &
-     !grepl("/", pdf[1]))
+  if(is_character(pdf) &
+     has_length(pdf, 1) &
+     is_pdf_fileext(pdf[1]) &
+     !is_fsep_path(pdf[1]))
     x <- .pdfboxesString(paste0(path.expand("~/"), pdf), pagenum)
 
 
-  if(class(pdf) == "character" &
-     length(pdf) == 1 &
-     grepl("[.]pdf$", pdf[1]) &
-     grepl("/", pdf[1])) x <- .pdfboxesString(pdf, pagenum)
+  if(is_character(pdf) &
+     has_length(pdf, 1) &
+     is_pdf_fileext(pdf[1]) &
+     is_fsep_path(pdf[1])) x <- .pdfboxesString(pdf, pagenum)
 
-  if((class(pdf) != "raw"       & class(pdf) != "character") |
-     (class(pdf) == "character" & length(pdf) > 1)           |
-     (class(pdf) == "character" & !grepl("[.]pdf$", pdf[1])) )
-  {
-    stop("pdfboxes requires a single path to a valid pdf or a raw vector.")
-  }
-  ggplot(data = x, aes(xmin = xmin, ymin = ymin, xmax = xmax, ymax = ymax,
-                       fill = factor(box))) -> D
-  print(D + geom_rect(alpha = 0.5))
+  check_pdf(pdf)
+  check_installed("ggplot2")
+  D <-
+    ggplot2::ggplot(
+      data = x,
+      ggplot2::aes(
+        xmin = xmin, ymin = ymin, xmax = xmax, ymax = ymax, fill = factor(box)
+        )
+    )
+  print(D + ggplot2::geom_rect(alpha = 0.5))
   .stopCpp()
   return(x)
 }
@@ -319,39 +286,45 @@ pdfboxes <- function(pdf, pagenum)
 #'
 #' @param file a valid pdf file location
 #' @param pagenum the page number to be plotted
-#'
+#' @param scale Scale used for linewidth and text size. Passed to
+#'   `ggplot2::geom_text()` size parameter as scale * size/3
 #' @return a ggplot
 #' @export
 #'
-#' @examples pdfgraphics(testfiles$leeds, 1)
+#' @examples pdfgraphics(pdfr_paths$leeds, 1)
+#'
+#' @importFrom grDevices rgb
 ##---------------------------------------------------------------------------##
 
 pdfgraphics <- function(file, pagenum, scale = 1) {
-  x <- pdfpage(file, pagenum, FALSE, FALSE)
-  a <- PDFR:::.GetPaths(file, pagenum)
-  dfs <- lapply(a, function(x) {
-    if(length(x$colour) == 0) x$colour <- c(0, 0, 0)
-    if(length(x$fill) == 0) {x$fill <- c(0, 0, 0); x$filled <- FALSE}
-    if(nchar(x$text) > 0)  x$stroked <- TRUE
-    x$stroke <- rgb(x$colour[1], x$colour[2], x$colour[3], as.numeric(x$stroked))
-    x$fill <- rgb(x$fill[1], x$fill[2], x$fill[3], as.numeric(x$filled))
-    x$fill <- rep(x$fill, length(x$X))
+  rlang::check_installed("ggplot2")
 
-    x$stroke <- rep(x$stroke, length(x$X))
-    x$filled <- rep(x$filled, length(x$X))
-    x$text <- rep(x$text, length(x$X))
+  x <- pdfpage(file, pagenum, FALSE, FALSE)
+  a <- .GetPaths(file, pagenum)
+  dfs <- lapply(a, function(x) {
+    if(has_length(x$colour, 0)) x$colour <- c(0, 0, 0)
+    if(has_length(x$fill, 0)) {x$fill <- c(0, 0, 0); x$filled <- FALSE}
+    if(nchar(x$text) > 0)  x$stroked <- TRUE
+    x$stroke <- grDevices::rgb(x$colour[1], x$colour[2], x$colour[3], as.numeric(x$stroked))
+    x$fill <- grDevices::rgb(x$fill[1], x$fill[2], x$fill[3], as.numeric(x$filled))
+    x$fill <- rep_len(x$fill, length(x$X))
+
+    x$stroke <- rep_len(x$stroke, length(x$X))
+    x$filled <- rep_len(x$filled, length(x$X))
+    x$text <- rep_len(x$text, length(x$X))
     x$hasText <- nchar(x$text) > 0
 
-    x$size <- rep(abs(x$size), length(x$X))
+    x$size <- rep_len(abs(x$size), length(x$X))
     as.data.frame(x[c("X", "Y", "stroke", "fill", "size",
                       "filled", "hasText", "text")])
   })
   dfs <- dfs[!sapply(dfs, function(x) any(x$X > 800) | any(x$Y > 800))]
-  dfs <- mapply(function(x, y) {x$poly <- rep(y, length(x$X)); x},
+  dfs <- mapply(function(x, y) {x$poly <- rep_len(y, length(x$X)); x},
                 dfs, seq_along(dfs), SIMPLIFY = FALSE)
 
   d <- do.call(rbind, dfs)
   Encoding(d$text) <- "UTF-8"
+
   ggplot2::ggplot(d[d$filled, ],
     ggplot2::aes(X, Y, colour = stroke, group = poly, size = size)) +
     ggplot2::geom_rect(ggplot2::aes(xmin = x$Box[1], ymin = x$Box[2],
@@ -375,17 +348,21 @@ pdfgraphics <- function(file, pagenum, scale = 1) {
 #'
 #' Plots the graphical elements of a pdf page as grobs
 #'
-#' @param file a valid pdf file location
+#' @param file_name a valid pdf file location
 #' @param pagenum the page number to be plotted
+#' @param scale Document scale. Defaults to `dev.size()[2]/10`
+#' @param enc Document encoding. Defaults to "UTF-8"
 #'
 #' @return invisibly returns grobs as well as drawing them
 #' @export
 #'
-#' @examples pdfgrobs(testfiles$leeds, 1)
+#' @examples pdfgrobs(pdfr_paths$leeds, 1)
+#' @importFrom grid grid.newpage grid.draw grid.rect gpar pushViewport viewport
+#' @importFrom grDevices dev.size
 ##---------------------------------------------------------------------------##
 pdfgrobs <- function(file_name, pagenum, scale = dev.size()[2]/10, enc = "UTF-8")
 {
-  groblist <- PDFR:::.GetGrobs(file_name, pagenum)
+  groblist <- .GetGrobs(file_name, pagenum)
   x <- pdfpage(file_name, pagenum, FALSE, FALSE)
 
   width  <- x$Box[3] - x$Box[1]
@@ -423,13 +400,20 @@ pdfgrobs <- function(file_name, pagenum, scale = dev.size()[2]/10, enc = "UTF-8"
 #' @return no return
 #' @export
 #'
-#' @examples draw_glyph(ttf, "a")
+#' @examples
+#' \dontrun{
+#' if(interactive()){
+#'  # ttf <- "raw vector with font file"
+#'  draw_glyph(ttf, "a")
+#'  }
+#' }
+#' @importFrom grid grid.newpage pushViewport viewport grid.path gpar
 ##---------------------------------------------------------------------------##
 draw_glyph <- function(fontfile, glyph)
 {
   header <- GetFontFileHeader(fontfile)
 
-  cmap <- PDFR::GetFontFileCMap(fontfile)
+  cmap <- GetFontFileCMap(fontfile)
 
   enc <- names(cmap)
 
@@ -439,15 +423,17 @@ draw_glyph <- function(fontfile, glyph)
     cmap <- cmap[[which(enc == "Windows Unicode (BMP only)" )[1]]]
   } else if("Mac" %in% enc) {
     cmap <- cmap[[which(enc == "Mac")[1]]]
-  } else stop("Can't find appropriate cmap")
+  } else cli_abort("Appropriate cmap can't be found in {.arg fontfile}")
 
-  if(is.character(glyph)) glyph <- as.numeric(charToRaw(substr(glyph, 1, 1)))
+  if(is_character(glyph)) glyph <- as.numeric(charToRaw(substr(glyph, 1, 1)))
 
   index <- which(cmap$first == glyph)
-  if(length(index) == 0) stop("Glyph not found")
+  if(has_length(index, 0)) {
+    cli_abort("{.arg glyph} can't be found in {.arg fontfile}")
+  }
   glyph <- cmap$second[index[1]]
 
-  glyph <- PDFR::GetFontFileGlyph(fontfile, glyph)
+  glyph <- GetFontFileGlyph(fontfile, glyph)
 
   grid::grid.newpage()
 

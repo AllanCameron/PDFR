@@ -1,5 +1,5 @@
-library(R6)
-library(PDFR)
+# library(R6)
+# library(PDFR)
 
 # Converts strings in the form "101010" to the integer they represent. Useful
 # function for reasoning about bits and binary representations. Accepts
@@ -33,7 +33,7 @@ IntToBinChar <- function(y, n = 8)
 {
   if(max(y) > 2^64 | n > 64)
   {
-    stop("IntToBinChar displays numbers of 64 bits or less")
+    abort("IntToBinChar displays numbers of 64 bits or less")
   }
 
   convert_one_int = function(x)
@@ -166,15 +166,15 @@ DeflateStream <- R6Class("DeflateStream", public = list(
     flg = as.numeric(self$GetByte());
     if(bitwAnd(cmf, 0x0f) != 8)
     {
-      stop("Invalid compression method.");
+      abort("Invalid compression method.");
     }
     if((bitwShiftL(cmf, 8) + flg) %% 31 != 0)
     {
-      stop("Invalid check flag");
+      abort("Invalid check flag");
     }
     if(bitwAnd(flg, 32) != 0)
     {
-      stop("FDICT bit set in stream header");
+      abort("FDICT bit set in stream header");
     }
   },
 
@@ -293,7 +293,7 @@ DeflateStream <- R6Class("DeflateStream", public = list(
         {
           read_bits = read_bits + 1;
           read_value = bitwShiftL(read_value, 1) + self$GetBits(1);
-          if(read_bits > maxbits) stop("Couldn't read code");
+          if(read_bits > maxbits) abort("Couldn't read code");
         }
       }
     }
@@ -322,7 +322,7 @@ DeflateStream <- R6Class("DeflateStream", public = list(
         chunk = bitwShiftL(chunk, 1) + self$GetBits(1);
       }
     }
-    stop("No code match found");
+    abort("No code match found");
   },
 
   BitFlip = function(code)
@@ -345,7 +345,7 @@ DeflateStream <- R6Class("DeflateStream", public = list(
   {
     if(class(my_data) != "raw")
     {
-      stop("Deflate stream requires raw vector.")
+      abort("Deflate stream requires raw vector.")
     }
     self$data = my_data;
     self$size = length(self$data);

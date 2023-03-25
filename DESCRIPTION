@@ -1,22 +1,35 @@
-Package: PDFR
 Type: Package
+Package: PDFR
 Title: Extract Text From PDFs In An R Friendly Way
 Version: 0.1.0
-Author: Allan Cameron
-Maintainer: <Allan.Cameron@nhs.net>
-Description: Extracts text from PDF into an R dataframe giving the content,
-    size, position and font of any text elements. This information can then 
-    be manipulated in R.
-License: file LICENSE
+Authors@R: c(
+    person("Allan", "Cameron", , "Allan.Cameron@nhs.net", role = c("aut", "cre", "cph")),
+    person("Eli", "Pousson", , "eli.pousson@gmail.com", role = "ctb",
+           comment = c(ORCID = "0000-0001-8280-1706"))
+  )
+Maintainer: Allan Cameron <Allan.Cameron@nhs.net>
+Description: Extracts text from PDF into an R dataframe giving the
+    content, size, position and font of any text elements. This
+    information can then be manipulated in R.
+License: MIT + file LICENSE
+URL: https://github.com/AllanCameron/PDFR
+BugReports: https://github.com/AllanCameron/PDFR/issues
+Depends: 
+    R (>= 2.10)
+Imports: 
+    cli,
+    grDevices,
+    grid,
+    Rcpp,
+    rlang
+Suggests: 
+    ggplot2,
+    testthat
+LinkingTo: 
+    Rcpp,
+    testthat
 Encoding: UTF-8
 LazyData: true
-Imports: 
-    Rcpp,
-    Rcpp11,
-    ggplot2
-LinkingTo: Rcpp, Rcpp11, testthat
-RoxygenNote: 6.1.1
-SystemRequirements: C++11
-Suggests: 
-    testthat
+RoxygenNote: 7.2.3
 StagedInstall: no
+SystemRequirements: C++11
