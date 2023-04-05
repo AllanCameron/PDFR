@@ -3,9 +3,16 @@
 "_PACKAGE"
 
 ## usethis namespace: start
-#' @importFrom Rcpp evalCpp
 #' @importFrom cli cli_abort
-#' @importFrom rlang is_character is_true is_false is_raw check_installed
-#'   has_length abort caller_env
+#' @importFrom Rcpp evalCpp
+#' @importFrom Rcpp sourceCpp
+#' @importFrom rlang is_character
+#' @importFrom rlang is_true
+#' @importFrom rlang is_false
+#' @importFrom rlang is_raw
+#' @importFrom rlang check_installed
+#' @importFrom rlang has_length
+#' @importFrom rlang abort
+#' @importFrom rlang caller_env
 ## usethis namespace: end
 NULL
