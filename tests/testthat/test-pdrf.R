@@ -1,13 +1,13 @@
 context("test-pdrf")
-pdfpage(pdfr_paths[[1]], 1, FALSE, FALSE)$Elements -> barcodes
-pdfpage(pdfr_paths[[2]], 1, FALSE, FALSE)$Elements -> chestpain
-pdfpage(pdfr_paths[[3]], 1, FALSE, FALSE)$Elements -> pdfinfo
-pdfpage(pdfr_paths[[4]], 1, FALSE, FALSE)$Elements -> adobe
-pdfpage(pdfr_paths[[5]], 1, FALSE, FALSE)$Elements -> leeds
-pdfpage(pdfr_paths[[6]], 1, FALSE, FALSE)$Elements -> sams
-pdfpage(pdfr_paths[[7]], 1, FALSE, FALSE)$Elements -> testreader
-pdfpage(pdfr_paths[[8]], 3, FALSE, FALSE)$Elements -> tex
-pdfpage(pdfr_paths[[9]], 1, FALSE, FALSE)$Elements -> rcpp
+barcodes <- pdfpage(pdfr_paths[[1]], 1, FALSE, FALSE)$Elements
+chestpain <- pdfpage(pdfr_paths[[2]], 1, FALSE, FALSE)$Elements
+pdfinfo <- pdfpage(pdfr_paths[[3]], 1, FALSE, FALSE)$Elements
+adobe <- pdfpage(pdfr_paths[[4]], 1, FALSE, FALSE)$Elements
+leeds <- pdfpage(pdfr_paths[[5]], 1, FALSE, FALSE)$Elements
+sams <- pdfpage(pdfr_paths[[6]], 1, FALSE, FALSE)$Elements
+testreader <- pdfpage(pdfr_paths[[7]], 1, FALSE, FALSE)$Elements
+tex <- pdfpage(pdfr_paths[[8]], 3, FALSE, FALSE)$Elements
+rcpp <- pdfpage(pdfr_paths[[9]], 1, FALSE, FALSE)$Elements
 
 test_that("Encoding works",
 {
