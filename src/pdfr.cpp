@@ -336,7 +336,7 @@ DataFrame PdfDocCommon(shared_ptr<Document> document_ptr)
   // Loop through each page, get its contents and add it to the output list
   for (size_t page_number = 0; page_number < number_of_pages; page_number++)
   {
-    // Create a new page pbject
+    // Create a new page object
     auto page_ptr = make_shared<Page>(document_ptr, page_number);
 
     // Create a new Parser object
