@@ -15,7 +15,7 @@ using namespace std;
 
 //---------------------------------------------------------------------------//
 
-static const float MAXPAGE = 30000;
+// static const float MAXPAGE = 30000;
 static const float MAX_LINE_FACTOR = 0.3;
 
 //---------------------------------------------------------------------------//
