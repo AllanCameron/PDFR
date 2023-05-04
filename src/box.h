@@ -37,6 +37,7 @@
 #include<vector>
 #include<algorithm>
 #include<memory>
+#include<stdexcept>
 
 //---------------------------------------------------------------------------//
 // This enum allows Vertices to be labelled according to which clockwise
