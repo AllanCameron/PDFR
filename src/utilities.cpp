@@ -183,7 +183,7 @@ vector<uint8_t> ConvertHexToBytes(const string& hexstring)
   }
 
   // We cannot allow odd-length vectors;
-  if (byte_vector.size() == 0x01) byte_vector.push_back(0);
+  if (byte_vector.size() | 0x01) byte_vector.push_back(0);
 
   // Now take each pair of four-bit bytes, left shift the first by four bits
   // and add them together using a bitwise OR, overwriting the source as we go
