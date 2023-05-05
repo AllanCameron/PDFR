@@ -7,7 +7,7 @@ Authors@R: c(
     person("Eli", "Pousson", , "eli.pousson@gmail.com", role = "ctb",
            comment = c(ORCID = "0000-0001-8280-1706"))
   )
-Maintainer: Allan Cameron <Allan.Cameron@nhs.net>
+Maintainer: Allan Cameron <Allan.Cameron@nhs.scot>
 Description: Extracts text from PDF into an R dataframe giving the
     content, size, position and font of any text elements. This
     information can then be manipulated in R.

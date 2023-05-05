@@ -39,7 +39,8 @@ text from page 1 of the barcodes PDF from `pdfr_paths`:
 ``` r
 library(PDFR)
 
-pdfpage(pdfr_paths$barcodes, 1)
+barcodes <- system.file("extdata", "barcodes.pdf", package = "PDFR")
+pdfpage(barcodes, 1)
 #>                               text  left right bottom   top    font size
 #> 1                             None  53.5  74.4  774.2 782.2 Courier    8
 #> 2                   Acute medicine 187.4 255.9  774.2 782.2 Courier    8
@@ -128,7 +129,11 @@ makes pdf parsing feasible, and even pretty quick in some cases.
 ## Related projects
 
 - [pdftools](https://github.com/ropensci/pdftools): Text Extraction,
-  Rendering and Converting of PDF Documents
+  Rendering and Converting of PDF Documents.
+- [qpdf](https://github.com/ropensci/qpdf): Content-preserving
+  transformations transformations of PDF files such as split, combine,
+  and compress. This package interfaces directly to the ‘qpdf’ C++ API
+  and does not require any command line utilities.
 - [tabulizer](https://github.com/ropensci/tabulizer): Bindings for
   Tabula PDF Table Extractor Library
 - [PDE](https://github.com/erikstricker/PDE): The PDE (Pdf Data
@@ -136,3 +141,5 @@ makes pdf parsing feasible, and even pretty quick in some cases.
   based on search words from PDF (Portable Document Format) files and
   enables the visualization of the results, both by providing a
   convenient user-interface.
+- [xmpdf](https://github.com/trevorld/r-xmpdf): Edit XMP metadata and
+  PDF bookmarks/documentation info.

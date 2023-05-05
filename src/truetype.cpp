@@ -601,7 +601,6 @@ void TTFont::ReadCompoundGlyph(Glyf& result)
       {
         if(result.contours_.size() == 0)
           throw std::runtime_error("I don't understand");
-        uint16_t this_compound_index = GetUint16();
         uint16_t comp_index = GetUint16();
         e = component.contours_[0].xcoords[comp_index];
         f = component.contours_[0].ycoords[comp_index];
@@ -619,7 +618,6 @@ void TTFont::ReadCompoundGlyph(Glyf& result)
       {
         if(result.contours_.size() == 0)
           throw std::runtime_error("I don't understand");
-        uint8_t this_compound_index = GetUint8();
         uint8_t comp_index = GetUint8();
         e = component.contours_[0].xcoords[comp_index];
         f = component.contours_[0].ycoords[comp_index];

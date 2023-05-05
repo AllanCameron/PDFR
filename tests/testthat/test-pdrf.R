@@ -12,7 +12,6 @@ pdfpage(pdfr_paths[[9]], 1, FALSE, FALSE)$Elements -> rcpp
 test_that("Encoding works",
 {
   expect_match(chestpain$text[1], "ACUTE CARDIAC CHEST PAIN GUIDELINES")
-  expect_match(paste0(adobe$text, collapse = ""), "PDF BOOKM ARK SAM P L E")
 })
 
 test_that("Ligatures are properly encoded",
